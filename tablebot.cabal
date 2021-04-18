@@ -4,16 +4,16 @@ cabal-version: 1.12
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: bf4c4a7d044a37e1e6e67a81254cdc7882aa9861adf6dadf042ebabc90b9ef15
+-- hash: a43addb8763d43407cc7c787b37016cbac5472c316d978d44e7402a55c7eb54f
 
 name:           tablebot
 version:        0.1.0.0
-description:    Please see the README on GitHub at <https://github.com/githubuser/tablebot#readme>
-homepage:       https://github.com/githubuser/tablebot#readme
-bug-reports:    https://github.com/githubuser/tablebot/issues
-author:         Author name here
-maintainer:     example@example.com
-copyright:      2021 Author name here
+description:    Please see the README on GitHub at <https://github.com/finnbar/tablebot#readme>
+homepage:       https://github.com/finnbar/tablebot#readme
+bug-reports:    https://github.com/finnbar/tablebot/issues
+author:         Finnbar Keating
+maintainer:     finnjkeating@gmail.com
+copyright:      2021 Finnbar Keating
 license:        BSD3
 license-file:   LICENSE
 build-type:     Simple
@@ -23,7 +23,7 @@ extra-source-files:
 
 source-repository head
   type: git
-  location: https://github.com/githubuser/tablebot
+  location: https://github.com/finnbar/tablebot
 
 library
   exposed-modules:
@@ -34,6 +34,11 @@ library
       src
   build-depends:
       base >=4.7 && <5
+    , discord-haskell
+    , emoji
+    , hlrdb
+    , text
+    , transformers
   default-language: Haskell2010
 
 executable tablebot-exe
@@ -45,7 +50,12 @@ executable tablebot-exe
   ghc-options: -threaded -rtsopts -with-rtsopts=-N
   build-depends:
       base >=4.7 && <5
+    , discord-haskell
+    , emoji
+    , hlrdb
     , tablebot
+    , text
+    , transformers
   default-language: Haskell2010
 
 test-suite tablebot-test
@@ -58,5 +68,10 @@ test-suite tablebot-test
   ghc-options: -threaded -rtsopts -with-rtsopts=-N
   build-depends:
       base >=4.7 && <5
+    , discord-haskell
+    , emoji
+    , hlrdb
     , tablebot
+    , text
+    , transformers
   default-language: Haskell2010

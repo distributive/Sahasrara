@@ -3,7 +3,42 @@
 # For more information, please see the documentation at:
 #   https://docs.haskellstack.org/en/stable/lock_files
 
-packages: []
+packages:
+- completed:
+    hackage: discord-haskell-1.8.5@sha256:56265067a27de25c8f372b3ecf3c282d7c1927503ba59a5b0a9d01fd81e268a0,3562
+    pantry-tree:
+      size: 2107
+      sha256: 47930963df17ed0e1946b058b55c5b32c9b93d062124ed72d8fefac61e307cf5
+  original:
+    hackage: discord-haskell-1.8.5
+- completed:
+    hackage: emoji-0.1.0.2@sha256:d995572a5c7dcd28f98eb15c6e387a7b3bda1ac2477ab0d9dba8580d5d7b161f,1273
+    pantry-tree:
+      size: 437
+      sha256: dd9ea90a631342e5db0fc21331ade4d563a685e9125d5a3989eefa8e1b96c6c6
+  original:
+    hackage: emoji-0.1.0.2
+- completed:
+    hackage: hlrdb-0.3.2.0@sha256:e1bc98de8a2f39d424f419ce27fb37a4b65e4f8b1d17d03bf609399f12f97b62,1498
+    pantry-tree:
+      size: 209
+      sha256: 8b8d0cdc377d5129540ca15c93188475df2538cc59eabe826f14ee022a174687
+  original:
+    hackage: hlrdb-0.3.2.0
+- completed:
+    hackage: hlrdb-core-0.1.6.0@sha256:3eb6172df1ee94d35d9cee9911548f159e8f3bc963e334c0fc2861d9aa627a98,1865
+    pantry-tree:
+      size: 769
+      sha256: 08bd7cc652bcd04176d96661c46b4cd1a39d978a756e14b46bc54313be3e6f35
+  original:
+    hackage: hlrdb-core-0.1.6.0
+- completed:
+    hackage: hedis-0.12.15@sha256:f95043a3427c1f99a63b62ddc7c474e287d7ae3880d729e23f527e2dd70876db,5274
+    pantry-tree:
+      size: 1279
+      sha256: c1971d0d77723951d68cca762ec286c62ba0d78926f347d925bce582a2ed51ea
+  original:
+    hackage: hedis-0.12.15
 snapshots:
 - completed:
     size: 567037
