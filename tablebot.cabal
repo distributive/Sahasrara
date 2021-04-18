@@ -4,7 +4,7 @@ cabal-version: 1.12
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: a43addb8763d43407cc7c787b37016cbac5472c316d978d44e7402a55c7eb54f
+-- hash: 0628f502ce35f515f709002a6007a84466e54b7b57c80a513d52f60b472a7170
 
 name:           tablebot
 version:        0.1.0.0
@@ -27,7 +27,8 @@ source-repository head
 
 library
   exposed-modules:
-      Lib
+      Commands
+      Tablebot
   other-modules:
       Paths_tablebot
   hs-source-dirs:
@@ -37,6 +38,7 @@ library
     , discord-haskell
     , emoji
     , hlrdb
+    , load-env
     , text
     , transformers
   default-language: Haskell2010
@@ -53,6 +55,7 @@ executable tablebot-exe
     , discord-haskell
     , emoji
     , hlrdb
+    , load-env
     , tablebot
     , text
     , transformers
@@ -71,6 +74,7 @@ test-suite tablebot-test
     , discord-haskell
     , emoji
     , hlrdb
+    , load-env
     , tablebot
     , text
     , transformers

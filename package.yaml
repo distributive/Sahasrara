@@ -26,6 +26,7 @@ dependencies:
 - text
 - transformers
 - hlrdb
+- load-env
 
 library:
   source-dirs: src

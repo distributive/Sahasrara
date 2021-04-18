@@ -46,6 +46,7 @@ extra-deps:
 - hlrdb-0.3.2.0
 - hlrdb-core-0.1.6.0
 - hedis-0.12.15
+- load-env-0.2.1.0
 
 # Override default flag values for local packages and extra-deps
 # flags: {}

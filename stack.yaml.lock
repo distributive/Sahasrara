@@ -39,6 +39,13 @@ packages:
       sha256: c1971d0d77723951d68cca762ec286c62ba0d78926f347d925bce582a2ed51ea
   original:
     hackage: hedis-0.12.15
+- completed:
+    hackage: load-env-0.2.1.0@sha256:17628d397cf7ba6af9bf103c2c3592bb246e2ad58bd019cc5071c654887b1083,1866
+    pantry-tree:
+      size: 601
+      sha256: 12947042909a99d32d10cb72865db781867f34c0bd28c430091c2b80db1f1109
+  original:
+    hackage: load-env-0.2.1.0
 snapshots:
 - completed:
     size: 567037
