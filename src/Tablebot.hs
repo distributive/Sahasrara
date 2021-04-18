@@ -15,6 +15,7 @@ data Config = Cfg { discordToken :: Text, prefix :: Text, rconn :: Connection, p
 runTablebot :: Config -> IO ()
 runTablebot cfg = do
     userFacingError <- runDiscord $ def {
-        Discord.discordToken = Tablebot.discordToken cfg
+        Discord.discordToken = Tablebot.discordToken cfg,
+        discordOnEvent = eventHandler (plugins cfg) (rconn cfg) (prefix cfg)
     }
     TIO.putStrLn userFacingError

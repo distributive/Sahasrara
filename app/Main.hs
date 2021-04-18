@@ -3,6 +3,7 @@
 module Main where
 
 import Tablebot
+import Features.Ping (pingPlugin)
 
 import LoadEnv (loadEnv)
 import System.Environment (getEnv, lookupEnv)
@@ -18,7 +19,7 @@ main = do
     prefix <- pack . fromMaybe "!" <$> lookupEnv "PREFIX"
     conninfo <- redisConnectInfo
     rconn <- checkedConnect conninfo
-    let plugins = []
+    let plugins = [pingPlugin]
     runTablebot Cfg {discordToken, prefix, rconn, plugins}
 
 redisConnectInfo :: IO ConnectInfo

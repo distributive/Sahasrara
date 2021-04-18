@@ -1,7 +1,7 @@
-{-# LANGUAGE NamedFieldPuns #-}
+{-# LANGUAGE NamedFieldPuns, BangPatterns #-}
 
 module Plugin.Plugin (
-    Plugin, Feature
+    Plugin, Feature(..), eventHandler
 ) where
 
 import Plugin.Types
@@ -11,8 +11,17 @@ import Discord
 import Discord.Types
 import Data.Text (Text)
 import Database.Redis (Connection)
+import Control.Monad.Trans.Reader
+import Control.Monad.Trans.Class
 
-eventHandler :: [Plugin] -> Connection -> DiscordHandle -> Text -> Event -> IO ()
-eventHandler pls rconn discord prefix = let env = FEnv {rconn, discord} in
-    \event -> case event of
-        MessageCreate m -> doCommand prefix m $! toCommandFns pls -- TODO: match on Command, map to its inner parser, run, apply m
+-- TODO: short rewrite with withReaderT, where r' = DiscordHandlerEnv, r = FeatureEnv
+-- TODO: parser is broken. fix
+eventHandler :: [Plugin] -> Connection -> Text -> Event -> DiscordHandler ()
+eventHandler pls rconn prefix =
+    let !commandFns = toCommandFns pls
+    in \event -> do -- DiscordHandler ()
+        discord <- ask
+        let env = FEnv {rconn, discord}
+        lift $ flip runReaderT env $ case event of
+            MessageCreate m -> doCommand prefix m $! toCommandFns pls
+            _ -> pure ()

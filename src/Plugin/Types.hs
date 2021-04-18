@@ -1,5 +1,6 @@
 module Plugin.Types where
 
+import Data.Text (Text)
 import Data.Attoparsec.Text
 import Discord
 import Discord.Types
@@ -18,7 +19,7 @@ type FeatureFn = ReaderT FeatureEnv IO ()
 -- * Other - events not covered here (should fire rarely, so not too much of a worry)
 -- * CronJob - runs on a given timeframe (represented as a delay in microseconds)
 data Feature =
-    Command { parser :: Parser (Message -> FeatureFn) }
+    Command { name :: Text, parser :: Parser (Message -> FeatureFn) }
     | MessageChange {
         -- Bool represents whether the message was updated or deleted.
         onMessageChange :: Bool -> ChannelId -> MessageId -> FeatureFn }
