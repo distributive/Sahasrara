@@ -27,9 +27,14 @@ dependencies:
 - transformers
 - hlrdb
 - load-env
+- hedis
+- bytestring
 
 library:
   source-dirs: src
+  default-extensions:
+  - OverloadedStrings
+  - ImportQualifiedPost
 
 executables:
   tablebot-exe:

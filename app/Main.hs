@@ -1,15 +1,34 @@
+{-# LANGUAGE NamedFieldPuns, ImportQualifiedPost #-}
+
 module Main where
 
 import Tablebot
 import Commands
 
-import LoadEnv
-import System.Environment (getEnv)
-import Data.Text
+import LoadEnv (loadEnv)
+import System.Environment (getEnv, lookupEnv)
+import Data.Text (pack)
+import Data.ByteString.Char8 qualified as BS
+import Data.Maybe (fromMaybe)
+import Database.Redis
 
 main :: IO ()
 main = do
     loadEnv
-    dtoken <- getEnv "DISCORD_TOKEN"
-    let cfg = Cfg (pack dtoken) []
-    runTablebot cfg
+    discordToken <- pack <$> getEnv "DISCORD_TOKEN"
+    prefix <- pack . fromMaybe "!" <$> lookupEnv "PREFIX"
+    conninfo <- redisConnectInfo
+    rconn <- checkedConnect conninfo
+    let commands = []
+    runTablebot Cfg {discordToken, prefix, rconn, commands}
+
+redisConnectInfo :: IO ConnectInfo
+redisConnectInfo = do
+    connectHost <- fromMaybe "localhost" <$> lookupEnv "REDIS_HOST"
+    port <- lookupEnv "REDIS_PORT"
+    let connectPort = PortNumber $ maybe 6379 read port
+    auth <- lookupEnv "REDIS_AUTH"
+    let connectAuth = BS.pack <$> auth
+    return $ defaultConnectInfo {
+        connectHost, connectPort, connectAuth
+    }

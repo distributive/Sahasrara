@@ -8,8 +8,10 @@ import Commands
 import Data.Text
 import Discord
 import qualified Data.Text.IO as TIO (putStrLn)
+import Database.Redis
 
-data Config = Cfg { discordToken :: Text, commands :: [Command] }
+-- TODO: add Cron jobs somehow - maybe commands have registered bits and called bits?
+data Config = Cfg { discordToken :: Text, prefix :: Text, rconn :: Connection, commands :: [Command] }
 
 runTablebot :: Config -> IO ()
 runTablebot cfg = do
