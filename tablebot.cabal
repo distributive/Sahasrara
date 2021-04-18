@@ -4,7 +4,7 @@ cabal-version: 1.12
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: 5b1565fbdc449c8709d3a595a2a0c30b8d950efef2f46802d9a3113840b732f3
+-- hash: e4d441373ed2b87a2c81e1d486734ef6cbfc374abd5c67cc3d95bc40e73c1831
 
 name:           tablebot
 version:        0.1.0.0
@@ -27,7 +27,9 @@ source-repository head
 
 library
   exposed-modules:
-      Commands
+      Plugin.Command
+      Plugin.Plugin
+      Plugin.Types
       Tablebot
   other-modules:
       Paths_tablebot
@@ -35,7 +37,8 @@ library
       src
   default-extensions: OverloadedStrings ImportQualifiedPost
   build-depends:
-      base >=4.7 && <5
+      attoparsec
+    , base >=4.7 && <5
     , bytestring
     , discord-haskell
     , emoji
@@ -54,7 +57,8 @@ executable tablebot-exe
       app
   ghc-options: -threaded -rtsopts -with-rtsopts=-N
   build-depends:
-      base >=4.7 && <5
+      attoparsec
+    , base >=4.7 && <5
     , bytestring
     , discord-haskell
     , emoji
@@ -75,7 +79,8 @@ test-suite tablebot-test
       test
   ghc-options: -threaded -rtsopts -with-rtsopts=-N
   build-depends:
-      base >=4.7 && <5
+      attoparsec
+    , base >=4.7 && <5
     , bytestring
     , discord-haskell
     , emoji

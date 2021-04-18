@@ -3,15 +3,14 @@ module Tablebot (
     Config(..)
 ) where
 
-import Commands
+import Plugin.Plugin
 
 import Data.Text
 import Discord
 import qualified Data.Text.IO as TIO (putStrLn)
 import Database.Redis
 
--- TODO: add Cron jobs somehow - maybe commands have registered bits and called bits?
-data Config = Cfg { discordToken :: Text, prefix :: Text, rconn :: Connection, commands :: [Command] }
+data Config = Cfg { discordToken :: Text, prefix :: Text, rconn :: Connection, plugins :: [Plugin] }
 
 runTablebot :: Config -> IO ()
 runTablebot cfg = do
