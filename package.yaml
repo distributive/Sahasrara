@@ -36,6 +36,7 @@ library:
   - OverloadedStrings
   - ImportQualifiedPost
   - LambdaCase
+  - RankNTypes
 
 executables:
   tablebot-exe:

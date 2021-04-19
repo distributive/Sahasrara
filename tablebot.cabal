@@ -4,7 +4,7 @@ cabal-version: 1.12
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: a410bd28db31b0a97efbaa576f57d567f8efef8f3fbd80be7b8f7b6e9636d324
+-- hash: c3684a8524a25e7dae6312ea61c2fac83db5e0bc67a68b5e5d1382d5393577fa
 
 name:           tablebot
 version:        0.1.0.0
@@ -31,6 +31,8 @@ library
       Tablebot.Handler
       Tablebot.Handler.Command
       Tablebot.Plugin
+      Tablebot.Plugin.Discord
+      Tablebot.Plugin.Parser
       Tablebot.Plugin.Types
       Tablebot.Plugins
       Tablebot.Plugins.Ping
@@ -38,7 +40,7 @@ library
       Paths_tablebot
   hs-source-dirs:
       src
-  default-extensions: OverloadedStrings ImportQualifiedPost LambdaCase
+  default-extensions: OverloadedStrings ImportQualifiedPost LambdaCase RankNTypes
   build-depends:
       attoparsec
     , base >=4.7 && <5

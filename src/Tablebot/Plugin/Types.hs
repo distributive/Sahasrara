@@ -7,26 +7,27 @@ import Discord.Types
     ( Event, Message, ChannelId, MessageId, ReactionInfo )
 import Database.Selda
 
-type SeldaDiscord b = SeldaT b DiscordHandler ()
+type SeldaDiscord b a = SeldaT b DiscordHandler a
+type SD a = forall b. SeldaDiscord b a
 
 -- Bot functionality comes in a few different flavours.
 -- * Commands - your standard MessageCreate with some kind of parser applied (after prefix)
-data Command b = Command { name :: Text, commandParser :: Parser (Message -> SeldaDiscord b) }
+data Command b = Command { name :: Text, commandParser :: Parser (Message -> SeldaDiscord b ()) }
 -- * InlineCommand - for commands called with fancy brackets and similar
-newtype InlineCommand b = InlineCommand { inlineCommandParser :: Parser (Message -> SeldaDiscord b) }
+newtype InlineCommand b = InlineCommand { inlineCommandParser :: Parser (Message -> SeldaDiscord b ()) }
 -- * MessageChange - called on MessageUpdate / MessageDelete / MessageDeleteBulk (as a map on MessageDelete)
 newtype MessageChange b = MessageChange {
         -- Bool represents whether the message was updated or deleted.
-        onMessageChange :: Bool -> ChannelId -> MessageId -> SeldaDiscord b }
+        onMessageChange :: Bool -> ChannelId -> MessageId -> SeldaDiscord b () }
 -- * ReactionAdd - called on MessageReactionAdd
-newtype ReactionAdd b = ReactionAdd { onReactionAdd :: ReactionInfo -> SeldaDiscord b }
+newtype ReactionAdd b = ReactionAdd { onReactionAdd :: ReactionInfo -> SeldaDiscord b () }
 -- * ReactionDel - called on MessageReactionRemove / MessageReactionRemoveAll / MessageReactionRemoveEmoji 
 -- (as maps on MessageReactionRemove)
-newtype ReactionDel b = ReactionDel { onReactionDelete :: ReactionInfo -> SeldaDiscord b }
+newtype ReactionDel b = ReactionDel { onReactionDelete :: ReactionInfo -> SeldaDiscord b () }
 -- * Other - events not covered here (should fire rarely, so not too much of a worry)
-newtype Other b = Other { onOtherEvent :: Event -> SeldaDiscord b }
+newtype Other b = Other { onOtherEvent :: Event -> SeldaDiscord b () }
 -- * CronJob - runs on a given timeframe (represented as a delay in microseconds)
-data CronJob b = CronJob { timeframe :: Int, onCron :: SeldaDiscord b }
+data CronJob b = CronJob { timeframe :: Int, onCron :: SeldaDiscord b () }
 
 data Plugin b = Pl {
     commands :: [Command b],
