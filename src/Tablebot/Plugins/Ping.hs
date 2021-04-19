@@ -1,13 +1,13 @@
-module Features.Ping where
+module Tablebot.Plugins.Ping (pingPlugin) where
 
-import Plugin.Plugin
+import Tablebot.Plugin
 
 import Control.Monad.IO.Class
 
 -- A very simple starter bot that responds to !ping.
 
-ping :: Feature b
+ping :: Command b
 ping = Command "ping" (pure $ \_ -> liftIO $ putStrLn "pong")
 
 pingPlugin :: Plugin b
-pingPlugin = [ping]
+pingPlugin = plug { commands = [ping] }

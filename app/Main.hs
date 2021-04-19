@@ -3,7 +3,7 @@
 module Main where
 
 import Tablebot
-import Features.Ping (pingPlugin)
+import Tablebot.Plugins (pingPlugin)
 
 import LoadEnv (loadEnv)
 import System.Environment (getEnv, lookupEnv)

@@ -4,7 +4,7 @@ cabal-version: 1.12
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: 3257caf7ca64f334177672614b36a17283845eaef661d983dc872f2ea31c801d
+-- hash: a410bd28db31b0a97efbaa576f57d567f8efef8f3fbd80be7b8f7b6e9636d324
 
 name:           tablebot
 version:        0.1.0.0
@@ -27,11 +27,13 @@ source-repository head
 
 library
   exposed-modules:
-      Features.Ping
-      Plugin.Command
-      Plugin.Plugin
-      Plugin.Types
       Tablebot
+      Tablebot.Handler
+      Tablebot.Handler.Command
+      Tablebot.Plugin
+      Tablebot.Plugin.Types
+      Tablebot.Plugins
+      Tablebot.Plugins.Ping
   other-modules:
       Paths_tablebot
   hs-source-dirs:
