@@ -4,7 +4,7 @@ cabal-version: 1.12
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: a1a53fe104cbb629ecd01822ded388bea3161395b9a657775716c2d1c273b254
+-- hash: 3257caf7ca64f334177672614b36a17283845eaef661d983dc872f2ea31c801d
 
 name:           tablebot
 version:        0.1.0.0
@@ -36,16 +36,15 @@ library
       Paths_tablebot
   hs-source-dirs:
       src
-  default-extensions: OverloadedStrings ImportQualifiedPost
+  default-extensions: OverloadedStrings ImportQualifiedPost LambdaCase
   build-depends:
       attoparsec
     , base >=4.7 && <5
-    , bytestring
     , discord-haskell
     , emoji
-    , hedis
-    , hlrdb
     , load-env
+    , selda
+    , selda-sqlite
     , text
     , transformers
   default-language: Haskell2010
@@ -60,12 +59,11 @@ executable tablebot-exe
   build-depends:
       attoparsec
     , base >=4.7 && <5
-    , bytestring
     , discord-haskell
     , emoji
-    , hedis
-    , hlrdb
     , load-env
+    , selda
+    , selda-sqlite
     , tablebot
     , text
     , transformers
@@ -82,12 +80,11 @@ test-suite tablebot-test
   build-depends:
       attoparsec
     , base >=4.7 && <5
-    , bytestring
     , discord-haskell
     , emoji
-    , hedis
-    , hlrdb
     , load-env
+    , selda
+    , selda-sqlite
     , tablebot
     , text
     , transformers

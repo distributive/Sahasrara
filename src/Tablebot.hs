@@ -1,6 +1,5 @@
 module Tablebot (
-    runTablebot,
-    Config(..)
+    runTablebot
 ) where
 
 import Plugin.Plugin
@@ -8,14 +7,13 @@ import Plugin.Plugin
 import Data.Text
 import Discord
 import qualified Data.Text.IO as TIO (putStrLn)
-import Database.Redis
+import Database.Selda.SQLite
 
-data Config = Cfg { discordToken :: Text, prefix :: Text, rconn :: Connection, plugins :: [Plugin] }
-
-runTablebot :: Config -> IO ()
-runTablebot cfg = do
+-- TODO (very far in future): choose between SQLite and Postgres.
+runTablebot :: Text -> Text -> FilePath -> [Plugin SQLite] -> IO ()
+runTablebot dToken prefix dbpath plugins = do
     userFacingError <- runDiscord $ def {
-        Discord.discordToken = Tablebot.discordToken cfg,
-        discordOnEvent = eventHandler (plugins cfg) (rconn cfg) (prefix cfg)
+        discordToken = dToken,
+        discordOnEvent = withSQLite dbpath . eventHandler plugins prefix
     }
     TIO.putStrLn userFacingError

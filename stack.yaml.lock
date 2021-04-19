@@ -19,27 +19,6 @@ packages:
   original:
     hackage: emoji-0.1.0.2
 - completed:
-    hackage: hlrdb-0.3.2.0@sha256:e1bc98de8a2f39d424f419ce27fb37a4b65e4f8b1d17d03bf609399f12f97b62,1498
-    pantry-tree:
-      size: 209
-      sha256: 8b8d0cdc377d5129540ca15c93188475df2538cc59eabe826f14ee022a174687
-  original:
-    hackage: hlrdb-0.3.2.0
-- completed:
-    hackage: hlrdb-core-0.1.6.0@sha256:3eb6172df1ee94d35d9cee9911548f159e8f3bc963e334c0fc2861d9aa627a98,1865
-    pantry-tree:
-      size: 769
-      sha256: 08bd7cc652bcd04176d96661c46b4cd1a39d978a756e14b46bc54313be3e6f35
-  original:
-    hackage: hlrdb-core-0.1.6.0
-- completed:
-    hackage: hedis-0.12.15@sha256:f95043a3427c1f99a63b62ddc7c474e287d7ae3880d729e23f527e2dd70876db,5274
-    pantry-tree:
-      size: 1279
-      sha256: c1971d0d77723951d68cca762ec286c62ba0d78926f347d925bce582a2ed51ea
-  original:
-    hackage: hedis-0.12.15
-- completed:
     hackage: load-env-0.2.1.0@sha256:17628d397cf7ba6af9bf103c2c3592bb246e2ad58bd019cc5071c654887b1083,1866
     pantry-tree:
       size: 601
@@ -53,6 +32,20 @@ packages:
       sha256: d41e1aa0534387e0b2f25ed2e79cae445ec65a442ca1ae1062b3c2acbd4cd6c2
   original:
     hackage: attoparsec-0.13.2.5
+- completed:
+    hackage: selda-0.5.1.0@sha256:8f4f7afddfb8ba3bcc8677e2a3f0b183ce85eed2c4ed6d7b8b40f057f573bf69,3111
+    pantry-tree:
+      size: 2462
+      sha256: 84aaea80bc34993c30cd954b4d8c03a97fde88544c83582bfbddfce20f50497b
+  original:
+    hackage: selda-0.5.1.0
+- completed:
+    hackage: selda-sqlite-0.1.7.1@sha256:d750cb189dfd5049628cd1dd0a5d7abda95bdac4a451e0973fc9fde80e70ed17,1257
+    pantry-tree:
+      size: 301
+      sha256: 2b1228ff4b880d23c1ba86d83cc495665be4d67155f8603df37df9bf67d46744
+  original:
+    hackage: selda-sqlite-0.1.7.1
 snapshots:
 - completed:
     size: 567037

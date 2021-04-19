@@ -25,17 +25,17 @@ dependencies:
 - emoji
 - text
 - transformers
-- hlrdb
 - load-env
-- hedis
-- bytestring
 - attoparsec
+- selda
+- selda-sqlite
 
 library:
   source-dirs: src
   default-extensions:
   - OverloadedStrings
   - ImportQualifiedPost
+  - LambdaCase
 
 executables:
   tablebot-exe:
