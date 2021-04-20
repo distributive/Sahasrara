@@ -47,6 +47,13 @@ packages:
   original:
     hackage: persistent-sqlite-2.11.1.0
 - completed:
+    hackage: persistent-template-2.9.1.0@sha256:1c83eeaadd43dd33ecd13caaf751d68d36bba2803eca05e5dd6b4e4d05b4d9d3,3008
+    pantry-tree:
+      size: 776
+      sha256: 894d89bf298707914b97426568ad486d8a73e88bd3398aabba6fcdb8644f4973
+  original:
+    hackage: persistent-template-2.9.1.0@rev:2
+- completed:
     hackage: esqueleto-3.4.1.1@sha256:b980d6c76cf288a84a32a0413d55b408357c5650a8ec2f4c2c5198574f9ed561,5869
     pantry-tree:
       size: 1542

@@ -5,7 +5,7 @@ import Text.Parsec.Text (Parser)
 import Discord (DiscordHandler)
 import Discord.Types
     (Event, Message, ChannelId, MessageId, ReactionInfo)
-import Database.Persist.Sqlite (SqlPersistT)
+import Database.Persist.Sqlite (SqlPersistT, Migration)
 
 type DatabaseDiscord a = SqlPersistT DiscordHandler a
 
@@ -35,11 +35,12 @@ data Plugin = Pl {
     onReactionAdds :: [ReactionAdd],
     onReactionDeletes :: [ReactionDel],
     otherEvents :: [Other],
-    cronJobs :: [CronJob]
+    cronJobs :: [CronJob],
+    migrations :: [Migration]
 }
 
 plug :: Plugin
-plug = Pl [] [] [] [] [] [] []
+plug = Pl [] [] [] [] [] [] [] []
 
 combinePlugins :: [Plugin] -> Plugin
 combinePlugins [] = plug
@@ -51,7 +52,8 @@ combinePlugins (p : ps) = let p' = combinePlugins ps
         onReactionAdds = merge onReactionAdds p p',
         onReactionDeletes = merge onReactionDeletes p p',
         otherEvents = merge otherEvents p p',
-        cronJobs = merge cronJobs p p'
+        cronJobs = merge cronJobs p p',
+        migrations = merge migrations p p'
     }
     where merge f p p' = f p +++ f p'
           -- We expect empty list to be very common in this process, so we add

@@ -1,5 +1,5 @@
 module Tablebot.Plugin.Parser (
-    noArguments, skipSpace
+    noArguments, skipSpace, Parser
 ) where
 
 import Text.Parsec

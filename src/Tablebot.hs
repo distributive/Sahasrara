@@ -5,7 +5,7 @@ module Tablebot (
 ) where
 
 import Tablebot.Handler
-import Tablebot.Plugin (Plugin, combinePlugins)
+import Tablebot.Plugin (Plugin, combinePlugins, migrations)
 
 import Data.Text
 import Discord
@@ -17,7 +17,9 @@ runTablebot :: Text -> Text -> FilePath -> [Plugin] -> IO ()
 runTablebot dToken prefix dbpath plugins =
     let !plugin = combinePlugins plugins
     in do
-    pool <- runNoLoggingT $ createSqlitePool "db.db" 8
+    pool <- runNoLoggingT $ createSqlitePool (pack dbpath) 8
+    -- TODO: this might have issues with duplicates?
+    mapM_ (\migration -> runSqlPool (runMigration migration) pool) $ migrations plugin
     userFacingError <- runDiscord $ def {
         discordToken = dToken,
         discordOnEvent =

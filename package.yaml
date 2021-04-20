@@ -29,6 +29,7 @@ dependencies:
 - parsec
 - persistent
 - persistent-sqlite
+- persistent-template
 - esqueleto
 - monad-logger
 
@@ -38,6 +39,20 @@ library:
   - OverloadedStrings
   - ImportQualifiedPost
   - LambdaCase
+  - EmptyDataDecls
+  - FlexibleContexts
+  - GADTs
+  - GeneralizedNewtypeDeriving
+  - MultiParamTypeClasses
+  - QuasiQuotes
+  - TemplateHaskell
+  - TypeFamilies
+  - DerivingStrategies
+  - StandaloneDeriving
+  - UndecidableInstances
+  - DataKinds
+  - FlexibleInstances
+
 
 executables:
   tablebot-exe:

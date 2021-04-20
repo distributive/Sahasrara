@@ -4,7 +4,7 @@ cabal-version: 1.12
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: 6ee0855afe8d096b58a742d09c19f7656495bac9c1819e874b1c0907ef1738c0
+-- hash: b7d8c519d94931ddde057153cf415aaf283b35c8bbd4b9914839ea612d2e42f4
 
 name:           tablebot
 version:        0.1.0.0
@@ -36,11 +36,12 @@ library
       Tablebot.Plugin.Types
       Tablebot.Plugins
       Tablebot.Plugins.Ping
+      Tablebot.Plugins.Quote
   other-modules:
       Paths_tablebot
   hs-source-dirs:
       src
-  default-extensions: OverloadedStrings ImportQualifiedPost LambdaCase
+  default-extensions: OverloadedStrings ImportQualifiedPost LambdaCase EmptyDataDecls FlexibleContexts GADTs GeneralizedNewtypeDeriving MultiParamTypeClasses QuasiQuotes TemplateHaskell TypeFamilies DerivingStrategies StandaloneDeriving UndecidableInstances DataKinds FlexibleInstances
   build-depends:
       base >=4.7 && <5
     , discord-haskell
@@ -51,6 +52,7 @@ library
     , parsec
     , persistent
     , persistent-sqlite
+    , persistent-template
     , text
     , transformers
   default-language: Haskell2010
@@ -72,6 +74,7 @@ executable tablebot-exe
     , parsec
     , persistent
     , persistent-sqlite
+    , persistent-template
     , tablebot
     , text
     , transformers
@@ -95,6 +98,7 @@ test-suite tablebot-test
     , parsec
     , persistent
     , persistent-sqlite
+    , persistent-template
     , tablebot
     , text
     , transformers

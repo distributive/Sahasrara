@@ -1,5 +1,5 @@
 module Tablebot.Plugin.Discord (
-    sendMessage, sendMessageVoid, reactToCommand
+    sendMessage, sendMessageVoid, reactToCommand, Message
 ) where
 
 import Tablebot.Plugin (DatabaseDiscord)
