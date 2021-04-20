@@ -8,15 +8,15 @@ import Control.Monad.IO.Class
 
 -- A very simple starter bot that responds to !ping.
 
-ping :: Command b
+ping :: Command
 ping = Command "ping" (noArguments $ \m -> do
     _ <- sendMessage m "pong"
     return ())
 
-pong :: Command b
+pong :: Command
 pong = Command "pong" (noArguments $ \m -> do
     _ <- sendMessage m "ping"
     return ())
 
-pingPlugin :: Plugin b
+pingPlugin :: Plugin
 pingPlugin = plug { commands = [ping, pong] }

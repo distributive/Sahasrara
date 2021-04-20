@@ -27,8 +27,10 @@ dependencies:
 - transformers
 - load-env
 - parsec
-- selda
-- selda-sqlite
+- persistent
+- persistent-sqlite
+- esqueleto
+- monad-logger
 
 library:
   source-dirs: src
@@ -36,7 +38,6 @@ library:
   - OverloadedStrings
   - ImportQualifiedPost
   - LambdaCase
-  - RankNTypes
 
 executables:
   tablebot-exe:

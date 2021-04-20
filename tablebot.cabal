@@ -4,7 +4,7 @@ cabal-version: 1.12
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: 413bc375f3130796aee73c84100be931e855a77598aad0c8e7cf233d0353d916
+-- hash: 6ee0855afe8d096b58a742d09c19f7656495bac9c1819e874b1c0907ef1738c0
 
 name:           tablebot
 version:        0.1.0.0
@@ -14,7 +14,7 @@ bug-reports:    https://github.com/finnbar/tablebot/issues
 author:         Finnbar Keating
 maintainer:     finnjkeating@gmail.com
 copyright:      2021 Finnbar Keating
-license:        BDD3
+license:        BSD3
 license-file:   LICENSE
 build-type:     Simple
 extra-source-files:
@@ -40,15 +40,17 @@ library
       Paths_tablebot
   hs-source-dirs:
       src
-  default-extensions: OverloadedStrings ImportQualifiedPost LambdaCase RankNTypes
+  default-extensions: OverloadedStrings ImportQualifiedPost LambdaCase
   build-depends:
       base >=4.7 && <5
     , discord-haskell
     , emoji
+    , esqueleto
     , load-env
+    , monad-logger
     , parsec
-    , selda
-    , selda-sqlite
+    , persistent
+    , persistent-sqlite
     , text
     , transformers
   default-language: Haskell2010
@@ -64,10 +66,12 @@ executable tablebot-exe
       base >=4.7 && <5
     , discord-haskell
     , emoji
+    , esqueleto
     , load-env
+    , monad-logger
     , parsec
-    , selda
-    , selda-sqlite
+    , persistent
+    , persistent-sqlite
     , tablebot
     , text
     , transformers
@@ -85,10 +89,12 @@ test-suite tablebot-test
       base >=4.7 && <5
     , discord-haskell
     , emoji
+    , esqueleto
     , load-env
+    , monad-logger
     , parsec
-    , selda
-    , selda-sqlite
+    , persistent
+    , persistent-sqlite
     , tablebot
     , text
     , transformers

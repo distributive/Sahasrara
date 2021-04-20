@@ -45,8 +45,9 @@ extra-deps:
 - emoji-0.1.0.2
 - load-env-0.2.1.0
 - parsec-3.1.14.0
-- selda-0.5.1.0
-- selda-sqlite-0.1.7.1
+- persistent-2.11.0.4
+- persistent-sqlite-2.11.1.0
+- esqueleto-3.4.1.1
 
 # Override default flag values for local packages and extra-deps
 # flags: {}

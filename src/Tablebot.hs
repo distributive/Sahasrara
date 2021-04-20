@@ -10,15 +10,17 @@ import Tablebot.Plugin (Plugin, combinePlugins)
 import Data.Text
 import Discord
 import qualified Data.Text.IO as TIO (putStrLn)
-import Database.Selda.SQLite
+import Database.Persist.Sqlite 
+import Control.Monad.Logger
 
-runTablebot :: Text -> Text -> FilePath -> [Plugin SQLite] -> IO ()
+runTablebot :: Text -> Text -> FilePath -> [Plugin] -> IO ()
 runTablebot dToken prefix dbpath plugins =
     let !plugin = combinePlugins plugins
     in do
+    pool <- runNoLoggingT $ createSqlitePool "db.db" 8
     userFacingError <- runDiscord $ def {
         discordToken = dToken,
         discordOnEvent =
-            withSQLite dbpath . eventHandler plugin prefix
+            flip runSqlPool pool . eventHandler plugin prefix
     }
     TIO.putStrLn userFacingError

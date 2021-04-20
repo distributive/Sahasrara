@@ -3,15 +3,15 @@ module Tablebot.Handler (
 ) where
 
 import Tablebot.Plugin
+import Tablebot.Plugin.Types (DatabaseDiscord)
 import Tablebot.Handler.Command
 
 import Discord
 import Discord.Types
 import Data.Text (Text)
-import Database.Selda
 import Control.Monad (unless)
 
-eventHandler :: Plugin b -> Text -> Event -> SeldaT b DiscordHandler ()
+eventHandler :: Plugin -> Text -> Event -> DatabaseDiscord ()
 eventHandler pl prefix = \case
         MessageCreate m -> unless (userIsBot (messageAuthor m)) $
             parseCommands (commands pl) m prefix

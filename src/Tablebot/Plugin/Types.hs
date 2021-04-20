@@ -5,44 +5,43 @@ import Text.Parsec.Text (Parser)
 import Discord (DiscordHandler)
 import Discord.Types
     (Event, Message, ChannelId, MessageId, ReactionInfo)
-import Database.Selda
+import Database.Persist.Sqlite (SqlPersistT)
 
-type DatabaseDiscord b a = SeldaT b DiscordHandler a
-type DD a = forall b. DatabaseDiscord b a
+type DatabaseDiscord a = SqlPersistT DiscordHandler a
 
 -- Bot functionality comes in a few different flavours.
 -- * Commands - your standard MessageCreate with some kind of parser applied (after prefix)
-data Command b = Command { name :: Text, commandParser :: Parser (Message -> DatabaseDiscord b ()) }
+data Command = Command { name :: Text, commandParser :: Parser (Message -> DatabaseDiscord ()) }
 -- * InlineCommand - for commands called with fancy brackets and similar
-newtype InlineCommand b = InlineCommand { inlineCommandParser :: Parser (Message -> DatabaseDiscord b ()) }
+newtype InlineCommand = InlineCommand { inlineCommandParser :: Parser (Message -> DatabaseDiscord ()) }
 -- * MessageChange - called on MessageUpdate / MessageDelete / MessageDeleteBulk (as a map on MessageDelete)
-newtype MessageChange b = MessageChange {
+newtype MessageChange = MessageChange {
         -- Bool represents whether the message was updated or deleted.
-        onMessageChange :: Bool -> ChannelId -> MessageId -> DatabaseDiscord b () }
+        onMessageChange :: Bool -> ChannelId -> MessageId -> DatabaseDiscord () }
 -- * ReactionAdd - called on MessageReactionAdd
-newtype ReactionAdd b = ReactionAdd { onReactionAdd :: ReactionInfo -> DatabaseDiscord b () }
+newtype ReactionAdd = ReactionAdd { onReactionAdd :: ReactionInfo -> DatabaseDiscord () }
 -- * ReactionDel - called on MessageReactionRemove / MessageReactionRemoveAll / MessageReactionRemoveEmoji 
 -- (as maps on MessageReactionRemove)
-newtype ReactionDel b = ReactionDel { onReactionDelete :: ReactionInfo -> DatabaseDiscord b () }
+newtype ReactionDel = ReactionDel { onReactionDelete :: ReactionInfo -> DatabaseDiscord () }
 -- * Other - events not covered here (should fire rarely, so not too much of a worry)
-newtype Other b = Other { onOtherEvent :: Event -> DatabaseDiscord b () }
+newtype Other = Other { onOtherEvent :: Event -> DatabaseDiscord () }
 -- * CronJob - runs on a given timeframe (represented as a delay in microseconds)
-data CronJob b = CronJob { timeframe :: Int, onCron :: DatabaseDiscord b () }
+data CronJob = CronJob { timeframe :: Int, onCron :: DatabaseDiscord () }
 
-data Plugin b = Pl {
-    commands :: [Command b],
-    inlineCommands :: [InlineCommand b],
-    onMessageChanges :: [MessageChange b],
-    onReactionAdds :: [ReactionAdd b],
-    onReactionDeletes :: [ReactionDel b],
-    otherEvents :: [Other b],
-    cronJobs :: [CronJob b]
+data Plugin = Pl {
+    commands :: [Command],
+    inlineCommands :: [InlineCommand],
+    onMessageChanges :: [MessageChange],
+    onReactionAdds :: [ReactionAdd],
+    onReactionDeletes :: [ReactionDel],
+    otherEvents :: [Other],
+    cronJobs :: [CronJob]
 }
 
-plug :: Plugin b
+plug :: Plugin
 plug = Pl [] [] [] [] [] [] []
 
-combinePlugins :: [Plugin b] -> Plugin b
+combinePlugins :: [Plugin] -> Plugin
 combinePlugins [] = plug
 combinePlugins (p : ps) = let p' = combinePlugins ps
     in Pl {

@@ -2,7 +2,7 @@ module Tablebot.Plugin.Discord (
     sendMessage, sendMessageVoid, reactToCommand
 ) where
 
-import Tablebot.Plugin (DD)
+import Tablebot.Plugin (DatabaseDiscord)
 
 import Discord
 import Discord.Types
@@ -11,14 +11,11 @@ import Data.Text
 import Control.Monad.Trans.Class
 import Control.Monad (void)
 
--- TODO: I am unsure what to do with the errors.
--- Maybe they should be called with fail, since SeldaT is a MonadFail?
-
-sendMessage :: Message -> Text -> DD (Either RestCallErrorCode Message)
+sendMessage :: Message -> Text -> DatabaseDiscord (Either RestCallErrorCode Message)
 sendMessage m t = lift . restCall $ R.CreateMessage (messageChannel m) t
 
-sendMessageVoid :: Message -> Text -> DD ()
+sendMessageVoid :: Message -> Text -> DatabaseDiscord ()
 sendMessageVoid m t = void $ sendMessage m t
 
-reactToCommand :: Message -> Text -> DD (Either RestCallErrorCode ())
+reactToCommand :: Message -> Text -> DatabaseDiscord (Either RestCallErrorCode ())
 reactToCommand m e = lift . restCall $ R.CreateReaction (messageChannel m, messageId m) e
