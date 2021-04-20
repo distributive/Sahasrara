@@ -14,5 +14,5 @@ import Control.Monad (unless)
 eventHandler :: Plugin b -> Text -> Event -> SeldaT b DiscordHandler ()
 eventHandler pl prefix = \case
         MessageCreate m -> unless (userIsBot (messageAuthor m)) $
-            doCommand prefix m (commands pl)
+            parseCommands (commands pl) m prefix
         _ -> pure ()

@@ -10,4 +10,4 @@ skipSpace :: Parser ()
 skipSpace = skipMany space
 
 noArguments :: a -> Parser a
-noArguments f = (skipSpace *> eof <?> "No arguments were needed!") $> f
+noArguments f = (skipSpace *> (eof <?> "No arguments were needed!")) $> f
