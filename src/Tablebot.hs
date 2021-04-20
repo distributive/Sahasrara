@@ -12,7 +12,6 @@ import Discord
 import qualified Data.Text.IO as TIO (putStrLn)
 import Database.Selda.SQLite
 
--- TODO (very far in future): choose between SQLite and Postgres.
 runTablebot :: Text -> Text -> FilePath -> [Plugin SQLite] -> IO ()
 runTablebot dToken prefix dbpath plugins =
     let !plugin = combinePlugins plugins

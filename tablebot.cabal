@@ -14,7 +14,7 @@ bug-reports:    https://github.com/finnbar/tablebot/issues
 author:         Finnbar Keating
 maintainer:     finnjkeating@gmail.com
 copyright:      2021 Finnbar Keating
-license:        BSD3
+license:        BDD3
 license-file:   LICENSE
 build-type:     Simple
 extra-source-files:
