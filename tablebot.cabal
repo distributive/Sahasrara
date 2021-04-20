@@ -4,7 +4,7 @@ cabal-version: 1.12
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: c3684a8524a25e7dae6312ea61c2fac83db5e0bc67a68b5e5d1382d5393577fa
+-- hash: 413bc375f3130796aee73c84100be931e855a77598aad0c8e7cf233d0353d916
 
 name:           tablebot
 version:        0.1.0.0
@@ -42,11 +42,11 @@ library
       src
   default-extensions: OverloadedStrings ImportQualifiedPost LambdaCase RankNTypes
   build-depends:
-      attoparsec
-    , base >=4.7 && <5
+      base >=4.7 && <5
     , discord-haskell
     , emoji
     , load-env
+    , parsec
     , selda
     , selda-sqlite
     , text
@@ -61,11 +61,11 @@ executable tablebot-exe
       app
   ghc-options: -threaded -rtsopts -with-rtsopts=-N
   build-depends:
-      attoparsec
-    , base >=4.7 && <5
+      base >=4.7 && <5
     , discord-haskell
     , emoji
     , load-env
+    , parsec
     , selda
     , selda-sqlite
     , tablebot
@@ -82,11 +82,11 @@ test-suite tablebot-test
       test
   ghc-options: -threaded -rtsopts -with-rtsopts=-N
   build-depends:
-      attoparsec
-    , base >=4.7 && <5
+      base >=4.7 && <5
     , discord-haskell
     , emoji
     , load-env
+    , parsec
     , selda
     , selda-sqlite
     , tablebot

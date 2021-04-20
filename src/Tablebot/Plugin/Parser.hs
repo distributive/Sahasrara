@@ -1,12 +1,13 @@
 module Tablebot.Plugin.Parser (
-    noArguments
+    noArguments, skipSpace
 ) where
 
-import Tablebot.Plugin (SeldaDiscord)
-
-import Discord.Types
-import Data.Attoparsec.Text
+import Text.Parsec
+import Text.Parsec.Text (Parser)
 import Data.Functor (($>))
 
-noArguments :: (Message -> SeldaDiscord b ()) -> Parser (Message -> SeldaDiscord b ())
-noArguments f = (skipSpace *> endOfInput <?> "No arguments were needed!") $> f
+skipSpace :: Parser ()
+skipSpace = skipMany space
+
+noArguments :: a -> Parser a
+noArguments f = (skipSpace *> eof <?> "No arguments were needed!") $> f

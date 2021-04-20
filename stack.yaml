@@ -44,7 +44,7 @@ extra-deps:
 - discord-haskell-1.8.5
 - emoji-0.1.0.2
 - load-env-0.2.1.0
-- attoparsec-0.13.2.5
+- parsec-3.1.14.0
 - selda-0.5.1.0
 - selda-sqlite-0.1.7.1
 

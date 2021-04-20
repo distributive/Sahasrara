@@ -1,10 +1,10 @@
 module Tablebot.Plugin.Types where
 
 import Data.Text (Text)
-import Data.Attoparsec.Text ( Parser )
-import Discord ( DiscordHandler )
+import Text.Parsec.Text (Parser)
+import Discord (DiscordHandler)
 import Discord.Types
-    ( Event, Message, ChannelId, MessageId, ReactionInfo )
+    (Event, Message, ChannelId, MessageId, ReactionInfo)
 import Database.Selda
 
 type SeldaDiscord b a = SeldaT b DiscordHandler a
