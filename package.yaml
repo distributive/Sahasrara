@@ -32,6 +32,7 @@ dependencies:
 - persistent-template
 - esqueleto
 - monad-logger
+- time
 
 library:
   source-dirs: src

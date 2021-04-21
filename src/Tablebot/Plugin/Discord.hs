@@ -1,5 +1,5 @@
 module Tablebot.Plugin.Discord (
-    sendMessage, sendMessageVoid, reactToCommand, Message
+    sendMessage, sendMessageVoid, reactToCommand, getMessage, Message
 ) where
 
 import Tablebot.Plugin (DatabaseDiscord)
@@ -16,6 +16,9 @@ sendMessage m t = lift . restCall $ R.CreateMessage (messageChannel m) t
 
 sendMessageVoid :: Message -> Text -> DatabaseDiscord ()
 sendMessageVoid m t = void $ sendMessage m t
+
+getMessage :: ChannelId -> MessageId -> DatabaseDiscord (Either RestCallErrorCode Message)
+getMessage cid mid = lift . restCall $ R.GetChannelMessage (cid, mid)
 
 reactToCommand :: Message -> Text -> DatabaseDiscord (Either RestCallErrorCode ())
 reactToCommand m e = lift . restCall $ R.CreateReaction (messageChannel m, messageId m) e

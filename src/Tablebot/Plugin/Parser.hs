@@ -22,8 +22,8 @@ quoted = between (char '"' <?> "Couldn't find opening quote.")
 word :: Parser String
 word = many1 letter
 
-number :: Parser String
-number = many1 digit
+number :: Parser Int
+number = read <$> many1 digit
 
 untilEnd :: Parser String
 untilEnd = do
@@ -33,7 +33,7 @@ untilEnd = do
 
 discordUser :: Parser String
 discordUser = do
-    num <- between (string "<@") (char '>') number
+    num <- between (string "<@") (char '>') (many1 digit)
     return $ "<@" ++ num ++ ">"
 
 sp :: Parser ()

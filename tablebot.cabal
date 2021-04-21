@@ -4,7 +4,7 @@ cabal-version: 1.12
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: 2ce6522e24e085e16b7adab5d21275ba4084967e41b934d95995e27d56c8174a
+-- hash: be727377169e09a0cc49ee9062fd7f7d7ffb8ebb4491871509276e3c6cf63c41
 
 name:           tablebot
 version:        0.1.0.0
@@ -38,6 +38,7 @@ library
       Tablebot.Plugins
       Tablebot.Plugins.Ping
       Tablebot.Plugins.Quote
+      Tablebot.Plugins.Reminder
   other-modules:
       Paths_tablebot
   hs-source-dirs:
@@ -55,6 +56,7 @@ library
     , persistent-sqlite
     , persistent-template
     , text
+    , time
     , transformers
   default-language: Haskell2010
 
@@ -78,6 +80,7 @@ executable tablebot-exe
     , persistent-template
     , tablebot
     , text
+    , time
     , transformers
   default-language: Haskell2010
 
@@ -102,5 +105,6 @@ test-suite tablebot-test
     , persistent-template
     , tablebot
     , text
+    , time
     , transformers
   default-language: Haskell2010
