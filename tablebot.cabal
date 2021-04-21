@@ -4,7 +4,7 @@ cabal-version: 1.12
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: b7d8c519d94931ddde057153cf415aaf283b35c8bbd4b9914839ea612d2e42f4
+-- hash: 2ce6522e24e085e16b7adab5d21275ba4084967e41b934d95995e27d56c8174a
 
 name:           tablebot
 version:        0.1.0.0
@@ -30,6 +30,7 @@ library
       Tablebot
       Tablebot.Handler
       Tablebot.Handler.Command
+      Tablebot.Handler.Event
       Tablebot.Plugin
       Tablebot.Plugin.Discord
       Tablebot.Plugin.Parser

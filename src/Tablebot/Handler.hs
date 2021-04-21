@@ -5,6 +5,7 @@ module Tablebot.Handler (
 import Tablebot.Plugin
 import Tablebot.Plugin.Types (DatabaseDiscord)
 import Tablebot.Handler.Command
+import Tablebot.Handler.Event
 
 import Discord
 import Discord.Types
@@ -17,9 +18,24 @@ import Control.Monad.IO.Class
 
 eventHandler :: Plugin -> Text -> Event -> DatabaseDiscord ()
 eventHandler pl prefix = \case
-        MessageCreate m -> unless (userIsBot (messageAuthor m)) $
+        MessageCreate m -> ifNotBot m $ do
             parseCommands (commands pl) m prefix
-        _ -> pure ()
+            parseInlineCommands (inlineCommands pl) m
+        MessageUpdate cid mid ->
+            parseMessageChange (onMessageChanges pl) True cid mid
+        MessageDelete cid mid ->
+            parseMessageChange (onMessageChanges pl) False cid mid
+        MessageDeleteBulk cid mids ->
+            mapM_ (parseMessageChange (onMessageChanges pl) False cid) mids
+        MessageReactionAdd ri -> parseReactionAdd (onReactionAdds pl) ri
+        MessageReactionRemove ri -> parseReactionDel (onReactionDeletes pl) ri
+        -- TODO: MessageReactionRemoveAll is a bit of a pain as it gives us cid/mid,
+        -- when we need ReactionInfo (contains a few extra bits).
+        -- Similar with MessageReactionRemoveEmoji (removes all of one type).
+        MessageReactionRemoveAll cid mid -> pure ()
+        MessageReactionRemoveEmoji rri -> pure ()
+        e -> parseOther (otherEvents pl) e
+    where ifNotBot m = unless (userIsBot (messageAuthor m))
 
 -- forkIO only works on direct IO, so we have to unwrap and rewrap the stack
 runCron :: CronJob -> DatabaseDiscord ThreadId

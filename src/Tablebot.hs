@@ -23,15 +23,16 @@ runTablebot dToken prefix dbpath plugins =
     pool <- runNoLoggingT $ createSqlitePool (pack dbpath) 8
     -- TODO: this might have issues with duplicates?
     mapM_ (\migration -> runSqlPool (runMigration migration) pool) $ migrations plugin
-    -- Build list of cron jobs.
-    mvar <- newEmptyMVar :: IO (MVar [ThreadId])
     -- Create a var to kill any ongoing tasks.
+    mvar <- newEmptyMVar :: IO (MVar [ThreadId])
     userFacingError <- runDiscord $ def {
         discordToken = dToken,
         discordOnEvent =
             flip runSqlPool pool . eventHandler plugin prefix,
         discordOnStart =
+            -- Build list of cron jobs.
             runSqlPool (mapM runCron (cronJobs plugin) >>= liftIO . putMVar mvar) pool,
+        -- Kill every cron job provided.
         discordOnEnd = takeMVar mvar >>= killCron
     }
     TIO.putStrLn userFacingError

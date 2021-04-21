@@ -1,5 +1,5 @@
 module Tablebot.Handler.Command (
-    parseCommands
+    parseCommands, parseInlineCommands
 ) where
 
 import Tablebot.Plugin
@@ -26,3 +26,11 @@ parseCommands cs m prefix = case parse (parser cs) "" (messageText m) of
           <|> pure (\_ -> pure ())
         toErroringParser :: Command -> Parser (Message -> DatabaseDiscord ())
         toErroringParser c = try (string (unpack $ name c)) *> sp *> commandParser c
+
+-- Deliberately do not propagate errors - just assume that no inline command was present.
+parseInlineCommands :: [InlineCommand] -> Message -> DatabaseDiscord ()
+parseInlineCommands cs m = case parse (parser cs) "" (messageText m) of
+        Right p -> p m
+        Left e -> pure ()
+  where parser :: [InlineCommand] -> Parser (Message -> DatabaseDiscord ())
+        parser cs = choice $ map (try . inlineCommandParser) cs

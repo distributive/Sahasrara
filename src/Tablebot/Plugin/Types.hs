@@ -16,7 +16,7 @@ data Command = Command { name :: Text, commandParser :: Parser (Message -> Datab
 newtype InlineCommand = InlineCommand { inlineCommandParser :: Parser (Message -> DatabaseDiscord ()) }
 -- * MessageChange - called on MessageUpdate / MessageDelete / MessageDeleteBulk (as a map on MessageDelete)
 newtype MessageChange = MessageChange {
-        -- Bool represents whether the message was updated or deleted.
+        -- Bool represents whether the message was updated (True) or deleted.
         onMessageChange :: Bool -> ChannelId -> MessageId -> DatabaseDiscord () }
 -- * ReactionAdd - called on MessageReactionAdd
 newtype ReactionAdd = ReactionAdd { onReactionAdd :: ReactionInfo -> DatabaseDiscord () }
