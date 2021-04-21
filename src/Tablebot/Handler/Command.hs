@@ -4,7 +4,7 @@ module Tablebot.Handler.Command (
 
 import Tablebot.Plugin
 import Tablebot.Plugin.Discord (sendMessageVoid)
-import Tablebot.Plugin.Parser (skipSpace)
+import Tablebot.Plugin.Parser (sp)
 
 import Data.Text (Text, stripPrefix, pack, unpack)
 import Discord.Types
@@ -25,4 +25,4 @@ parseCommands cs m prefix = case parse (parser cs) "" (messageText m) of
             choice (map toErroringParser cs) <?> "No command with that name was found!"
           <|> pure (\_ -> pure ())
         toErroringParser :: Command -> Parser (Message -> DatabaseDiscord ())
-        toErroringParser c = try (string (unpack $ name c)) *> commandParser c
+        toErroringParser c = try (string (unpack $ name c)) *> sp *> commandParser c

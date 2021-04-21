@@ -3,7 +3,7 @@ module Tablebot.Plugins.Quote (
 ) where
 
 import Tablebot.Plugin
-import Tablebot.Plugin.Parser (skipSpace, Parser)
+import Tablebot.Plugin.Parser
 import Tablebot.Plugin.Discord (sendMessageVoid, Message)
 
 import Data.Text (append, pack)
@@ -20,38 +20,40 @@ Quote
     deriving Show
 |]
 
-addQuote :: Command
-addQuote = Command "addquote" parser
-  where parser :: Parser (Message -> DatabaseDiscord ())
-        parser = do
-            skipSpace
-            quote <- between (char '"' <?> "Couldn't find opening quote.")
-                (char '"' <?> "Couldn't find closing quote.")
-                (many1 $ noneOf ['"']) <?> "Couldn't get quote!"
-            skipSpace
-            author <- manyTill anyChar eof
-            return $ addQ quote author
-        addQ :: String -> String -> Message -> DatabaseDiscord ()
+quote :: Command
+quote = Command "quote" (
+    ((try (string "add") *> addQuote) <|> (try (string "show") *> showQuote))
+        <?> "Unknown quote functionality.")
+
+addQuote :: Parser (Message -> DatabaseDiscord ())
+addQuote = do
+    sp 
+    quote <- try quoted <?> error ++ " (needed a quote)"
+    sp
+    char '-' <?> error ++ " (needed hyphen)"
+    sp
+    addQ quote <$> untilEnd <?> error ++ " (needed author)"
+  where addQ :: String -> String -> Message -> DatabaseDiscord ()
         addQ quote author m = do
             added <- insert $ Quote quote author
             let res = pack $ show $ fromSqlKey added
             sendMessageVoid m ("Quote added as #" `append` res)
+        error = "Syntax is: .quote add \"quote\" - author"
 
-showQuote :: Command
-showQuote = Command "showquote" parser
-  where parser :: Parser (Message -> DatabaseDiscord ())
-        parser = do
-            skipSpace
-            num <- many1 digit
-            let id = read num :: Int64
-            return $ showQ id
-        showQ :: Int64 -> Message -> DatabaseDiscord ()
+showQuote :: Parser (Message -> DatabaseDiscord ())
+showQuote = do
+    sp
+    num <- many1 digit <?> error
+    let id = read num :: Int64
+    return $ showQ id
+  where showQ :: Int64 -> Message -> DatabaseDiscord ()
         showQ id m = do
             qu <- get $ toSqlKey id
             case qu of
                 Just (Quote txt author) ->
                     sendMessageVoid m $ pack $ txt ++ " - " ++ author
                 Nothing -> sendMessageVoid m "Couldn't get that quote!"
+        error = "Syntax is: .quote show n"
 
 quotePlugin :: Plugin
-quotePlugin = plug { commands = [addQuote, showQuote], migrations = [quoteMigration] }
+quotePlugin = plug { commands = [quote], migrations = [quoteMigration] }
