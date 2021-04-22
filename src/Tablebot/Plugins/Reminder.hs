@@ -1,18 +1,33 @@
+{-|
+Module      : Tablebot.Plugins.Quote
+Description : A complex example using databases and cron jobs.
+Copyright   : (c) Finnbar Keating 2021
+License     : MIT
+Maintainer  : finnjkeating@gmail.com
+Stability   : experimental
+Portability : POSIX
+
+This is an example plugin which allows user to ask the bot to remind them about
+something later in time.
+-}
 module Tablebot.Plugins.Reminder (
     reminderPlugin
 ) where
 
-import Tablebot.Plugin.Parser
-import Tablebot.Plugin.Types
+import Tablebot.Plugin
+import Tablebot.Plugin.Parser (number, quoted, Parser)
 import Tablebot.Plugin.Discord
+    (Message, getMessage, sendMessageVoid)
 
 import Discord.Types
 import Data.Word (Word64)
-import Data.Time.Clock
-import Data.Time.Clock.System
+import Data.Time.Clock (secondsToDiffTime)
+import Data.Time.Clock.System (getSystemTime, systemToUTCTime)
 import Data.Time.Calendar.OrdinalDate
+    (isLeapYear, fromOrdinalDate)
 import Data.Time.Calendar.MonthDay
-import Text.Parsec
+    (monthAndDayToDayOfYear, monthLength)
+import Text.Parsec (char, space, string)
 import Database.Esqueleto
 import Database.Persist qualified as P (delete)
 import Database.Persist.TH
@@ -20,6 +35,8 @@ import Control.Monad (when, forM_)
 import Control.Monad.IO.Class (MonadIO(liftIO))
 import Data.Text (pack, append)
 
+-- Our Reminder table in the database. This is fairly standard for Persistent,
+-- however you should note the name of the migration made.
 share [mkPersist sqlSettings, mkMigrate "reminderMigration"] [persistLowerCase|
 Reminder
     reminderCid Word64
@@ -29,9 +46,10 @@ Reminder
     deriving Show
 |]
 
--- Parses DD/MM/YYYY HH:MM
--- TODO: better parsing.
+-- | @dateTimeParser@ parses a string of the form DD/MM/YYYY HH:MM into a
+-- 'UTCTime'.
 dateTimeParser :: Parser UTCTime
+-- TODO: better parsing.
 dateTimeParser = do
     day <- number
     char '/'
@@ -52,7 +70,8 @@ dateTimeParser = do
     let difftime = secondsToDiffTime $ toInteger $ (minute * 60) + (hour * 60 * 60)
     return $ UTCTime yearday difftime
 
--- !remind "reminder" at (time)
+-- @reminderParser@ parses a reminder request of the form
+-- @!remind "reminder" at time@.
 reminderParser :: Parser (Message -> DatabaseDiscord ())
 reminderParser = do
     content <- quoted
@@ -60,7 +79,9 @@ reminderParser = do
     time <- dateTimeParser
     return $ addReminder time content
 
--- TODO: timezones...
+-- @addReminder@ takes a @time@ to remind at and the @content@ of a reminder
+-- and adds a reminder at that time. Note that this is all done in UTC, so
+-- currently ignores the user's timezone... (TODO fix)
 addReminder :: UTCTime -> String -> Message -> DatabaseDiscord ()
 addReminder time content m = do
     let (Snowflake cid) = messageChannel m
@@ -69,9 +90,14 @@ addReminder time content m = do
     let res = pack $ show $ fromSqlKey added
     sendMessageVoid m ("Reminder added as #" `append` res)
 
+-- | @reminderCommand@ is a command implementing the functionality in
+-- @reminderParser@ and @addReminder@.
 reminderCommand :: Command
 reminderCommand = Command "remind" reminderParser
 
+-- | @reminderCron@ is a cron job that checks every minute to see if a reminder
+-- has passed, and if so sends a message using the stored information about the
+-- message originally triggering it in the database.
 reminderCron :: DatabaseDiscord ()
 reminderCron = do
     now <- liftIO $ systemToUTCTime <$> getSystemTime
@@ -93,5 +119,12 @@ reminderCron = do
                         "Reminder to <@" ++ show uid ++ ">! " ++ content
                     P.delete (entityKey r)
 
+-- | @reminderPlugin@ builds a plugin providing reminder asking functionality
+-- (@reminderCommand@), reminding functionality (via the cron job specified by
+-- @reminderCron@) and the database information.
 reminderPlugin :: Plugin
-reminderPlugin = plug { commands = [reminderCommand], cronJobs = [CronJob 60000000 reminderCron], migrations = [reminderMigration] }
+reminderPlugin = plug {
+    commands = [reminderCommand],
+    cronJobs = [CronJob 60000000 reminderCron],
+    migrations = [reminderMigration]
+}

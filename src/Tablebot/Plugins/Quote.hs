@@ -1,9 +1,21 @@
+{-|
+Module      : Tablebot.Plugins.Quote
+Description : A more complex example using databases.
+Copyright   : (c) Finnbar Keating 2021
+License     : MIT
+Maintainer  : finnjkeating@gmail.com
+Stability   : experimental
+Portability : POSIX
+
+This is an example plugin which allows user to @!quote add@ their favourite
+quotes and then @!quote show n@ a particular quote.
+-}
 module Tablebot.Plugins.Quote (
     quotePlugin
 ) where
 
 import Tablebot.Plugin
-import Tablebot.Plugin.Parser
+import Tablebot.Plugin.Parser (quoted, sp, untilEnd, Parser)
 import Tablebot.Plugin.Discord (sendMessageVoid, Message)
 
 import Data.Text (append, pack)
@@ -13,6 +25,8 @@ import Database.Persist.Sqlite
 import Database.Persist.TH
 import GHC.Int (Int64)
 
+-- Our Quote table in the database. This is fairly standard for Persistent,
+-- however you should note the name of the migration made.
 share [mkPersist sqlSettings, mkMigrate "quoteMigration"] [persistLowerCase|
 Quote
     quote String
@@ -20,11 +34,15 @@ Quote
     deriving Show
 |]
 
+-- | Our quote command, which combines @addQuote@ and @showQuote@.
 quote :: Command
 quote = Command "quote" (
     ((try (string "add") *> addQuote) <|> (try (string "show") *> showQuote))
         <?> "Unknown quote functionality.")
 
+-- | @addQuote@, which looks for a message of the form
+-- @!quote add "quoted text" - author@, and then stores said quote in the
+-- database, returning the ID used.
 addQuote :: Parser (Message -> DatabaseDiscord ())
 addQuote = do
     sp 
@@ -40,6 +58,8 @@ addQuote = do
             sendMessageVoid m ("Quote added as #" `append` res)
         error = "Syntax is: .quote add \"quote\" - author"
 
+-- | @showQuote@, which looks for a message of the form @!quote show n@, looks
+-- that quote up in the database and responds with that quote.
 showQuote :: Parser (Message -> DatabaseDiscord ())
 showQuote = do
     sp
@@ -55,5 +75,7 @@ showQuote = do
                 Nothing -> sendMessageVoid m "Couldn't get that quote!"
         error = "Syntax is: .quote show n"
 
+-- | @quotePlugin@ assembles the @quote@ command (consisting of @add@ and
+-- @show@) and the database migration into a plugin.
 quotePlugin :: Plugin
 quotePlugin = plug { commands = [quote], migrations = [quoteMigration] }
