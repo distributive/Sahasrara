@@ -10,17 +10,23 @@ Portability : POSIX
 This module contains helpful parsers for building plugins, along with a few
 reexports from "Text.Parsec" to avoid having to import it.
 -}
-module Tablebot.Plugin.Parser (
-    module Tablebot.Plugin.Parser,
-    -- | A Parser on @Text@ inputs (reexport from "Text.Parsec.Text").
-    Parser
-) where
+module Tablebot.Plugin.Parser where
 
 -- TODO: Much helpful functionality is missing here.
 
-import Text.Parsec
-import Text.Parsec.Text (Parser)
+import Text.Megaparsec
+import Tablebot.Plugin (Parser)
 import Data.Functor (($>))
+import Data.Char (isSpace, isDigit, isLetter)
+
+space :: Parser ()
+space = satisfy isSpace $> ()
+
+digit :: Parser Char
+digit = satisfy isDigit
+
+letter :: Parser Char
+letter = satisfy isLetter
 
 -- | @skipSpace@ is a parser that skips many space characters.
 skipSpace :: Parser ()
@@ -37,33 +43,34 @@ noArguments f = (skipSpace *> (eof <?> "No arguments were needed!")) $> f
 -- clear error.
 quoted :: Parser String
 -- TODO: deal with backslash escapes properly.
--- Also consider "" and '' quoting.
-quoted = between (char '"' <?> "Couldn't find opening quote.")
-    (char '"' <?> "Couldn't find closing quote.")
-    (many1 $ noneOf ['"']) <?> "Couldn't get quote!"
+quoted = quotedWith '"' <|> quotedWith '\''
+  where quotedWith :: Char -> Parser String
+        quotedWith c = between (single c <?> "Couldn't find opening quote.")
+            (single c <?> "Couldn't find closing quote.")
+            (some $ anySingleBut c) <?> "Couldn't get quote!"
 
 -- | @word@ parses a single word of letters only.
 word :: Parser String
-word = many1 letter
+word = some letter
 
 -- | @number@ parses any whole, non-negative number.
 number :: Parser Int
-number = read <$> many1 digit
+number = read <$> some digit
 
 -- | @untilEnd@ gets all of the characters up to the end of the input.
 untilEnd :: Parser String
 untilEnd = do
-    c <- anyChar
-    cs <- manyTill anyChar eof
+    c <- anySingle 
+    cs <- manyTill anySingle eof
     return (c:cs)
 
 -- | @discordUser@ gets a Discord user from its input.
 -- This means that it matches @<\@longidhere>@.
 discordUser :: Parser String
 discordUser = do
-    num <- between (string "<@") (char '>') (many1 digit)
+    num <- between (chunk "<@") (single '>') (some digit)
     return $ "<@" ++ num ++ ">"
 
 -- | @sp@ parses an optional space character.
 sp :: Parser ()
-sp = optional space
+sp = space <|> pure ()

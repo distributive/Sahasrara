@@ -15,11 +15,11 @@ module Tablebot.Plugins.Quote (
 ) where
 
 import Tablebot.Plugin
-import Tablebot.Plugin.Parser (quoted, sp, untilEnd, Parser)
+import Tablebot.Plugin.Parser (quoted, sp, untilEnd, number)
 import Tablebot.Plugin.Discord (sendMessageVoid, Message)
 
 import Data.Text (append, pack)
-import Text.Parsec
+import Text.Megaparsec
 import Database.Persist
 import Database.Persist.Sqlite
 import Database.Persist.TH
@@ -37,7 +37,7 @@ Quote
 -- | Our quote command, which combines @addQuote@ and @showQuote@.
 quote :: Command
 quote = Command "quote" (
-    ((try (string "add") *> addQuote) <|> (try (string "show") *> showQuote))
+    ((try (chunk "add") *> addQuote) <|> (try (chunk "show") *> showQuote))
         <?> "Unknown quote functionality.")
 
 -- | @addQuote@, which looks for a message of the form
@@ -48,7 +48,7 @@ addQuote = do
     sp 
     quote <- try quoted <?> error ++ " (needed a quote)"
     sp
-    char '-' <?> error ++ " (needed hyphen)"
+    single '-' <?> error ++ " (needed hyphen)"
     sp
     addQ quote <$> untilEnd <?> error ++ " (needed author)"
   where addQ :: String -> String -> Message -> DatabaseDiscord ()
@@ -63,8 +63,8 @@ addQuote = do
 showQuote :: Parser (Message -> DatabaseDiscord ())
 showQuote = do
     sp
-    num <- many1 digit <?> error
-    let id = read num :: Int64
+    num <- number <?> error
+    let id = fromIntegral num :: Int64
     return $ showQ id
   where showQ :: Int64 -> Message -> DatabaseDiscord ()
         showQ id m = do

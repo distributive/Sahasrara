@@ -4,7 +4,7 @@ cabal-version: 1.12
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: be727377169e09a0cc49ee9062fd7f7d7ffb8ebb4491871509276e3c6cf63c41
+-- hash: 19da101e66a685b659ab859081c49544778e330706d4451b5a42c1d44357227f
 
 name:           tablebot
 version:        0.1.0.0
@@ -50,8 +50,8 @@ library
     , emoji
     , esqueleto
     , load-env
+    , megaparsec
     , monad-logger
-    , parsec
     , persistent
     , persistent-sqlite
     , persistent-template
@@ -73,8 +73,8 @@ executable tablebot-exe
     , emoji
     , esqueleto
     , load-env
+    , megaparsec
     , monad-logger
-    , parsec
     , persistent
     , persistent-sqlite
     , persistent-template
@@ -98,8 +98,8 @@ test-suite tablebot-test
     , emoji
     , esqueleto
     , load-env
+    , megaparsec
     , monad-logger
-    , parsec
     , persistent
     , persistent-sqlite
     , persistent-template

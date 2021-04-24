@@ -26,12 +26,12 @@ packages:
   original:
     hackage: load-env-0.2.1.0
 - completed:
-    hackage: parsec-3.1.14.0@sha256:72d5c57e6e126adaa781ab97b19dc76f68490c0a3d88f14038219994cabe94e1,4356
+    hackage: megaparsec-9.0.1@sha256:2244ab77521a52a0083966c5405b3151f149e1db50b1a5b104cd9b1e56617203,3248
     pantry-tree:
-      size: 2574
-      sha256: 495a86688c6e89faf38b8804cc4c9216709e9a6a93cf56c2f07d5bef83f09a17
+      size: 1447
+      sha256: 0e2df0d318e48e352b3d766c46cdabc3abb5dcc3dfcb062bdd0a8d44f34a975c
   original:
-    hackage: parsec-3.1.14.0
+    hackage: megaparsec-9.0.1
 - completed:
     hackage: persistent-2.11.0.4@sha256:a55a9a30d663407d77e2ea0e65b1e29e3aa2ecf531d7d758ded31c415875e216,4735
     pantry-tree:

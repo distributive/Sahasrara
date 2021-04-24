@@ -15,7 +15,8 @@ database and Discord operations within your features.
 module Tablebot.Plugin.Types where
 
 import Data.Text (Text)
-import Text.Parsec.Text (Parser)
+import Text.Megaparsec (Parsec)
+import Data.Void (Void)
 import Discord (DiscordHandler)
 import Discord.Types
     (Event(..), Message, ChannelId, MessageId, ReactionInfo)
@@ -30,6 +31,10 @@ import Database.Persist.Sqlite (SqlPersistT, Migration)
 -- "Tablebot.Plugin.Discord" provides some helper functions for
 -- running Discord operations without excessive use of @lift@.
 type DatabaseDiscord = SqlPersistT DiscordHandler
+
+-- * Parser
+-- | A simple definition for parsers on Text.
+type Parser = Parsec Void Text
 
 -- * Features
 -- Bot functionality is split into /features/, which are combined into plugins.

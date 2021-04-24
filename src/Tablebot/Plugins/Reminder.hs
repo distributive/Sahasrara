@@ -15,7 +15,7 @@ module Tablebot.Plugins.Reminder (
 ) where
 
 import Tablebot.Plugin
-import Tablebot.Plugin.Parser (number, quoted, Parser)
+import Tablebot.Plugin.Parser (number, quoted, space)
 import Tablebot.Plugin.Discord
     (Message, getMessage, sendMessageVoid)
 
@@ -27,7 +27,7 @@ import Data.Time.Calendar.OrdinalDate
     (isLeapYear, fromOrdinalDate)
 import Data.Time.Calendar.MonthDay
     (monthAndDayToDayOfYear, monthLength)
-import Text.Parsec (char, space, string)
+import Text.Megaparsec
 import Database.Esqueleto
 import Database.Persist qualified as P (delete)
 import Database.Persist.TH
@@ -52,16 +52,16 @@ dateTimeParser :: Parser UTCTime
 -- TODO: better parsing.
 dateTimeParser = do
     day <- number
-    char '/'
+    single '/'
     month <- number
     when (month > 12) $ fail "There are only twelve months in a year!"
-    char '/'
+    single '/'
     year <- number
     let leapYear = isLeapYear (toInteger year)
     when (day > monthLength leapYear month) $ fail "That month doesn't have enough days!"
     space
     hour <- number
-    char ':'
+    single ':'
     minute <- number
     when (hour >= 24) $ fail "There are only 24 hours in a day!"
     when (minute >= 60) $ fail "There are only sixty minutes in an hour!"
@@ -75,7 +75,7 @@ dateTimeParser = do
 reminderParser :: Parser (Message -> DatabaseDiscord ())
 reminderParser = do
     content <- quoted
-    string " at "
+    chunk " at "
     time <- dateTimeParser
     return $ addReminder time content
 
