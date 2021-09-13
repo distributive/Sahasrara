@@ -4,7 +4,7 @@ cabal-version: 1.12
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: 6bd2e9a49ddb3d8b6b3e3a4179ec13acc521245f7d309906602a66cc9f0ace9b
+-- hash: c46f0382c52d47748aeffdb86be00a406148aa764abd29b5fff83affe561eaae
 
 name:           tablebot
 version:        0.1.0.0
@@ -61,6 +61,7 @@ library
       UndecidableInstances
       DataKinds
       FlexibleInstances
+      DeriveGeneric
   build-depends:
       aeson
     , base >=4.7 && <5

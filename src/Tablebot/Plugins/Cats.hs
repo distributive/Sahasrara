@@ -1,6 +1,6 @@
 -- |
 -- Module      : Tablebot.Plugins.Cats
--- Description : A very simple example plugin.
+-- Description : A very simple plugin that provides cat pictures.
 -- Copyright   : (c) Finnbar Keating 2021
 -- License     : MIT
 -- Maintainer  : finnjkeating@gmail.com
@@ -13,9 +13,11 @@ module Tablebot.Plugins.Cats (catPlugin) where
 import Control.Monad (MonadPlus (mzero))
 import Control.Monad.IO.Class (MonadIO (liftIO))
 import Data.Aeson
-import Data.Text (Text)
-import Data.Vector ((!))
-import GHC.Exception (getCallStack)
+  ( FromJSON (parseJSON),
+    eitherDecode,
+  )
+import Data.Text (Text, pack)
+import GHC.Generics (Generic)
 import Network.HTTP.Client.Conduit (withManager)
 import Network.HTTP.Conduit
   ( Response (responseBody),
@@ -30,6 +32,7 @@ import Tablebot.Plugin.Types
     plug,
   )
 
+-- | @CatAPI@ is the basic data type for the JSON object that thecatapi returns
 data CatAPI = CatAPI
   { breeds :: ![Text],
     id :: !Text,
@@ -37,22 +40,12 @@ data CatAPI = CatAPI
     width :: !Int,
     height :: !Int
   }
-  deriving (Show)
+  deriving (Show, Generic)
 
-instance FromJSON CatAPI where
-  parseJSON (Object v) =
-    CatAPI <$> v .: "breeds"
-      <*> v .: "id"
-      <*> v .: "url"
-      <*> v .: "width"
-      <*> v .: "height"
-  parseJSON (Array v)
-    | length v == 1 = parseJSON (v ! 0)
-    | otherwise = mzero
-  parseJSON _ = mzero
+instance FromJSON CatAPI
 
 -- | @cat@ is a command that takes no arguments (using 'noArguments') and
--- replies with an image of a cat.
+-- replies with an image of a cat. Uses https://docs.thecatapi.com/ for cats.
 cat :: Command
 cat =
   Command
@@ -63,17 +56,24 @@ cat =
         return ()
     )
 
+-- | @getCatAPI@ is a helper function that turns gets a JSON object that may
+-- contain a cat image. Uses https://docs.thecatapi.com/ for cats.
 getCatAPI :: IO (Either String CatAPI)
 getCatAPI = do
   req <- parseRequest "https://api.thecatapi.com/v1/images/search"
   res <- httpLBS req
-  return $ eitherDecode $ responseBody res
+  return $ ((eitherDecode $ responseBody res) :: Either String [CatAPI]) >>= eitherHead
+  where
+    eitherHead [] = Left "Empty list"
+    eitherHead (x : _) = Right x
 
+-- | @getCat@ is a helper function that turns the IO Either of @getCatAPI@
+-- into either an error message or the url of the cat image.
 getCat :: IO Text
 getCat = do
   response <- getCatAPI
   let catURL = case response of
-        (Left _) -> "no cat today, sorry :("
+        (Left r) -> "no cat today, sorry :(. (error is `" <> pack r <> "`)"
         (Right r) -> url r
   return catURL
 
