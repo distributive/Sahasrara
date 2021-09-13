@@ -1,10 +1,10 @@
 cabal-version: 1.12
 
--- This file has been generated from package.yaml by hpack version 0.33.0.
+-- This file has been generated from package.yaml by hpack version 0.34.4.
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: 19da101e66a685b659ab859081c49544778e330706d4451b5a42c1d44357227f
+-- hash: 35c88c49e82ba9572a2127bdcfe8c206a86d737cdb7d4ebdf299210e00601a8b
 
 name:           tablebot
 version:        0.1.0.0
@@ -43,7 +43,23 @@ library
       Paths_tablebot
   hs-source-dirs:
       src
-  default-extensions: OverloadedStrings ImportQualifiedPost LambdaCase EmptyDataDecls FlexibleContexts GADTs GeneralizedNewtypeDeriving MultiParamTypeClasses QuasiQuotes TemplateHaskell TypeFamilies DerivingStrategies StandaloneDeriving UndecidableInstances DataKinds FlexibleInstances
+  default-extensions:
+      OverloadedStrings
+      ImportQualifiedPost
+      LambdaCase
+      EmptyDataDecls
+      FlexibleContexts
+      GADTs
+      GeneralizedNewtypeDeriving
+      MultiParamTypeClasses
+      QuasiQuotes
+      TemplateHaskell
+      TypeFamilies
+      DerivingStrategies
+      StandaloneDeriving
+      UndecidableInstances
+      DataKinds
+      FlexibleInstances
   build-depends:
       base >=4.7 && <5
     , discord-haskell
