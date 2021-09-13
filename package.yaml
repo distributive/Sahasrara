@@ -33,6 +33,9 @@ dependencies:
 - esqueleto
 - monad-logger
 - time
+- http-conduit
+- aeson
+- vector
 
 library:
   source-dirs: src
