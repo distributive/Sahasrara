@@ -35,7 +35,6 @@ dependencies:
 - time
 - http-conduit
 - aeson
-- vector
 
 library:
   source-dirs: src
