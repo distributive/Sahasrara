@@ -14,9 +14,13 @@ import Control.Monad.IO.Class (MonadIO (liftIO))
 import Data.Aeson (FromJSON, eitherDecode)
 import Data.Functor ((<&>))
 import Data.Text (Text, pack)
+import Data.Text.Encoding (encodeUtf8)
 import GHC.Generics (Generic)
+import LoadEnv (loadEnv)
 import Network.HTTP.Conduit (Response (responseBody), parseRequest)
-import Network.HTTP.Simple (httpLBS)
+import Network.HTTP.Simple (addRequestHeader, httpLBS)
+import System.Environment (getEnv)
+import System.IO.Error (catchIOError, isDoesNotExistError)
 import Tablebot.Plugin.Discord (sendMessage)
 import Tablebot.Plugin.Parser (noArguments)
 import Tablebot.Plugin.Types (Command (Command), Plugin (commands), plug)
@@ -47,9 +51,21 @@ cat =
 
 -- | @getCatAPI@ is a helper function that turns gets a JSON object that may
 -- contain a cat image. Uses https://docs.thecatapi.com/ for cats.
+-- CATAPI_TOKEN must be provided in .env so that there are no cat limits.
 getCatAPI :: IO (Either String CatAPI)
 getCatAPI = do
-  req <- parseRequest "https://api.thecatapi.com/v1/images/search"
+  initReq <- parseRequest "https://api.thecatapi.com/v1/images/search"
+  loadEnv
+  let api_token = getEnv "CATAPI_TOKEN"
+  dToken <-
+    catchIOError
+      api_token
+      ( \e ->
+          if isDoesNotExistError e
+            then putStrLn "Could not find CATAPI_TOKEN, using no token" >> return ""
+            else ioError e
+      )
+  let req = addRequestHeader "x-api-key" ((encodeUtf8 . pack) dToken) initReq
   res <- httpLBS req
   return $ ((eitherDecode $ responseBody res) :: Either String [CatAPI]) >>= eitherHead
   where
