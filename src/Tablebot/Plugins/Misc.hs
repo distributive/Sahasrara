@@ -15,6 +15,8 @@ import Tablebot.Plugin.Discord (sendMessage)
 import Tablebot.Plugin.Parser (noArguments)
 import Tablebot.Plugin.Types (Command (Command), Plugin (commands), plug)
 
+-- | The misc commands. Put the command in the first element of each tuple, and the 
+-- response in the second element of each tuple.
 miscCommands :: [(Text, Text)]
 miscCommands =
   [ ("pr", "You can make a pull request for that!"),
