@@ -10,27 +10,16 @@
 -- This is an example plugin which just responds with a cat photo to a .cat call
 module Tablebot.Plugins.Cats (catPlugin) where
 
-import Control.Monad (MonadPlus (mzero))
 import Control.Monad.IO.Class (MonadIO (liftIO))
-import Data.Aeson
-  ( FromJSON (parseJSON),
-    eitherDecode,
-  )
+import Data.Aeson (FromJSON, eitherDecode)
+import Data.Functor ((<&>))
 import Data.Text (Text, pack)
 import GHC.Generics (Generic)
-import Network.HTTP.Client.Conduit (withManager)
-import Network.HTTP.Conduit
-  ( Response (responseBody),
-    parseRequest,
-  )
+import Network.HTTP.Conduit (Response (responseBody), parseRequest)
 import Network.HTTP.Simple (httpLBS)
 import Tablebot.Plugin.Discord (sendMessage)
 import Tablebot.Plugin.Parser (noArguments)
-import Tablebot.Plugin.Types
-  ( Command (Command),
-    Plugin (commands),
-    plug,
-  )
+import Tablebot.Plugin.Types (Command (Command), Plugin (commands), plug)
 
 -- | @CatAPI@ is the basic data type for the JSON object that thecatapi returns
 data CatAPI = CatAPI
@@ -51,7 +40,7 @@ cat =
   Command
     "cat"
     ( noArguments $ \m -> do
-        r <- liftIO getCat
+        r <- liftIO (getCatAPI <&> getCat)
         _ <- sendMessage m r
         return ()
     )
@@ -67,15 +56,12 @@ getCatAPI = do
     eitherHead [] = Left "Empty list"
     eitherHead (x : _) = Right x
 
--- | @getCat@ is a helper function that turns the IO Either of @getCatAPI@
+-- | @getCat@ is a helper function that turns the Either of @getCatAPI@
 -- into either an error message or the url of the cat image.
-getCat :: IO Text
-getCat = do
-  response <- getCatAPI
-  let catURL = case response of
-        (Left r) -> "no cat today, sorry :(. (error is `" <> pack r <> "`)"
-        (Right r) -> url r
-  return catURL
+getCat :: Either String CatAPI -> Text
+getCat esc = case esc of
+  (Left r) -> "no cat today, sorry :(. (error is `" <> pack r <> "`)"
+  (Right r) -> url r
 
 -- | @catPlugin@ assembles these commands into a plugin containing cat
 catPlugin :: Plugin
