@@ -119,6 +119,9 @@ reminderCron = do
                         "Reminder to <@" ++ show uid ++ ">! " ++ content
                     P.delete (entityKey r)
 
+reminderHelp :: HelpPage
+reminderHelp = HelpPage "remind" "ask the bot to remind you to do things in the future" "**Reminders**\nSend a reminder to yourself or others. Pick a date and time, and the tablebot will poke you to remember at your preordained moment.\n\n*Usage:* `remind \"reminder\" at <time>`" [] 
+
 -- | @reminderPlugin@ builds a plugin providing reminder asking functionality
 -- (@reminderCommand@), reminding functionality (via the cron job specified by
 -- @reminderCron@) and the database information.
@@ -126,5 +129,6 @@ reminderPlugin :: Plugin
 reminderPlugin = plug {
     commands = [reminderCommand],
     cronJobs = [CronJob 60000000 reminderCron],
-    migrations = [reminderMigration]
+    migrations = [reminderMigration],
+    helpPages = [reminderHelp]
 }

@@ -29,7 +29,13 @@ pong = Command "pong" (noArguments $ \m -> do
     _ <- sendMessage m "ping"
     return ())
 
+pingHelp :: HelpPage
+pingHelp = HelpPage "ping" "show a debug message" "**Ping**\nShows a debug message\n\n*Usage:* `ping`" [] 
+
+pongHelp :: HelpPage
+pongHelp = HelpPage "pong" "show a more different debug message" "**Pong**\nShows a different debug message\n\n*Usage:* `pong`" [] 
+
 -- | @pingPlugin@ assembles these commands into a plugin containing both ping
 -- and pong.
 pingPlugin :: Plugin
-pingPlugin = plug { commands = [ping, pong] }
+pingPlugin = plug { commands = [ping, pong], helpPages = [pingHelp, pongHelp] }
