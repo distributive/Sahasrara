@@ -30,9 +30,13 @@ dependencies:
 - persistent
 - persistent-sqlite
 - persistent-template
+- random
 - esqueleto
 - monad-logger
 - time
+- aeson
+- bytestring
+- yaml
 
 library:
   source-dirs: src
@@ -53,6 +57,7 @@ library:
   - UndecidableInstances
   - DataKinds
   - FlexibleInstances
+  - DeriveGeneric
 
 
 executables:

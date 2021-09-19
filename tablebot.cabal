@@ -1,10 +1,10 @@
 cabal-version: 1.12
 
--- This file has been generated from package.yaml by hpack version 0.34.4.
+-- This file has been generated from package.yaml by hpack version 0.33.0.
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: 35c88c49e82ba9572a2127bdcfe8c206a86d737cdb7d4ebdf299210e00601a8b
+-- hash: a935e892b150bd44bb6df4369caa081382e00d94a54f2bf4f0af60899d0c4576
 
 name:           tablebot
 version:        0.1.0.0
@@ -39,29 +39,16 @@ library
       Tablebot.Plugins.Ping
       Tablebot.Plugins.Quote
       Tablebot.Plugins.Reminder
+      Tablebot.Plugins.Welcome
   other-modules:
       Paths_tablebot
   hs-source-dirs:
       src
-  default-extensions:
-      OverloadedStrings
-      ImportQualifiedPost
-      LambdaCase
-      EmptyDataDecls
-      FlexibleContexts
-      GADTs
-      GeneralizedNewtypeDeriving
-      MultiParamTypeClasses
-      QuasiQuotes
-      TemplateHaskell
-      TypeFamilies
-      DerivingStrategies
-      StandaloneDeriving
-      UndecidableInstances
-      DataKinds
-      FlexibleInstances
+  default-extensions: OverloadedStrings ImportQualifiedPost LambdaCase EmptyDataDecls FlexibleContexts GADTs GeneralizedNewtypeDeriving MultiParamTypeClasses QuasiQuotes TemplateHaskell TypeFamilies DerivingStrategies StandaloneDeriving UndecidableInstances DataKinds FlexibleInstances DeriveGeneric
   build-depends:
-      base >=4.7 && <5
+      aeson
+    , base >=4.7 && <5
+    , bytestring
     , discord-haskell
     , emoji
     , esqueleto
@@ -71,9 +58,11 @@ library
     , persistent
     , persistent-sqlite
     , persistent-template
+    , random
     , text
     , time
     , transformers
+    , yaml
   default-language: Haskell2010
 
 executable tablebot-exe
@@ -84,7 +73,9 @@ executable tablebot-exe
       app
   ghc-options: -threaded -rtsopts -with-rtsopts=-N
   build-depends:
-      base >=4.7 && <5
+      aeson
+    , base >=4.7 && <5
+    , bytestring
     , discord-haskell
     , emoji
     , esqueleto
@@ -94,10 +85,12 @@ executable tablebot-exe
     , persistent
     , persistent-sqlite
     , persistent-template
+    , random
     , tablebot
     , text
     , time
     , transformers
+    , yaml
   default-language: Haskell2010
 
 test-suite tablebot-test
@@ -109,7 +102,9 @@ test-suite tablebot-test
       test
   ghc-options: -threaded -rtsopts -with-rtsopts=-N
   build-depends:
-      base >=4.7 && <5
+      aeson
+    , base >=4.7 && <5
+    , bytestring
     , discord-haskell
     , emoji
     , esqueleto
@@ -119,8 +114,10 @@ test-suite tablebot-test
     , persistent
     , persistent-sqlite
     , persistent-template
+    , random
     , tablebot
     , text
     , time
     , transformers
+    , yaml
   default-language: Haskell2010
