@@ -32,11 +32,11 @@ chooseOneWithDefault _ xs = chooseOne xs
 chooseOneWeighted :: (a -> Int) -> [a] -> IO a
 chooseOneWeighted weight xs = do
     index <- randomRIO (0, (sum $ weight <$> xs) - 1)
-    return $ fst $ foldr func (head xs, index) xs
+    return $ fst $ foldr iter (head xs, index) xs
         where
-            func new (old, i) = if i <= 0
-                then (old, i)
-                else (new, i - weight new)
+            iter new (old, i)
+                | i <= 0    = (old, i)
+                | otherwise = (new, i - weight new)
 
 -- | @chooseOneWeightedWithDefault@ chooses a single random element from a given
 -- list with weighted distribution as defined by a given weighting function, or
