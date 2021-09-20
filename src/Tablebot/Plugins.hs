@@ -12,9 +12,10 @@ to the Plugins directory, include an import here. This means that users only
 need to import @Tablebot.Plugins@ to import individual plugins.
 -}
 module Tablebot.Plugins (
-    pingPlugin, quotePlugin, reminderPlugin
+    flipPlugin, pingPlugin, quotePlugin, reminderPlugin
 ) where
 
+import Tablebot.Plugins.Flip (flipPlugin)
 import Tablebot.Plugins.Ping (pingPlugin)
 import Tablebot.Plugins.Quote (quotePlugin)
 import Tablebot.Plugins.Reminder (reminderPlugin)

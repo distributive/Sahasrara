@@ -1,10 +1,10 @@
 cabal-version: 1.12
 
--- This file has been generated from package.yaml by hpack version 0.34.4.
+-- This file has been generated from package.yaml by hpack version 0.33.0.
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: 35c88c49e82ba9572a2127bdcfe8c206a86d737cdb7d4ebdf299210e00601a8b
+-- hash: 3c34a0b9214310222eca76822cb6bdede58397e8ed260ad9a6160a616a2033a4
 
 name:           tablebot
 version:        0.1.0.0
@@ -36,30 +36,16 @@ library
       Tablebot.Plugin.Parser
       Tablebot.Plugin.Types
       Tablebot.Plugins
+      Tablebot.Plugins.Flip
       Tablebot.Plugins.Ping
       Tablebot.Plugins.Quote
       Tablebot.Plugins.Reminder
+      Tablebot.Util.Random
   other-modules:
       Paths_tablebot
   hs-source-dirs:
       src
-  default-extensions:
-      OverloadedStrings
-      ImportQualifiedPost
-      LambdaCase
-      EmptyDataDecls
-      FlexibleContexts
-      GADTs
-      GeneralizedNewtypeDeriving
-      MultiParamTypeClasses
-      QuasiQuotes
-      TemplateHaskell
-      TypeFamilies
-      DerivingStrategies
-      StandaloneDeriving
-      UndecidableInstances
-      DataKinds
-      FlexibleInstances
+  default-extensions: OverloadedStrings ImportQualifiedPost LambdaCase EmptyDataDecls FlexibleContexts GADTs GeneralizedNewtypeDeriving MultiParamTypeClasses QuasiQuotes TemplateHaskell TypeFamilies DerivingStrategies StandaloneDeriving UndecidableInstances DataKinds FlexibleInstances
   build-depends:
       base >=4.7 && <5
     , discord-haskell
@@ -68,9 +54,11 @@ library
     , load-env
     , megaparsec
     , monad-logger
+    , parsec
     , persistent
     , persistent-sqlite
     , persistent-template
+    , random
     , text
     , time
     , transformers
@@ -91,9 +79,11 @@ executable tablebot-exe
     , load-env
     , megaparsec
     , monad-logger
+    , parsec
     , persistent
     , persistent-sqlite
     , persistent-template
+    , random
     , tablebot
     , text
     , time
@@ -116,9 +106,11 @@ test-suite tablebot-test
     , load-env
     , megaparsec
     , monad-logger
+    , parsec
     , persistent
     , persistent-sqlite
     , persistent-template
+    , random
     , tablebot
     , text
     , time
