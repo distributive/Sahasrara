@@ -9,21 +9,38 @@ Portability : POSIX
 
 A collection of utility functions for generating randomness.
 -}
-module Tablebot.Util.Random (chooseOne, chooseOneWithDefault) where
+module Tablebot.Util.Random (chooseOne, chooseOneWithDefault, chooseOneWeighted) where
 
 import System.Random (randomRIO)
 
--- | @chooseOne@ chooses a single random element from a given list.
+-- | @chooseOne@ chooses a single random element from a given list with uniform
+-- distribution.
 chooseOne :: [a] -> IO a
 chooseOne [] = fail "Empty list."
 chooseOne xs = do
     index <- randomRIO (0, length xs - 1 :: Int)
-    return $ head $ drop index xs
+    return $ xs !! index
 
--- | @chooseOne@ chooses a single random element from a given list, or a given
--- default value if the list is empty.
+-- | @chooseOneWithDefault@ chooses a single random element from a given list
+-- with uniform distribution, or a given default value if the list is empty.
 chooseOneWithDefault :: a -> [a] -> IO a
 chooseOneWithDefault x [] = pure x
-chooseOneWithDefault _ xs = do
-    index <- randomRIO (0, length xs - 1 :: Int)
-    return $ head $ drop index xs
+chooseOneWithDefault _ xs = chooseOne xs
+
+-- | @chooseOneWeighted@ chooses a single random element from a given list with
+-- weighted distribution as defined by a given weighting function.
+chooseOneWeighted :: (a -> Int) -> [a] -> IO a
+chooseOneWeighted weight xs = do
+    index <- randomRIO (0, (sum $ weight <$> xs) - 1)
+    return $ fst $ foldr func (head xs, index) xs
+        where
+            func new (old, i) = if i <= 0
+                then (old, i)
+                else (new, i - weight new)
+
+-- | @chooseOneWeightedWithDefault@ chooses a single random element from a given
+-- list with weighted distribution as defined by a given weighting function, or
+-- a given default if the list is empty
+chooseOneWeightedWithDefault :: a -> (a -> Int) -> [a] -> IO a
+chooseOneWeightedWithDefault x _ [] = pure x
+chooseOneWeightedWithDefault _ weight xs = chooseOneWeighted weight xs
