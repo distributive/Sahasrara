@@ -34,6 +34,9 @@ dependencies:
 - esqueleto
 - monad-logger
 - time
+- aeson
+- bytestring
+- yaml
 - parsec
 
 library:
@@ -55,6 +58,7 @@ library:
   - UndecidableInstances
   - DataKinds
   - FlexibleInstances
+  - DeriveGeneric
 
 
 executables:
