@@ -30,9 +30,11 @@ dependencies:
 - persistent
 - persistent-sqlite
 - persistent-template
+- random
 - esqueleto
 - monad-logger
 - time
+- parsec
 
 library:
   source-dirs: src
