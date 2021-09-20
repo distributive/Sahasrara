@@ -35,6 +35,10 @@ letter = satisfy isLetter
 skipSpace :: Parser ()
 skipSpace = skipMany space
 
+-- | @skipSpace1@ is a parser that skips at least one space character.
+skipSpace1 :: Parser ()
+skipSpace1 = skipSome space
+
 -- | @noArguments@ is a parser that only accepts space characters followed by
 -- an end-of-file character, and then runs the input function @f@. Useful for
 -- building parsers for commands that take no arguments.
@@ -66,7 +70,12 @@ number = read <$> some digit
 
 -- | @untilEnd@ gets all of the characters up to the end of the input.
 untilEnd :: Parser String
-untilEnd = do
+untilEnd = manyTill anySingle eof
+
+-- | @untilEnd1@ gets all of the characters up to the end of the input,
+-- requiring there to be at least one.
+untilEnd1 :: Parser String
+untilEnd1 = do
     c <- anySingle
     cs <- manyTill anySingle eof
     return (c:cs)

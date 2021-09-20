@@ -13,7 +13,8 @@ module Tablebot.Plugins.Welcome (welcomePlugin) where
 
 import Tablebot.Plugin
 import Tablebot.Plugin.Discord (sendMessage)
-import Tablebot.Plugin.Parser (noArguments, untilEnd)
+import Tablebot.Plugin.Parser (noArguments)
+import Tablebot.Util.Random (chooseOne, chooseOneWeighted)
 
 import qualified Data.ByteString.Lazy as B
 
@@ -23,7 +24,6 @@ import Data.Yaml (decodeFileEither)
 import Data.Yaml.Internal (ParseException)
 import Data.Text (Text, pack)
 import GHC.Generics (Generic)
-import System.Random (randomRIO)
 import Text.Printf
 
 -- | @favourite@ is the user-facing command that generates categories.
@@ -56,19 +56,15 @@ categories = do
         Right out -> classes out
 
 randomCategoryClass :: IO CategoryClass
-randomCategoryClass = do
-    cats <- categories
-    let weightedCategories = concat $ (\c -> replicate (getWeight c) c) <$> cats
-    x <- randomElement weightedCategories
-    return x
-        where
-            getWeight c = case weight c of
-                Just x -> x
-                Nothing -> length $ values c
+randomCategoryClass = categories >>= chooseOneWeighted getWeight
+    where
+        getWeight c = case weight c of
+            Just x -> x
+            Nothing -> length $ values c
 
 generateCategory :: CategoryClass -> IO (String, String)
 generateCategory = \catClass -> do
-    x <- randomElement $ values catClass
+    x <- chooseOne $ values catClass
     return (getInterrogative catClass, printf (getTemplate catClass) x)
         where
             getTemplate c = case template c of
@@ -77,11 +73,6 @@ generateCategory = \catClass -> do
             getInterrogative c = case interrogative c of
                 Just x -> x
                 Nothing -> "What"
-
-randomElement :: [a] -> IO a
-randomElement = \xs -> do
-    index <- randomRIO (0, length xs - 1 :: Int)
-    return $ head $ drop index xs
 
 -- | @welcomePlugin@ assembles these commands into a plugin.
 welcomePlugin :: Plugin
