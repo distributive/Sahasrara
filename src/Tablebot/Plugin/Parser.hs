@@ -22,6 +22,9 @@ import Data.Char (isSpace, isDigit, isLetter)
 space :: Parser ()
 space = satisfy isSpace $> ()
 
+notSpace :: Parser Char
+notSpace = satisfy $ not . isSpace
+
 digit :: Parser Char
 digit = satisfy isDigit
 
@@ -53,6 +56,10 @@ quoted = quotedWith '"' <|> quotedWith '\''
 word :: Parser String
 word = some letter
 
+-- | @nonSpaceWord@ parses a single word of any non-space characters.
+nonSpaceWord :: Parser String
+nonSpaceWord = some notSpace
+
 -- | @number@ parses any whole, non-negative number.
 number :: Parser Int
 number = read <$> some digit
@@ -60,7 +67,7 @@ number = read <$> some digit
 -- | @untilEnd@ gets all of the characters up to the end of the input.
 untilEnd :: Parser String
 untilEnd = do
-    c <- anySingle 
+    c <- anySingle
     cs <- manyTill anySingle eof
     return (c:cs)
 

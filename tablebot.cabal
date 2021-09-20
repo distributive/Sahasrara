@@ -4,7 +4,7 @@ cabal-version: 1.12
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: a935e892b150bd44bb6df4369caa081382e00d94a54f2bf4f0af60899d0c4576
+-- hash: 3c34a0b9214310222eca76822cb6bdede58397e8ed260ad9a6160a616a2033a4
 
 name:           tablebot
 version:        0.1.0.0
@@ -36,10 +36,12 @@ library
       Tablebot.Plugin.Parser
       Tablebot.Plugin.Types
       Tablebot.Plugins
+      Tablebot.Plugins.Flip
       Tablebot.Plugins.Ping
       Tablebot.Plugins.Quote
       Tablebot.Plugins.Reminder
       Tablebot.Plugins.Welcome
+      Tablebot.Util.Random
   other-modules:
       Paths_tablebot
   hs-source-dirs:
@@ -55,6 +57,7 @@ library
     , load-env
     , megaparsec
     , monad-logger
+    , parsec
     , persistent
     , persistent-sqlite
     , persistent-template
@@ -82,6 +85,7 @@ executable tablebot-exe
     , load-env
     , megaparsec
     , monad-logger
+    , parsec
     , persistent
     , persistent-sqlite
     , persistent-template
@@ -111,6 +115,7 @@ test-suite tablebot-test
     , load-env
     , megaparsec
     , monad-logger
+    , parsec
     , persistent
     , persistent-sqlite
     , persistent-template

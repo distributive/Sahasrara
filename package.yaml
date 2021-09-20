@@ -37,6 +37,7 @@ dependencies:
 - aeson
 - bytestring
 - yaml
+- parsec
 
 library:
   source-dirs: src
