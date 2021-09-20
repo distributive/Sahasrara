@@ -15,7 +15,7 @@ module Tablebot.Plugins.Quote (
 ) where
 
 import Tablebot.Plugin
-import Tablebot.Plugin.Parser (quoted, sp, untilEnd, number)
+import Tablebot.Plugin.Parser (quoted, sp, untilEnd1, number)
 import Tablebot.Plugin.Discord (sendMessageVoid, Message)
 
 import Data.Text (append, pack)
@@ -45,12 +45,12 @@ quote = Command "quote" (
 -- database, returning the ID used.
 addQuote :: Parser (Message -> DatabaseDiscord ())
 addQuote = do
-    sp 
+    sp
     quote <- try quoted <?> error ++ " (needed a quote)"
     sp
     single '-' <?> error ++ " (needed hyphen)"
     sp
-    addQ quote <$> untilEnd <?> error ++ " (needed author)"
+    addQ quote <$> untilEnd1 <?> error ++ " (needed author)"
   where addQ :: String -> String -> Message -> DatabaseDiscord ()
         addQ quote author m = do
             added <- insert $ Quote quote author
