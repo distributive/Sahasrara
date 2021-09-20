@@ -4,7 +4,7 @@ cabal-version: 1.12
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: 3c34a0b9214310222eca76822cb6bdede58397e8ed260ad9a6160a616a2033a4
+-- hash: 2c00bd9b2cab39dd5101c5170ac1e59375b3c0593df7b13d3b7727d236989628
 
 name:           tablebot
 version:        0.1.0.0
@@ -40,6 +40,7 @@ library
       Tablebot.Plugins.Ping
       Tablebot.Plugins.Quote
       Tablebot.Plugins.Reminder
+      Tablebot.Plugins.Say
       Tablebot.Plugins.Welcome
       Tablebot.Util.Random
   other-modules:
