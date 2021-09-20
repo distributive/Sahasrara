@@ -1,5 +1,5 @@
 {-|
-Module      : Tablebot.Plugins.Ping
+Module      : Tablebot.Util.Random
 Description : A very simple example plugin.
 Copyright   : (c) Finnbar Keating 2021
 License     : MIT

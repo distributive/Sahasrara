@@ -13,7 +13,7 @@ module Tablebot.Plugins.Welcome (welcomePlugin) where
 
 import Tablebot.Plugin
 import Tablebot.Plugin.Discord (sendMessage)
-import Tablebot.Plugin.Parser (noArguments, untilEnd)
+import Tablebot.Plugin.Parser (noArguments)
 
 import qualified Data.ByteString.Lazy as B
 
