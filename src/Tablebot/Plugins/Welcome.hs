@@ -31,10 +31,8 @@ import Text.Printf
 favourite :: Command
 favourite = Command "favourite" (noArguments $ \m -> do
     cat <- liftIO $ generateCategory =<< randomCategoryClass
-    let formatted = (\(i, c) -> i ++ " is your favourite:\n> " ++ c ++ "?") <$> cat
-    let out = case formatted of Left err -> err
-                                Right str -> str
-    _ <- sendMessage m $ pack $ out
+    let formatted = either id id $ (\(i, c) -> i ++ " is your favourite:\n> " ++ c ++ "?") <$> cat
+    _ <- sendMessage m $ pack $ formatted
     return ())
 
 data CategoryClass = CategoryClass { name :: !String
