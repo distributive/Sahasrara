@@ -14,6 +14,7 @@ module Tablebot.Plugins.Welcome (welcomePlugin) where
 import Tablebot.Plugin
 import Tablebot.Plugin.Discord (sendMessage)
 import Tablebot.Plugin.Parser (noArguments)
+import Tablebot.Util.Error
 import Tablebot.Util.Random (chooseOne, chooseOneWeighted)
 
 import qualified Data.ByteString.Lazy as B
@@ -30,7 +31,10 @@ import Text.Printf
 favourite :: Command
 favourite = Command "favourite" (noArguments $ \m -> do
     cat <- liftIO $ generateCategory =<< randomCategoryClass
-    _ <- sendMessage m $ pack $ fst cat ++ " is your favourite:\n> " ++ snd cat ++ "?"
+    let formatted = (\(i, c) -> i ++ " is your favourite:\n> " ++ c ++ "?") <$> cat
+    let out = case formatted of Left err -> err
+                                Right str -> str
+    _ <- sendMessage m $ pack $ out
     return ())
 
 data CategoryClass = CategoryClass { name :: !String
@@ -55,17 +59,20 @@ categories = do
         Left err -> []
         Right out -> classes out
 
-randomCategoryClass :: IO CategoryClass
-randomCategoryClass = categories >>= chooseOneWeighted getWeight
-    where
-        getWeight c = case weight c of
-            Just x -> x
-            Nothing -> length $ values c
+randomCategoryClass :: IO (Either Error CategoryClass)
+randomCategoryClass = do
+    cats <- categories
+    chooseOneWeighted getWeight cats
+        where
+            getWeight c = case weight c of
+                Just x -> x
+                Nothing -> length $ values c
 
-generateCategory :: CategoryClass -> IO (String, String)
-generateCategory = \catClass -> do
-    x <- chooseOne $ values catClass
-    return (getInterrogative catClass, printf (getTemplate catClass) x)
+generateCategory :: Either Error CategoryClass -> IO (Either Error (String, String))
+generateCategory (Left err) = return $ Left err
+generateCategory (Right catClass) = do
+    choice <- chooseOne $ values catClass
+    return $ (\x -> (getInterrogative catClass, printf (getTemplate catClass) x)) <$> choice
         where
             getTemplate c = case template c of
                 Just x -> x

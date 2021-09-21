@@ -32,9 +32,9 @@ flip = Command "flip" flipcomm
             args <- nonSpaceWord `sepBy` space
             return $ \m -> do
                 choice <- case length args of
-                    0         -> liftIO $ chooseOne ["Heads", "Tails"]
+                    0         -> liftIO $ chooseOneWithDefault "" ["Heads", "Tails"]
                     1         -> pure "You only specified one item!"
-                    otherwise -> liftIO $ chooseOne args
+                    otherwise -> liftIO $ chooseOneWithDefault (head args) args
                 sendMessage m $ pack choice
                 return ()
 
