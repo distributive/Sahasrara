@@ -9,17 +9,19 @@ Portability : POSIX
 
 A collection of utility functions for generating randomness.
 -}
-module Tablebot.Util.Random (chooseOne, chooseOneWithDefault, chooseOneWeighted) where
+module Tablebot.Util.Random (chooseOne, chooseOneWithDefault, chooseOneWeighted, chooseOneWeightedWithDefault) where
 
 import Tablebot.Util.Error
 
+import Data.List
+import Data.Maybe
 import System.Random (randomRIO)
 
 -- | @chooseOne@ chooses a single random element from a given list with uniform
 -- distribution.
 chooseOne :: [a] -> IO (Either Error a)
 chooseOne [] = return $ Left "Cannot choose from empty list."
-chooseOne xs = (Right . (xs !!)) <$> randomRIO (0, length xs - 1 :: Int)
+chooseOne xs = Right . (xs !!) <$> randomRIO (0, length xs - 1 :: Int)
 
 -- | @chooseOneWithDefault@ chooses a single random element from a given list
 -- with uniform distribution, or a given default value if the list is empty.
@@ -31,15 +33,14 @@ chooseOneWithDefault x xs = either (const x) id <$> (chooseOne xs)
 chooseOneWeighted :: (a -> Int) -> [a] -> IO (Either Error a)
 chooseOneWeighted _ [] = return $ Left "Cannot choose from empty list."
 chooseOneWeighted weight xs
-    | any ((<0) . weight) xs = return $ Left "Probability weightings cannot be negative."
+    | any (( <0) . weight) xs = return $ Left "Probability weightings cannot be negative."
     | all ((==0) . weight) xs = return $ Left "At least one weighting must be positive."
-    | otherwise = (Right . (\i -> fst $ foldr iter (head xs', i) xs')) <$> randomRIO (0, totalWeight - 1)
+    | otherwise = Right . fst . fromJust
+            . (\i -> find ((>i) . snd) (zip xs' $ scanl1 (+) $ weight <$> xs'))
+            <$> randomRIO (0, totalWeight - 1)
         where
             xs' = filter ((>0) . weight) xs
             totalWeight = sum $ weight <$> xs'
-            iter new (old, i)
-                | i <= 0    = (old, i)
-                | otherwise = (new, i - weight new)
 
 -- | @chooseOneWeightedWithDefault@ chooses a single random element from a given
 -- list with weighted distribution as defined by a given weighting function, or
