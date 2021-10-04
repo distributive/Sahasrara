@@ -11,7 +11,7 @@
 module Tablebot.Plugins.Cats (catPlugin) where
 
 import Control.Monad.IO.Class (MonadIO (liftIO))
-import Data.Aeson (FromJSON, eitherDecode)
+import Data.Aeson (FromJSON, eitherDecode, Object)
 import Data.Functor ((<&>))
 import Data.Text (Text, pack)
 import Data.Text.Encoding (encodeUtf8)
@@ -27,7 +27,7 @@ import Tablebot.Plugin.Types (Command (Command), Plugin (commands), plug)
 
 -- | @CatAPI@ is the basic data type for the JSON object that thecatapi returns
 data CatAPI = CatAPI
-  { breeds :: ![Text],
+  { breeds :: ![Object],
     id :: !Text,
     url :: !Text,
     width :: !Int,
