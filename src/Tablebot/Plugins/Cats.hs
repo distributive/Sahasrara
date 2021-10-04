@@ -11,7 +11,7 @@
 module Tablebot.Plugins.Cats (catPlugin) where
 
 import Control.Monad.IO.Class (MonadIO (liftIO))
-import Data.Aeson (FromJSON, eitherDecode, Object)
+import Data.Aeson (FromJSON, Object, eitherDecode)
 import Data.Functor ((<&>))
 import Data.Text (Text, pack)
 import Data.Text.Encoding (encodeUtf8)

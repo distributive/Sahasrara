@@ -1,18 +1,16 @@
 module Main where
 
-import Tablebot
-import Tablebot.Plugins (pingPlugin, quotePlugin, reminderPlugin, basicPlugin, catPlugin)
-
+import Data.Maybe (fromMaybe)
+import Data.Text (pack)
 import LoadEnv (loadEnv)
 import System.Environment (getEnv, lookupEnv)
-import Data.Text (pack)
-import Data.Maybe (fromMaybe)
+import Tablebot (runTablebot)
+import Tablebot.Plugins (plugins)
 
 main :: IO ()
 main = do
-    loadEnv
-    dToken <- pack <$> getEnv "DISCORD_TOKEN"
-    prefix <- pack . fromMaybe "!" <$> lookupEnv "PREFIX"
-    dbpath <- getEnv "SQLITE_FILENAME"
-    let plugins = [pingPlugin, quotePlugin, reminderPlugin, basicPlugin, catPlugin]
-    runTablebot dToken prefix dbpath plugins
+  loadEnv
+  dToken <- pack <$> getEnv "DISCORD_TOKEN"
+  prefix <- pack . fromMaybe "!" <$> lookupEnv "PREFIX"
+  dbpath <- getEnv "SQLITE_FILENAME"
+  runTablebot dToken prefix dbpath plugins
