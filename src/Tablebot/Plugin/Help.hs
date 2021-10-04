@@ -4,8 +4,8 @@ import qualified Data.Text as T
 import Data.Text (Text)
 import Text.Megaparsec (choice, (<|>), try, eof, (<?>), chunk)
 import Data.Functor (($>))
-import Tablebot.Plugin.Discord
-import Tablebot.Plugin.Parser
+import Tablebot.Plugin.Discord (Message, sendMessage)
+import Tablebot.Plugin.Parser (skipSpace)
 import Tablebot.Plugin.Types
 
 
