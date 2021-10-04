@@ -3,7 +3,7 @@ module Tablebot.Plugin.Help where
 import qualified Data.Text as T
 import Data.Text (Text)
 import Text.Megaparsec (choice, (<|>), try, eof, (<?>), chunk)
-import Data.Functor (($>))
+import Data.Functor (($>), void)
 import Tablebot.Plugin.Discord (Message, sendMessage)
 import Tablebot.Plugin.Parser (skipSpace)
 import Tablebot.Plugin.Types
@@ -32,9 +32,7 @@ parseHelpPage hp = do
   (try eof $> displayHelp hp) <|> choice (map parseHelpPage $ helpSubpages hp) <?> "Unknown Subcommand"
 
 displayHelp :: HelpPage -> Message -> DatabaseDiscord ()
-displayHelp hp m = do
-               _ <- sendMessage m $ formatHelp hp
-               return ()
+displayHelp hp m = void $ sendMessage m $ formatHelp hp
                
 formatHelp :: HelpPage -> Text
 formatHelp hp = helpBody hp <> formatSubpages hp

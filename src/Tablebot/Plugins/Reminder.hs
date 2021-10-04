@@ -1,3 +1,4 @@
+{-# LANGUAGE QuasiQuotes #-}
 {-|
 Module      : Tablebot.Plugins.Quote
 Description : A complex example using databases and cron jobs.
@@ -34,6 +35,7 @@ import Database.Persist.TH
 import Control.Monad (when, forM_)
 import Control.Monad.IO.Class (MonadIO(liftIO))
 import Data.Text (pack, append)
+import Text.RawString.QQ
 
 -- Our Reminder table in the database. This is fairly standard for Persistent,
 -- however you should note the name of the migration made.
@@ -120,7 +122,10 @@ reminderCron = do
                     P.delete (entityKey r)
 
 reminderHelp :: HelpPage
-reminderHelp = HelpPage "remind" "ask the bot to remind you to do things in the future" "**Reminders**\nSend a reminder to yourself or others. Pick a date and time, and the tablebot will poke you to remember at your preordained moment.\n\n*Usage:* `remind \"reminder\" at <time>`" [] 
+reminderHelp = HelpPage "remind" "ask the bot to remind you to do things in the future" [r|**Reminders**
+Send a reminder to yourself or others. Pick a date and time, and the tablebot will poke you to remember at your preordained moment.
+
+*Usage:* `remind "reminder" at <time>`|] []
 
 -- | @reminderPlugin@ builds a plugin providing reminder asking functionality
 -- (@reminderCommand@), reminding functionality (via the cron job specified by
