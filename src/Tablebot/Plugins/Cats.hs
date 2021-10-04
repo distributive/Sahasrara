@@ -19,7 +19,7 @@ import GHC.Generics (Generic)
 import LoadEnv (loadEnv)
 import Network.HTTP.Conduit (Response (responseBody), parseRequest)
 import Network.HTTP.Simple (addRequestHeader, httpLBS)
-import System.Environment (getEnv)
+import System.Environment (getEnv, lookupEnv)
 import System.IO.Error (catchIOError, isDoesNotExistError)
 import Tablebot.Plugin.Discord (sendMessage)
 import Tablebot.Plugin.Parser (noArguments)
@@ -55,20 +55,14 @@ cat =
 getCatAPI :: IO (Either String CatAPI)
 getCatAPI = do
   initReq <- parseRequest "https://api.thecatapi.com/v1/images/search"
-  loadEnv
-  let api_token = getEnv "CATAPI_TOKEN"
-  dToken <-
-    catchIOError
-      api_token
-      ( \e ->
-          if isDoesNotExistError e
-            then putStrLn "Could not find CATAPI_TOKEN, using no token" >> return ""
-            else ioError e
-      )
+  maybeAPIToken <- lookupEnv "CATAPI_TOKEN"
+  dToken <- genErr maybeAPIToken
   let req = addRequestHeader "x-api-key" ((encodeUtf8 . pack) dToken) initReq
   res <- httpLBS req
   return $ ((eitherDecode $ responseBody res) :: Either String [CatAPI]) >>= eitherHead
   where
+    genErr (Just tok) = return tok
+    genErr _ = putStrLn "Could not find CATAPI_TOKEN, using no token" >> return ""
     eitherHead [] = Left "Empty list"
     eitherHead (x : _) = Right x
 
