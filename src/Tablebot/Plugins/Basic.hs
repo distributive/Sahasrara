@@ -20,7 +20,7 @@ import Tablebot.Plugin.Types (Command (Command), Plugin (commands), plug, HelpPa
 -- | @MiniHelpPage@ simplifies creating the help pages. You can either provide just the short and long help text and let 
 -- it autogenerate the formatting, or you can provide a full help page if you want more control
 data MiniHelpPage = Simple (Text, Text) | Advanced HelpPage
--- | @BasicCommand@ is a tuple containing the important for this command.
+-- | @BasicCommand@ is a tuple containing the important information for this command.
 -- Put the command in the first element, the response in the second element of each tuple, 
 -- and a 'MiniHelpPage' for your command in the third
 type BasicCommand = (Text, Text, MiniHelpPage)
