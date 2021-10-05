@@ -33,6 +33,7 @@ dependencies:
 - esqueleto
 - monad-logger
 - time
+- raw-strings-qq
 
 library:
   source-dirs: src

@@ -19,6 +19,7 @@ module Tablebot (
 
 import Tablebot.Handler (eventHandler, killCron, runCron)
 import Tablebot.Plugin (Plugin, combinePlugins, migrations, cronJobs)
+import Tablebot.Plugin.Help
 
 import Data.Text (Text, pack)
 import Discord
@@ -42,7 +43,7 @@ import Control.Concurrent
 -- bot close.
 runTablebot :: Text -> Text -> FilePath -> [Plugin] -> IO ()
 runTablebot dToken prefix dbpath plugins =
-    let !plugin = combinePlugins plugins
+    let !plugin = generateHelp $ combinePlugins plugins
     in do
     -- Create multiple database threads.
     pool <- runNoLoggingT $ createSqlitePool (pack dbpath) 8
