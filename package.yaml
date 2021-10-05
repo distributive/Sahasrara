@@ -33,6 +33,8 @@ dependencies:
 - esqueleto
 - monad-logger
 - time
+- http-conduit
+- aeson
 - raw-strings-qq
 
 library:
@@ -54,6 +56,7 @@ library:
   - UndecidableInstances
   - DataKinds
   - FlexibleInstances
+  - DeriveGeneric
 
 
 executables:
