@@ -35,6 +35,7 @@ dependencies:
 - time
 - http-conduit
 - aeson
+- raw-strings-qq
 
 library:
   source-dirs: src
