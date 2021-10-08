@@ -38,6 +38,8 @@ dependencies:
 - bytestring
 - yaml
 - parsec
+- http-conduit
+- raw-strings-qq
 
 library:
   source-dirs: src

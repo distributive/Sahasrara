@@ -75,7 +75,16 @@ showQuote = do
                 Nothing -> sendMessageVoid m "Couldn't get that quote!"
         error = "Syntax is: .quote show n"
 
+showQuoteHelp :: HelpPage
+showQuoteHelp = HelpPage "show" "show a quote by number" "**Show Quote**\nShows a quote by id\n\n*Usage:* `quote show <id>`" []
+
+addQuoteHelp :: HelpPage
+addQuoteHelp = HelpPage "add" "add a new quote" "**Add Quote**\nAdds a quote\n\n*Usage:* `quote add \"quote\" - author`" []
+
+quoteHelp :: HelpPage
+quoteHelp = HelpPage "quote" "store and retrieve quotes" "**Quotes**\nAllows storing and retrieving quotes" [showQuoteHelp, addQuoteHelp]
+
 -- | @quotePlugin@ assembles the @quote@ command (consisting of @add@ and
 -- @show@) and the database migration into a plugin.
 quotePlugin :: Plugin
-quotePlugin = plug { commands = [quote], migrations = [quoteMigration] }
+quotePlugin = plug { commands = [quote], migrations = [quoteMigration], helpPages=[quoteHelp] }
