@@ -11,7 +11,7 @@ This module contains helpful Discord functionality for building plugins
 without having to lift Discord operations constantly.
 -}
 module Tablebot.Plugin.Discord (
-    sendMessage, sendMessageVoid, reactToMessage, getMessage, Message
+    sendMessage, sendMessageVoid, reactToMessage, getMessage, Message, getMessageMember
 ) where
 
 import Tablebot.Plugin (DatabaseDiscord)
@@ -22,6 +22,7 @@ import qualified Discord.Requests as R
 import Data.Text
 import Control.Monad (void)
 import Control.Monad.Trans.Class (MonadTrans(lift))
+import Data.Maybe (fromJust)
 
 -- | @sendMessage@ sends the input message @t@ in the same channel as message
 -- @m@. This returns an @Either RestCallErrorCode Message@ to denote failure or
@@ -49,3 +50,17 @@ reactToMessage :: Message -> Text
     -> DatabaseDiscord (Either RestCallErrorCode ())
 reactToMessage m e = lift . restCall $
     R.CreateReaction (messageChannel m, messageId m) e
+
+-- | @getMessageMember@ returns the message member object if it was sent from a Discord server,
+-- or @Nothing@ if it was sent from a DM (or the API fails)
+getMessageMember :: Message -> DatabaseDiscord (Maybe GuildMember)
+getMessageMember m = gMM (messageGuild m) m
+  where 
+    maybeRight :: Either a b -> Maybe b
+    maybeRight (Left _) = Nothing
+    maybeRight (Right a) = Just a
+    gMM :: Maybe GuildId -> Message -> DatabaseDiscord (Maybe GuildMember)
+    gMM Nothing _ = return Nothing
+    gMM (Just g') m' = do 
+      a <- lift $ restCall $ R.GetGuildMember g' (userId $ messageAuthor m')
+      return $ maybeRight a

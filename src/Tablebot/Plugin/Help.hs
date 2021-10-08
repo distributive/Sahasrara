@@ -15,9 +15,12 @@ rootBody =
   \This friendly little bot provides several tools to help with\
   \ the running of the Warwick Tabletop Games and Role-Playing Society Discord server."
 
+helpHelpPage :: HelpPage
+helpHelpPage = HelpPage "help" "show information about commands" "**Help**\nShows information about bot commands\n\n*Usage:* `help <page>`" []
+
 generateHelp :: Plugin -> Plugin
 generateHelp p = p {
-  commands = Command "help" (handleHelp (helpPages p)) : commands p
+  commands = Command "help" (handleHelp (helpHelpPage:helpPages p)) : commands p
 }
 
 handleHelp :: [HelpPage] -> Parser (Message -> DatabaseDiscord ())

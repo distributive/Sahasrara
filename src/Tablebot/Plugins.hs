@@ -22,5 +22,12 @@ import Tablebot.Plugins.Ping (pingPlugin)
 import Tablebot.Plugins.Quote (quotePlugin)
 import Tablebot.Plugins.Reminder (reminderPlugin)
 
+-- Use long list format to make additions and removals non-conflicting on git PRs
 plugins :: [Plugin]
-plugins = [pingPlugin, quotePlugin, reminderPlugin, basicPlugin, catPlugin]
+plugins =
+    [ pingPlugin
+    , quotePlugin
+--    , reminderPlugin
+    , basicPlugin
+    , catPlugin
+    ]

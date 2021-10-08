@@ -177,3 +177,11 @@ combinePlugins (p : ps) = let p' = combinePlugins ps
           [] +++ ys = ys
           xs +++ [] = xs
           (x:xs) +++ ys = x : xs +++ ys
+
+data UserPermission = UserPerm {
+  permExec :: Bool, 
+  permModerator :: Bool, 
+  permSuperuser :: Bool
+} deriving (Show, Eq)
+
+data RequiredPermission = None | Any | Exec | Moderator | Superuser deriving (Show, Eq)
