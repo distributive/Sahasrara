@@ -2,9 +2,5 @@
 *~
 .env
 db.*
-<<<<<<< HEAD
 database*
 *.cabal
-=======
-tablebot.cabal
->>>>>>> 7da6238bc5f73e991cb7558ea223296c42ba2982
