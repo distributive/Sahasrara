@@ -1,4 +1,5 @@
 # tablebot
+[![CI](https://github.com/WarwickTabletop/tablebot/actions/workflows/main.yml/badge.svg)](https://github.com/WarwickTabletop/tablebot/actions/workflows/main.yml)
 
 An extendable Discord bot framework written on top of `discord-haskell`
 
