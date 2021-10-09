@@ -1,8 +1,20 @@
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE TypeApplications #-}
-{-# LANGUAGE TypeOperators #-}
 
-module Tablebot.TypeLevel where
+-- |
+-- Module      : Tablebot.Plugin.SmartCommand
+-- Description : Automatic parser generation from function types.
+-- Copyright   : (c) Finnbar Keating 2021
+-- License     : MIT
+-- Maintainer  : finnjkeating@gmail.com
+-- Stability   : experimental
+-- Portability : POSIX
+--
+-- Generates a parser based on the shape of the command function.
+-- For example, if you have a command that takes in an Int as argument, we
+-- build a parser that reads in that Int and then runs the command.
+
+module Tablebot.Plugin.SmartCommand where
 
 import Data.Proxy
 import Data.Text
@@ -12,29 +24,13 @@ import Tablebot.Plugin.Parser (digit, quoted, space, word)
 import Tablebot.Plugin.Types (DatabaseDiscord, Parser)
 import Text.Megaparsec
 
--- TODO: generally put this in the correct place and integrate properly.
--- This is currently just a scratchpad.
-
-data Permission = Admin | Moderator | None
-
-data ParsedCommand (perm :: Permission) ty = PC
-  { name :: Text,
-    command :: ty -> Message -> DatabaseDiscord ()
-  }
-
-parseCommand ::
-  (PComm (ty -> Message -> DatabaseDiscord ())) =>
-  ParsedCommand perm ty ->
-  Parser (Message -> DatabaseDiscord ())
-parseCommand comm = parseComm (command comm)
-
 class PComm commandty where
   parseComm :: commandty -> Parser (Message -> DatabaseDiscord ())
 
-instance PComm (Message -> DatabaseDiscord ()) where
+instance {-# OVERLAPPING #-} PComm (Message -> DatabaseDiscord ()) where
   parseComm comm = eof >> return comm
 
-instance (CanParse a, PComm as) => PComm (a -> as) where
+instance {-# OVERLAPPABLE #-}(CanParse a, PComm as) => PComm (a -> as) where
   parseComm comm = do
     this <- pars @a
     space
@@ -52,7 +48,7 @@ instance CanParse String where
 newtype Quoted = Qu Text
 
 instance CanParse Quoted where
-  pars = (Qu . pack) <$> quoted
+  pars = Qu . pack <$> quoted
 
 instance CanParse Int where
   pars = read <$> many digit
@@ -72,3 +68,24 @@ instance KnownSymbol s => CanParse (Exactly s) where
 
 instance (CanParse a, CanParse b) => CanParse (Either a b) where
   pars = (Left <$> pars @a) <|> (Right <$> pars @b)
+
+instance (CanParse a, CanParse b) => CanParse (a, b) where
+  pars = do
+    x <- pars @a
+    space
+    y <- pars @b
+    return (x, y)
+
+instance (CanParse a, CanParse b, CanParse c) => CanParse (a, b, c) where
+  pars = do
+    x <- pars @a
+    space
+    y <- pars @b
+    space
+    z <- pars @c
+    return (x, y, z)
+
+newtype WithError (err :: Symbol) x = WErr x
+
+instance (KnownSymbol err, CanParse x) => CanParse (WithError err x) where
+  pars = (WErr <$> pars @x) <?> symbolVal (Proxy :: Proxy err)

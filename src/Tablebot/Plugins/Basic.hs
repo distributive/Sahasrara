@@ -13,7 +13,7 @@ module Tablebot.Plugins.Basic (basicPlugin) where
 import Data.Text (toTitle)
 import Data.Text.Internal (Text)
 import Tablebot.Plugin.Discord (sendMessage)
-import Tablebot.Plugin.Parser (noArguments)
+import Tablebot.Plugin.SmartCommand (parseComm)
 import Tablebot.Plugin.Types (Command (Command), HelpPage (HelpPage), Plugin (commands), helpPages, plug)
 
 -- * Some types to help clarify what's going on
@@ -45,7 +45,7 @@ baseCommand :: BasicCommand -> Command
 baseCommand (a, b, _) =
   Command
     a
-    ( noArguments $ \m -> do
+    ( parseComm $ \m -> do
         _ <- sendMessage m b
         return ()
     )
