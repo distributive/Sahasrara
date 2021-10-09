@@ -1,9 +1,9 @@
 -- |
 -- Module      : Tablebot.Plugins.Welcome
 -- Description : Basic commands that just output string literals.
--- Copyright   : (c) Finnbar Keating 2021
+-- Copyright   : (c) Amelie WD 2021
 -- License     : MIT
--- Maintainer  : finnjkeating@gmail.com
+-- Maintainer  : tablebot@ameliewd.com
 -- Stability   : experimental
 -- Portability : POSIX
 --
