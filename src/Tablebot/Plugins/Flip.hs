@@ -1,6 +1,6 @@
 -- |
 -- Module      : Tablebot.Plugins.Flip
--- Description : A very simple example plugin.
+-- Description : A command that flips a coin, or randomly selects from a list.
 -- Copyright   : (c) Amelie WD 2021
 -- License     : MIT
 -- Maintainer  : tablebot@ameliewd.com

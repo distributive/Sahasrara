@@ -1,6 +1,6 @@
 -- |
 -- Module      : Tablebot.Plugins.Say
--- Description : A very simple example plugin.
+-- Description : A command that outputs its input.
 -- Copyright   : (c) Amelie WD 2021
 -- License     : MIT
 -- Maintainer  : tablebot@ameliewd.com

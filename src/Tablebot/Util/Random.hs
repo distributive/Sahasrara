@@ -1,6 +1,6 @@
 -- |
 -- Module      : Tablebot.Util.Random
--- Description : A very simple example plugin.
+-- Description : A plugin for random generation.
 -- Copyright   : (c) Amelie WD 2021
 -- License     : MIT
 -- Maintainer  : tablebot@ameliewd.com

@@ -1,6 +1,6 @@
 -- |
 -- Module      : Tablebot.Plugins.Welcome
--- Description : Basic commands that just output string literals.
+-- Description : A plugin for generating welcome messages.
 -- Copyright   : (c) Amelie WD 2021
 -- License     : MIT
 -- Maintainer  : tablebot@ameliewd.com
