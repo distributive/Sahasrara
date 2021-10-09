@@ -56,9 +56,6 @@ newtype Quoted = Qu Text
 instance CanParse Quoted where
   pars = Qu . pack <$> quoted
 
-instance CanParse Int where
-  pars = read <$> many digit
-
 -- Try to read the value, or skip if you fail.
 instance CanParse a => CanParse (Maybe a) where
   pars = optional $ try (pars @a)
