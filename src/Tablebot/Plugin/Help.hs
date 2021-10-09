@@ -1,13 +1,12 @@
 module Tablebot.Plugin.Help where
 
-import qualified Data.Text as T
+import Data.Functor (void, ($>))
 import Data.Text (Text)
-import Text.Megaparsec (choice, (<|>), try, eof, (<?>), chunk)
-import Data.Functor (($>), void)
+import qualified Data.Text as T
 import Tablebot.Plugin.Discord (Message, sendMessage)
 import Tablebot.Plugin.Parser (skipSpace)
 import Tablebot.Plugin.Types
-
+import Text.Megaparsec (choice, chunk, eof, try, (<?>), (<|>))
 
 rootBody :: Text
 rootBody =
@@ -16,9 +15,10 @@ rootBody =
   \ the running of the Warwick Tabletop Games and Role-Playing Society Discord server."
 
 generateHelp :: Plugin -> Plugin
-generateHelp p = p {
-  commands = Command "help" (handleHelp (helpPages p)) : commands p
-}
+generateHelp p =
+  p
+    { commands = Command "help" (handleHelp (helpPages p)) : commands p
+    }
 
 handleHelp :: [HelpPage] -> Parser (Message -> DatabaseDiscord ())
 handleHelp hp = parseHelpPage root
@@ -33,7 +33,7 @@ parseHelpPage hp = do
 
 displayHelp :: HelpPage -> Message -> DatabaseDiscord ()
 displayHelp hp m = void $ sendMessage m $ formatHelp hp
-               
+
 formatHelp :: HelpPage -> Text
 formatHelp hp = helpBody hp <> formatSubpages hp
   where
