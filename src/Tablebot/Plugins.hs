@@ -23,4 +23,10 @@ import Tablebot.Plugins.Quote (quotePlugin)
 import Tablebot.Plugins.Reminder (reminderPlugin)
 
 plugins :: [Plugin]
-plugins = [pingPlugin, quotePlugin, reminderPlugin, basicPlugin, catPlugin]
+plugins =
+  [ pingPlugin,
+    quotePlugin,
+    reminderPlugin,
+    basicPlugin,
+    catPlugin
+  ]
