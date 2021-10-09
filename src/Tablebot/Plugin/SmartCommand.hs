@@ -4,7 +4,7 @@
 -- |
 -- Module      : Tablebot.Plugin.SmartCommand
 -- Description : Automatic parser generation from function types.
--- Copyright   : (c) Finnbar Keating 2021
+-- Copyright   : (c) Finnbar Keating, Benjamin McRae 2021
 -- License     : MIT
 -- Maintainer  : finnjkeating@gmail.com
 -- Stability   : experimental
@@ -13,14 +13,13 @@
 -- Generates a parser based on the shape of the command function.
 -- For example, if you have a command that takes in an Int as argument, we
 -- build a parser that reads in that Int and then runs the command.
-
 module Tablebot.Plugin.SmartCommand where
 
 import Data.Proxy
 import Data.Text
 import Discord.Types
 import GHC.TypeLits
-import Tablebot.Plugin.Parser (digit, quoted, space, word)
+import Tablebot.Plugin.Parser
 import Tablebot.Plugin.Types (DatabaseDiscord, Parser)
 import Text.Megaparsec
 
@@ -28,9 +27,15 @@ class PComm commandty where
   parseComm :: commandty -> Parser (Message -> DatabaseDiscord ())
 
 instance {-# OVERLAPPING #-} PComm (Message -> DatabaseDiscord ()) where
-  parseComm comm = eof >> return comm
+  parseComm comm = skipSpace >> eof >> return comm
 
-instance {-# OVERLAPPABLE #-}(CanParse a, PComm as) => PComm (a -> as) where
+-- No trailing space is wanted.
+instance {-# OVERLAPPING #-} CanParse a => PComm (a -> Message -> DatabaseDiscord ()) where
+  parseComm comm = do
+    this <- pars @a
+    parseComm (comm this)
+
+instance {-# OVERLAPPABLE #-} (CanParse a, PComm as) => PComm (a -> as) where
   parseComm comm = do
     this <- pars @a
     space
@@ -42,7 +47,8 @@ class CanParse a where
 instance CanParse Text where
   pars = pack <$> word
 
-instance CanParse String where
+-- overlapping since otherwise [a] conflicts
+instance {-# OVERLAPPING #-} CanParse String where
   pars = word
 
 newtype Quoted = Qu Text
@@ -58,7 +64,7 @@ instance CanParse a => CanParse (Maybe a) where
   pars = optional $ try (pars @a)
 
 -- Parse any number of a type (can include zero)
-instance CanParse a => CanParse [a] where
+instance {-# OVERLAPPABLE #-} CanParse a => CanParse [a] where
   pars = many pars
 
 data Exactly (s :: Symbol) = Ex
@@ -69,6 +75,7 @@ instance KnownSymbol s => CanParse (Exactly s) where
 instance (CanParse a, CanParse b) => CanParse (Either a b) where
   pars = (Left <$> pars @a) <|> (Right <$> pars @b)
 
+-- TODO: automate creation of tuple instances using TemplateHaskell
 instance (CanParse a, CanParse b) => CanParse (a, b) where
   pars = do
     x <- pars @a
@@ -85,7 +92,31 @@ instance (CanParse a, CanParse b, CanParse c) => CanParse (a, b, c) where
     z <- pars @c
     return (x, y, z)
 
+instance (CanParse a, CanParse b, CanParse c, CanParse d) => CanParse (a, b, c, d) where
+  pars = do
+    x <- pars @a
+    space
+    y <- pars @b
+    space
+    z <- pars @c
+    space
+    w <- pars @d
+    return (x, y, z, w)
+
 newtype WithError (err :: Symbol) x = WErr x
 
 instance (KnownSymbol err, CanParse x) => CanParse (WithError err x) where
   pars = (WErr <$> pars @x) <?> symbolVal (Proxy :: Proxy err)
+
+-- | parsing implementation for all integral types
+-- Overlappable due to the really flexible head state
+instance {-# OVERLAPPABLE #-} (Integral a, Read a) => CanParse a where
+  pars = integer
+
+instance CanParse Double where
+  pars = double
+
+newtype RestOfInput = ROI Text
+
+instance CanParse RestOfInput where
+  pars = ROI . pack <$> untilEnd

@@ -1,7 +1,7 @@
 -- |
 -- Module      : Tablebot.Plugin.Parser
 -- Description : Helpful parsers for building plugins.
--- Copyright   : (c) Finnbar Keating 2021
+-- Copyright   : (c) Finnbar Keating, Benjamin McRae 2021
 -- License     : MIT
 -- Maintainer  : finnjkeating@gmail.com
 -- Stability   : experimental
@@ -11,12 +11,11 @@
 -- reexports from "Text.Parsec" to avoid having to import it.
 module Tablebot.Plugin.Parser where
 
--- TODO: Much helpful functionality is missing here.
-
 import Data.Char (isDigit, isLetter, isSpace)
 import Data.Functor (($>))
 import Tablebot.Plugin (Parser)
 import Text.Megaparsec
+import Text.Megaparsec.Char (char)
 
 space :: Parser ()
 space = satisfy isSpace $> ()
@@ -30,12 +29,6 @@ letter = satisfy isLetter
 -- | @skipSpace@ is a parser that skips many space characters.
 skipSpace :: Parser ()
 skipSpace = skipMany space
-
--- | @noArguments@ is a parser that only accepts space characters followed by
--- an end-of-file character, and then runs the input function @f@. Useful for
--- building parsers for commands that take no arguments.
-noArguments :: a -> Parser a
-noArguments f = (skipSpace *> (eof <?> "No arguments were needed!")) $> f
 
 -- | @quoted@ looks for a quoted string - i.e. one of the form @"text"@.
 -- It returns the string found within the quotes if successful, or throws a
@@ -77,3 +70,24 @@ discordUser = do
 -- | @sp@ parses an optional space character.
 sp :: Parser ()
 sp = space <|> pure ()
+
+-- | @integer@ parses any whole number.
+integer :: (Integral a, Read a) => Parser a
+integer = do
+  minus <- char '-' <|> return ' '
+  digits <- some digit
+  return (read (minus : digits))
+
+-- | @double@ parses any decimal number.
+double :: Parser Double
+double = do
+  minus <- char '-' <|> return ' '
+  digits <- some digit
+  decimal <-
+    ( do
+        char '.'
+        num <- some digit
+        return $ '.' : num
+      )
+      <|> return ""
+  return (read (minus : digits ++ decimal))
