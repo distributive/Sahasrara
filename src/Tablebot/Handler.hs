@@ -1,38 +1,46 @@
-{-|
-Module      : Tablebot.Handler
-Description : The event handler and cron runner for Tablebot.
-Copyright   : (c) Finnbar Keating 2021
-License     : MIT
-Maintainer  : finnjkeating@gmail.com
-Stability   : experimental
-Portability : POSIX
+-- |
+-- Module      : Tablebot.Handler
+-- Description : The event handler and cron runner for Tablebot.
+-- Copyright   : (c) Finnbar Keating 2021
+-- License     : MIT
+-- Maintainer  : finnjkeating@gmail.com
+-- Stability   : experimental
+-- Portability : POSIX
+--
+-- This module provides most of the functionality in "Tablebot". This
+-- includes rerouting the various Discord events to the right kinds of commands,
+-- running cron jobs at Discord startup and killing those jobs after completion.
+module Tablebot.Handler
+  ( eventHandler,
+    runCron,
+    killCron,
+  )
+where
 
-This module provides most of the functionality in "Tablebot". This
-includes rerouting the various Discord events to the right kinds of commands,
-running cron jobs at Discord startup and killing those jobs after completion.
--}
-module Tablebot.Handler (
-    eventHandler, runCron, killCron
-) where
-
+import Control.Concurrent
+  ( ThreadId,
+    forkIO,
+    killThread,
+    threadDelay,
+  )
+import Control.Monad (unless)
+import Control.Monad.IO.Class (MonadIO (liftIO))
+import Control.Monad.Trans.Class (MonadTrans (lift))
+import Control.Monad.Trans.Reader (ReaderT (runReaderT), ask)
+import Data.Text (Text)
+import Discord.Types
+import Tablebot.Handler.Command
+  ( parseCommands,
+    parseInlineCommands,
+  )
+import Tablebot.Handler.Event
+  ( parseMessageChange,
+    parseOther,
+    parseReactionAdd,
+    parseReactionDel,
+  )
 import Tablebot.Plugin
 import Tablebot.Plugin.Types (DatabaseDiscord)
-import Tablebot.Handler.Command
-    (parseCommands, parseInlineCommands)
-import Tablebot.Handler.Event
-    ( parseMessageChange,
-      parseOther,
-      parseReactionAdd,
-      parseReactionDel )
-
-import Discord.Types
-import Data.Text (Text)
-import Control.Monad (unless)
-import Control.Concurrent
-    (ThreadId, threadDelay, forkIO, killThread)
-import Control.Monad.Trans.Reader (ReaderT(runReaderT), ask)
-import Control.Monad.Trans.Class (MonadTrans(lift))
-import Control.Monad.IO.Class (MonadIO(liftIO))
 
 -- | Given a combined plugin @pl@ and a command prefix @prefix@, builds an
 -- event handler. This takes in each Discord 'Event' received (present in
@@ -40,24 +48,25 @@ import Control.Monad.IO.Class (MonadIO(liftIO))
 -- combined plugin.
 eventHandler :: Plugin -> Text -> Event -> DatabaseDiscord ()
 eventHandler pl prefix = \case
-        MessageCreate m -> ifNotBot m $ do
-            parseCommands (commands pl) m prefix
-            parseInlineCommands (inlineCommands pl) m
-        MessageUpdate cid mid ->
-            parseMessageChange (onMessageChanges pl) True cid mid
-        MessageDelete cid mid ->
-            parseMessageChange (onMessageChanges pl) False cid mid
-        MessageDeleteBulk cid mids ->
-            mapM_ (parseMessageChange (onMessageChanges pl) False cid) mids
-        MessageReactionAdd ri -> parseReactionAdd (onReactionAdds pl) ri
-        MessageReactionRemove ri -> parseReactionDel (onReactionDeletes pl) ri
-        -- TODO: MessageReactionRemoveAll is a bit of a pain as it gives us cid/mid,
-        -- when we need ReactionInfo (contains a few extra bits).
-        -- Similar with MessageReactionRemoveEmoji (removes all of one type).
-        MessageReactionRemoveAll cid mid -> pure ()
-        MessageReactionRemoveEmoji rri -> pure ()
-        e -> parseOther (otherEvents pl) e
-    where ifNotBot m = unless (userIsBot (messageAuthor m))
+  MessageCreate m -> ifNotBot m $ do
+    parseCommands (commands pl) m prefix
+    parseInlineCommands (inlineCommands pl) m
+  MessageUpdate cid mid ->
+    parseMessageChange (onMessageChanges pl) True cid mid
+  MessageDelete cid mid ->
+    parseMessageChange (onMessageChanges pl) False cid mid
+  MessageDeleteBulk cid mids ->
+    mapM_ (parseMessageChange (onMessageChanges pl) False cid) mids
+  MessageReactionAdd ri -> parseReactionAdd (onReactionAdds pl) ri
+  MessageReactionRemove ri -> parseReactionDel (onReactionDeletes pl) ri
+  -- TODO: MessageReactionRemoveAll is a bit of a pain as it gives us cid/mid,
+  -- when we need ReactionInfo (contains a few extra bits).
+  -- Similar with MessageReactionRemoveEmoji (removes all of one type).
+  MessageReactionRemoveAll cid mid -> pure ()
+  MessageReactionRemoveEmoji rri -> pure ()
+  e -> parseOther (otherEvents pl) e
+  where
+    ifNotBot m = unless (userIsBot (messageAuthor m))
 
 -- | @runCron@ takes an individual @CronJob@ and runs it in a separate thread.
 -- The @ThreadId@ is returned so it can be killed later.
@@ -70,13 +79,14 @@ eventHandler pl prefix = \case
 -- so may need rewriting if you change the @DatabaseDiscord@ monad stack.
 runCron :: CronJob -> DatabaseDiscord ThreadId
 runCron (CronJob delay fn) = do
-    db <- ask
-    discord <- lift ask
-    let unDB = runReaderT fn db
-    let unDiscord = runReaderT unDB discord
-    liftIO $ forkIO (loopWithDelay delay unDiscord)
-    where loopWithDelay :: Int -> IO () -> IO ()
-          loopWithDelay del fn = fn >> threadDelay del >> loopWithDelay del fn
+  db <- ask
+  discord <- lift ask
+  let unDB = runReaderT fn db
+  let unDiscord = runReaderT unDB discord
+  liftIO $ forkIO (loopWithDelay delay unDiscord)
+  where
+    loopWithDelay :: Int -> IO () -> IO ()
+    loopWithDelay del fn = fn >> threadDelay del >> loopWithDelay del fn
 
 -- | @killCron@ takes a list of @ThreadId@ and kills each thread.
 killCron :: [ThreadId] -> IO ()
