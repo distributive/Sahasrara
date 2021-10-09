@@ -133,10 +133,15 @@ reminderCron = do
               P.delete (entityKey r)
 
 reminderHelp :: HelpPage
-reminderHelp = HelpPage "remind" "ask the bot to remind you to do things in the future" [r|**Reminders**
+reminderHelp =
+  HelpPage
+    "remind"
+    "ask the bot to remind you to do things in the future"
+    [r|**Reminders**
 Send a reminder to yourself or others. Pick a date and time, and the tablebot will poke you to remember at your preordained moment.
 
-*Usage:* `remind "reminder" at <time>`|] []
+*Usage:* `remind "reminder" at <time>`|]
+    []
 
 -- | @reminderPlugin@ builds a plugin providing reminder asking functionality
 -- (@reminderCommand@), reminding functionality (via the cron job specified by

@@ -117,8 +117,8 @@ data CronJob = CronJob
 -- | A feature for generating help text
 -- Each help text page consists of a explanation body, as well as a list of sub-pages
 -- that display the short text for its page
-data HelpPage = HelpPage {
-    -- | The [sub]command name
+data HelpPage = HelpPage
+  { -- | The [sub]command name
     helpName :: Text,
     -- | The text to show when listed in a subpage list. Will be prefixed by its helpName
     helpShortText :: Text,
@@ -126,7 +126,8 @@ data HelpPage = HelpPage {
     helpBody :: Text,
     -- | A list of help pages that can be recursively accessed
     helpSubpages :: [HelpPage]
-} deriving Show
+  }
+  deriving (Show)
 
 -- * Plugins
 

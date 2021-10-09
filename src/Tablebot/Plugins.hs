@@ -26,12 +26,13 @@ import Tablebot.Plugins.Say (sayPlugin)
 import Tablebot.Plugins.Welcome (welcomePlugin)
 
 plugins :: [Plugin]
-plugins = [ pingPlugin
-          , basicPlugin
-          , catPlugin
-          , flipPlugin
-          , quotePlugin
-          , reminderPlugin
-          , sayPlugin
-          , welcomePlugin
-          ]
+plugins =
+  [ pingPlugin,
+    basicPlugin,
+    catPlugin,
+    flipPlugin,
+    quotePlugin,
+    reminderPlugin,
+    sayPlugin,
+    welcomePlugin
+  ]

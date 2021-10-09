@@ -79,9 +79,9 @@ untilEnd = manyTill anySingle eof
 -- requiring there to be at least one.
 untilEnd1 :: Parser String
 untilEnd1 = do
-    c <- anySingle
-    cs <- manyTill anySingle eof
-    return (c:cs)
+  c <- anySingle
+  cs <- manyTill anySingle eof
+  return (c : cs)
 
 -- | @discordUser@ gets a Discord user from its input.
 -- This means that it matches @<\@longidhere>@.
