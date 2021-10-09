@@ -20,4 +20,4 @@ Then you can run it on every file via
 
 `ormolu --mode inplace $(git ls-files '*.hs')`
 
-You can see full documentation on the [Ormolo repo](https://github.com/tweag/ormolu#usage).
+You can see full documentation on the [Ormolu repo](https://github.com/tweag/ormolu#usage).
