@@ -42,8 +42,8 @@ quote =
     "quote"
     (parseComm quoteComm)
 
-quoteComm :: WithError "Unknown quote functionality." (Either (Exactly "add", Quoted, Exactly "-", RestOfInput) (Exactly "show", Int)) -> Message -> DatabaseDiscord ()
-quoteComm (WErr (Left (_, Qu quote, _, ROI author))) = addQ (unpack quote) (unpack author)
+quoteComm :: WithError "Unknown quote functionality." (Either (Exactly "add", Quoted String, Exactly "-", RestOfInput String) (Exactly "show", Int)) -> Message -> DatabaseDiscord ()
+quoteComm (WErr (Left (_, Qu quote, _, ROI author))) = addQ quote author
 quoteComm (WErr (Right (_, id))) = showQ (fromIntegral id)
 
 -- | @addQuote@, which looks for a message of the form

@@ -36,6 +36,7 @@ dependencies:
 - http-conduit
 - aeson
 - raw-strings-qq
+- template-haskell
 
 library:
   source-dirs: src
