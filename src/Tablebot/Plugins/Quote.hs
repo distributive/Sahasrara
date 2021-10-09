@@ -14,14 +14,14 @@ module Tablebot.Plugins.Quote
   )
 where
 
-import Data.Text (append, pack)
+import Data.Text (Text (..), append, pack, unpack)
 import Database.Persist
 import Database.Persist.Sqlite
 import Database.Persist.TH
 import GHC.Int (Int64)
 import Tablebot.Plugin
 import Tablebot.Plugin.Discord (Message, sendMessageVoid)
-import Tablebot.Plugin.Parser (number, quoted, sp, untilEnd)
+import Tablebot.Plugin.SmartCommand
 import Text.Megaparsec
 
 -- Our Quote table in the database. This is fairly standard for Persistent,
@@ -40,46 +40,30 @@ quote :: Command
 quote =
   Command
     "quote"
-    ( ((try (chunk "add") *> addQuote) <|> (try (chunk "show") *> showQuote))
-        <?> "Unknown quote functionality."
-    )
+    (parseComm quoteComm)
+
+quoteComm :: WithError "Unknown quote functionality." (Either (Exactly "add", Quoted String, Exactly "-", RestOfInput String) (Exactly "show", Int)) -> Message -> DatabaseDiscord ()
+quoteComm (WErr (Left (_, Qu quote, _, ROI author))) = addQ quote author
+quoteComm (WErr (Right (_, id))) = showQ (fromIntegral id)
 
 -- | @addQuote@, which looks for a message of the form
 -- @!quote add "quoted text" - author@, and then stores said quote in the
 -- database, returning the ID used.
-addQuote :: Parser (Message -> DatabaseDiscord ())
-addQuote = do
-  sp
-  quote <- try quoted <?> error ++ " (needed a quote)"
-  sp
-  single '-' <?> error ++ " (needed hyphen)"
-  sp
-  addQ quote <$> untilEnd <?> error ++ " (needed author)"
-  where
-    addQ :: String -> String -> Message -> DatabaseDiscord ()
-    addQ quote author m = do
-      added <- insert $ Quote quote author
-      let res = pack $ show $ fromSqlKey added
-      sendMessageVoid m ("Quote added as #" `append` res)
-    error = "Syntax is: .quote add \"quote\" - author"
+addQ :: String -> String -> Message -> DatabaseDiscord ()
+addQ quote author m = do
+  added <- insert $ Quote quote author
+  let res = pack $ show $ fromSqlKey added
+  sendMessageVoid m ("Quote added as #" `append` res)
 
 -- | @showQuote@, which looks for a message of the form @!quote show n@, looks
 -- that quote up in the database and responds with that quote.
-showQuote :: Parser (Message -> DatabaseDiscord ())
-showQuote = do
-  sp
-  num <- number <?> error
-  let id = fromIntegral num :: Int64
-  return $ showQ id
-  where
-    showQ :: Int64 -> Message -> DatabaseDiscord ()
-    showQ id m = do
-      qu <- get $ toSqlKey id
-      case qu of
-        Just (Quote txt author) ->
-          sendMessageVoid m $ pack $ txt ++ " - " ++ author
-        Nothing -> sendMessageVoid m "Couldn't get that quote!"
-    error = "Syntax is: .quote show n"
+showQ :: Int64 -> Message -> DatabaseDiscord ()
+showQ id m = do
+  qu <- get $ toSqlKey id
+  case qu of
+    Just (Quote txt author) ->
+      sendMessageVoid m $ pack $ txt ++ " - " ++ author
+    Nothing -> sendMessageVoid m "Couldn't get that quote!"
 
 showQuoteHelp :: HelpPage
 showQuoteHelp = HelpPage "show" "show a quote by number" "**Show Quote**\nShows a quote by id\n\n*Usage:* `quote show <id>`" []

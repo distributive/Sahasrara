@@ -15,6 +15,7 @@ on:
 
 # A workflow run is made up of one or more jobs that can run sequentially or in parallel
 jobs:
+<<<<<<< HEAD
   ormolu:
     runs-on: ubuntu-latest
     steps:
@@ -24,6 +25,11 @@ jobs:
     name: Build
     runs-on: ubuntu-latest # or macOS-latest, or windows-latest
     needs: ormolu
+=======
+  build:
+    name: Build
+    runs-on: ubuntu-latest # or macOS-latest, or windows-latest
+>>>>>>> 9639c287cd32d0598392077ea97736d4f06f3998
     steps:
       - uses: actions/checkout@v2
       - uses: haskell/actions/setup@v1
