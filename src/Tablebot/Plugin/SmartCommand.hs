@@ -16,8 +16,8 @@
 module Tablebot.Plugin.SmartCommand where
 
 import Data.Proxy
-import Data.Text
-import Discord.Types
+import Data.Text ( Text, pack )
+import Discord.Types ( Message )
 import GHC.TypeLits
 import Tablebot.Plugin.Parser
 import Tablebot.Plugin.Types (DatabaseDiscord, Parser)
@@ -76,7 +76,7 @@ instance CanParse Text where
 instance {-# OVERLAPPING #-} CanParse String where
   pars = word
 
--- | @Quoated a@ defines an input of type @a@ that is contained within quotes.
+-- | @Quoted a@ defines an input of type @a@ that is contained within quotes.
 newtype Quoted a = Qu a
 
 instance FromString a => CanParse (Quoted a) where
