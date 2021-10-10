@@ -36,14 +36,10 @@ import Database.Persist qualified as P (delete)
 import Database.Persist.TH
 import Discord.Types
 import Tablebot.Plugin
-import Tablebot.Plugin.Discord
-  ( Message,
-    getMessage,
-    sendMessageVoid,
-  )
+import Tablebot.Plugin.Discord (getMessage, sendMessageVoid)
 import Tablebot.Plugin.Parser (number, quoted, space)
 import Text.Megaparsec
-import Text.RawString.QQ
+import Text.RawString.QQ qualified as RS (r)
 
 -- Our Reminder table in the database. This is fairly standard for Persistent,
 -- however you should note the name of the migration made.
@@ -64,16 +60,16 @@ dateTimeParser :: Parser UTCTime
 -- TODO: better parsing.
 dateTimeParser = do
   day <- number
-  single '/'
+  _ <- single '/'
   month <- number
   when (month > 12) $ fail "There are only twelve months in a year!"
-  single '/'
+  _ <- single '/'
   year <- number
   let leapYear = isLeapYear (toInteger year)
   when (day > monthLength leapYear month) $ fail "That month doesn't have enough days!"
   space
   hour <- number
-  single ':'
+  _ <- single ':'
   minute <- number
   when (hour >= 24) $ fail "There are only 24 hours in a day!"
   when (minute >= 60) $ fail "There are only sixty minutes in an hour!"
@@ -87,7 +83,7 @@ dateTimeParser = do
 reminderParser :: Parser (Message -> DatabaseDiscord ())
 reminderParser = do
   content <- quoted
-  chunk " at "
+  _ <- chunk " at "
   time <- dateTimeParser
   return $ addReminder time content
 
@@ -120,11 +116,11 @@ reminderCron = do
       return r
   liftIO $ mapM_ (print . entityVal) entitydue
   forM_ entitydue $ \r ->
-    let (Reminder cid mid time content) = entityVal r
+    let (Reminder cid mid _time content) = entityVal r
      in do
           res <- getMessage (Snowflake cid) (Snowflake mid)
           case res of
-            Left e -> pure ()
+            Left _ -> pure ()
             Right mess -> do
               let (Snowflake uid) = userId (messageAuthor mess)
               sendMessageVoid mess $
@@ -137,7 +133,7 @@ reminderHelp =
   HelpPage
     "remind"
     "ask the bot to remind you to do things in the future"
-    [r|**Reminders**
+    [RS.r|**Reminders**
 Send a reminder to yourself or others. Pick a date and time, and the tablebot will poke you to remember at your preordained moment.
 
 *Usage:* `remind "reminder" at <time>`|]

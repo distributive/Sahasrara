@@ -1,7 +1,7 @@
 -- -- |
 -- Module      : Tablebot.Plugins.Basic
 -- Description : A very simple example plugin.
--- Copyright   : (c) Finnbar Keating 2021
+-- Copyright   : (c) Benji, A 2021
 -- License     : MIT
 -- Maintainer  : finnjkeating@gmail.com
 -- Stability   : experimental
