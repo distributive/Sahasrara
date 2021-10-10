@@ -28,6 +28,8 @@ chooseOneWithDefault x xs = either (const x) id <$> (chooseOne xs)
 
 -- | @chooseOneWeighted@ chooses a single random element from a given list with
 -- weighted distribution as defined by a given weighting function.
+-- The function works by zipping each element with its cumulative weight, then
+-- choosing a random element indexed by [0, totalWeight)
 chooseOneWeighted :: (a -> Int) -> [a] -> IO (Either Error a)
 chooseOneWeighted _ [] = return $ Left "Cannot choose from empty list."
 chooseOneWeighted weight xs
@@ -38,7 +40,7 @@ chooseOneWeighted weight xs
       . (\i -> find ((> i) . snd) (zip xs' $ scanl1 (+) $ weight <$> xs'))
       <$> randomRIO (0, totalWeight - 1)
   where
-    xs' = filter ((> 0) . weight) xs
+    xs' = filter ((> 0) . weight) xs -- removes elements with a weight of zero
     totalWeight = sum $ weight <$> xs'
 
 -- | @chooseOneWeightedWithDefault@ chooses a single random element from a given
