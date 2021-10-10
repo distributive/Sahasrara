@@ -17,6 +17,7 @@ import Tablebot.Plugin.Discord (Message, sendMessageVoid)
 import Tablebot.Plugin.Parser
 import Tablebot.Util.Random
 import Text.Megaparsec
+import Text.RawString.QQ
 import Prelude hiding (flip)
 
 -- | @flip@ picks one of its arguments at random, or one of "heads" and "tails"
@@ -34,7 +35,17 @@ flip = Command "flip" flipcomm
         sendMessageVoid m $ pack choice
 
 flipHelp :: HelpPage
-flipHelp = HelpPage "flip" "flip a coin, or randomly pick from a given list" "**Flip**\nRandomly picks one element from its arguments or, if none are provided, picks from heads and tails. \n\n*Usage:*\n`flip`\n`flip first second third`" []
+flipHelp =
+  HelpPage
+    "flip"
+    "flip a coin, or randomly pick from a given list"
+    [r|**Flip**
+Randomly picks one element from its arguments or, if none are provided, picks from heads and tails.
+
+*Usage:*
+`flip`
+`flip first second third`|]
+    []
 
 -- | @flipPlugin@ assembles the command into a plugin.
 flipPlugin :: Plugin

@@ -16,6 +16,7 @@ import Tablebot.Plugin
 import Tablebot.Plugin.Discord (Message, sendMessageVoid)
 import Tablebot.Plugin.Parser (untilEnd)
 import Text.Megaparsec
+import Text.RawString.QQ
 
 -- | @say@ outputs its input.
 say :: Command
@@ -28,7 +29,15 @@ say = Command "say" saycomm
         sendMessageVoid m $ pack $ "> " ++ input ++ "\n - <@" ++ (show $ userId $ messageAuthor m) ++ ">"
 
 sayHelp :: HelpPage
-sayHelp = HelpPage "say" "make the bot speak" "**Say**\nRepeat the input.\n\n*Usage:* `say This text will be repeated by the bot!`" []
+sayHelp =
+  HelpPage
+    "say"
+    "make the bot speak"
+    [r|**Say**
+Repeat the input.
+
+*Usage:* `say This text will be repeated by the bot!`|]
+    []
 
 -- | @sayPlugin@ assembles the command into a plugin.
 sayPlugin :: Plugin

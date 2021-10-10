@@ -23,6 +23,7 @@ import Tablebot.Plugin.Parser (noArguments)
 import Tablebot.Util.Error
 import Tablebot.Util.Random (chooseOne, chooseOneWeighted)
 import Text.Printf
+import Text.RawString.QQ
 
 -- | @favourite@ is the user-facing command that generates categories.
 favourite :: Command
@@ -37,7 +38,15 @@ favourite =
     )
 
 favouriteHelp :: HelpPage
-favouriteHelp = HelpPage "favourite" "generate a category of things you might have a favourite of" "**Favourite**\nGenerate a category of thing to help inspire welcome messages.\n\n*Usage:* `favourite`" []
+favouriteHelp =
+  HelpPage
+    "favourite"
+    "generate a category of things you might have a favourite of"
+    [r|**Favourite**
+Generate a random category of thing to help inspire welcome messages.
+
+*Usage:* `favourite`|]
+    []
 
 data CategoryClass = CategoryClass
   { name :: !String,
