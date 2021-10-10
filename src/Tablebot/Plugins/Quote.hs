@@ -21,7 +21,7 @@ import Database.Persist.TH
 import GHC.Int (Int64)
 import Tablebot.Plugin
 import Tablebot.Plugin.Discord (Message, sendMessageVoid)
-import Tablebot.Plugin.Parser (number, quoted, sp, untilEnd)
+import Tablebot.Plugin.Parser (number, quoted, sp, untilEnd1)
 import Text.Megaparsec
 
 -- Our Quote table in the database. This is fairly standard for Persistent,
@@ -54,7 +54,7 @@ addQuote = do
   sp
   single '-' <?> error ++ " (needed hyphen)"
   sp
-  addQ quote <$> untilEnd <?> error ++ " (needed author)"
+  addQ quote <$> untilEnd1 <?> error ++ " (needed author)"
   where
     addQ :: String -> String -> Message -> DatabaseDiscord ()
     addQ quote author m = do
