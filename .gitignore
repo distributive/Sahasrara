@@ -2,4 +2,5 @@
 *~
 .env
 db.*
-tablebot.cabal
+database*
+*.cabal
