@@ -11,6 +11,7 @@
 module Tablebot.Plugins.Say (sayPlugin) where
 
 import Data.Text (Text, pack)
+import Discord.Types
 import Tablebot.Plugin
 import Tablebot.Plugin.Discord (Message, sendMessageVoid)
 import Tablebot.Plugin.Parser (untilEnd)
@@ -22,9 +23,9 @@ say = Command "say" saycomm
   where
     saycomm :: Parser (Message -> DatabaseDiscord ())
     saycomm = do
-      input <- untilEnd <?> ""
+      input <- untilEnd
       return $ \m -> do
-        sendMessageVoid m $ pack $ input ++ " - "
+        sendMessageVoid m $ pack $ "> " ++ input ++ "\n - <@" ++ (show $ userId $ messageAuthor m) ++ ">"
 
 sayHelp :: HelpPage
 sayHelp = HelpPage "say" "make the bot speak" "**Say**\nRepeat the input.\n\n*Usage:* `say This text will be repeated by the bot!`" []
