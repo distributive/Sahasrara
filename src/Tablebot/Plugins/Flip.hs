@@ -13,7 +13,7 @@ module Tablebot.Plugins.Flip (flipPlugin) where
 import Control.Monad.IO.Class
 import Data.Text (Text, pack)
 import Tablebot.Plugin
-import Tablebot.Plugin.Discord (Message, sendMessage)
+import Tablebot.Plugin.Discord (Message, sendMessageVoid)
 import Tablebot.Plugin.Parser
 import Tablebot.Util.Random
 import Text.Megaparsec
@@ -32,8 +32,7 @@ flip = Command "flip" flipcomm
           0 -> liftIO $ chooseOneWithDefault "" ["Heads", "Tails"]
           1 -> pure "You only specified one item!"
           otherwise -> liftIO $ chooseOneWithDefault (head args) args
-        sendMessage m $ pack choice
-        return ()
+        sendMessageVoid m $ pack choice
 
 flipHelp :: HelpPage
 flipHelp = HelpPage "flip" "flip a coin, or randomly pick from a given list" "**Flip**\nRandomly picks one element from its arguments or, if none are provided, picks from heads and tails. \n\n*Usage:*\n`flip`\n`flip first second third`" []
