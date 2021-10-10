@@ -1,7 +1,7 @@
 -- |
 -- Module      : Tablebot.Plugin.Parser
 -- Description : Helpful parsers for building plugins.
--- Copyright   : (c) Finnbar Keating, Benjamin McRae 2021
+-- Copyright   : (c) Finnbar Keating, Benji 2021
 -- License     : MIT
 -- Maintainer  : finnjkeating@gmail.com
 -- Stability   : experimental

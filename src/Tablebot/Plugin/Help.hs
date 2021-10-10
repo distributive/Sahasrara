@@ -1,3 +1,13 @@
+-- -- |
+-- Module      : Tablebot.Plugin.Help
+-- Description : Help text generation and storage
+-- Copyright   : (c) A 2021
+-- License     : MIT
+-- Maintainer  : finnjkeating@gmail.com
+-- Stability   : experimental
+-- Portability : POSIX
+--
+-- This module creates functions and data structures to help generate help text for commands
 module Tablebot.Plugin.Help where
 
 import Data.Functor (void, ($>))

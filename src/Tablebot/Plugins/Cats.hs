@@ -1,7 +1,7 @@
 -- |
 -- Module      : Tablebot.Plugins.Cats
 -- Description : A very simple plugin that provides cat pictures.
--- Copyright   : (c) Finnbar Keating 2021
+-- Copyright   : (c) Benji 2021
 -- License     : MIT
 -- Maintainer  : finnjkeating@gmail.com
 -- Stability   : experimental

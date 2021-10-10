@@ -4,7 +4,7 @@
 -- |
 -- Module      : Tablebot.Plugin.SmartCommand
 -- Description : Automatic parser generation from function types.
--- Copyright   : (c) Finnbar Keating, Benjamin McRae 2021
+-- Copyright   : (c) Finnbar Keating, Benji 2021
 -- License     : MIT
 -- Maintainer  : finnjkeating@gmail.com
 -- Stability   : experimental
