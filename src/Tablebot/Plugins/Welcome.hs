@@ -19,8 +19,8 @@ import Data.Yaml.Internal (ParseException)
 import GHC.Generics (Generic)
 import Tablebot.Plugin
 import Tablebot.Plugin.Discord (sendMessage)
+import Tablebot.Plugin.Error
 import Tablebot.Plugin.Parser (noArguments)
-import Tablebot.Util.Error
 import Tablebot.Util.Random (chooseOne, chooseOneWeighted)
 import Text.Printf
 import Text.RawString.QQ

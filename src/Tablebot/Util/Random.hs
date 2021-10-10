@@ -13,7 +13,7 @@ module Tablebot.Util.Random (chooseOne, chooseOneWithDefault, chooseOneWeighted,
 import Data.List
 import Data.Maybe
 import System.Random (randomRIO)
-import Tablebot.Util.Error
+import Tablebot.Plugin.Error
 
 -- | @chooseOne@ chooses a single random element from a given list with uniform
 -- distribution.

@@ -8,6 +8,6 @@
 -- Portability : POSIX
 --
 -- A plugin for error handling.
-module Tablebot.Util.Error (Error) where
+module Tablebot.Plugin.Error (Error) where
 
 type Error = String
