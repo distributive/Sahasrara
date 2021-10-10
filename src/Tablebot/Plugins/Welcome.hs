@@ -37,7 +37,7 @@ favourite =
     )
 
 favouriteHelp :: HelpPage
-favouriteHelp = HelpPage "favourite" "generate a category of things you might have a favourite of" "**Say**\nGenerate a category of thing to help inspire welcome messages.\n\n*Usage:* `favourite`" []
+favouriteHelp = HelpPage "favourite" "generate a category of things you might have a favourite of" "**Favourite**\nGenerate a category of thing to help inspire welcome messages.\n\n*Usage:* `favourite`" []
 
 data CategoryClass = CategoryClass
   { name :: !String,
