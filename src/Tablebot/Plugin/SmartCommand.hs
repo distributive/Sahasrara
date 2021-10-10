@@ -16,8 +16,8 @@
 module Tablebot.Plugin.SmartCommand where
 
 import Data.Proxy
-import Data.Text ( Text, pack )
-import Discord.Types ( Message )
+import Data.Text (Text, pack)
+import Discord.Types (Message)
 import GHC.TypeLits
 import Tablebot.Plugin.Parser
 import Tablebot.Plugin.Types (DatabaseDiscord, Parser)
@@ -91,12 +91,6 @@ instance CanParse a => CanParse (Maybe a) where
 instance {-# OVERLAPPABLE #-} CanParse a => CanParse [a] where
   pars = many pars
 
--- | @Exactly s@ defines an input exactly matching @s@ and nothing else.
-data Exactly (s :: Symbol) = Ex
-
-instance KnownSymbol s => CanParse (Exactly s) where
-  pars = chunk (pack $ symbolVal (Proxy :: Proxy s)) >> return Ex
-
 -- A parser for @Either a b@ attempts to parse @a@, and if that fails then
 -- attempts to parse @b@.
 instance (CanParse a, CanParse b) => CanParse (Either a b) where
@@ -129,6 +123,12 @@ instance (CanParse a, CanParse b, CanParse c, CanParse d) => CanParse (a, b, c, 
     space
     w <- pars @d
     return (x, y, z, w)
+
+-- | @Exactly s@ defines an input exactly matching @s@ and nothing else.
+data Exactly (s :: Symbol) = Ex
+
+instance KnownSymbol s => CanParse (Exactly s) where
+  pars = chunk (pack $ symbolVal (Proxy :: Proxy s)) >> return Ex
 
 -- | @WithError err x@ parses an @x@, reporting @err@ if the parsing of @x@
 -- fails.

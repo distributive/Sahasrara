@@ -14,7 +14,7 @@ module Tablebot.Plugins.Quote
   )
 where
 
-import Data.Text (Text (..), append, pack, unpack)
+import Data.Text (append, pack)
 import Database.Persist
 import Database.Persist.Sqlite
 import Database.Persist.TH
@@ -22,7 +22,6 @@ import GHC.Int (Int64)
 import Tablebot.Plugin
 import Tablebot.Plugin.Discord (Message, sendMessageVoid)
 import Tablebot.Plugin.SmartCommand
-import Text.Megaparsec
 
 -- Our Quote table in the database. This is fairly standard for Persistent,
 -- however you should note the name of the migration made.
@@ -43,23 +42,23 @@ quote =
     (parseComm quoteComm)
 
 quoteComm :: WithError "Unknown quote functionality." (Either (Exactly "add", Quoted String, Exactly "-", RestOfInput String) (Exactly "show", Int)) -> Message -> DatabaseDiscord ()
-quoteComm (WErr (Left (_, Qu quote, _, ROI author))) = addQ quote author
-quoteComm (WErr (Right (_, id))) = showQ (fromIntegral id)
+quoteComm (WErr (Left (_, Qu qu, _, ROI author))) = addQ qu author
+quoteComm (WErr (Right (_, qId))) = showQ (fromIntegral qId)
 
 -- | @addQuote@, which looks for a message of the form
 -- @!quote add "quoted text" - author@, and then stores said quote in the
 -- database, returning the ID used.
 addQ :: String -> String -> Message -> DatabaseDiscord ()
-addQ quote author m = do
-  added <- insert $ Quote quote author
+addQ qu author m = do
+  added <- insert $ Quote qu author
   let res = pack $ show $ fromSqlKey added
   sendMessageVoid m ("Quote added as #" `append` res)
 
 -- | @showQuote@, which looks for a message of the form @!quote show n@, looks
 -- that quote up in the database and responds with that quote.
 showQ :: Int64 -> Message -> DatabaseDiscord ()
-showQ id m = do
-  qu <- get $ toSqlKey id
+showQ qId m = do
+  qu <- get $ toSqlKey qId
   case qu of
     Just (Quote txt author) ->
       sendMessageVoid m $ pack $ txt ++ " - " ++ author

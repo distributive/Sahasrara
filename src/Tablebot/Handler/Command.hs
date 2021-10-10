@@ -16,7 +16,7 @@ module Tablebot.Handler.Command
   )
 where
 
-import Data.Text (Text, pack, stripPrefix, unpack)
+import Data.Text (Text, pack)
 import Discord.Types (Message (messageText))
 import Tablebot.Plugin
 import Tablebot.Plugin.Discord (sendMessageVoid)
@@ -37,10 +37,10 @@ parseCommands cs m prefix = case parse (parser cs) "" (messageText m) of
   Left e -> sendMessageVoid m . pack $ "```\n" ++ errorBundlePretty e ++ "```"
   where
     parser :: [Command] -> Parser (Message -> DatabaseDiscord ())
-    parser cs =
+    parser cs' =
       do
-        chunk prefix
-        choice (map toErroringParser cs) <?> "No command with that name was found!"
+        _ <- chunk prefix
+        choice (map toErroringParser cs') <?> "No command with that name was found!"
         <|> pure (\_ -> pure ())
     toErroringParser :: Command -> Parser (Message -> DatabaseDiscord ())
     toErroringParser c = try (chunk $ name c) *> sp *> commandParser c
@@ -51,7 +51,7 @@ parseCommands cs m prefix = case parse (parser cs) "" (messageText m) of
 parseInlineCommands :: [InlineCommand] -> Message -> DatabaseDiscord ()
 parseInlineCommands cs m = case parse (parser cs) "" (messageText m) of
   Right p -> p m
-  Left e -> pure ()
+  Left _ -> pure ()
   where
     parser :: [InlineCommand] -> Parser (Message -> DatabaseDiscord ())
-    parser cs = choice $ map (try . inlineCommandParser) cs
+    parser cs' = choice $ map (try . inlineCommandParser) cs'

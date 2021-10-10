@@ -85,7 +85,7 @@ double = do
   digits <- some digit
   decimal <-
     ( do
-        char '.'
+        _ <- char '.'
         num <- some digit
         return $ '.' : num
       )

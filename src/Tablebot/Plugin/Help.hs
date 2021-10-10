@@ -27,7 +27,7 @@ handleHelp hp = parseHelpPage root
 
 parseHelpPage :: HelpPage -> Parser (Message -> DatabaseDiscord ())
 parseHelpPage hp = do
-  chunk (helpName hp)
+  _ <- chunk (helpName hp)
   skipSpace
   (try eof $> displayHelp hp) <|> choice (map parseHelpPage $ helpSubpages hp) <?> "Unknown Subcommand"
 
