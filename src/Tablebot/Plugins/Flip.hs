@@ -30,7 +30,6 @@ flip = Command "flip" flipcomm
       return $ \m -> do
         choice <- case length args of
           0 -> liftIO $ chooseOneWithDefault "" ["Heads", "Tails"]
-          1 -> pure "You only specified one item!"
           otherwise -> liftIO $ chooseOneWithDefault (head args) args
         sendMessageVoid m $ pack choice
 
