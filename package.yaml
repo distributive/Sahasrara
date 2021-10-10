@@ -37,7 +37,6 @@ dependencies:
 - aeson
 - bytestring
 - yaml
-- parsec
 - http-conduit
 - raw-strings-qq
 
