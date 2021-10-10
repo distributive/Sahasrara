@@ -20,7 +20,7 @@ import Data.Text (Text, pack)
 import Discord.Types (Message (messageText))
 import Tablebot.Plugin
 import Tablebot.Plugin.Discord (sendMessageVoid)
-import Tablebot.Plugin.Parser (sp)
+import Tablebot.Plugin.Parser (skipSpace1, sp)
 import Text.Megaparsec
 
 -- | Given a list of 'Command' @cs@, the 'Message' that triggered the event
@@ -43,7 +43,7 @@ parseCommands cs m prefix = case parse (parser cs) "" (messageText m) of
         choice (map toErroringParser cs') <?> "No command with that name was found!"
         <|> pure (\_ -> pure ())
     toErroringParser :: Command -> Parser (Message -> DatabaseDiscord ())
-    toErroringParser c = try (chunk $ name c) *> sp *> commandParser c
+    toErroringParser c = try (chunk $ name c) *> (skipSpace1 <|> eof) *> commandParser c
 
 -- | Given a list of 'InlineCommand' @cs@ and a message @m@, run each inline
 -- command's parser on the message text until one succeeds. Errors are not sent
