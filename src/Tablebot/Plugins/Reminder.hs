@@ -38,7 +38,7 @@ import Tablebot.Plugin
 import Tablebot.Plugin.Discord (getMessage, sendMessageVoid)
 import Tablebot.Plugin.Parser (number, quoted, space)
 import Text.Megaparsec
-import Text.RawString.QQ qualified as RS (r)
+import Text.RawString.QQ (r)
 
 -- Our Reminder table in the database. This is fairly standard for Persistent,
 -- however you should note the name of the migration made.
@@ -110,12 +110,12 @@ reminderCron = do
   now <- liftIO $ systemToUTCTime <$> getSystemTime
   liftIO $ putStrLn $ "running reminder cron at " ++ show now
   entitydue <- select $
-    from $ \r -> do
-      where_ (r ^. ReminderTime <=. val now)
-      return r
+    from $ \re -> do
+      where_ (re ^. ReminderTime <=. val now)
+      return re
   liftIO $ mapM_ (print . entityVal) entitydue
-  forM_ entitydue $ \r ->
-    let (Reminder cid mid _time content) = entityVal r
+  forM_ entitydue $ \re ->
+    let (Reminder cid mid _time content) = entityVal re
      in do
           res <- getMessage (Snowflake cid) (Snowflake mid)
           case res of
@@ -125,14 +125,14 @@ reminderCron = do
               sendMessageVoid mess $
                 pack $
                   "Reminder to <@" ++ show uid ++ ">! " ++ content
-              P.delete (entityKey r)
+              P.delete (entityKey re)
 
 reminderHelp :: HelpPage
 reminderHelp =
   HelpPage
     "remind"
     "ask the bot to remind you to do things in the future"
-    [RS.r|**Reminders**
+    [r|**Reminders**
 Send a reminder to yourself or others. Pick a date and time, and the tablebot will poke you to remember at your preordained moment.
 
 *Usage:* `remind "reminder" at <time>`|]
