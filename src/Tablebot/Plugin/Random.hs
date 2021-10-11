@@ -17,7 +17,7 @@ import Tablebot.Plugin.Error
 
 -- | @chooseOne@ chooses a single random element from a given list with uniform
 -- distribution.
-chooseOne :: [a] -> IO (Either RandomError a)
+chooseOne :: [a] -> IO (Either BotError a)
 -- chooseOne :: BotError err => [a] -> IO (Either err a)
 chooseOne [] = return $ Left $ RandomError "Cannot choose from empty list."
 chooseOne xs = Right . (xs !!) <$> randomRIO (0, length xs - 1 :: Int)
@@ -31,7 +31,7 @@ chooseOneWithDefault x xs = either (const x) id <$> (chooseOne xs)
 -- weighted distribution as defined by a given weighting function.
 -- The function works by zipping each element with its cumulative weight, then
 -- choosing a random element indexed by [0, totalWeight)
-chooseOneWeighted :: (a -> Int) -> [a] -> IO (Either RandomError a)
+chooseOneWeighted :: (a -> Int) -> [a] -> IO (Either BotError a)
 chooseOneWeighted _ [] = return $ Left $ RandomError "Cannot choose from empty list."
 chooseOneWeighted weight xs
   | any ((< 0) . weight) xs = return $ Left $ RandomError "Probability weightings cannot be negative."

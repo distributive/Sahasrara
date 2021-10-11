@@ -72,7 +72,7 @@ categories = do
     Left err -> []
     Right out -> classes out
 
-randomCategoryClass :: IO (Either RandomError CategoryClass)
+randomCategoryClass :: IO (Either BotError CategoryClass)
 randomCategoryClass = do
   cats <- categories
   chooseOneWeighted getWeight cats
@@ -81,7 +81,7 @@ randomCategoryClass = do
       Just x -> x
       Nothing -> length $ values c
 
-generateCategory :: Either RandomError CategoryClass -> IO (Either RandomError (String, String))
+generateCategory :: Either BotError CategoryClass -> IO (Either BotError (String, String))
 generateCategory (Left err) = return $ Left err
 generateCategory (Right catClass) = do
   choice <- chooseOne $ values catClass
