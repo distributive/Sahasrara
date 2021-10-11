@@ -139,11 +139,12 @@ data HelpPage = HelpPage
 -- -- Moderator: The user must be a moderator
 -- -- Both: The user must be both an exec and a moderator
 -- -- Superuser: The user must be a superuser
-data UserPermission = UserPerm {
-  permExec :: Bool,
-  permModerator :: Bool,
-  permSuperuser :: Bool
-} deriving (Show, Eq)
+data UserPermission = UserPerm
+  { permExec :: Bool,
+    permModerator :: Bool,
+    permSuperuser :: Bool
+  }
+  deriving (Show, Eq)
 
 data RequiredPermission = None | Any | Exec | Moderator | Both | Superuser deriving (Show, Eq)
 

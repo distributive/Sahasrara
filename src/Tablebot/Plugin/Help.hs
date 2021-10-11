@@ -20,7 +20,7 @@ helpHelpPage = HelpPage "help" "show information about commands" "**Help**\nShow
 generateHelp :: Plugin -> Plugin
 generateHelp p =
   p
-    { commands = Command "help" (handleHelp (helpHelpPage:helpPages p)) : commands p
+    { commands = Command "help" (handleHelp (helpHelpPage : helpPages p)) : commands p
     }
 
 handleHelp :: [HelpPage] -> Parser (Message -> DatabaseDiscord ())

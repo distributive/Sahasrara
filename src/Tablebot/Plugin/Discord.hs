@@ -21,8 +21,8 @@ where
 
 import Control.Monad (void)
 import Control.Monad.Trans.Class (MonadTrans (lift))
-import Data.Text
 import Data.Maybe (fromJust)
+import Data.Text
 import Discord (RestCallErrorCode, restCall)
 import qualified Discord.Requests as R
 import Discord.Types
