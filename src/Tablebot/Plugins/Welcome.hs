@@ -19,7 +19,7 @@ import Data.Yaml.Internal (ParseException)
 import GHC.Generics (Generic)
 import Tablebot.Plugin
 import Tablebot.Plugin.Discord (sendMessage)
-import Tablebot.Plugin.Parser (noArguments)
+import Tablebot.Plugin.SmartCommand
 import Tablebot.Util.Error
 import Tablebot.Util.Random (chooseOne, chooseOneWeighted)
 import Text.Printf
@@ -30,7 +30,7 @@ favourite :: Command
 favourite =
   Command
     "favourite"
-    ( noArguments $ \m -> do
+    ( parseComm $ \m -> do
         cat <- liftIO $ generateCategory =<< randomCategoryClass
         let formatted = either id id $ (\(i, c) -> i ++ " is your favourite:\n> " ++ c ++ "?") <$> cat
         _ <- sendMessage m $ pack $ formatted

@@ -39,6 +39,7 @@ dependencies:
 - yaml
 - http-conduit
 - raw-strings-qq
+- template-haskell
 
 library:
   source-dirs: src
