@@ -1,0 +1,164 @@
+classes:
+  - name: GENERIC
+    values:
+      - instrument
+      - movie
+      - book
+      - song
+      - game
+      - piece of music
+      - colour
+  - name: MISC
+    values:
+      - typo
+      - punctuation mark
+      - era of history
+      - paradox
+      - unit of measurement
+      - spacecraft
+      - meme
+      - Minecraft block
+      - month
+      - holiday
+      - letter of the alphabet
+      - kind of fruit
+      - language
+      - continent
+      - cardinal direction
+      - planet
+      - piece of cutlery
+      - utensil
+      - ancient, modern, or natural wonder of the world
+      - font
+      - constellation
+      - type of maze
+      - Olympic sport
+      - word beginning and ending with the same letter
+      - animated character
+      - shape
+      - fact
+      - kind of weather
+  - name: PEOPLE
+    weight: 1
+    interrogative: Who
+    values:
+      - actor
+      - artist
+      - author
+  - name: BREED
+    weight: 1
+    template: "breed of %s"
+    values:
+      - cat
+      - dog
+      - horse
+  - name: DRINK
+    weight: 1
+    values:
+      - drink
+      - hot drink
+      - cold drink
+  - name: MEDIUM
+    weight: 1
+    template: "genre of %s"
+    values:
+      - music
+      - film
+      - movie
+      - TV show
+      - game
+  - name: GAME_TYPE
+    weight: 1
+    template: "%s game"
+    values:
+      - video
+      - board
+      - card
+  - name: FOODSTUFF
+    weight: 1
+    template: "flavour of %s"
+    values:
+      - smoothie
+      - milkshake
+      - ice cream
+      - jam
+      - crisps
+  - name: FILLING
+    weight: 1
+    template: "%s filling"
+    values:
+      - burrito
+      - pancake
+      - strudel
+      - pie
+  - name: ANIMAL_CLASS
+    weight: 1
+    template: "species of %s"
+    values:
+      - mammal
+      - reptile
+      - amphibian
+      - fish
+      - bird
+      - lizard
+      - gastropod
+  - name: PLANT_TYPE
+    weight: 1
+    template: "kind of %s"
+    values:
+      - flower
+      - tree
+      - mushroom
+      - deciduous tree
+      - evergreen tree
+      - forest
+  - name: MYTHOLOGY
+    weight: 1
+    template: "%s god"
+    values:
+      - Greek
+      - Egyptian
+      - Roman
+      - Aztec
+  - name: FURNITURE
+    weight: 1
+    template: "type of %s"
+    values:
+      - furniture
+      - chair
+      - sofa
+      - bed
+  - name: NUMBER
+    weight: 1
+    values:
+      - number
+      - positive number
+      - negative number
+      - fraction
+      - non-zero number
+      - big number
+  - name: BUILDING
+    weight: 1
+    values:
+      - building
+      - ancient building
+      - modern building
+      - building with a spire
+  - name: SPEECH
+    weight: 1
+    template: "thing to %s"
+    values:
+      - shout
+      - whisper
+  - name: CHEMICAL
+    weight: 1
+    values:
+      - metal alloy
+      - classical element
+      - chemical element
+      - ore
+  - name: CLOTHING
+    weight: 1
+    values:
+      - hat
+      - shirt
