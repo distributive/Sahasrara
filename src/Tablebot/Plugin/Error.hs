@@ -8,7 +8,12 @@
 -- Portability : POSIX
 --
 -- A plugin for error handling.
-module Tablebot.Plugin.Error where
+module Tablebot.Plugin.Error
+  ( BotError (..),
+    showError,
+    showUserError,
+  )
+where
 
 -- | @BotError@ is the type for errors caught in TableBot.
 -- Declare new errors here, and define them at the bottom of the file.
