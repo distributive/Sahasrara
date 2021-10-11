@@ -11,7 +11,7 @@
 module Tablebot.Plugin.Error where
 
 -- | @BotError@ is the type for errors caught in TableBot.
--- Define new errors here, and define them at the bottom of the file.
+-- Declare new errors here, and define them at the bottom of the file.
 data BotError
   = UnnamedError String String
   | IndexOutOfBoundsError Int (Int, Int)
@@ -51,8 +51,8 @@ showUserError e = formatUserError (errorName e) (errorMsg e)
 -- | @errorInfo@ takes a BotError and converts it into an ErrorInfo struct.
 errorInfo :: BotError -> ErrorInfo
 
--- | Add new errors here. Do not modify anything above this line except to add
--- new errors to the definition of BotError.
+-- | Add new errors here. Do not modify anything above this line except to
+-- declare new errors in the definition of BotError.
 errorInfo (UnnamedError name msg) = ErrorInfo name msg
 errorInfo (IndexOutOfBoundsError index (a, b)) =
   ErrorInfo
