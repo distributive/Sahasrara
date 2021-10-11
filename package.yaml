@@ -39,6 +39,10 @@ dependencies:
 - yaml
 - http-conduit
 - raw-strings-qq
+- bytestring
+- req
+- http-client
+- data-default
 
 library:
   source-dirs: src

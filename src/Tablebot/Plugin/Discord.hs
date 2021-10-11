@@ -12,6 +12,8 @@
 module Tablebot.Plugin.Discord
   ( sendMessage,
     sendMessageVoid,
+    sendEmbedMessage,
+    sendColouredEmbedMessage,
     reactToMessage,
     getMessage,
     Message,
@@ -24,6 +26,7 @@ import Data.Text
 import Discord (RestCallErrorCode, restCall)
 import qualified Discord.Requests as R
 import Discord.Types
+import Tablebot.Handler.Embed
 import Tablebot.Plugin (DatabaseDiscord)
 
 -- | @sendMessage@ sends the input message @t@ in the same channel as message
@@ -34,6 +37,30 @@ sendMessage ::
   Text ->
   DatabaseDiscord (Either RestCallErrorCode Message)
 sendMessage m t = lift . restCall $ R.CreateMessage (messageChannel m) t
+
+-- | @sendEmbedMessage@ sends the input message @t@ in the same channel as message
+-- @m@ with an additional CreateEmbed. This returns an @Either RestCallErrorCode Message@ to denote failure or
+-- return the 'Message' that was just sent.
+sendEmbedMessage ::
+  Message ->
+  CreateEmbed ->
+  Text ->
+  DatabaseDiscord (Either RestCallErrorCode Message)
+sendEmbedMessage m e t = lift . restCall $ R.CreateMessageEmbed (messageChannel m) t e
+
+-- | @sendColouredEmbedMessage@ sends the input message @t@ in the same channel as message
+-- @m@ with an additional full Embed. This returns an @Either RestCallErrorCode Message@ to denote failure or
+-- return the 'Message' that was just sent.
+-- This is *really* janky. The library exposes *no way* to create a coloured embed through its main api,
+-- so I'm having to manually reimplement the sending logic just to add this in.
+-- If you suffer from nightmares, don't look in 'Tablebot.Handler.Embed'. Nothing good lives there.
+-- In the future, I may actually submit a PR to discord-haskell with a fix to allow colours properly.
+sendColouredEmbedMessage ::
+  Message ->
+  Text ->
+  Embed ->
+  DatabaseDiscord (Either RestCallErrorCode Message)
+sendColouredEmbedMessage m t e = lift . restCall $ TablebotEmbedRequest (messageChannel m) t e
 
 -- | @sendMessageVoid@ does the same as @sendMessage@, except it does not
 -- return anything. Useful if you don't care whether a message successfully
