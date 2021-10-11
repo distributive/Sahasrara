@@ -1,4 +1,5 @@
 # tablebot
+
 [![CI](https://github.com/WarwickTabletop/tablebot/actions/workflows/main.yml/badge.svg)](https://github.com/WarwickTabletop/tablebot/actions/workflows/main.yml)
 
 An extendable Discord bot framework written on top of `discord-haskell`
@@ -26,9 +27,18 @@ Then you can run it on every file via
 
 You can see full documentation on the [Ormolu repo](https://github.com/tweag/ormolu#usage).
 
+## Good Practice Recommendations
+
+Here are some good practice tips for git and this project.
+
+* Whenever a new feature is being worked on, create a new branch on your forked repo
+* When a feature is ready to be merged into the bot, make a pull request from the feature branch to the main repo
+* Before making a pull request, make sure your branch is up to date with main (and that it compiles and complies with `ormolu`) so that it can be merged without hassle
+* Write comments! This project will be maintained by many people, and it can be difficult to work out what others' code does
+
 ## Setup from Scratch
 
-If at any point something doesn't work, restart your computer first and try again, and then ask Benji (or someone else) for guidance. This guide is for Windows, mostly, but parts can be retooled for other OS's.
+If at any point something doesn't work, restart your computer first and try again, and then ask Benji (or someone else) for guidance. Sections are marked depending on what OS they rely on, if any.
 
 1. git, wsl, and vscode setup
     1. github
@@ -36,19 +46,24 @@ If at any point something doesn't work, restart your computer first and try agai
         2. Go to <https://github.com/WarwickTabletop/tablebot>
         3. Click fork on the repo (should be top right) (this creates your own version of the repo)
         4. Take note of the url that your forked repo is on
-    2. wsl and git
+    2. wsl and git (Windows)
         1. Install wsl by going to <https://docs.microsoft.com/en-us/windows/wsl/install>, and make sure it's in the right click context menu of folders
         2. Navigate to an empty folder on your computer that you want to do your programming from (the project folder)
         3. Shift-right click in the project folder, and click "open linux shell here"
         4. Type `git clone <your repo url>` into the terminal
         5. The folder should be filled with a bunch of files and folders
-    3. vscode
+    3. terminal and git (Linux)
+        2. Navigate to an empty folder on your computer that you want to do your programming from (the project folder)
+        3. Shift-right click in the project folder and press "open in termainal"
+        4. Type `git clone <your repo url>` into the terminal
+        5. The folder should be filled with a bunch of files and folders
+    4. vscode
         1. Install vscode from <https://code.visualstudio.com/>
         2. Install this <https://marketplace.visualstudio.com/items?itemName=ms-vscode-remote.vscode-remote-extensionpack>
         3. From a terminal opened in the project folder, type `code .`
         4. There should soon be a window which has all the folders and files open on the left hand side
 2. Haskell setup
-    1. In any linux terminal window, type `curl -sSL https://get.haskellstack.org/ | sh`, allowing sudo access and providing passwords as needed
+    1. In any linux terminal window (wsl or the linux terminal itself), type `curl -sSL https://get.haskellstack.org/ | sh`, allowing sudo access and providing passwords as needed
     2. In the linux terminal window opened from the project folder (or the terminal open in the vscode window) run `stack build`, and then wait until it's done
     3. This will take a long time
     4. Make some tea, or maybe some coffee or hot chocolate
