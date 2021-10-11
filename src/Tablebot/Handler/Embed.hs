@@ -52,24 +52,20 @@ colourToInternal DiscordBlack = 16777215
 -- so I'm having to manually reimplement the sending logic just to add this in.
 -- If you suffer from nightmares, don't look in 'Tablebot.Handler.Embed'. Nothing good lives there.
 -- In the future, I may actually submit a PR to discord-haskell with a fix to allow colours properly.
-
 channels :: R.Url 'R.Https
 channels = baseUrl /: "channels"
 
 data TablebotEmbedRequest a where TablebotEmbedRequest :: ChannelId -> Text -> Embed -> TablebotEmbedRequest Message
 
-
 instance Request (TablebotEmbedRequest a) where
   jsonRequest = createEmbedJson
   majorRoute = embedMajorRoute
 
-
 embedMajorRoute :: TablebotEmbedRequest a -> String
 embedMajorRoute (TablebotEmbedRequest chan _ _) = "msg " <> show chan
-
 
 createEmbedJson :: TablebotEmbedRequest a -> JsonRequest
 createEmbedJson (TablebotEmbedRequest chan msg embed) =
   let partJson = partBS "payload_json" $ BL.toStrict $ encode $ toJSON $ object ["content" .= msg, "embed" .= embed]
       body = R.reqBodyMultipart [partJson]
-  in Post (channels // chan /: "messages") body mempty
+   in Post (channels // chan /: "messages") body mempty
