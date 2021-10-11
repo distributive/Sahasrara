@@ -32,7 +32,7 @@ At the end of the parser, we use `return` to give back the two numbers found - h
 
 Later on we'll be seeing how you can avoid writing these parsers altogether using _smart commands_. As such, we won't discuss writing parsers in more detail in this tutorial - if you're interested then there are a good number of tutorials about `megaparsec` and its parent `parsec` online.
 
-Our command parser requires us to return a function of type `Message -> DatabaseDiscord ()`. `Message` is a type provided by the library `discord-haskell`, which contains a variety of information about the message that the command was contained in. You can find all of the data within it documented (in the `discord-haskell` documentation)[https://hackage.haskell.org/package/discord-haskell-1.8.8/docs/Discord-Internal-Types-Channel.html#t:Message], but for now we will just be using the input `Message` with some of the helper functions defined in this library.
+Our command parser requires us to return a function of type `Message -> DatabaseDiscord ()`. `Message` is a type provided by the library `discord-haskell`, which contains a variety of information about the message that the command was contained in. You can find all of the data within it documented [in the `discord-haskell` documentation](https://hackage.haskell.org/package/discord-haskell-1.8.8/docs/Discord-Internal-Types-Channel.html#t:Message), but for now we will just be using the input `Message` with some of the helper functions defined in this library.
 
 Finally, `DatabaseDiscord ()` is the type of a _monadic action_ which provides us a few bits of functionality - namely Discord operations (such as sending messages), database operations and IO operations. We'll cover each of these as we build our more complex plugin. In general, you do not need to worry about the specifics of the underlying implementation (for those familiar with these kinds of libraries, `DatabaseDiscord` contains a stack of monads providing each bit of functionality) and instead stick with the library functions discussed in this tutorial.
 
@@ -159,7 +159,7 @@ pingPlugin :: Plugin
 pingPlugin = plug {commands = [ping'], migrations = [pingMigration]}
 ```
 
-With that in place, we now need commands that work with this database. We use `esquelito`, which allows us to write in an SQL-like language. Its (documentation)[https://hackage.haskell.org/package/esqueleto-3.5.3.0/docs/Database-Esqueleto.html] has a variety of great examples which you should investigate if you're going to perform database operations! For now, let's look at the implementation of this command. First, we attempt to get the existing user info.
+With that in place, we now need commands that work with this database. We use `esquelito`, which allows us to write in an SQL-like language. Its [documentation](https://hackage.haskell.org/package/esqueleto-3.5.3.0/docs/Database-Esqueleto.html) has a variety of great examples which you should investigate if you're going to perform database operations! For now, let's look at the implementation of this command. First, we attempt to get the existing user info.
 
 ```haskell
 ping'' = Command "ping" (parseComm pingDB)
