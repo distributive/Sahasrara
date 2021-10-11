@@ -62,7 +62,9 @@ pingPlugin = plug {commands = [ping]}
 ## Echo
 
 "But wait!" I hear you cry. "Echo isn't ping! You lied to us!"
+
 "Yeah fair enough, but at least this is kind of like ping and will teach you how to use smart commands." I respond, sleepily.
+
 "Touché."
 
 The echo command takes in a single argument (some text), which is repeated back to the user. Thrilling, I know. We could define this with a parser that takes all text up to the end of the line, but instead we are going to use _smart commands_. Smart commands allow you to define a command via a more complex function type, which a parser is automatically generated for. For example, if we define a command that takes in a `Text` argument, then it will consume the first word of the message that it sees (after the command invocation of `.echo`) and provide that as input to your function.
