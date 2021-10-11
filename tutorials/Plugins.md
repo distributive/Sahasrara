@@ -179,15 +179,18 @@ Note that the table we are selecting from is inferred by use of `^. PingCountRem
 This query will either get us a single record in a list, or the empty list. We use this information to create the record we would like to be present in the database - either a new record if this record was not present, or a record with incremented count otherwise. We finally then use `repsert`, which replaces or inserts the given data.
 
 ```haskell
+              ...
               let record' = case user of
                   [] -> PingCount uid 1
                   (x : _) -> (\(PingCount uid' count) -> PingCount uid' (count+1)) $ entityVal x
               repsert uid record'
+              ...
 ```
 
 Finally, we need to provide functionality for reporting this information back to the user, which is a game of reading the record we just wrote to the database.
 
 ```haskell
+              ...
               sendMessageVoid m (show $ count record')
 ```
 
