@@ -5,9 +5,9 @@ An extendable Discord bot framework written on top of `discord-haskell`
 
 ## Setup from Scratch
 
-If at any point something doesn't work, restart your computer first and try again, and then ask Benji (or someone else) for guidance.
+If at any point something doesn't work, restart your computer first and try again, and then ask Benji (or someone else) for guidance. This guide is for Windows, mostly, but parts can be retooled for other OS's.
 
-1. git, wsl, and vscode
+1. git, wsl, and vscode setup
     1. github
         1. Create a GitHub account
         2. Go to <https://github.com/WarwickTabletop/tablebot>
@@ -24,27 +24,27 @@ If at any point something doesn't work, restart your computer first and try agai
         2. Install this <https://marketplace.visualstudio.com/items?itemName=ms-vscode-remote.vscode-remote-extensionpack>
         3. From a terminal opened in the project folder, type `code .`
         4. There should soon be a window which has all the folders and files open on the left hand side
-2. haskell beginnings
-    1. in any linux terminal window, type `curl -sSL https://get.haskellstack.org/ | sh`, allowing sudo access and providing passwords as needed
-    2. in the linux terminal window which was opened from the project folder (or the terminal that is open in the vscode window) run `stack build`, and then wait until it's done
-    3. this will take a long time
-    4. make some tea, or maybe some coffee or hot chocolate
-    5. if it didn't work, reopen all terminal windows and try again. if that doesn't work, restart your computer and try again
-    6. install this <https://marketplace.visualstudio.com/items?itemName=haskell.haskell>
-    7. open a file and marvel at the colours, and the fact you can hover over things and see values and stuff
-3. discord
-    1. create a file in the top level of the project folder called `.env`, based on the template in `.env.example`
-    2. follow the instructions in <https://github.com/WarwickTabletop/tablebot#readme> to fill in the `.env`. make sure to get a `DISCORD_TOKEN` and a `SQLITE_FILENAME` (which can be named anything, but use something like `database.db`)
-    3. to run the bot, type `stack run` into the terminal, and the bot will start to run
-    4. make sure to invite the bot to a server so you can test it out!
+2. Haskell setup
+    1. In any linux terminal window, type `curl -sSL https://get.haskellstack.org/ | sh`, allowing sudo access and providing passwords as needed
+    2. In the linux terminal window opened from the project folder (or the terminal open in the vscode window) run `stack build`, and then wait until it's done
+    3. This will take a long time
+    4. Make some tea, or maybe some coffee or hot chocolate
+    5. If it didn't work, reopen all terminal windows and try again. if that doesn't work, restart your computer and try again
+    6. Install this <https://marketplace.visualstudio.com/items?itemName=haskell.haskell>
+    7. Open a file and marvel at the colours, and the fact you can hover over things and see values and stuff
+3. Discord and Environment variables
+    1. Create a file in the top level of the project folder called `.env`, based on the template in `.env.example`
+    2. Follow the instructions in [Environment File Setup](#environment-file-setup) to fill in the `.env`. Make sure to get a `DISCORD_TOKEN` and a `SQLITE_FILENAME` (which can be named anything, but use something like `database.db`)
+    3. To run the bot, type `stack run` into the terminal, and the bot will start to run
+    4. Make sure to invite the bot to a server so you can test it out!
 
-congratulations, you now know the very basics needed to set up your own tablebot!
+Congratulations, you now know the very basics needed to set up your own tablebot!
 
 To learn more about git, you should look up a tutorial or look at this video: <https://youtu.be/HOIC804Berc>
 
 
 
-## Environment file setup
+### Environment file setup
 
 Create a `.env` file containing the following keys. Consult `.env.example` if you're unsure how this should be formatted!
 
