@@ -150,3 +150,8 @@ newtype RestOfInput a = ROI a
 
 instance FromString a => CanParse (RestOfInput a) where
   pars = ROI . fromString <$> untilEnd
+
+-- | @noArguments@ is a type-specific alias for @parseComm@ for commands that
+-- have no arguments (thus making it extremely clear).
+noArguments :: (Message -> DatabaseDiscord ()) -> Parser (Message -> DatabaseDiscord ())
+noArguments = parseComm
