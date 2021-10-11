@@ -219,7 +219,7 @@ combinePlugins (p : ps) =
           helpPages = merge helpPages p p'
         }
   where
-    merge f p p' = f p +++ f p'
+    merge f q q' = f q +++ f q'
     -- We expect empty list to be very common in this process, so we add
     -- the special case where the second element is empty. This is
     -- because plugins are unlikely to define every possible kind of
