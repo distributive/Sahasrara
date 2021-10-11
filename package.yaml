@@ -30,11 +30,14 @@ dependencies:
 - persistent
 - persistent-sqlite
 - persistent-template
+- random
 - esqueleto
 - monad-logger
 - time
-- http-conduit
 - aeson
+- bytestring
+- yaml
+- http-conduit
 - raw-strings-qq
 
 library:

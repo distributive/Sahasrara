@@ -21,6 +21,9 @@ import Text.Megaparsec
 space :: Parser ()
 space = satisfy isSpace $> ()
 
+notSpace :: Parser Char
+notSpace = satisfy $ not . isSpace
+
 digit :: Parser Char
 digit = satisfy isDigit
 
@@ -30,6 +33,10 @@ letter = satisfy isLetter
 -- | @skipSpace@ is a parser that skips many space characters.
 skipSpace :: Parser ()
 skipSpace = skipMany space
+
+-- | @skipSpace1@ is a parser that skips at least one space character.
+skipSpace1 :: Parser ()
+skipSpace1 = skipSome space
 
 -- | @noArguments@ is a parser that only accepts space characters followed by
 -- an end-of-file character, and then runs the input function @f@. Useful for
@@ -56,13 +63,22 @@ quoted = quotedWith '"' <|> quotedWith '\''
 word :: Parser String
 word = some letter
 
+-- | @nonSpaceWord@ parses a single word of any non-space characters.
+nonSpaceWord :: Parser String
+nonSpaceWord = some notSpace
+
 -- | @number@ parses any whole, non-negative number.
 number :: Parser Int
 number = read <$> some digit
 
 -- | @untilEnd@ gets all of the characters up to the end of the input.
 untilEnd :: Parser String
-untilEnd = do
+untilEnd = manyTill anySingle eof
+
+-- | @untilEnd1@ gets all of the characters up to the end of the input,
+-- requiring there to be at least one.
+untilEnd1 :: Parser String
+untilEnd1 = do
   c <- anySingle
   cs <- manyTill anySingle eof
   return (c : cs)

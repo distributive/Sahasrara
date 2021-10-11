@@ -18,15 +18,21 @@ where
 import Tablebot.Plugin (Plugin)
 import Tablebot.Plugins.Basic (basicPlugin)
 import Tablebot.Plugins.Cats (catPlugin)
+import Tablebot.Plugins.Flip (flipPlugin)
 import Tablebot.Plugins.Ping (pingPlugin)
 import Tablebot.Plugins.Quote (quotePlugin)
 import Tablebot.Plugins.Reminder (reminderPlugin)
+import Tablebot.Plugins.Say (sayPlugin)
+import Tablebot.Plugins.Welcome (welcomePlugin)
 
 plugins :: [Plugin]
 plugins =
   [ pingPlugin,
+    basicPlugin,
+    catPlugin,
+    flipPlugin,
     quotePlugin,
     reminderPlugin,
-    basicPlugin,
-    catPlugin
+    sayPlugin,
+    welcomePlugin
   ]

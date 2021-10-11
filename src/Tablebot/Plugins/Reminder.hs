@@ -1,5 +1,4 @@
 {-# LANGUAGE ImportQualifiedPost #-}
-{-# LANGUAGE QuasiQuotes #-}
 
 -- |
 -- Module      : Tablebot.Plugins.Quote
