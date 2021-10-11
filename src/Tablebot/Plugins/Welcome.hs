@@ -18,10 +18,10 @@ import Data.Yaml (decodeFileEither)
 import Data.Yaml.Internal (ParseException)
 import GHC.Generics (Generic)
 import Tablebot.Plugin
-import Tablebot.Plugin.Discord (sendMessage)
+import Tablebot.Plugin.Discord (sendMessageVoid)
 import Tablebot.Plugin.Error
 import Tablebot.Plugin.Parser (noArguments)
-import Tablebot.Util.Random (chooseOne, chooseOneWeighted)
+import Tablebot.Plugin.Random (chooseOne, chooseOneWeighted)
 import Text.Printf
 import Text.RawString.QQ
 
@@ -32,9 +32,8 @@ favourite =
     "favourite"
     ( noArguments $ \m -> do
         cat <- liftIO $ generateCategory =<< randomCategoryClass
-        let formatted = either id id $ (\(i, c) -> i ++ " is your favourite:\n> " ++ c ++ "?") <$> cat
-        _ <- sendMessage m $ pack $ formatted
-        return ()
+        let formatted = either showUserError id $ (\(i, c) -> i ++ " is your favourite:\n> " ++ c ++ "?") <$> cat
+        sendMessageVoid m $ pack $ formatted
     )
 
 favouriteHelp :: HelpPage
@@ -73,7 +72,7 @@ categories = do
     Left err -> []
     Right out -> classes out
 
-randomCategoryClass :: IO (Either Error CategoryClass)
+randomCategoryClass :: IO (Either RandomError CategoryClass)
 randomCategoryClass = do
   cats <- categories
   chooseOneWeighted getWeight cats
@@ -82,7 +81,7 @@ randomCategoryClass = do
       Just x -> x
       Nothing -> length $ values c
 
-generateCategory :: Either Error CategoryClass -> IO (Either Error (String, String))
+generateCategory :: Either RandomError CategoryClass -> IO (Either RandomError (String, String))
 generateCategory (Left err) = return $ Left err
 generateCategory (Right catClass) = do
   choice <- chooseOne $ values catClass

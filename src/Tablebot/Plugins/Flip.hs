@@ -15,7 +15,7 @@ import Data.Text (Text, pack)
 import Tablebot.Plugin
 import Tablebot.Plugin.Discord (Message, sendMessageVoid)
 import Tablebot.Plugin.Parser
-import Tablebot.Util.Random
+import Tablebot.Plugin.Random
 import Text.Megaparsec
 import Text.RawString.QQ
 import Prelude hiding (flip)

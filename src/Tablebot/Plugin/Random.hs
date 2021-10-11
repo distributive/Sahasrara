@@ -8,7 +8,7 @@
 -- Portability : POSIX
 --
 -- A collection of utility functions for generating randomness.
-module Tablebot.Util.Random (chooseOne, chooseOneWithDefault, chooseOneWeighted, chooseOneWeightedWithDefault) where
+module Tablebot.Plugin.Random (chooseOne, chooseOneWithDefault, chooseOneWeighted, chooseOneWeightedWithDefault) where
 
 import Data.List
 import Data.Maybe
@@ -17,8 +17,9 @@ import Tablebot.Plugin.Error
 
 -- | @chooseOne@ chooses a single random element from a given list with uniform
 -- distribution.
-chooseOne :: [a] -> IO (Either Error a)
-chooseOne [] = return $ Left "Cannot choose from empty list."
+chooseOne :: [a] -> IO (Either RandomError a)
+-- chooseOne :: BotError err => [a] -> IO (Either err a)
+chooseOne [] = return $ Left $ RandomError "Cannot choose from empty list."
 chooseOne xs = Right . (xs !!) <$> randomRIO (0, length xs - 1 :: Int)
 
 -- | @chooseOneWithDefault@ chooses a single random element from a given list
@@ -30,11 +31,11 @@ chooseOneWithDefault x xs = either (const x) id <$> (chooseOne xs)
 -- weighted distribution as defined by a given weighting function.
 -- The function works by zipping each element with its cumulative weight, then
 -- choosing a random element indexed by [0, totalWeight)
-chooseOneWeighted :: (a -> Int) -> [a] -> IO (Either Error a)
-chooseOneWeighted _ [] = return $ Left "Cannot choose from empty list."
+chooseOneWeighted :: (a -> Int) -> [a] -> IO (Either RandomError a)
+chooseOneWeighted _ [] = return $ Left $ RandomError "Cannot choose from empty list."
 chooseOneWeighted weight xs
-  | any ((< 0) . weight) xs = return $ Left "Probability weightings cannot be negative."
-  | all ((== 0) . weight) xs = return $ Left "At least one weighting must be positive."
+  | any ((< 0) . weight) xs = return $ Left $ RandomError "Probability weightings cannot be negative."
+  | all ((== 0) . weight) xs = return $ Left $ RandomError "At least one weighting must be positive."
   | otherwise =
     Right . fst . fromJust
       . (\i -> find ((> i) . snd) (zip xs' $ scanl1 (+) $ weight <$> xs'))
