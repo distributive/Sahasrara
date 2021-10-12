@@ -80,8 +80,8 @@ showQ qId m = do
       sendMessageVoid m $ pack $ txt ++ " - " ++ author
     Nothing -> sendMessageVoid m "Couldn't get that quote!"
 
--- | @randomQuote@, which looks for a message of the form @!quote show n@, looks
--- that quote up in the database and responds with that quote.
+-- | @randomQuote@, which looks for a message of the form @!quote random@,
+-- selects a quote from the database and responds with that quote.
 randomQ :: Message -> DatabaseDiscord ()
 randomQ m = do
   num <- count allQuotes
@@ -106,9 +106,9 @@ addQ qu author m = do
   let res = pack $ show $ fromSqlKey added
   sendMessageVoid m ("Quote added as #" `append` res)
 
--- | @addQuote@, which looks for a message of the form
--- @!quote add "quoted text" - author@, and then stores said quote in the
--- database, returning the ID used.
+-- | @editQuote@, which looks for a message of the form
+-- @!quote edit n "quoted text" - author@, and then updates quote with id n in the
+-- database, to match the provided quote.
 editQ :: Int64 -> String -> String -> Message -> DatabaseDiscord ()
 editQ qId qu author m =
   requirePermission Any m $
