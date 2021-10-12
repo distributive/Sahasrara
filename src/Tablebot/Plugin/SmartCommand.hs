@@ -124,6 +124,19 @@ instance (CanParse a, CanParse b, CanParse c, CanParse d) => CanParse (a, b, c, 
     w <- pars @d
     return (x, y, z, w)
 
+instance (CanParse a, CanParse b, CanParse c, CanParse d, CanParse e) => CanParse (a, b, c, d, e) where
+  pars = do
+    x <- pars @a
+    space
+    y <- pars @b
+    space
+    z <- pars @c
+    space
+    w <- pars @d
+    space
+    v <- pars @e
+    return (x, y, z, w, v)
+
 -- | @Exactly s@ defines an input exactly matching @s@ and nothing else.
 data Exactly (s :: Symbol) = Ex
 
