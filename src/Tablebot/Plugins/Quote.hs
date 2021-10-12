@@ -104,7 +104,7 @@ Requires moderation permission
 
 *Usage:* `quote delete <id>`|]
     []
-    Superuser
+    Any
 
 addQuoteHelp :: HelpPage
 addQuoteHelp = HelpPage "add" "add a new quote" "**Add Quote**\nAdds a quote\n\n*Usage:* `quote add \"quote\" - author`" [] None
