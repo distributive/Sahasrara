@@ -16,14 +16,18 @@ where
 
 import Control.Monad (void)
 import Control.Monad.IO.Class (liftIO)
-import Data.Text (append, pack)
+import Data.Text (append, pack, unpack)
+import Data.Time.Clock.System (getSystemTime, systemToUTCTime)
 import Database.Persist
 import Database.Persist.Sqlite
 import Database.Persist.TH
+import Discord.Internal.Types.Events (ReactionInfo (reactionChannelId, reactionEmoji, reactionMessageId, reactionUserId))
+import Discord.Types (Emoji (emojiName), Message (messageAuthor, messageChannel, messageId, messageText), UTCTime, messageGuild)
 import GHC.Int (Int64)
 import System.Random (randomRIO)
 import Tablebot.Plugin
-import Tablebot.Plugin.Discord (Message, sendMessageVoid)
+import Tablebot.Plugin.Discord (getMessage, getMessageLink, getPrecedingMessage, getReplyMessage, sendColouredEmbedMessage, sendMessageVoid, toMentionStr)
+import Tablebot.Plugin.Embed
 import Tablebot.Plugin.Permission (requirePermission)
 import Tablebot.Plugin.SmartCommand
 import Text.RawString.QQ
@@ -36,8 +40,26 @@ share
 Quote
     quote String
     author String
+    msgId Int Maybe
+    cnlId Int Maybe
+    time UTCTime
     deriving Show
 |]
+
+-- | @quoteReactionAdd@ creates an event for when a reaction is added to a message.
+-- If the reaction is :speech_balloon:, the message is added as a quote
+quoteReactionAdd :: ReactionAdd
+quoteReactionAdd = ReactionAdd qra
+  where
+    qra ri
+      | emojiName (reactionEmoji ri) == "💬" = do
+        m <- m'
+        case m of
+          Left _ -> pure ()
+          Right mes -> addMessageQuote mes mes
+      | otherwise = return ()
+      where
+        m' = getMessage (reactionChannelId ri) (reactionMessageId ri)
 
 -- | Our quote command, which combines @addQuote@ and @showQuote@.
 quote :: Command
@@ -51,21 +73,32 @@ quoteComm ::
     "Unknown quote functionality."
     ( Either
         ( Either
-            (Exactly "add", Quoted String, Exactly "-", RestOfInput String)
-            (Exactly "edit", Int, Quoted String, Exactly "-", RestOfInput String)
+            ( Either
+                (Exactly "add", Quoted String, Exactly "-", RestOfInput String)
+                (Exactly "edit", Int, Quoted String, Exactly "-", RestOfInput String)
+            )
+            ( Either
+                (Exactly "this")
+                (Exactly "user", RestOfInput String)
+            )
         )
         ( Either
             ( Either
                 (Exactly "show", Int)
                 (Exactly "delete", Int)
             )
-            (Exactly "random")
+            ( Either
+                (Exactly "random")
+                ()
+            )
         )
     ) ->
   Message ->
   DatabaseDiscord ()
-quoteComm (WErr (Left (Left (_, Qu qu, _, ROI author)))) = addQ qu author
-quoteComm (WErr (Left (Right (_, qId, Qu qu, _, ROI author)))) = editQ (fromIntegral qId) qu author
+quoteComm (WErr (Left (Left (Left (_, Qu qu, _, ROI author))))) = addQ qu author
+quoteComm (WErr (Left (Left (Right (_, qId, Qu qu, _, ROI author))))) = editQ (fromIntegral qId) qu author
+quoteComm (WErr (Left (Right (Left (_))))) = thisQ
+quoteComm (WErr (Left (Right (Right (_, ROI author))))) = authorQ author
 quoteComm (WErr (Right (Left (Left (_, qId))))) = showQ (fromIntegral qId)
 quoteComm (WErr (Right (Left (Right (_, qId))))) = deleteQ (fromIntegral qId)
 quoteComm (WErr (Right (Right (_)))) = randomQ
@@ -76,35 +109,83 @@ showQ :: Int64 -> Message -> DatabaseDiscord ()
 showQ qId m = do
   qu <- get $ toSqlKey qId
   case qu of
-    Just (Quote txt author) ->
-      sendMessageVoid m $ pack $ txt ++ " - " ++ author
+    Just q -> renderQuoteMessage q qId m
     Nothing -> sendMessageVoid m "Couldn't get that quote!"
 
 -- | @randomQuote@, which looks for a message of the form @!quote random@,
--- selects a quote from the database and responds with that quote.
+-- selects a random quote from the database and responds with that quote.
 randomQ :: Message -> DatabaseDiscord ()
 randomQ m = do
   num <- count allQuotes
-  rindex <- liftIO $ randomRIO (0, (num - 1))
-  key <- selectKeysList allQuotes [OffsetBy rindex, LimitTo 1]
-  qu <- get $ head key
-  case qu of
-    Just (Quote txt author) ->
-      sendMessageVoid m $ pack $ txt ++ " - " ++ author
-    Nothing -> sendMessageVoid m "Couldn't find any quotes!"
-  return ()
+  if num == 0
+    then sendMessageVoid m "Couldn't find any quotes!"
+    else do
+      rindex <- liftIO $ randomRIO (0, (num - 1))
+      key <- selectKeysList allQuotes [OffsetBy rindex, LimitTo 1]
+      qu <- get $ head key
+      case qu of
+        Just q -> renderQuoteMessage q (fromSqlKey $ head key) m
+        Nothing -> sendMessageVoid m "Couldn't find any quotes!"
+      return ()
   where
     allQuotes :: [Filter Quote]
     allQuotes = []
+
+-- | @authorQuote@, which looks for a message of the form @!quote user u@,
+-- selects a random quote from the database attributed to u and responds with that quote.
+-- This is currently mis-documented in the help pages as its not quite working (the author matching is way to strict)
+authorQ :: String -> Message -> DatabaseDiscord ()
+authorQ t m = do
+  num <- count userQuotes
+  if num == 0
+    then sendMessageVoid m "Couldn't find any quotes matching that user!"
+    else do
+      rindex <- liftIO $ randomRIO (0, (num - 1))
+      key <- selectKeysList userQuotes [OffsetBy rindex, LimitTo 1]
+      qu <- get $ head key
+      case qu of
+        Just q -> renderQuoteMessage q (fromSqlKey $ head key) m
+        Nothing -> sendMessageVoid m "Couldn't find any quotes matching that user!"
+      return ()
+  where
+    userQuotes :: [Filter Quote]
+    userQuotes = [QuoteAuthor ==. t]
 
 -- | @addQuote@, which looks for a message of the form
 -- @!quote add "quoted text" - author@, and then stores said quote in the
 -- database, returning the ID used.
 addQ :: String -> String -> Message -> DatabaseDiscord ()
 addQ qu author m = do
-  added <- insert $ Quote qu author
+  now <- liftIO $ systemToUTCTime <$> getSystemTime
+  added <- insert $ Quote qu author (Just $ fromIntegral $ messageId m) (Just $ fromIntegral $ messageChannel m) now
   let res = pack $ show $ fromSqlKey added
   sendMessageVoid m ("Quote added as #" `append` res)
+
+-- | @thisQuote@, which takes the replied message or the
+-- previous message and stores said message as a quote in the database,
+-- returning the ID used.
+thisQ :: Message -> DatabaseDiscord ()
+thisQ m = do
+  q <- getReplyMessage m
+  case q of
+    (Just q') -> addMessageQuote q' m
+    Nothing -> do
+      q2 <- getPrecedingMessage m
+      case q2 of
+        (Just q') -> addMessageQuote q' m
+        Nothing -> sendMessageVoid m "Unable to add quote"
+
+-- | @addMessageQuote@, adds a message as a quote to the database, checking that it passes the relevant tests
+addMessageQuote :: Message -> Message -> DatabaseDiscord ()
+addMessageQuote q' m = do
+  num <- count [QuoteMsgId ==. Just (fromIntegral $ messageId q')]
+  if num == 0
+    then do
+      now <- liftIO $ systemToUTCTime <$> getSystemTime
+      added <- insert $ Quote (unpack $ messageText q') (toMentionStr $ messageAuthor q') (Just $ fromIntegral $ messageId q') (Just $ fromIntegral $ messageChannel q') now
+      let res = pack $ show $ fromSqlKey added
+      sendMessageVoid m ("Quote added as #" `append` res)
+    else sendMessageVoid m "Message already quoted"
 
 -- | @editQuote@, which looks for a message of the form
 -- @!quote edit n "quoted text" - author@, and then updates quote with id n in the
@@ -116,8 +197,9 @@ editQ qId qu author m =
      in do
           oQu <- get k
           case oQu of
-            Just (Quote _ _) -> do
-              replace k $ Quote qu author
+            Just (Quote _ _ _ _ _) -> do
+              now <- liftIO $ systemToUTCTime <$> getSystemTime
+              replace k $ Quote qu author (Just $ fromIntegral $ messageId m) (Just $ fromIntegral $ messageChannel m) now
               sendMessageVoid m "Quote updated"
             Nothing -> sendMessageVoid m "Couldn't update that quote!"
 
@@ -130,13 +212,38 @@ deleteQ qId m =
      in do
           qu <- get k
           case qu of
-            Just (Quote _ _) -> do
+            Just (Quote _ _ _ _ _) -> do
               delete k
               sendMessageVoid m "Quote deleted"
             Nothing -> sendMessageVoid m "Couldn't delete that quote!"
 
+renderQuoteMessage :: Quote -> Int64 -> Message -> DatabaseDiscord ()
+renderQuoteMessage (Quote txt author msgId cnlId dtm) qId m =
+  void $ sendColouredEmbedMessage m "" (addColour Blue $ addTimestamp dtm $ addFooter (pack $ "Quote #" ++ show qId) $ simpleEmbed ((pack txt) <> " - " <> (pack author) <> maybeAddFooter link))
+  where
+    link = getMessageLink (messageGuild m) (fmap fromIntegral cnlId) (fmap fromIntegral msgId)
+    maybeAddFooter l = if l == "" then "" else ("\n[source](" <> pack l <> ")")
+
 showQuoteHelp :: HelpPage
 showQuoteHelp = HelpPage "show" "show a quote by number" "**Show Quote**\nShows a quote by id\n\n*Usage:* `quote show <id>`" [] None
+
+randomQuoteHelp :: HelpPage
+randomQuoteHelp = HelpPage "random" "show a random quote" "**Random Quote**\nDisplays a random quote\n\n*Usage:* `quote random`" [] None
+
+authorQuoteHelp :: HelpPage
+authorQuoteHelp = HelpPage "user" "show a random quote by a user" "**Random User Quote**\nDisplays a random quote attributed to a particular user\n\n*Usage:* `quote user <author>`" [] Superuser
+
+thisQuoteHelp :: HelpPage
+thisQuoteHelp =
+  HelpPage
+    "this"
+    "add another message as a quote"
+    [r|**Quote This Message**
+Adds an existing message as a quote. If the command is a reply, it uses the replied to message, otherwise it uses the immediatly preceding message.
+
+*Usage:* `quote this`|]
+    []
+    None
 
 deleteQuoteHelp :: HelpPage
 deleteQuoteHelp =
@@ -154,13 +261,13 @@ Requires moderation permission
 editQuoteHelp :: HelpPage
 editQuoteHelp =
   HelpPage
-    "delete"
-    "delete a quote by number"
+    "edit"
+    "edit a quote by number"
     [r|**Edit Quote**
 Edit a quote by id
 Requires moderation permission
 
-*Usage:* `quote delete <id>`|]
+*Usage:* `quote edit <id> "quote" - author`|]
     []
     Any
 
@@ -168,9 +275,19 @@ addQuoteHelp :: HelpPage
 addQuoteHelp = HelpPage "add" "add a new quote" "**Add Quote**\nAdds a quote\n\n*Usage:* `quote add \"quote\" - author`" [] None
 
 quoteHelp :: HelpPage
-quoteHelp = HelpPage "quote" "store and retrieve quotes" "**Quotes**\nAllows storing and retrieving quotes" [showQuoteHelp, addQuoteHelp, editQuoteHelp, deleteQuoteHelp] None
+quoteHelp =
+  HelpPage
+    "quote"
+    "store and retrieve quotes"
+    [r|**Quotes**
+Allows storing and retrieving quotes
+Calling without arguments returns a random quote
+
+*Usage:* `quote`|]
+    [randomQuoteHelp, showQuoteHelp, authorQuoteHelp, addQuoteHelp, thisQuoteHelp, editQuoteHelp, deleteQuoteHelp]
+    None
 
 -- | @quotePlugin@ assembles the @quote@ command (consisting of @add@ and
 -- @show@) and the database migration into a plugin.
 quotePlugin :: Plugin
-quotePlugin = plug {commands = [quote], migrations = [quoteMigration], helpPages = [quoteHelp]}
+quotePlugin = plug {commands = [quote], onReactionAdds = [quoteReactionAdd], migrations = [quoteMigration], helpPages = [quoteHelp]}

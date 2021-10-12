@@ -17,13 +17,17 @@ module Tablebot.Plugin.Discord
     reactToMessage,
     getMessage,
     getMessageMember,
+    getReplyMessage,
+    getPrecedingMessage,
+    toMention,
+    toMentionStr,
+    getMessageLink,
     Message,
   )
 where
 
 import Control.Monad (void)
 import Control.Monad.Trans.Class (MonadTrans (lift))
-import Data.Maybe (fromJust)
 import Data.Text
 import Discord (RestCallErrorCode, restCall)
 import qualified Discord.Requests as R
@@ -86,6 +90,34 @@ reactToMessage m e =
   lift . restCall $
     R.CreateReaction (messageChannel m, messageId m) e
 
+-- | @getReplyMessage@ returns the message being replied to (if applicable)
+getReplyMessage :: Message -> DatabaseDiscord (Maybe Message)
+getReplyMessage m = do
+  let m' = referencedMessage m
+  let mRef = messageReference m
+  case m' of
+    Just msg -> return $ Just msg
+    Nothing -> case mRef of
+      Nothing -> return Nothing
+      Just mRef' -> maybeGetMessage (referenceChannelId mRef') (referenceMessageId mRef')
+  where
+    maybeGetMessage :: Maybe ChannelId -> Maybe MessageId -> DatabaseDiscord (Maybe Message)
+    maybeGetMessage (Just cId) (Just mId) = do
+      m' <- getMessage cId mId
+      case m' of
+        Left _ -> return Nothing
+        Right msg -> return $ Just msg
+    maybeGetMessage _ _ = return Nothing
+
+-- | @getPrecedingMessage@ returns the message immediately above the provided message
+getPrecedingMessage :: Message -> DatabaseDiscord (Maybe Message)
+getPrecedingMessage m = do
+  mlst <- lift . restCall $ R.GetChannelMessages (messageChannel m) (1, R.BeforeMessage (messageId m))
+  case mlst of
+    Right mlst' ->
+      return $ Just $ Prelude.head mlst'
+    Left _ -> return Nothing
+
 -- | @getMessageMember@ returns the message member object if it was sent from a Discord server,
 -- or @Nothing@ if it was sent from a DM (or the API fails)
 getMessageMember :: Message -> DatabaseDiscord (Maybe GuildMember)
@@ -99,3 +131,15 @@ getMessageMember m = gMM (messageGuild m) m
     gMM (Just g') m' = do
       a <- lift $ restCall $ R.GetGuildMember g' (userId $ messageAuthor m')
       return $ maybeRight a
+
+-- | @toMention@ converts a user to its corresponding mention
+toMention :: User -> Text
+toMention u = pack $ toMentionStr u
+
+-- | @toMentionStr@ converts a user to its corresponding mention, returning a string to prevent packing and unpacking
+toMentionStr :: User -> String
+toMentionStr u = "<@!" ++ show (userId u) ++ ">"
+
+getMessageLink :: Maybe GuildId -> Maybe ChannelId -> Maybe MessageId -> String
+getMessageLink (Just g) (Just c) (Just m) = "https://discord.com/channels/" ++ show g ++ "/" ++ show c ++ "/" ++ show m
+getMessageLink _ _ _ = ""
