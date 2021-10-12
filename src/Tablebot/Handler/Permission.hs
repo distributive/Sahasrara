@@ -14,17 +14,18 @@ import Control.Monad.IO.Class (liftIO)
 import Data.Maybe (fromJust, isJust)
 import Discord (RestCallErrorCode)
 import Discord.Types (GuildMember, Message, RoleId, memberRoles)
+import GHC.IO (unsafePerformIO)
 import System.Environment (lookupEnv)
 import Tablebot.Plugin.Discord (getMessageMember, sendMessageVoid)
 import Tablebot.Plugin.Types
 import Text.Read (readMaybe)
-import GHC.IO (unsafePerformIO)
 
 data KnownRoles = KnownRoles
   { krExec :: Maybe RoleId,
     krModerator :: Maybe RoleId,
     krSuperuser :: Maybe RoleId
-  } deriving Show
+  }
+  deriving (Show)
 
 userHasPermission :: RequiredPermission -> UserPermission -> Bool
 userHasPermission _ (UserPerm _ _ True) = True -- Superuser always has perm

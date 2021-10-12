@@ -76,8 +76,8 @@ showQ qId m = do
       sendMessageVoid m $ pack $ txt ++ " - " ++ author
     Nothing -> sendMessageVoid m "Couldn't get that quote!"
 
--- | @deleteQuote@, which looks for a message of the form @!quote show n@, looks
--- that quote up in the database and responds with that quote.
+-- | @deleteQuote@, which looks for a message of the form @!quote delete n@,
+-- and removes it from the database.
 deleteQ :: Int64 -> Message -> DatabaseDiscord ()
 deleteQ qId m =
   requirePermission Any m $
@@ -94,11 +94,17 @@ showQuoteHelp :: HelpPage
 showQuoteHelp = HelpPage "show" "show a quote by number" "**Show Quote**\nShows a quote by id\n\n*Usage:* `quote show <id>`" [] None
 
 deleteQuoteHelp :: HelpPage
-deleteQuoteHelp = HelpPage "delete" "delete a quote by number" [r|**Delete Quote**
+deleteQuoteHelp =
+  HelpPage
+    "delete"
+    "delete a quote by number"
+    [r|**Delete Quote**
 Delete a quote by id
 Requires moderation permission
 
-*Usage:* `quote delete <id>`|] [] Superuser
+*Usage:* `quote delete <id>`|]
+    []
+    Superuser
 
 addQuoteHelp :: HelpPage
 addQuoteHelp = HelpPage "add" "add a new quote" "**Add Quote**\nAdds a quote\n\n*Usage:* `quote add \"quote\" - author`" [] None
