@@ -1,4 +1,14 @@
-module Tablebot.Handler.Permission (userHasPermission, enforcePermission) where
+-- |
+-- Module      : Tablebot.Handler.Permission
+-- Description : Some internal code for handling permissions
+-- Copyright   : (c) Anna Bruce 2021
+-- License     : MIT
+-- Maintainer  : finnjkeating@gmail.com
+-- Stability   : experimental
+-- Portability : POSIX
+--
+-- This contains some functions to extract and handle privileged commands
+module Tablebot.Handler.Permission where
 
 import Control.Monad.IO.Class (liftIO)
 import Data.Maybe (fromJust, isJust)
@@ -20,14 +30,8 @@ userHasPermission None _ = True
 userHasPermission Any (UserPerm exec moderator _) = exec || moderator
 userHasPermission Exec (UserPerm exec _ _) = exec
 userHasPermission Moderator (UserPerm _ moderator _) = moderator
+userHasPermission Both (UserPerm exec moderator _) = exec && moderator
 userHasPermission _ _ = False
-
-enforcePermission :: RequiredPermission -> (Message -> DatabaseDiscord ()) -> Message -> DatabaseDiscord ()
-enforcePermission perm a m = do
-  p <- getSenderPermission m
-  if userHasPermission perm p
-    then a m
-    else sendMessageVoid m "Sorry, you don't have permission to do that."
 
 getKnownRoles :: IO KnownRoles
 getKnownRoles = do

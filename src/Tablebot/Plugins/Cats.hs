@@ -21,7 +21,7 @@ import Network.HTTP.Simple (addRequestHeader, httpLBS)
 import System.Environment (lookupEnv)
 import Tablebot.Plugin.Discord (sendMessage)
 import Tablebot.Plugin.SmartCommand (parseComm)
-import Tablebot.Plugin.Types (Command (Command), HelpPage (HelpPage), Plugin (..), plug)
+import Tablebot.Plugin.Types (Command (Command), HelpPage (HelpPage), Plugin (..), RequiredPermission (None), plug)
 
 -- | @CatAPI@ is the basic data type for the JSON object that thecatapi returns
 data CatAPI = CatAPI
@@ -73,7 +73,7 @@ getCat esc = case esc of
 
 -- | @catHelp@ has the help text for the cat command
 catHelp :: HelpPage
-catHelp = HelpPage "cat" "displays an image of a cat" "**Cat**\nGets a random cat image using <https://thecatapi.com/>.\n\n*Usage:* `cat`" []
+catHelp = HelpPage "cat" "displays an image of a cat" "**Cat**\nGets a random cat image using <https://thecatapi.com/>.\n\n*Usage:* `cat`" [] None
 
 -- | @catPlugin@ assembles these commands into a plugin containing cat
 catPlugin :: Plugin

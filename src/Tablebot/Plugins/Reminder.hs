@@ -137,6 +137,7 @@ Send a reminder to yourself or others. Pick a date and time, and the tablebot wi
 
 *Usage:* `remind "reminder" at <time>`|]
     []
+    None
 
 -- | @reminderPlugin@ builds a plugin providing reminder asking functionality
 -- (@reminderCommand@), reminding functionality (via the cron job specified by

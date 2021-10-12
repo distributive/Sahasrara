@@ -125,7 +125,9 @@ data HelpPage = HelpPage
     -- | The text to show when specifically listed. Appears above the list of subpages
     helpBody :: Text,
     -- | A list of help pages that can be recursively accessed
-    helpSubpages :: [HelpPage]
+    helpSubpages :: [HelpPage],
+    -- | Permission required to run
+    helpPermission :: RequiredPermission
   }
   deriving (Show)
 
