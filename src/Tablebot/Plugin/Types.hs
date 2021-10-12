@@ -150,6 +150,46 @@ data UserPermission = UserPerm
 
 data RequiredPermission = None | Any | Exec | Moderator | Both | Superuser deriving (Show, Eq)
 
+-- | Colour names
+-- Colour is a bit of a mess on discord embeds.
+-- I've here stolen the pallet list from https://gist.github.com/thomasbnt/b6f455e2c7d743b796917fa3c205f812
+data DiscordColour
+  = RGB Integer Integer Integer
+  | Default
+  | Aqua
+  | DarkAqua
+  | Green
+  | DarkGreen
+  | Blue
+  | DarkBlue
+  | Purple
+  | DarkPurple
+  | LuminousVividPink
+  | DarkVividPink
+  | Gold
+  | DarkGold
+  | Orange
+  | DarkOrange
+  | Red
+  | DarkRed
+  | Gray
+  | DarkGray
+  | DarkerGray
+  | LightGray
+  | Navy
+  | DarkNavy
+  | Yellow
+  | DiscordWhite
+  | DiscordBlurple
+  | DiscordGrayple
+  | DiscordDarkButNotBlack
+  | DiscordNotQuiteBlack
+  | DiscordGreen
+  | DiscordYellow
+  | DiscordFuschia
+  | DiscordRed
+  | DiscordBlack
+
 -- * Plugins
 
 -- Plugins are groups of features that forms some functionality of your bot.

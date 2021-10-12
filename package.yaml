@@ -40,6 +40,10 @@ dependencies:
 - http-conduit
 - raw-strings-qq
 - template-haskell
+- bytestring
+- req
+- http-client
+- data-default
 
 library:
   source-dirs: src
