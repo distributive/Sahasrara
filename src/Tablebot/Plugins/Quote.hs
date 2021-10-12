@@ -24,6 +24,7 @@ import Tablebot.Plugin
 import Tablebot.Plugin.Discord (Message, sendMessageVoid)
 import Tablebot.Plugin.Permission (requirePermission)
 import Tablebot.Plugin.SmartCommand
+import Text.RawString.QQ
 
 -- Our Quote table in the database. This is fairly standard for Persistent,
 -- however you should note the name of the migration made.
@@ -92,11 +93,18 @@ deleteQ qId m =
 showQuoteHelp :: HelpPage
 showQuoteHelp = HelpPage "show" "show a quote by number" "**Show Quote**\nShows a quote by id\n\n*Usage:* `quote show <id>`" [] None
 
+deleteQuoteHelp :: HelpPage
+deleteQuoteHelp = HelpPage "delete" "delete a quote by number" [r|**Delete Quote**
+Delete a quote by id
+Requires moderation permission
+
+*Usage:* `quote delete <id>`|] [] Superuser
+
 addQuoteHelp :: HelpPage
 addQuoteHelp = HelpPage "add" "add a new quote" "**Add Quote**\nAdds a quote\n\n*Usage:* `quote add \"quote\" - author`" [] None
 
 quoteHelp :: HelpPage
-quoteHelp = HelpPage "quote" "store and retrieve quotes" "**Quotes**\nAllows storing and retrieving quotes" [showQuoteHelp, addQuoteHelp] None
+quoteHelp = HelpPage "quote" "store and retrieve quotes" "**Quotes**\nAllows storing and retrieving quotes" [showQuoteHelp, addQuoteHelp, deleteQuoteHelp] None
 
 -- | @quotePlugin@ assembles the @quote@ command (consisting of @add@ and
 -- @show@) and the database migration into a plugin.
