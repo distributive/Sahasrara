@@ -1,3 +1,13 @@
+-- -- |
+-- Module      : Tablebot.Plugin.Help
+-- Description : Embed request generation and colours 
+-- Copyright   : (c) Anna Bruce 2021
+-- License     : MIT
+-- Maintainer  : finnjkeating@gmail.com
+-- Stability   : experimental
+-- Portability : POSIX
+--
+-- This module contains some behind the scenes logic to allow creation of coloured embeds
 module Tablebot.Handler.Embed where
 
 import Data.Aeson

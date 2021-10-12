@@ -1,3 +1,13 @@
+-- -- |
+-- Module      : Tablebot.Plugin.Help
+-- Description : Embed maniplution helpers
+-- Copyright   : (c) Anna Bruce 2021
+-- License     : MIT
+-- Maintainer  : finnjkeating@gmail.com
+-- Stability   : experimental
+-- Portability : POSIX
+--
+-- This module exposes some helpful functions for working with full Embeds
 module Tablebot.Plugin.Embed where
 
 import Data.Text (Text)
