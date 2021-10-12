@@ -1,6 +1,6 @@
 -- -- |
 -- Module      : Tablebot.Plugin.Embed
--- Description : Embed maniplution helpers
+-- Description : Embed manipulation helpers
 -- Copyright   : (c) Anna Bruce 2021
 -- License     : MIT
 -- Maintainer  : finnjkeating@gmail.com
