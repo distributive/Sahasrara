@@ -61,7 +61,7 @@ quoteReactionAdd = ReactionAdd qra
       where
         m' = getMessage (reactionChannelId ri) (reactionMessageId ri)
 
--- | Our quote command, which combines @addQuote@ and @showQuote@.
+-- | Our quote command, which combines various functions to create, display and update quotes.
 quote :: Command
 quote =
   Command
