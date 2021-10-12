@@ -1,5 +1,5 @@
 -- -- |
--- Module      : Tablebot.Plugin.Help
+-- Module      : Tablebot.Handler.Embed
 -- Description : Embed request generation and colours 
 -- Copyright   : (c) Anna Bruce 2021
 -- License     : MIT

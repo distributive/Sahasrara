@@ -1,5 +1,5 @@
 -- -- |
--- Module      : Tablebot.Plugin.Help
+-- Module      : Tablebot.Plugin.Embed
 -- Description : Embed maniplution helpers
 -- Copyright   : (c) Anna Bruce 2021
 -- License     : MIT
