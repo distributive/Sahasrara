@@ -12,7 +12,7 @@ module Tablebot.Plugins.Ping (pingPlugin) where
 
 import Tablebot.Plugin
 import Tablebot.Plugin.Discord (sendMessage)
-import Tablebot.Plugin.Parser (noArguments)
+import Tablebot.Plugin.SmartCommand (parseComm)
 
 -- | @ping@ is a command that takes no arguments (using 'noArguments') and
 -- replies with "pong".
@@ -20,7 +20,7 @@ ping :: Command
 ping =
   Command
     "ping"
-    ( noArguments $ \m -> do
+    ( parseComm $ \m -> do
         _ <- sendMessage m "pong"
         return ()
     )
@@ -31,7 +31,7 @@ pong :: Command
 pong =
   Command
     "pong"
-    ( noArguments $ \m -> do
+    ( parseComm $ \m -> do
         _ <- sendMessage m "ping"
         return ()
     )

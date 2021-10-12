@@ -1,7 +1,7 @@
 -- |
 -- Module      : Tablebot.Plugins.Cats
 -- Description : A very simple plugin that provides cat pictures.
--- Copyright   : (c) Finnbar Keating 2021
+-- Copyright   : (c) Benji 2021
 -- License     : MIT
 -- Maintainer  : finnjkeating@gmail.com
 -- Stability   : experimental
@@ -20,7 +20,7 @@ import Network.HTTP.Conduit (Response (responseBody), parseRequest)
 import Network.HTTP.Simple (addRequestHeader, httpLBS)
 import System.Environment (lookupEnv)
 import Tablebot.Plugin.Discord (sendMessage)
-import Tablebot.Plugin.Parser (noArguments)
+import Tablebot.Plugin.SmartCommand (parseComm)
 import Tablebot.Plugin.Types (Command (Command), HelpPage (HelpPage), Plugin (..), plug)
 
 -- | @CatAPI@ is the basic data type for the JSON object that thecatapi returns
@@ -41,7 +41,7 @@ cat :: Command
 cat =
   Command
     "cat"
-    ( noArguments $ \m -> do
+    ( parseComm $ \m -> do
         r <- liftIO (getCatAPI <&> getCat)
         _ <- sendMessage m r
         return ()
