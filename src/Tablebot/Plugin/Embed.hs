@@ -34,10 +34,22 @@ addFooter t e =
     { embedFooter = Just $ EmbedFooter t Nothing Nothing
     }
 
+addTimestamp :: UTCTime -> Embed -> Embed
+addTimestamp t e =
+  e
+    { embedTimestamp = Just t
+    }
+
 addAuthor :: Text -> Embed -> Embed
 addAuthor t e =
   e
     { embedAuthor = Just $ EmbedAuthor (Just t) Nothing Nothing Nothing
+    }
+
+addLink :: Text -> Embed -> Embed
+addLink t e =
+  e
+    { embedUrl = Just t
     }
 
 addColour :: DiscordColour -> Embed -> Embed

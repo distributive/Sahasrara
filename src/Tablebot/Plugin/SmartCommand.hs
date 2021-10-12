@@ -158,6 +158,9 @@ instance {-# OVERLAPPABLE #-} (Integral a, Read a) => CanParse a where
 instance CanParse Double where
   pars = double
 
+instance CanParse () where
+  pars = eof
+
 -- | @RestOfInput a@ parses the rest of the input, giving a value of type @a@.
 newtype RestOfInput a = ROI a
 
