@@ -17,12 +17,14 @@ import Discord.Types (GuildMember, Message, RoleId, memberRoles)
 import System.Environment (lookupEnv)
 import Tablebot.Plugin.Discord (getMessageMember, sendMessageVoid)
 import Tablebot.Plugin.Types
+import Text.Read (readMaybe)
+import GHC.IO (unsafePerformIO)
 
 data KnownRoles = KnownRoles
   { krExec :: Maybe RoleId,
     krModerator :: Maybe RoleId,
     krSuperuser :: Maybe RoleId
-  }
+  } deriving Show
 
 userHasPermission :: RequiredPermission -> UserPermission -> Bool
 userHasPermission _ (UserPerm _ _ True) = True -- Superuser always has perm
@@ -40,7 +42,7 @@ getKnownRoles = do
   superuser <- lookupEnv "SUPERUSER_GROUP"
   return $ KnownRoles (maybeRead exec) (maybeRead moderator) (maybeRead superuser)
   where
-    maybeRead (Just a) = read a
+    maybeRead (Just a) = readMaybe a
     maybeRead Nothing = Nothing
 
 getMemberGroups :: Maybe GuildMember -> [RoleId]
