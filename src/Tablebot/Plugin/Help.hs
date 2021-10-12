@@ -56,6 +56,7 @@ formatHelp up hp = helpBody hp <> formatSubpages hp
   where
     formatSubpages :: HelpPage -> Text
     formatSubpages (HelpPage _ _ _ [] _) = ""
-    formatSubpages hp' = "\n\n*Subcommands*" <> T.concat (map formatSubpage (helpSubpages hp'))
+    formatSubpages hp' = if T.null sp then "" else "\n\n*Subcommands*" <> sp
+      where sp = T.concat (map formatSubpage (helpSubpages hp'))
     formatSubpage :: HelpPage -> Text
     formatSubpage hp' = if userHasPermission (helpPermission hp') up then "\n`" <> helpName hp' <> "` " <> helpShortText hp' else ""
