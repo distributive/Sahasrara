@@ -58,7 +58,7 @@ permsFromGroups krls gps =
     (krSuperuser krls `elemish` gps)
   where
     elemish (Just a) b = a `elem` b
-    elemish Nothing _ = True
+    elemish Nothing _ = False
 
 getSenderPermission :: Message -> DatabaseDiscord UserPermission
 getSenderPermission m = do
