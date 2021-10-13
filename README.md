@@ -35,6 +35,7 @@ Here are some good practice tips for git and this project.
 * When a feature is ready to be merged into the bot, make a pull request from the feature branch to the main repo
 * Before making a pull request, make sure your branch is up to date with main (and that it compiles and complies with `ormolu`) so that it can be merged without hassle
 * Write comments! This project will be maintained by many people, and it can be difficult to work out what others' code does
+* To communicate with the maintainers, please join the Tabletop discord server and join the #computers-were-a-mistake channel
 
 ## Setup from Scratch
 
