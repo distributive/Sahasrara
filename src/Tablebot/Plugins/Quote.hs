@@ -26,7 +26,7 @@ import Discord.Types (Emoji (emojiName), Message (messageAuthor, messageChannel,
 import GHC.Int (Int64)
 import System.Random (randomRIO)
 import Tablebot.Plugin
-import Tablebot.Plugin.Discord (getMessage, getMessageLink, getPrecedingMessage, getReplyMessage, sendColouredEmbedMessage, sendMessageVoid, toMentionStr)
+import Tablebot.Plugin.Discord (getMessage, getMessageLink, getPrecedingMessage, getReplyMessage, sendMessageVoid, toMentionStr, sendEmbedMessage)
 import Tablebot.Plugin.Embed
 import Tablebot.Plugin.Permission (requirePermission)
 import Tablebot.Plugin.SmartCommand
@@ -219,7 +219,7 @@ deleteQ qId m =
 
 renderQuoteMessage :: Quote -> Int64 -> Message -> DatabaseDiscord ()
 renderQuoteMessage (Quote txt author msgId cnlId dtm) qId m =
-  void $ sendColouredEmbedMessage m "" (addColour Blue $ addTimestamp dtm $ addFooter (pack $ "Quote #" ++ show qId) $ simpleEmbed ((pack txt) <> " - " <> (pack author) <> maybeAddFooter link))
+  void $ sendEmbedMessage m "" (addColour Blue $ addTimestamp dtm $ addFooter (pack $ "Quote #" ++ show qId) $ simpleEmbed ((pack txt) <> " - " <> (pack author) <> maybeAddFooter link))
   where
     link = getMessageLink (messageGuild m) (fmap fromIntegral cnlId) (fmap fromIntegral msgId)
     maybeAddFooter l = if l == "" then "" else ("\n[source](" <> pack l <> ")")
