@@ -26,7 +26,7 @@ import Discord.Types (Emoji (emojiName), Message (messageAuthor, messageChannel,
 import GHC.Int (Int64)
 import System.Random (randomRIO)
 import Tablebot.Plugin
-import Tablebot.Plugin.Discord (getMessage, getMessageLink, getPrecedingMessage, getReplyMessage, sendMessageVoid, toMentionStr, sendEmbedMessage)
+import Tablebot.Plugin.Discord (getMessage, getMessageLink, getPrecedingMessage, getReplyMessage, sendEmbedMessage, sendMessageVoid, toMentionStr)
 import Tablebot.Plugin.Embed
 import Tablebot.Plugin.Permission (requirePermission)
 import Tablebot.Plugin.SmartCommand
