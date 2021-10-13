@@ -11,12 +11,9 @@
 module Tablebot.Handler.Permission where
 
 import Control.Monad.IO.Class (liftIO)
-import Data.Maybe (fromJust, isJust)
-import Discord (RestCallErrorCode)
 import Discord.Types (GuildMember, Message, RoleId, memberRoles)
-import GHC.IO (unsafePerformIO)
 import System.Environment (lookupEnv)
-import Tablebot.Plugin.Discord (getMessageMember, sendMessageVoid)
+import Tablebot.Plugin.Discord (getMessageMember)
 import Tablebot.Plugin.Types
 import Tablebot.Util.Utils (isDebug)
 import Text.Read (readMaybe)
