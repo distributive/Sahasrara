@@ -18,6 +18,7 @@ import GHC.IO (unsafePerformIO)
 import System.Environment (lookupEnv)
 import Tablebot.Plugin.Discord (getMessageMember, sendMessageVoid)
 import Tablebot.Plugin.Types
+import Tablebot.Util.Utils (isDebug)
 import Text.Read (readMaybe)
 
 data KnownRoles = KnownRoles
@@ -50,12 +51,12 @@ getMemberGroups :: Maybe GuildMember -> [RoleId]
 getMemberGroups (Just gm) = memberRoles gm
 getMemberGroups Nothing = []
 
-permsFromGroups :: KnownRoles -> [RoleId] -> UserPermission
-permsFromGroups krls gps =
+permsFromGroups :: Bool -> KnownRoles -> [RoleId] -> UserPermission
+permsFromGroups debug krls gps =
   UserPerm
-    (krExec krls `elemish` gps)
-    (krModerator krls `elemish` gps)
-    (krSuperuser krls `elemish` gps)
+    (debug || krExec krls `elemish` gps)
+    (debug || krModerator krls `elemish` gps)
+    (debug || krSuperuser krls `elemish` gps)
   where
     elemish (Just a) b = a `elem` b
     elemish Nothing _ = False
@@ -64,4 +65,5 @@ getSenderPermission :: Message -> DatabaseDiscord UserPermission
 getSenderPermission m = do
   member <- getMessageMember m
   knownroles <- liftIO getKnownRoles
-  return $ permsFromGroups knownroles $ getMemberGroups member
+  debug <- liftIO isDebug
+  return $ permsFromGroups debug knownroles $ getMemberGroups member

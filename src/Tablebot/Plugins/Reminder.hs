@@ -37,6 +37,7 @@ import Discord.Types
 import Tablebot.Plugin
 import Tablebot.Plugin.Discord (getMessage, sendMessageVoid)
 import Tablebot.Plugin.Parser (number, quoted, space)
+import Tablebot.Util.Utils (debugPrint)
 import Text.Megaparsec
 import Text.RawString.QQ (r)
 
@@ -108,7 +109,7 @@ reminderCommand = Command "remind" reminderParser
 reminderCron :: DatabaseDiscord ()
 reminderCron = do
   now <- liftIO $ systemToUTCTime <$> getSystemTime
-  liftIO $ putStrLn $ "running reminder cron at " ++ show now
+  liftIO $ debugPrint $ "running reminder cron at " ++ show now
   entitydue <- select $
     from $ \re -> do
       where_ (re ^. ReminderTime <=. val now)
