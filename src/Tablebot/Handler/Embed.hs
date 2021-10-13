@@ -79,3 +79,15 @@ createEmbedJson (TablebotEmbedRequest chan msg embed) =
   let partJson = partBS "payload_json" $ BL.toStrict $ encode $ toJSON $ object ["content" .= msg, "embed" .= embed]
       body = R.reqBodyMultipart [partJson]
    in Post (channels // chan /: "messages") body mempty
+
+class Embeddable e where
+  asEmbed :: e -> Embed
+
+instance Embeddable Embed where
+  asEmbed = id
+
+instance Embeddable CreateEmbed where
+  asEmbed = createEmbed
+
+instance Embeddable Text where
+  asEmbed t = createEmbed $ CreateEmbed "" "" Nothing "" "" Nothing t [] Nothing "" Nothing

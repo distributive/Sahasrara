@@ -13,7 +13,7 @@ module Tablebot.Plugin.Discord
   ( sendMessage,
     sendMessageVoid,
     sendEmbedMessage,
-    sendColouredEmbedMessage,
+    sendEmbedMessageVoid,
     reactToMessage,
     getMessage,
     Message,
@@ -39,34 +39,31 @@ sendMessage ::
 sendMessage m t = lift . restCall $ R.CreateMessage (messageChannel m) t
 
 -- | @sendEmbedMessage@ sends the input message @t@ in the same channel as message
--- @m@ with an additional CreateEmbed. This returns an @Either RestCallErrorCode Message@ to denote failure or
--- return the 'Message' that was just sent.
-sendEmbedMessage ::
-  Message ->
-  CreateEmbed ->
-  Text ->
-  DatabaseDiscord (Either RestCallErrorCode Message)
-sendEmbedMessage m e t = lift . restCall $ R.CreateMessageEmbed (messageChannel m) t e
-
--- | @sendColouredEmbedMessage@ sends the input message @t@ in the same channel as message
 -- @m@ with an additional full Embed. This returns an @Either RestCallErrorCode Message@ to denote failure or
 -- return the 'Message' that was just sent.
 -- This is *really* janky. The library exposes *no way* to create a coloured embed through its main api,
 -- so I'm having to manually reimplement the sending logic just to add this in.
 -- If you suffer from nightmares, don't look in 'Tablebot.Handler.Embed'. Nothing good lives there.
 -- In the future, I may actually submit a PR to discord-haskell with a fix to allow colours properly.
-sendColouredEmbedMessage ::
+sendEmbedMessage ::
+  Embeddable e =>
   Message ->
   Text ->
-  Embed ->
+  e ->
   DatabaseDiscord (Either RestCallErrorCode Message)
-sendColouredEmbedMessage m t e = lift . restCall $ TablebotEmbedRequest (messageChannel m) t e
+sendEmbedMessage m t e = lift . restCall $ TablebotEmbedRequest (messageChannel m) t (asEmbed e)
 
 -- | @sendMessageVoid@ does the same as @sendMessage@, except it does not
 -- return anything. Useful if you don't care whether a message successfully
 -- sent or not.
 sendMessageVoid :: Message -> Text -> DatabaseDiscord ()
 sendMessageVoid m t = void $ sendMessage m t
+
+-- | @sendEmbedMessageVoid@ does the same as @sendEmbedMessage@, except it does not
+-- return anything. Useful if you don't care whether a message successfully
+-- sent or not.
+sendEmbedMessageVoid :: Embeddable e => Message -> Text -> e -> DatabaseDiscord ()
+sendEmbedMessageVoid m t e = void $ sendEmbedMessage m t e
 
 -- | @getMessage@ gets the relevant 'Message' object for a given 'ChannelId'
 -- and 'MessageId', or returns an error ('RestCallErrorCode').
