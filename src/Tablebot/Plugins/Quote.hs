@@ -52,7 +52,7 @@ quoteReactionAdd :: ReactionAdd
 quoteReactionAdd = ReactionAdd qra
   where
     qra ri
-      | emojiName (reactionEmoji ri) == "💬" = do
+      | emojiName (reactionEmoji ri) == "\x1F4AC" = do
         m <- m'
         case m of
           Left _ -> pure ()
