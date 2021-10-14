@@ -10,12 +10,11 @@
 -- A collection of utility functions for generating randomness.
 module Tablebot.Plugin.Random (chooseOne, chooseOneWithDefault, chooseOneWeighted, chooseOneWeightedWithDefault) where
 
+import Control.Monad.Exception
 import Data.List
 import Data.Maybe
 import System.Random (randomRIO)
 import Tablebot.Plugin.Error
-
-import Control.Monad.Exception
 
 -- | @chooseOne@ chooses a single random element from a given list with uniform
 -- distribution.
@@ -27,7 +26,7 @@ chooseOne xs = (xs !!) <$> randomRIO (0, length xs - 1 :: Int)
 -- | @chooseOneWithDefault@ chooses a single random element from a given list
 -- with uniform distribution, or a given default value if the list is empty.
 chooseOneWithDefault :: a -> [a] -> IO a
-chooseOneWithDefault x xs = onException (chooseOne xs) (return x)--chooseOne xs `catch` \_ -> return x
+chooseOneWithDefault x xs = onException (chooseOne xs) (return x) --chooseOne xs `catch` \_ -> return x
 
 -- | @chooseOneWeighted@ chooses a single random element from a given list with
 -- weighted distribution as defined by a given weighting function.
@@ -48,4 +47,4 @@ chooseOneWeighted weight xs
 -- list with weighted distribution as defined by a given weighting function, or
 -- a given default if the list is empty
 chooseOneWeightedWithDefault :: a -> (a -> Int) -> [a] -> IO a
-chooseOneWeightedWithDefault x weight xs = onException (chooseOneWeighted weight xs) (return x)--chooseOneWeighted weight xs `catch` \_ -> return x
+chooseOneWeightedWithDefault x weight xs = onException (chooseOneWeighted weight xs) (return x) --chooseOneWeighted weight xs `catch` \_ -> return x

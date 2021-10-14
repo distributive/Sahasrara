@@ -38,6 +38,7 @@ Repeat the input.
 
 *Usage:* `say This text will be repeated by the bot!`|]
     []
+    None
 
 -- | @sayPlugin@ assembles the command into a plugin.
 sayPlugin :: Plugin

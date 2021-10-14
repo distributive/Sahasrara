@@ -14,6 +14,7 @@ module Tablebot.Plugins.Quote
   )
 where
 
+import Control.Monad (void)
 import Data.Text (append, pack)
 import Database.Persist
 import Database.Persist.Sqlite
@@ -21,7 +22,9 @@ import Database.Persist.TH
 import GHC.Int (Int64)
 import Tablebot.Plugin
 import Tablebot.Plugin.Discord (Message, sendMessageVoid)
+import Tablebot.Plugin.Permission (requirePermission)
 import Tablebot.Plugin.SmartCommand
+import Text.RawString.QQ
 
 -- Our Quote table in the database. This is fairly standard for Persistent,
 -- however you should note the name of the migration made.
@@ -41,9 +44,18 @@ quote =
     "quote"
     (parseComm quoteComm)
 
-quoteComm :: WithError "Unknown quote functionality." (Either (Exactly "add", Quoted String, Exactly "-", RestOfInput String) (Exactly "show", Int)) -> Message -> DatabaseDiscord ()
+quoteComm ::
+  WithError
+    "Unknown quote functionality."
+    ( Either
+        (Exactly "add", Quoted String, Exactly "-", RestOfInput String)
+        (Either (Exactly "show", Int) (Exactly "delete", Int))
+    ) ->
+  Message ->
+  DatabaseDiscord ()
 quoteComm (WErr (Left (_, Qu qu, _, ROI author))) = addQ qu author
-quoteComm (WErr (Right (_, qId))) = showQ (fromIntegral qId)
+quoteComm (WErr (Right (Left (_, qId)))) = showQ (fromIntegral qId)
+quoteComm (WErr (Right (Right (_, qId)))) = deleteQ (fromIntegral qId)
 
 -- | @addQuote@, which looks for a message of the form
 -- @!quote add "quoted text" - author@, and then stores said quote in the
@@ -64,14 +76,41 @@ showQ qId m = do
       sendMessageVoid m $ pack $ txt ++ " - " ++ author
     Nothing -> sendMessageVoid m "Couldn't get that quote!"
 
+-- | @deleteQuote@, which looks for a message of the form @!quote delete n@,
+-- and removes it from the database.
+deleteQ :: Int64 -> Message -> DatabaseDiscord ()
+deleteQ qId m =
+  requirePermission Any m $
+    let k = toSqlKey qId
+     in do
+          qu <- get k
+          case qu of
+            Just (Quote _ _) -> do
+              delete k
+              sendMessageVoid m "Quote deleted"
+            Nothing -> sendMessageVoid m "Couldn't get that quote!"
+
 showQuoteHelp :: HelpPage
-showQuoteHelp = HelpPage "show" "show a quote by number" "**Show Quote**\nShows a quote by id\n\n*Usage:* `quote show <id>`" []
+showQuoteHelp = HelpPage "show" "show a quote by number" "**Show Quote**\nShows a quote by id\n\n*Usage:* `quote show <id>`" [] None
+
+deleteQuoteHelp :: HelpPage
+deleteQuoteHelp =
+  HelpPage
+    "delete"
+    "delete a quote by number"
+    [r|**Delete Quote**
+Delete a quote by id
+Requires moderation permission
+
+*Usage:* `quote delete <id>`|]
+    []
+    Any
 
 addQuoteHelp :: HelpPage
-addQuoteHelp = HelpPage "add" "add a new quote" "**Add Quote**\nAdds a quote\n\n*Usage:* `quote add \"quote\" - author`" []
+addQuoteHelp = HelpPage "add" "add a new quote" "**Add Quote**\nAdds a quote\n\n*Usage:* `quote add \"quote\" - author`" [] None
 
 quoteHelp :: HelpPage
-quoteHelp = HelpPage "quote" "store and retrieve quotes" "**Quotes**\nAllows storing and retrieving quotes" [showQuoteHelp, addQuoteHelp]
+quoteHelp = HelpPage "quote" "store and retrieve quotes" "**Quotes**\nAllows storing and retrieving quotes" [showQuoteHelp, addQuoteHelp, deleteQuoteHelp] None
 
 -- | @quotePlugin@ assembles the @quote@ command (consisting of @add@ and
 -- @show@) and the database migration into a plugin.

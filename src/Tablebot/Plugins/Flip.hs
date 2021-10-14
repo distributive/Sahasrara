@@ -46,6 +46,7 @@ Randomly picks one element from its arguments or, if none are provided, picks fr
 `flip`
 `flip first second third`|]
     []
+    None
 
 -- | @flipPlugin@ assembles the command into a plugin.
 flipPlugin :: Plugin

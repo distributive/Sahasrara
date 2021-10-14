@@ -14,7 +14,7 @@ import Data.Text (toTitle)
 import Data.Text.Internal (Text)
 import Tablebot.Plugin.Discord (sendMessage)
 import Tablebot.Plugin.SmartCommand (parseComm)
-import Tablebot.Plugin.Types (Command (Command), HelpPage (HelpPage), Plugin (commands), helpPages, plug)
+import Tablebot.Plugin.Types (Command (Command), HelpPage (HelpPage), Plugin (commands), RequiredPermission (None), helpPages, plug)
 
 -- * Some types to help clarify what's going on
 
@@ -52,7 +52,7 @@ baseCommand (a, b, _) =
 
 baseHelp :: BasicCommand -> HelpPage
 baseHelp (_, _, Advanced help) = help
-baseHelp (a, _, Simple (short, long)) = HelpPage a short ("**" <> toTitle a <> "**\n" <> long <> "\n\n*Usage:* `" <> a <> "`") []
+baseHelp (a, _, Simple (short, long)) = HelpPage a short ("**" <> toTitle a <> "**\n" <> long <> "\n\n*Usage:* `" <> a <> "`") [] None
 
 -- | @basicPlugin@ assembles the call and response commands into a simple command list.
 basicPlugin :: Plugin

@@ -10,6 +10,7 @@
 -- Commands for generating welcome messages.
 module Tablebot.Plugins.Welcome (welcomePlugin) where
 
+import Control.Monad.Exception
 import Control.Monad.IO.Class
 import Data.Aeson (FromJSON, eitherDecode)
 import qualified Data.ByteString.Lazy as B
@@ -24,8 +25,6 @@ import Tablebot.Plugin.Random (chooseOne, chooseOneWeighted)
 import Tablebot.Plugin.SmartCommand
 import Text.Printf
 import Text.RawString.QQ
-
-import Control.Monad.Exception
 
 -- | @favourite@ is the user-facing command that generates categories.
 favourite :: Command
@@ -48,6 +47,7 @@ Generate a random category of thing to help inspire welcome messages.
 
 *Usage:* `favourite`|]
     []
+    None
 
 data CategoryClass = CategoryClass
   { name :: !String,

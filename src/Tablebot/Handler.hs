@@ -24,6 +24,7 @@ import Control.Concurrent
     threadDelay,
   )
 import Control.Monad (unless)
+import Control.Monad.Exception
 import Control.Monad.IO.Class (MonadIO (liftIO))
 import Control.Monad.Trans.Class (MonadTrans (lift))
 import Control.Monad.Trans.Reader (ReaderT (runReaderT), ask)
@@ -40,10 +41,8 @@ import Tablebot.Handler.Event
     parseReactionDel,
   )
 import Tablebot.Plugin
-
-import Control.Monad.Exception
-import Tablebot.Plugin.Error
 import Tablebot.Plugin.Discord (sendEmbedMessageVoid)
+import Tablebot.Plugin.Error
 
 -- | Given a combined plugin @pl@ and a command prefix @prefix@, builds an
 -- event handler. This takes in each Discord 'Event' received (present in
