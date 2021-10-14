@@ -131,6 +131,46 @@ data HelpPage = HelpPage
   }
   deriving (Show)
 
+-- | Colour names
+-- Colour is a bit of a mess on discord embeds.
+-- I've here stolen the pallet list from https://gist.github.com/thomasbnt/b6f455e2c7d743b796917fa3c205f812
+data DiscordColour
+  = RGB Integer Integer Integer
+  | Default
+  | Aqua
+  | DarkAqua
+  | Green
+  | DarkGreen
+  | Blue
+  | DarkBlue
+  | Purple
+  | DarkPurple
+  | LuminousVividPink
+  | DarkVividPink
+  | Gold
+  | DarkGold
+  | Orange
+  | DarkOrange
+  | Red
+  | DarkRed
+  | Gray
+  | DarkGray
+  | DarkerGray
+  | LightGray
+  | Navy
+  | DarkNavy
+  | Yellow
+  | DiscordWhite
+  | DiscordBlurple
+  | DiscordGrayple
+  | DiscordDarkButNotBlack
+  | DiscordNotQuiteBlack
+  | DiscordGreen
+  | DiscordYellow
+  | DiscordFuschia
+  | DiscordRed
+  | DiscordBlack
+
 -- | Automatic handling of command permissions
 -- @UserPermission@ models the current permissions of the user
 -- @RequiredPermission@ models the permissions required to run a command.
