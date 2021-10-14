@@ -37,6 +37,7 @@ import Discord
 import Tablebot.Handler (eventHandler, killCron, runCron)
 import Tablebot.Plugin (Plugin, combinePlugins, cronJobs, migrations)
 import Tablebot.Plugin.Help
+import Tablebot.Util.Utils (debugPrint)
 
 -- | runTablebot @dToken@ @prefix@ @dbpath@ @plugins@ runs the bot using the
 -- given Discord API token @dToken@ and SQLite connection string @dbpath@. Only
@@ -52,6 +53,7 @@ runTablebot :: Text -> Text -> FilePath -> [Plugin] -> IO ()
 runTablebot dToken prefix dbpath plugins =
   let !plugin = generateHelp $ combinePlugins plugins
    in do
+        debugPrint ("DEBUG enabled. This is strongly not recommended in production!" :: String)
         -- Create multiple database threads.
         pool <- runNoLoggingT $ createSqlitePool (pack dbpath) 8
         -- TODO: this might have issues with duplicates?

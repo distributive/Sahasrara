@@ -47,6 +47,7 @@ Generate a random category of thing to help inspire welcome messages.
 
 *Usage:* `favourite`|]
     []
+    None
 
 data CategoryClass = CategoryClass
   { name :: !String,

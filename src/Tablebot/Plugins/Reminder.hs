@@ -35,6 +35,7 @@ import Duckling.Time.Types (InstantValue (InstantValue), SingleTimeValue (Simple
 import Tablebot.Plugin
 import Tablebot.Plugin.Discord (getMessage, sendMessageVoid)
 import Tablebot.Plugin.SmartCommand (PComm (parseComm), Quoted (Qu), RestOfInput (ROI))
+import Tablebot.Util.Utils (debugPrint)
 import Text.RawString.QQ (r)
 
 -- Our Reminder table in the database. This is fairly standard for Persistent,
@@ -57,7 +58,7 @@ Reminder
 -- is given as a DucklingTime. If it cannot parse the Text, Nothing is given.
 ducklingDateTime :: DucklingTime -> Text -> Maybe UTCTime
 ducklingDateTime now rawString = do
-  entity <- listToMaybe (parse rawString context options [Seal Time])
+  entity <- listToMaybe (Duckling.Core.parse rawString context options [Seal Time])
   zt <- getVal entity
   return $ zonedTimeToUTC zt
   where
@@ -105,7 +106,7 @@ reminderCommand = Command "remind" (parseComm reminderParser)
 reminderCron :: DatabaseDiscord ()
 reminderCron = do
   now <- liftIO $ systemToUTCTime <$> getSystemTime
-  liftIO $ putStrLn $ "running reminder cron at " ++ show now
+  liftIO $ debugPrint $ "running reminder cron at " ++ show now
   entitydue <- select $
     from $ \re -> do
       where_ (re ^. ReminderTime <=. val now)
@@ -136,6 +137,7 @@ Uses duckling (<https://github.com/facebook/duckling>) to parse time and dates, 
 
 *Usage:* `remind "reminder" <at|in|on> <time or duration>`|]
     []
+    None
 
 -- | @reminderPlugin@ builds a plugin providing reminder asking functionality
 -- (@reminderCommand@), reminding functionality (via the cron job specified by

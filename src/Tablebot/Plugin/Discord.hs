@@ -16,12 +16,14 @@ module Tablebot.Plugin.Discord
     sendEmbedMessageVoid,
     reactToMessage,
     getMessage,
+    getMessageMember,
     Message,
   )
 where
 
 import Control.Monad (void)
 import Control.Monad.Trans.Class (MonadTrans (lift))
+import Data.Maybe (fromJust)
 import Data.Text
 import Discord (RestCallErrorCode, restCall)
 import qualified Discord.Requests as R
@@ -83,3 +85,17 @@ reactToMessage ::
 reactToMessage m e =
   lift . restCall $
     R.CreateReaction (messageChannel m, messageId m) e
+
+-- | @getMessageMember@ returns the message member object if it was sent from a Discord server,
+-- or @Nothing@ if it was sent from a DM (or the API fails)
+getMessageMember :: Message -> DatabaseDiscord (Maybe GuildMember)
+getMessageMember m = gMM (messageGuild m) m
+  where
+    maybeRight :: Either a b -> Maybe b
+    maybeRight (Left _) = Nothing
+    maybeRight (Right a) = Just a
+    gMM :: Maybe GuildId -> Message -> DatabaseDiscord (Maybe GuildMember)
+    gMM Nothing _ = return Nothing
+    gMM (Just g') m' = do
+      a <- lift $ restCall $ R.GetGuildMember g' (userId $ messageAuthor m')
+      return $ maybeRight a
