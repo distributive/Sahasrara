@@ -125,7 +125,9 @@ data HelpPage = HelpPage
     -- | The text to show when specifically listed. Appears above the list of subpages
     helpBody :: Text,
     -- | A list of help pages that can be recursively accessed
-    helpSubpages :: [HelpPage]
+    helpSubpages :: [HelpPage],
+    -- | Permission required to run
+    helpPermission :: RequiredPermission
   }
   deriving (Show)
 
@@ -168,6 +170,25 @@ data DiscordColour
   | DiscordFuschia
   | DiscordRed
   | DiscordBlack
+
+-- | Automatic handling of command permissions
+-- @UserPermission@ models the current permissions of the user
+-- @RequiredPermission@ models the permissions required to run a command.
+-- Note, superusers can run all commands
+-- -- None: Any user can run the command
+-- -- Any: The user must be either an exec, moderator
+-- -- Exec: The user must be an exec
+-- -- Moderator: The user must be a moderator
+-- -- Both: The user must be both an exec and a moderator
+-- -- Superuser: The user must be a superuser
+data UserPermission = UserPerm
+  { permExec :: Bool,
+    permModerator :: Bool,
+    permSuperuser :: Bool
+  }
+  deriving (Show, Eq)
+
+data RequiredPermission = None | Any | Exec | Moderator | Both | Superuser deriving (Show, Eq)
 
 -- * Plugins
 

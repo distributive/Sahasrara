@@ -37,6 +37,7 @@ import Discord.Types
 import Tablebot.Plugin
 import Tablebot.Plugin.Discord (getMessage, sendMessageVoid)
 import Tablebot.Plugin.Parser (number, quoted, space)
+import Tablebot.Util.Utils (debugPrint)
 import Text.Megaparsec
 import Text.RawString.QQ (r)
 
@@ -108,7 +109,7 @@ reminderCommand = Command "remind" reminderParser
 reminderCron :: DatabaseDiscord ()
 reminderCron = do
   now <- liftIO $ systemToUTCTime <$> getSystemTime
-  liftIO $ putStrLn $ "running reminder cron at " ++ show now
+  liftIO $ debugPrint $ "running reminder cron at " ++ show now
   entitydue <- select $
     from $ \re -> do
       where_ (re ^. ReminderTime <=. val now)
@@ -137,6 +138,7 @@ Send a reminder to yourself or others. Pick a date and time, and the tablebot wi
 
 *Usage:* `remind "reminder" at <time>`|]
     []
+    None
 
 -- | @reminderPlugin@ builds a plugin providing reminder asking functionality
 -- (@reminderCommand@), reminding functionality (via the cron job specified by

@@ -37,10 +37,10 @@ pong =
     )
 
 pingHelp :: HelpPage
-pingHelp = HelpPage "ping" "show a debug message" "**Ping**\nShows a debug message\n\n*Usage:* `ping`" []
+pingHelp = HelpPage "ping" "show a debug message" "**Ping**\nShows a debug message\n\n*Usage:* `ping`" [] None
 
 pongHelp :: HelpPage
-pongHelp = HelpPage "pong" "show a more different debug message" "**Pong**\nShows a different debug message\n\n*Usage:* `pong`" []
+pongHelp = HelpPage "pong" "show a more different debug message" "**Pong**\nShows a different debug message\n\n*Usage:* `pong`" [] None
 
 -- | @pingPlugin@ assembles these commands into a plugin containing both ping
 -- and pong.
