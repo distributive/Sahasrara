@@ -18,18 +18,18 @@ where
 
 import Control.Monad (forM_)
 import Control.Monad.IO.Class (MonadIO (liftIO))
-import Data.Functor ((<&>))
 import Data.HashMap.Strict (singleton)
+import Data.Maybe (listToMaybe)
 import Data.Text (Text, pack, unpack)
 import Data.Time.Clock.System (getSystemTime, systemToUTCTime)
-import Data.Time.LocalTime (zonedTimeToUTC)
+import Data.Time.LocalTime (ZonedTime, zonedTimeToUTC)
 import Data.Time.LocalTime.TimeZone.Olson.Parse (getTimeZoneSeriesFromOlsonFile)
 import Data.Word (Word64)
 import Database.Esqueleto hiding ((<&>))
 import Database.Persist qualified as P (delete)
 import Database.Persist.TH
 import Discord.Types
-import Duckling.Core (Dimension (Time), Entity (value), Lang (EN), Region (GB), ResolvedVal (RVal), Seal (Seal), currentReftime, makeLocale, parse)
+import Duckling.Core (Dimension (Time), Lang (EN), Region (GB), ResolvedVal (RVal), Seal (Seal), Entity(value), currentReftime, makeLocale, parse)
 import Duckling.Resolve (Context (..), DucklingTime, Options (..))
 import Duckling.Time.Types (InstantValue (InstantValue), SingleTimeValue (SimpleValue), TimeValue (TimeValue))
 import Tablebot.Plugin
@@ -50,30 +50,32 @@ Reminder
     deriving Show
 |]
 
-parseDuckling :: DucklingTime -> Text -> [Seal Dimension] -> [Duckling.Core.Entity]
-parseDuckling now rawString = Duckling.Core.parse rawString context options
+-- Below duckling code was greatly helped by dixonary's example project, below
+-- <https://github.com/dixonary/duckling-example>
+
+-- | @ducklingDateTime@ might return the UTCTime represented by the given text when the current time
+-- is given as a DucklingTime. If it cannot parse the Text, Nothing is given.
+ducklingDateTime :: DucklingTime -> Text -> Maybe UTCTime
+ducklingDateTime now rawString = do
+  entity <- listToMaybe (parse rawString context options [Seal Time])
+  zt <- getVal entity
+  return $ zonedTimeToUTC zt
   where
     context = Context {referenceTime = now, locale = makeLocale EN (Just GB)}
     options = Options {withLatent = True}
-
-ducklingDateTimeParser :: DucklingTime -> Text -> Maybe UTCTime
-ducklingDateTimeParser now rawString = parsedTime <&> zonedTimeToUTC
-  where
-    parsedResult = parseDuckling now rawString [Seal Time]
-    parsedTime = case parsedResult of
-      [] -> Nothing
-      (h : _) -> case value h of
-        RVal Time (TimeValue (SimpleValue (InstantValue x _)) _ _) -> Just x
-        _ -> Nothing
+    getVal :: Duckling.Core.Entity -> Maybe ZonedTime
+    getVal pr = case value pr of
+      RVal Time (TimeValue (SimpleValue (InstantValue x _)) _ _) -> Just x
+      _ -> Nothing
 
 -- @reminderParser@ parses a reminder request of the form
 -- @!remind "reminder" <format>@, where format is a format that Duckling can parse.
-reminderParser' :: Quoted String -> RestOfInput Text -> Message -> DatabaseDiscord ()
-reminderParser' (Qu content) (ROI rawString) m = do
+reminderParser :: Quoted String -> RestOfInput Text -> Message -> DatabaseDiscord ()
+reminderParser (Qu content) (ROI rawString) m = do
   let tz = "Europe/London" :: Text
   tzs <- liftIO $ getTimeZoneSeriesFromOlsonFile $ "/usr/share/zoneinfo/" <> unpack tz
   now <- liftIO $ currentReftime (singleton tz tzs) tz
-  let mTime = ducklingDateTimeParser now rawString
+  let mTime = ducklingDateTime now rawString
   time <- case mTime of
     Just a -> return a
     Nothing -> sendMessageVoid m failText >> fail (unpack failText)
@@ -95,7 +97,7 @@ addReminder time content m = do
 -- | @reminderCommand@ is a command implementing the functionality in
 -- @reminderParser@ and @addReminder@.
 reminderCommand :: Command
-reminderCommand = Command "remind" (parseComm reminderParser')
+reminderCommand = Command "remind" (parseComm reminderParser)
 
 -- | @reminderCron@ is a cron job that checks every minute to see if a reminder
 -- has passed, and if so sends a message using the stored information about the
