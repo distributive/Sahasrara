@@ -39,7 +39,11 @@ dependencies:
 - yaml
 - http-conduit
 - raw-strings-qq
-- neat-interpolation
+- template-haskell
+- bytestring
+- req
+- http-client
+- data-default
 
 library:
   source-dirs: src

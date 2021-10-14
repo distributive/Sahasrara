@@ -129,6 +129,46 @@ data HelpPage = HelpPage
   }
   deriving (Show)
 
+-- | Colour names
+-- Colour is a bit of a mess on discord embeds.
+-- I've here stolen the pallet list from https://gist.github.com/thomasbnt/b6f455e2c7d743b796917fa3c205f812
+data DiscordColour
+  = RGB Integer Integer Integer
+  | Default
+  | Aqua
+  | DarkAqua
+  | Green
+  | DarkGreen
+  | Blue
+  | DarkBlue
+  | Purple
+  | DarkPurple
+  | LuminousVividPink
+  | DarkVividPink
+  | Gold
+  | DarkGold
+  | Orange
+  | DarkOrange
+  | Red
+  | DarkRed
+  | Gray
+  | DarkGray
+  | DarkerGray
+  | LightGray
+  | Navy
+  | DarkNavy
+  | Yellow
+  | DiscordWhite
+  | DiscordBlurple
+  | DiscordGrayple
+  | DiscordDarkButNotBlack
+  | DiscordNotQuiteBlack
+  | DiscordGreen
+  | DiscordYellow
+  | DiscordFuschia
+  | DiscordRed
+  | DiscordBlack
+
 -- * Plugins
 
 -- Plugins are groups of features that forms some functionality of your bot.
@@ -179,7 +219,7 @@ combinePlugins (p : ps) =
           helpPages = merge helpPages p p'
         }
   where
-    merge f p p' = f p +++ f p'
+    merge f q q' = f q +++ f q'
     -- We expect empty list to be very common in this process, so we add
     -- the special case where the second element is empty. This is
     -- because plugins are unlikely to define every possible kind of

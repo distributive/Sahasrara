@@ -40,7 +40,6 @@ import Tablebot.Handler.Event
     parseReactionDel,
   )
 import Tablebot.Plugin
-import Tablebot.Plugin.Types (DatabaseDiscord)
 
 -- | Given a combined plugin @pl@ and a command prefix @prefix@, builds an
 -- event handler. This takes in each Discord 'Event' received (present in
@@ -62,8 +61,8 @@ eventHandler pl prefix = \case
   -- TODO: MessageReactionRemoveAll is a bit of a pain as it gives us cid/mid,
   -- when we need ReactionInfo (contains a few extra bits).
   -- Similar with MessageReactionRemoveEmoji (removes all of one type).
-  MessageReactionRemoveAll cid mid -> pure ()
-  MessageReactionRemoveEmoji rri -> pure ()
+  MessageReactionRemoveAll _cid _mid -> pure ()
+  MessageReactionRemoveEmoji _rri -> pure ()
   e -> parseOther (otherEvents pl) e
   where
     ifNotBot m = unless (userIsBot (messageAuthor m))
@@ -86,7 +85,7 @@ runCron (CronJob delay fn) = do
   liftIO $ forkIO (loopWithDelay delay unDiscord)
   where
     loopWithDelay :: Int -> IO () -> IO ()
-    loopWithDelay del fn = fn >> threadDelay del >> loopWithDelay del fn
+    loopWithDelay del fn' = fn' >> threadDelay del >> loopWithDelay del fn'
 
 -- | @killCron@ takes a list of @ThreadId@ and kills each thread.
 killCron :: [ThreadId] -> IO ()
