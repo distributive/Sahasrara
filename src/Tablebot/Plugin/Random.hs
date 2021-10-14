@@ -14,7 +14,7 @@ import Control.Monad.Exception
 import Data.List
 import Data.Maybe
 import System.Random (randomRIO)
-import Tablebot.Plugin.Error
+import Tablebot.Plugin.Exception
 
 -- | @chooseOne@ chooses a single random element from a given list with uniform
 -- distribution.

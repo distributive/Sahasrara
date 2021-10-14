@@ -20,7 +20,7 @@ import Data.Text (Text, pack)
 import Discord.Types (Message (messageText))
 import Tablebot.Plugin
 import Tablebot.Plugin.Discord (sendEmbedMessageVoid)
-import Tablebot.Plugin.Error
+import Tablebot.Plugin.Exception
 import Tablebot.Plugin.Parser (skipSpace1, sp)
 import Text.Megaparsec
 

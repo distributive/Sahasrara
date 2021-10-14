@@ -20,7 +20,7 @@ import Data.Yaml.Internal (ParseException)
 import GHC.Generics (Generic)
 import Tablebot.Plugin
 import Tablebot.Plugin.Discord (sendMessageVoid)
-import Tablebot.Plugin.Error
+import Tablebot.Plugin.Exception
 import Tablebot.Plugin.Random (chooseOne, chooseOneWeighted)
 import Tablebot.Plugin.SmartCommand
 import Text.Printf
