@@ -41,6 +41,10 @@ import Tablebot.Handler.Event
   )
 import Tablebot.Plugin
 
+import Control.Monad.Exception
+import Tablebot.Plugin.Error
+import Tablebot.Plugin.Discord (sendEmbedMessageVoid)
+
 -- | Given a combined plugin @pl@ and a command prefix @prefix@, builds an
 -- event handler. This takes in each Discord 'Event' received (present in
 -- "Discord.Types") and runs the relevant command or event handler from the
@@ -48,7 +52,7 @@ import Tablebot.Plugin
 eventHandler :: Plugin -> Text -> Event -> DatabaseDiscord ()
 eventHandler pl prefix = \case
   MessageCreate m -> ifNotBot m $ do
-    parseCommands (commands pl) m prefix
+    parseCommands (commands pl) m prefix `catch` \e -> sendEmbedMessageVoid m "" $ embedError $ (e :: BotException)
     parseInlineCommands (inlineCommands pl) m
   MessageUpdate cid mid ->
     parseMessageChange (onMessageChanges pl) True cid mid

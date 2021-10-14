@@ -35,7 +35,7 @@ import Text.Megaparsec
 parseCommands :: [Command] -> Message -> Text -> DatabaseDiscord ()
 parseCommands cs m prefix = case parse (parser cs) "" (messageText m) of
   Right p -> p m
-  Left e -> sendEmbedMessageVoid m "" $ embedError $ ParserError $ "```\n" ++ errorBundlePretty e ++ "```"
+  Left e -> sendEmbedMessageVoid m "" $ embedError $ ParseException $ "```\n" ++ errorBundlePretty e ++ "```"
   where
     parser :: [Command] -> Parser (Message -> DatabaseDiscord ())
     parser cs' =

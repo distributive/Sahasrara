@@ -9,7 +9,7 @@
 --
 -- A plugin for error handling.
 module Tablebot.Plugin.Error
-  ( BotError (..),
+  ( BotException (..),
     showError,
     showUserError,
     embedError,
@@ -21,14 +21,20 @@ import Discord.Internal.Types
 import Tablebot.Plugin.Embed
 import Tablebot.Plugin.Types (DiscordColour (..))
 
--- | @BotError@ is the type for errors caught in TableBot.
--- Declare new errors here, and define them at the bottom of the file.
-data BotError
-  = UnnamedError String String
-  | ParserError String
-  | IndexOutOfBoundsError Int (Int, Int)
-  | RandomError String
+import Control.Monad.Exception (Exception)
 
+-- | @BotException@ is the type for errors caught in TableBot.
+-- Declare new errors here, and define them at the bottom of the file.
+data BotException
+  = GenericException String String
+  | ParseException String
+  | IndexOutOfBoundsException Int (Int, Int)
+  | RandomException String
+  deriving (Show, Eq)
+
+instance Exception BotException
+
+-- | @errorEmoji@ defines a Discord emoji in plaintext for use in error outputs.
 errorEmoji :: String
 errorEmoji = ":warning:"
 
@@ -48,37 +54,37 @@ formatUserError name message =
 data ErrorInfo = ErrorInfo {name :: String, msg :: String}
 
 -- | @errorName@ generates the name of a given error.
-errorName :: BotError -> String
+errorName :: BotException -> String
 errorName = name . errorInfo
 
 -- | @errorMsg@ generates the message of a given error.
-errorMsg :: BotError -> String
+errorMsg :: BotException -> String
 errorMsg = msg . errorInfo
 
 -- | @showError@ generates the command line output of a given error.
-showError :: BotError -> String
+showError :: BotException -> String
 showError e = (errorName e) ++ ": " ++ (errorMsg e)
 
 -- | @showUserError@ generates a user-facing error for outputting to Discord.
-showUserError :: BotError -> String
+showUserError :: BotException -> String
 showUserError e = formatUserError (errorName e) (errorMsg e)
 
 -- | @embedError@ takes an error and makes it into an embed.
-embedError :: BotError -> Embed
+embedError :: BotException -> Embed
 embedError e =
   addTitle (pack $ errorEmoji ++ " **" ++ (errorName e) ++ "** " ++ errorEmoji) $
     addColour Red $
       simpleEmbed (pack $ errorMsg e)
 
--- | @errorInfo@ takes a BotError and converts it into an ErrorInfo struct.
-errorInfo :: BotError -> ErrorInfo
+-- | @errorInfo@ takes a BotException and converts it into an ErrorInfo struct.
+errorInfo :: BotException -> ErrorInfo
 
 -- | Add new errors here. Do not modify anything above this line except to
--- declare new errors in the definition of BotError.
-errorInfo (UnnamedError name msg) = ErrorInfo name msg
-errorInfo (ParserError msg) = ErrorInfo "ParserError" msg
-errorInfo (IndexOutOfBoundsError index (a, b)) =
+-- declare new errors in the definition of BotException.
+errorInfo (GenericException name msg) = ErrorInfo name msg
+errorInfo (ParseException msg) = ErrorInfo "ParseException" msg
+errorInfo (IndexOutOfBoundsException index (a, b)) =
   ErrorInfo
-    "IndexOutOfBoundsError"
+    "IndexOutOfBoundsException"
     $ "Index value of " ++ (show index) ++ " is not in the valid range [" ++ (show a) ++ ", " ++ (show b) ++ "]."
-errorInfo (RandomError msg) = ErrorInfo "RandomError" msg
+errorInfo (RandomException msg) = ErrorInfo "RandomException" msg

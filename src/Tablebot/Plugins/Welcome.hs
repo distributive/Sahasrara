@@ -25,6 +25,8 @@ import Tablebot.Plugin.SmartCommand
 import Text.Printf
 import Text.RawString.QQ
 
+import Control.Monad.Exception
+
 -- | @favourite@ is the user-facing command that generates categories.
 favourite :: Command
 favourite =
@@ -32,7 +34,7 @@ favourite =
     "favourite"
     ( parseComm $ \m -> do
         cat <- liftIO $ generateCategory =<< randomCategoryClass
-        let formatted = either showUserError id $ (\(i, c) -> i ++ " is your favourite:\n> " ++ c ++ "?") <$> cat
+        let formatted = (\(i, c) -> i ++ " is your favourite:\n> " ++ c ++ "?") cat
         sendMessageVoid m $ pack $ formatted
     )
 
@@ -72,7 +74,7 @@ categories = do
     Left err -> []
     Right out -> classes out
 
-randomCategoryClass :: IO (Either BotError CategoryClass)
+randomCategoryClass :: IO CategoryClass
 randomCategoryClass = do
   cats <- categories
   chooseOneWeighted getWeight cats
@@ -81,11 +83,10 @@ randomCategoryClass = do
       Just x -> x
       Nothing -> length $ values c
 
-generateCategory :: Either BotError CategoryClass -> IO (Either BotError (String, String))
-generateCategory (Left err) = return $ Left err
-generateCategory (Right catClass) = do
+generateCategory :: CategoryClass -> IO (String, String)
+generateCategory catClass = do
   choice <- chooseOne $ values catClass
-  return $ (\x -> (getInterrogative catClass, printf (getTemplate catClass) x)) <$> choice
+  return $ (getInterrogative catClass, printf (getTemplate catClass) choice)
   where
     getTemplate c = case template c of
       Just x -> x
