@@ -25,7 +25,7 @@ import Data.Time.Clock.System (getSystemTime, systemToUTCTime)
 import Data.Time.LocalTime (ZonedTime, zonedTimeToUTC)
 import Data.Time.LocalTime.TimeZone.Olson.Parse (getTimeZoneSeriesFromOlsonFile)
 import Data.Word (Word64)
-import Database.Esqueleto hiding ((<&>))
+import Database.Esqueleto
 import Database.Persist qualified as P (delete)
 import Database.Persist.TH
 import Discord.Types
