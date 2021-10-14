@@ -12,7 +12,7 @@ module Tablebot.Plugin.Embed where
 
 import Data.Text (Text)
 import Discord.Internal.Types
-import Tablebot.Handler.Embed (colourToInternal)
+import Tablebot.Handler.Embed (Embeddable, asEmbed, colourToInternal)
 import Tablebot.Plugin.Types (DiscordColour)
 
 -- | Some helper functions to allow progressively building up an embed
@@ -22,15 +22,15 @@ import Tablebot.Plugin.Types (DiscordColour)
 simpleEmbed :: Text -> Embed
 simpleEmbed t = createEmbed $ CreateEmbed "" "" Nothing "" "" Nothing t [] Nothing "" Nothing
 
-addTitle :: Text -> Embed -> Embed
+addTitle :: Embeddable e => Text -> e -> Embed
 addTitle t e =
-  e
+  (asEmbed e)
     { embedTitle = Just t
     }
 
-addFooter :: Text -> Embed -> Embed
+addFooter :: Embeddable e => Text -> e -> Embed
 addFooter t e =
-  e
+  (asEmbed e)
     { embedFooter = Just $ EmbedFooter t Nothing Nothing
     }
 
@@ -42,7 +42,7 @@ addTimestamp t e =
 
 addAuthor :: Text -> Embed -> Embed
 addAuthor t e =
-  e
+  (asEmbed e)
     { embedAuthor = Just $ EmbedAuthor (Just t) Nothing Nothing Nothing
     }
 
@@ -54,18 +54,18 @@ addLink t e =
 
 addColour :: DiscordColour -> Embed -> Embed
 addColour c e =
-  e
+  (asEmbed e)
     { embedColor = Just $ colourToInternal c
     }
 
-addImage :: Text -> Embed -> Embed
+addImage :: Embeddable e => Text -> e -> Embed
 addImage url e =
-  e
+  (asEmbed e)
     { embedImage = Just $ EmbedImage (Just url) Nothing Nothing Nothing
     }
 
-addThumbnail :: Text -> Embed -> Embed
+addThumbnail :: Embeddable e => Text -> e -> Embed
 addThumbnail url e =
-  e
+  (asEmbed e)
     { embedThumbnail = Just $ EmbedThumbnail (Just url) Nothing Nothing Nothing
     }
