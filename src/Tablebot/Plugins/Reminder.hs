@@ -29,7 +29,7 @@ import Database.Esqueleto hiding ((<&>))
 import Database.Persist qualified as P (delete)
 import Database.Persist.TH
 import Discord.Types
-import Duckling.Core (Dimension (Time), Lang (EN), Region (GB), ResolvedVal (RVal), Seal (Seal), Entity(value), currentReftime, makeLocale, parse)
+import Duckling.Core (Dimension (Time), Entity (value), Lang (EN), Region (GB), ResolvedVal (RVal), Seal (Seal), currentReftime, makeLocale, parse)
 import Duckling.Resolve (Context (..), DucklingTime, Options (..))
 import Duckling.Time.Types (InstantValue (InstantValue), SingleTimeValue (SimpleValue), TimeValue (TimeValue))
 import Tablebot.Plugin
