@@ -11,9 +11,8 @@
 module Tablebot.Plugins.Welcome (welcomePlugin) where
 
 import Control.Monad.IO.Class
-import Data.Aeson (FromJSON, eitherDecode)
-import qualified Data.ByteString.Lazy as B
-import Data.Text (Text, pack)
+import Data.Aeson (FromJSON)
+import Data.Text (pack)
 import Data.Yaml (decodeFileEither)
 import Data.Yaml.Internal (ParseException)
 import GHC.Generics (Generic)
@@ -58,7 +57,7 @@ data CategoryClass = CategoryClass
   }
   deriving (Show, Generic)
 
-data FileData = FileData {classes :: ![CategoryClass]} deriving (Show, Generic)
+newtype FileData = FileData {classes :: [CategoryClass]} deriving (Show, Generic)
 
 instance FromJSON CategoryClass
 
@@ -71,7 +70,7 @@ categories :: IO [CategoryClass]
 categories = do
   cats <- decodeFileEither yamlFile :: IO (Either ParseException FileData)
   return $ case cats of
-    Left err -> []
+    Left _ -> []
     Right out -> classes out
 
 randomCategoryClass :: IO (Either Error CategoryClass)

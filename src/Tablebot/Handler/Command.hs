@@ -20,7 +20,7 @@ import Data.Text (Text, pack)
 import Discord.Types (Message (messageText))
 import Tablebot.Plugin
 import Tablebot.Plugin.Discord (sendMessageVoid)
-import Tablebot.Plugin.Parser (skipSpace1, sp)
+import Tablebot.Plugin.Parser (skipSpace1)
 import Text.Megaparsec
 
 -- | Given a list of 'Command' @cs@, the 'Message' that triggered the event

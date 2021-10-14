@@ -10,13 +10,12 @@
 -- A command that outputs its input.
 module Tablebot.Plugins.Say (sayPlugin) where
 
-import Data.Text (Text, pack)
-import Discord.Types
+import Data.Text (pack)
+import Discord.Types (Message (messageAuthor), User (userId))
 import Tablebot.Plugin
-import Tablebot.Plugin.Discord (Message, sendMessageVoid)
+import Tablebot.Plugin.Discord (sendMessageVoid)
 import Tablebot.Plugin.Parser (untilEnd)
-import Text.Megaparsec
-import Text.RawString.QQ
+import Text.RawString.QQ (r)
 
 -- | @say@ outputs its input.
 say :: Command
@@ -26,7 +25,7 @@ say = Command "say" saycomm
     saycomm = do
       input <- untilEnd
       return $ \m -> do
-        sendMessageVoid m $ pack $ "> " ++ input ++ "\n - <@" ++ (show $ userId $ messageAuthor m) ++ ">"
+        sendMessageVoid m $ pack $ "> " ++ input ++ "\n - <@" ++ show (userId $ messageAuthor m) ++ ">"
 
 sayHelp :: HelpPage
 sayHelp =
