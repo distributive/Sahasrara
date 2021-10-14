@@ -16,12 +16,11 @@ module Tablebot.Plugin.Error
   )
 where
 
+import Control.Monad.Exception (Exception)
 import Data.Text (pack)
 import Discord.Internal.Types
 import Tablebot.Plugin.Embed
 import Tablebot.Plugin.Types (DiscordColour (..))
-
-import Control.Monad.Exception (Exception)
 
 -- | @BotException@ is the type for errors caught in TableBot.
 -- Declare new errors here, and define them at the bottom of the file.
