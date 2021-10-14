@@ -40,6 +40,11 @@ dependencies:
 - http-conduit
 - raw-strings-qq
 - template-haskell
+- timezone-series
+- timezone-olson
+- duckling
+- string
+- unordered-containers
 
 library:
   source-dirs: src
@@ -61,6 +66,8 @@ library:
   - DataKinds
   - FlexibleInstances
   - DeriveGeneric
+  ghc-options:
+  - -Wall
 
 
 executables:

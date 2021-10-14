@@ -4,3 +4,4 @@
 db.*
 database*
 *.cabal
+stack.yaml.lock
