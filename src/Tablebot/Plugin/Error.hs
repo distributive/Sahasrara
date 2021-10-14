@@ -12,21 +12,31 @@ module Tablebot.Plugin.Error
   ( BotError (..),
     showError,
     showUserError,
+    embedError,
   )
 where
+
+import Data.Text (pack)
+import Discord.Internal.Types
+import Tablebot.Plugin.Embed
+import Tablebot.Plugin.Types (DiscordColour (..))
 
 -- | @BotError@ is the type for errors caught in TableBot.
 -- Declare new errors here, and define them at the bottom of the file.
 data BotError
   = UnnamedError String String
+  | ParserError String
   | IndexOutOfBoundsError Int (Int, Int)
   | RandomError String
+
+errorEmoji :: String
+errorEmoji = ":warning:"
 
 -- | @formatUserError@ takes an error's name and message and makes it pretty for
 -- Discord.
 formatUserError :: String -> String -> String
 formatUserError name message =
-  ":warning: **" ++ name ++ "** :warning:\n"
+  errorEmoji ++ " **" ++ name ++ "** " ++ errorEmoji ++ "\n"
     ++ "An error was encountered while resolving your command:\n"
     ++ "> `"
     ++ message
@@ -53,12 +63,20 @@ showError e = (errorName e) ++ ": " ++ (errorMsg e)
 showUserError :: BotError -> String
 showUserError e = formatUserError (errorName e) (errorMsg e)
 
+-- | @embedError@ takes an error and makes it into an embed.
+embedError :: BotError -> Embed
+embedError e =
+  addTitle (pack $ errorEmoji ++ " **" ++ (errorName e) ++ "** " ++ errorEmoji) $
+    addColour Red $
+      simpleEmbed (pack $ errorMsg e)
+
 -- | @errorInfo@ takes a BotError and converts it into an ErrorInfo struct.
 errorInfo :: BotError -> ErrorInfo
 
 -- | Add new errors here. Do not modify anything above this line except to
 -- declare new errors in the definition of BotError.
 errorInfo (UnnamedError name msg) = ErrorInfo name msg
+errorInfo (ParserError msg) = ErrorInfo "ParserError" msg
 errorInfo (IndexOutOfBoundsError index (a, b)) =
   ErrorInfo
     "IndexOutOfBoundsError"
