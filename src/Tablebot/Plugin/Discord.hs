@@ -20,6 +20,7 @@ module Tablebot.Plugin.Discord
 where
 
 import Control.Monad (void)
+import Control.Monad.Exception
 import Control.Monad.Trans.Class (MonadTrans (lift))
 import Data.Maybe (fromJust)
 import Data.Text
@@ -28,8 +29,6 @@ import qualified Discord.Requests as R
 import Discord.Types
 import Tablebot.Handler.Embed
 import Tablebot.Plugin (DatabaseDiscord)
-
-import Control.Monad.Exception
 import Tablebot.Plugin.Exception (BotException (..))
 
 -- | @sendMessage@ sends the input message @t@ in the same channel as message
