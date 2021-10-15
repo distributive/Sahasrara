@@ -19,7 +19,7 @@ where
 import Data.Text (Text, pack)
 import Discord.Types (Message (messageText))
 import Tablebot.Plugin
-import Tablebot.Plugin.Discord (sendEmbedMessageVoid)
+import Tablebot.Plugin.Discord (sendEmbedMessage)
 import Tablebot.Plugin.Exception
 import Tablebot.Plugin.Parser (skipSpace1, sp)
 import Text.Megaparsec
@@ -35,7 +35,7 @@ import Text.Megaparsec
 parseCommands :: [Command] -> Message -> Text -> DatabaseDiscord ()
 parseCommands cs m prefix = case parse (parser cs) "" (messageText m) of
   Right p -> p m
-  Left e -> sendEmbedMessageVoid m "" $ embedError $ ParseException $ "```\n" ++ errorBundlePretty e ++ "```"
+  Left e -> sendEmbedMessage m "" $ embedError $ ParseException $ "```\n" ++ errorBundlePretty e ++ "```"
   where
     parser :: [Command] -> Parser (Message -> DatabaseDiscord ())
     parser cs' =

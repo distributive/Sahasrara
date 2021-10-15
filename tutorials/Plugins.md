@@ -45,11 +45,11 @@ ping = Command "ping" (noArguments $ \m -> do
     return ())
 ```
 
-This can be further simplified through `sendMessageVoid`, which discards the error for us:
+This can be further simplified through `sendMessage`, which discards the error for us:
 
 ```haskell
 ping :: Command
-ping = Command "ping" (noArguments $ \m -> sendMessageVoid m "pong")
+ping = Command "ping" (noArguments $ \m -> sendMessage m "pong")
 ```
 
 Now we just need to make a `Plugin`. This is done using `plug` (the default empty plugin) and a record update to add your commands in. To add commands to a plugin, simply update the `commands` field of the record as follows.
@@ -75,7 +75,7 @@ Smart commands are invocated through `parseComm :: PComm ty => ty -> Parser (Mes
 echo :: Command
 echo = Command "echo" (parseComm echoHelp)
     where echoHelp :: Text -> Message -> DatabaseDiscord ()
-          echoHelp t m = sendMessageVoid m t
+          echoHelp t m = sendMessage m t
 ```
 
 As you can see, we didn't have to even mention parsers here - we defined the sort of command that we wanted, and `parseComm` built the parser for us. However, the parser for `Text` only parses a single word, which may not be the entire input. As such, we provide a collection of new types that have slightly different parsers. These are instances of `CanParse` in `Tablebot.Plugin.SmartCommand` so can be seen in that documentation, but we also list the new ones here for convenience.
@@ -91,7 +91,7 @@ As you can see, we didn't have to even mention parsers here - we defined the sor
 echo :: Command
 echo = Command "echo" (parseComm echoHelp)
     where echoHelp :: RestOfInput Text -> Message -> DatabaseDiscord ()
-          echoHelp (ROI t) m = sendMessageVoid m t
+          echoHelp (ROI t) m = sendMessage m t
 ```
 
 As a bonus, we also map common types to helpful parsers.
@@ -132,7 +132,7 @@ ping' = Command "ping" (parseComm pingWithTime)
     where pingWithTime :: Message -> DatabaseDiscord ()
           pingWithTime m = do
               now <- liftIO $ systemToUTCTime <$> getSystemTime
-              sendMessageVoid $ "pong (" ++ show now ++ ")"
+              sendMessage $ "pong (" ++ show now ++ ")"
 ```
 
 Great!
@@ -191,7 +191,7 @@ Finally, we need to provide functionality for reporting this information back to
 
 ```haskell
               ...
-              sendMessageVoid m (show $ count record')
+              sendMessage m (show $ count record')
 ```
 
 Hooray!

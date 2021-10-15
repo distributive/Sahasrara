@@ -19,7 +19,7 @@ import Data.Yaml (decodeFileEither)
 import Data.Yaml.Internal (ParseException)
 import GHC.Generics (Generic)
 import Tablebot.Plugin
-import Tablebot.Plugin.Discord (sendMessageVoid)
+import Tablebot.Plugin.Discord (sendMessage)
 import Tablebot.Plugin.Exception
 import Tablebot.Plugin.Random (chooseOne, chooseOneWeighted)
 import Tablebot.Plugin.SmartCommand
@@ -34,7 +34,7 @@ favourite =
     ( parseComm $ \m -> do
         cat <- liftIO $ generateCategory =<< randomCategoryClass
         let formatted = (\(i, c) -> i ++ " is your favourite:\n> " ++ c ++ "?") cat
-        sendMessageVoid m $ pack $ formatted
+        sendMessage m $ pack $ formatted
     )
 
 favouriteHelp :: HelpPage

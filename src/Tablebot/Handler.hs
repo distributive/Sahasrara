@@ -41,7 +41,7 @@ import Tablebot.Handler.Event
     parseReactionDel,
   )
 import Tablebot.Plugin
-import Tablebot.Plugin.Discord (sendEmbedMessageVoid)
+import Tablebot.Plugin.Discord (sendEmbedMessage)
 import Tablebot.Plugin.Exception
 
 -- | Given a combined plugin @pl@ and a command prefix @prefix@, builds an
@@ -51,7 +51,7 @@ import Tablebot.Plugin.Exception
 eventHandler :: Plugin -> Text -> Event -> DatabaseDiscord ()
 eventHandler pl prefix = \case
   MessageCreate m -> ifNotBot m $ do
-    parseCommands (commands pl) m prefix `catch` \e -> sendEmbedMessageVoid m "" $ embedError $ (e :: BotException)
+    parseCommands (commands pl) m prefix `catch` \e -> sendEmbedMessage m "" $ embedError $ (e :: BotException)
     parseInlineCommands (inlineCommands pl) m
   MessageUpdate cid mid ->
     parseMessageChange (onMessageChanges pl) True cid mid

@@ -66,6 +66,7 @@ library:
   - DataKinds
   - FlexibleInstances
   - DeriveGeneric
+  - TypeApplications
 
 
 executables:

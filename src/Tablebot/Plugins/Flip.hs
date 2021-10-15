@@ -13,7 +13,7 @@ module Tablebot.Plugins.Flip (flipPlugin) where
 import Control.Monad.IO.Class
 import Data.Text (Text, pack)
 import Tablebot.Plugin
-import Tablebot.Plugin.Discord (Message, sendMessageVoid)
+import Tablebot.Plugin.Discord (Message, sendMessage)
 import Tablebot.Plugin.Parser
 import Tablebot.Plugin.Random
 import Text.Megaparsec
@@ -32,7 +32,7 @@ flip = Command "flip" flipcomm
         choice <- case length args of
           0 -> liftIO $ chooseOneWithDefault "" ["Heads", "Tails"]
           otherwise -> liftIO $ chooseOneWithDefault (head args) args
-        sendMessageVoid m $ pack choice
+        sendMessage m $ pack choice
 
 flipHelp :: HelpPage
 flipHelp =
