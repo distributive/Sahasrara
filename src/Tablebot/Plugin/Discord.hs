@@ -42,7 +42,7 @@ sendMessage ::
 sendMessage m t = do
   res <- lift . restCall $ R.CreateMessage (messageChannel m) t
   case res of
-    Left e -> throw $ GenericException "SendMessageException" "Failed to send message."
+    Left e -> throw $ MessageSendException "Failed to send message."
     Right m -> return ()
 
 -- | @sendEmbedMessage@ sends the input message @t@ in the same channel as message
@@ -61,7 +61,7 @@ sendEmbedMessage ::
 sendEmbedMessage m t e = do
   res <- lift . restCall $ TablebotEmbedRequest (messageChannel m) t (asEmbed e)
   case res of
-    Left e -> throw $ GenericException "SendEmbedMessageException" "Failed to send embed message."
+    Left e -> throw $ MessageSendException "Failed to send embed message."
     Right m -> return ()
 
 -- | @getMessage@ gets the relevant 'Message' object for a given 'ChannelId'
