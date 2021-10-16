@@ -20,7 +20,7 @@ module Tablebot.Plugin.Exception
   )
 where
 
-import Control.Monad.Exception (MonadException, Exception, throw, catch)
+import Control.Monad.Exception (Exception, MonadException, catch, throw)
 import Data.Text (pack)
 import Discord.Internal.Types
 import Tablebot.Plugin.Embed
@@ -41,6 +41,7 @@ instance Exception BotException
 -- | Aliases for throw and catch that enforce the exception type.
 throwBot :: MonadException m => BotException -> m a
 throwBot = throw
+
 catchBot :: MonadException m => m a -> (BotException -> m a) -> m a
 catchBot = catch
 
