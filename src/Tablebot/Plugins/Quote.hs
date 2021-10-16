@@ -22,7 +22,7 @@ import Database.Persist
 import Database.Persist.Sqlite
 import Database.Persist.TH
 import Discord.Internal.Types.Events (ReactionInfo (reactionChannelId, reactionEmoji, reactionMessageId, reactionUserId))
-import Discord.Types (Emoji (emojiName), Message (messageAuthor, messageChannel, messageId, messageText), UTCTime, messageGuild)
+import Discord.Types (Emoji (emojiName), Message (messageAuthor, messageChannel, messageId, messageText), UTCTime, messageGuild, userIsBot)
 import GHC.Int (Int64)
 import System.Random (randomRIO)
 import Tablebot.Plugin
@@ -181,12 +181,15 @@ addMessageQuote :: Message -> Message -> DatabaseDiscord ()
 addMessageQuote q' m = do
   num <- count [QuoteMsgId ==. Just (fromIntegral $ messageId q')]
   if num == 0
-    then do
-      now <- liftIO $ systemToUTCTime <$> getSystemTime
-      let new = Quote (unpack $ messageText q') (toMentionStr $ messageAuthor q') (Just $ fromIntegral $ messageId q') (Just $ fromIntegral $ messageChannel q') now
-      added <- insert $ new
-      let res = pack $ show $ fromSqlKey added
-      renderCustomQuoteMessage ("Quote added as #" `append` res) new (fromSqlKey added) m
+    then
+      if not $ userIsBot (messageAuthor q')
+        then do
+          now <- liftIO $ systemToUTCTime <$> getSystemTime
+          let new = Quote (unpack $ messageText q') (toMentionStr $ messageAuthor q') (Just $ fromIntegral $ messageId q') (Just $ fromIntegral $ messageChannel q') now
+          added <- insert $ new
+          let res = pack $ show $ fromSqlKey added
+          renderCustomQuoteMessage ("Quote added as #" `append` res) new (fromSqlKey added) m
+        else sendMessageVoid m "Can't quote a bot"
     else sendMessageVoid m "Message already quoted"
 
 -- | @editQuote@, which looks for a message of the form
