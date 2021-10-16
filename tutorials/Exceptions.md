@@ -1,0 +1,209 @@
+# What to do when your code might break or: How I Learned to Stop Worrying and Love the Exception
+
+In this tutorial we will be writing code that has the potential to cause an error, from no fault of the developer. Sometimes errors can't be avoided, like for example if your code relies on the existence of a file or the proper formatting of an input. Your code does need to account for errors though to properly notify the user what went wrong.
+
+## BotException
+
+Let's start by exploring how Tablebot handles errors. If you check out `Tablebot/Plugin/Exception.hs` you can see how it's implemented. Later on we'll go through how to add a new type of exception to it.
+
+The important thing to take away from the implementation is that it's built on top of [Control.Monad.Exception](https://hackage.haskell.org/package/exception-transformers-0.4.0.10/docs/Control-Monad-Exception.html). There are three important functions that enable exception throwing and handling:
+
+```haskell
+-- | Throws an exception of type e.
+throw :: Exception e => e -> m a
+
+-- | If the computation in the first argument throws an error, apply the second
+-- argument to it as a fallback measure.
+catch :: Exception e => m a	-> (e -> m a)	-> m a
+
+-- | Runs the computation in the first argument, and then the computation in the
+-- second one afterwards regardless of an error was thrown.
+-- | finally is only required if you want to ensure some computation (m b)
+-- always happens after the computation (m a). For the most part you will only
+-- need throw and catch.
+finally :: m a -> m b -> m a
+```
+
+You may notice that `throw` and `catch` are aliased as `throwBot` and `catchBot` respectively. These aliases do exactly the same thing, but specify that the type of exception is always `BotException`. This is very useful when writing fallbacks that the compiler cannot determine the type of. Please use `throwBot` and `catchBot` instead of their original counterparts.
+
+### Example
+
+Here is an example of a function `foo` that does nothing but throw a `GenericException`. It is called by the function `bar` which catches the exception and responds with a fallback:
+
+```haskell
+foo = throwBot $ GenericException "TutorialException" "This is the description of the exception."
+
+bar = foo `catchBot` \e -> putStrLn "An exception was caught!"
+```
+
+If you evaluate `foo` by itself you'll get the default output for when an uncaught error occurs:
+`*** Exception: GenericException "TutorialException" "This is the description of the exception."`
+
+Note that this will only appear in the command line, so Discord users won't see it but only a lack of response from the bot.
+
+If you evaluate `bar` it will catch the exception from `foo` and output `An exception was caught!`.
+
+You won't always have to worry about catching exceptions. Any exception that happens while evaluating a command response will be caught in `Tablebot/Handler.hs` and formatted into a nice embed message for Discord users to see. Times when you might want to catch exceptions is when you don't want the command to fail if there's an error. You might also want to clarify exactly what the error was. A good example of this is with functions involving random number generation.
+
+The following example works using the `chooseOne` function from `Tablebot/Plugin/Random.hs`. Note its sibling function `chooseOneWithDefault`, which uses a `catch` to ensure it never propagates an error. The intention with the code below is that the user provides a minimum and maximum number and the bot responds with a random number inclusively between them:
+
+```haskell
+randomNumber :: Command
+randomNumber =
+  Command
+    "randomNumber"
+    ( parseComm $ \m -> do
+        low <- number
+        space
+        high <- number
+        x <- chooseOne [low..high]
+        sendMessage m $ pack $ show x
+    )
+```
+
+But what happens if the user gives an invalid range of numbers, like 10 and 1? This range would result in the bot attempting to choose from the empty list `[]`. `chooseOne` throws a `RandomException` when it encounters an empty list, citing that it "cannot choose from empty list". However, this isn't very informative to Discord users who might not even know what list is even being chosen from. Let's detect the error ourselves and send a clearer message:
+
+```haskell
+randomNumber :: Command
+randomNumber =
+  Command
+    "randomNumber"
+    ( parseComm $ \m -> do
+        low <- number
+        space
+        high <- number
+        x <- chooseOne [low..high] `catch` \e -> throwBot $ RandomException "Please provide a valid range. The first argument cannot be larger than the second"
+        sendMessage m $ pack $ show x
+    )
+```
+
+Here, instead of the exception propagating to the handler, we catch it early and replace it with a new exception. The exception module supports this functionality with `transformException`:
+
+```haskell
+randomNumber :: Command
+randomNumber =
+  Command
+    "randomNumber"
+    ( parseComm $ \m -> do
+        low <- number
+        space
+        high <- number
+        x <- chooseOne [low..high] `transformException` \e -> RandomException "Please provide a valid range. The first argument cannot be larger than the second"
+        sendMessage m $ pack $ show x
+    )
+```
+
+`transformException` takes a computation that may fail and a function that converts a BotException into a new BotException. In this case we don't care what the previous exception was, so we can use the simpler `transformExceptionConst`:
+
+```haskell
+randomNumber :: Command
+randomNumber =
+  Command
+    "randomNumber"
+    ( parseComm $ \m -> do
+        low <- number
+        space
+        high <- number
+        x <- chooseOne [low..high] `transformExceptionConst` RandomException "Please provide a valid range. The first argument cannot be larger than the second"
+        sendMessage m $ pack $ show x
+    )
+```
+
+### Parser exceptions
+
+Be aware that you don't have to catch parsing errors yourself. The parser automatically throws a `ParserException` when it cannot match its input.
+
+## Outputting errors
+
+The exception module provides a number of ways to format your exceptions nicely. All BotExceptions implement the following functions:
+
+```haskell
+-- | Generates the name of a given error.
+errorName :: BotException -> String
+errorName = name . errorInfo
+
+-- | Generates the message of a given error.
+errorMsg :: BotException -> String
+errorMsg = msg . errorInfo
+
+-- | Generates the command line output of a given error.
+showError :: BotException -> String
+showError e = (errorName e) ++ ": " ++ (errorMsg e)
+
+-- | Generates a user-facing error for outputting to Discord.
+showUserError :: BotException -> String
+
+-- | Takes an error and makes it into an embed.
+embedError :: BotException -> Embed
+```
+
+Most commonly you'll want to use `showUserError` for plaintext outputs and `embedError` for embed message outputs.
+
+## Types of exception
+
+The type for exceptions in Tablebot is `BotException`:
+
+```haskell
+data BotException
+  = GenericException String String
+  | MessageSendException String
+  | ParserException
+  | RandomException String
+  | IndexOutOfBoundsException Int (Int, Int)
+  | ...
+```
+
+As development continues more categories of exception will be added to this definition.
+
+Some categories worth being aware of are:
+
+`GenericException` defines two strings: a name and a description. It's purpose is for one-off exception types that don't really fit anywhere else. If you find yourself using a lot of these consider adding a new category of exception instead. Their main purpose is for testing during development.
+
+Note that no other exception lets you define its name, as all other exceptions already have names.
+
+`MessageSendException` is an exception used by the handler when a message fails to send for some reason. You are very unlikely to need this unless you are working with the bot's message-sending functions.
+
+`ParserException` similarly is for when the bot's parser fails to match something it should be able to, and does not need to be manually thrown by command implementations.
+
+`RandomException` is an exception thrown when attempting to do something with random numbers. Its only parameter is the exception's description. This is a good example of what most exception categories should look like.
+
+`IndexOutOfBoundsException` is an odd one as it doesn't let you specify its message. Instead you tell it what index caused the exception and what the valid range was. When you call `errorMsg` on it, it formats that information into a message for you.
+
+### Adding new exceptions
+
+Now that you hopefully have a grasp on how to use exceptions, let's talk about making our own!
+
+Before we get into it, first let's have an extremely brief look at `ErrorInfo`:
+
+```haskell
+data ErrorInfo = ErrorInfo {name :: String, msg :: String}
+errorInfo :: BotException -> ErrorInfo
+```
+
+`ErrorInfo` (the type) contains the data required from an exception to output it: an exception name and a description. `errorInfo` (the function) takes a BotException and extracts this information into an `ErrorInfo`. This is useful as it lets us define the format of new exceptions in a single line:
+
+```haskell
+errorInfo (GenericException name msg) = ErrorInfo name msg
+```
+
+In the above example `GenericException` is defined as described before. See also:
+
+```haskell
+errorInfo (RandomException msg) = ErrorInfo "RandomException" msg
+```
+
+In this example `RandomException` is defined. In this case the name field is a constant, as all exceptions of this type share the same name. You can see the exception module for more examples.
+
+With all that out of the way, the process is very simple:
+
+* Add your new exception type as a constructer of `BotException` at the top of `Tablebot/Plugin/Exception.hs`
+* Implement `errorInfo` for your new exception type to define its parameters at the bottom of `Tablebot/Plugin/Exception.hs`
+
+And that's all there is to it!
+
+## Good practice
+
+When considering which exception to use, and whether you should be making a new one for your purposes, consider the following:
+
+* Is there an exception type that broadly explains what the exception is? For example `RandomException` is for when a random generation function cannot compute. If your issue is actually with failing to read IO, then perhaps you actually want an `IOException`.
+* If you've made multiple new exceptions, consider if there's something that connects them. If there is, maybe they can be combined into a single exception type to reduce the amount of fluff in the module.
