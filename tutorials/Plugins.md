@@ -36,20 +36,12 @@ Our command parser requires us to return a function of type `Message -> Database
 
 Finally, `DatabaseDiscord ()` is the type of a _monadic action_ which provides us a few bits of functionality - namely Discord operations (such as sending messages), database operations and IO operations. We'll cover each of these as we build our more complex plugin. In general, you do not need to worry about the specifics of the underlying implementation (for those familiar with these kinds of libraries, `DatabaseDiscord` contains a stack of monads providing each bit of functionality) and instead stick with the library functions discussed in this tutorial.
 
-With all of that out of the way, we can finally get to implementing our Ping plugin. We use `noArguments :: (Message -> DatabaseDiscord ()) -> Parser (Message -> DatabaseDiscord ())` here, which provides us a parser for free that accepts commands with no arguments. We then need to actually respond - this is done using `sendMessage :: Message -> Text -> DatabaseDiscord (Either RestCallErrorCode Message)`, which sends a message in the same channel as the input `Message`, with content `Text`. This computation either returns the message you just sent, or an error - but for simplicity we will just ignore this. As such, our implementation is the following:
+With all of that out of the way, we can finally get to implementing our Ping plugin. We use `noArguments :: (Message -> DatabaseDiscord ()) -> Parser (Message -> DatabaseDiscord ())` here, which provides us a parser for free that accepts commands with no arguments. We then need to actually respond - this is done using `sendMessage :: Message -> Text -> DatabaseDiscord ()`, which sends a message in the same channel as the input `Message`, with content `Text`:
 
 ```haskell
 ping :: Command
 ping = Command "ping" (noArguments $ \m -> do
-    _ <- sendMessage m "pong"
-    return ())
-```
-
-This can be further simplified through `sendMessage`, which discards the error for us:
-
-```haskell
-ping :: Command
-ping = Command "ping" (noArguments $ \m -> sendMessage m "pong")
+    sendMessage m "pong")
 ```
 
 Now we just need to make a `Plugin`. This is done using `plug` (the default empty plugin) and a record update to add your commands in. To add commands to a plugin, simply update the `commands` field of the record as follows.
