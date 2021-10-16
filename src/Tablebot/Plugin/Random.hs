@@ -19,7 +19,6 @@ import Tablebot.Plugin.Exception
 -- | @chooseOne@ chooses a single random element from a given list with uniform
 -- distribution.
 chooseOne :: [a] -> IO a
--- chooseOne :: BotException err => [a] -> IO (Either err a)
 chooseOne [] = throw $ RandomException "Cannot choose from empty list."
 chooseOne xs = (xs !!) <$> randomRIO (0, length xs - 1 :: Int)
 
