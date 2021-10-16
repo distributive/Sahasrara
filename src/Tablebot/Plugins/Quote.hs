@@ -16,7 +16,7 @@ where
 
 import Control.Monad (void)
 import Control.Monad.IO.Class (liftIO)
-import Data.Text (append, pack, unpack)
+import Data.Text (Text, append, pack, unpack)
 import Data.Time.Clock.System (getSystemTime, systemToUTCTime)
 import Database.Persist
 import Database.Persist.Sqlite
@@ -157,9 +157,10 @@ authorQ t m = do
 addQ :: String -> String -> Message -> DatabaseDiscord ()
 addQ qu author m = do
   now <- liftIO $ systemToUTCTime <$> getSystemTime
-  added <- insert $ Quote qu author (Just $ fromIntegral $ messageId m) (Just $ fromIntegral $ messageChannel m) now
+  let new = Quote qu author (Just $ fromIntegral $ messageId m) (Just $ fromIntegral $ messageChannel m) now
+  added <- insert $ new
   let res = pack $ show $ fromSqlKey added
-  sendMessageVoid m ("Quote added as #" `append` res)
+  renderCustomQuoteMessage ("Quote added as #" `append` res) new (fromSqlKey added) m
 
 -- | @thisQuote@, which takes the replied message or the
 -- previous message and stores said message as a quote in the database,
@@ -182,9 +183,10 @@ addMessageQuote q' m = do
   if num == 0
     then do
       now <- liftIO $ systemToUTCTime <$> getSystemTime
-      added <- insert $ Quote (unpack $ messageText q') (toMentionStr $ messageAuthor q') (Just $ fromIntegral $ messageId q') (Just $ fromIntegral $ messageChannel q') now
+      let new = Quote (unpack $ messageText q') (toMentionStr $ messageAuthor q') (Just $ fromIntegral $ messageId q') (Just $ fromIntegral $ messageChannel q') now
+      added <- insert $ new
       let res = pack $ show $ fromSqlKey added
-      sendMessageVoid m ("Quote added as #" `append` res)
+      renderCustomQuoteMessage ("Quote added as #" `append` res) new (fromSqlKey added) m
     else sendMessageVoid m "Message already quoted"
 
 -- | @editQuote@, which looks for a message of the form
@@ -199,8 +201,9 @@ editQ qId qu author m =
           case oQu of
             Just (Quote _ _ _ _ _) -> do
               now <- liftIO $ systemToUTCTime <$> getSystemTime
-              replace k $ Quote qu author (Just $ fromIntegral $ messageId m) (Just $ fromIntegral $ messageChannel m) now
-              sendMessageVoid m "Quote updated"
+              let new = Quote qu author (Just $ fromIntegral $ messageId m) (Just $ fromIntegral $ messageChannel m) now
+              replace k $ new
+              renderCustomQuoteMessage "Quote updated" new (fromIntegral $ messageId m) m
             Nothing -> sendMessageVoid m "Couldn't update that quote!"
 
 -- | @deleteQuote@, which looks for a message of the form @!quote delete n@,
@@ -218,8 +221,11 @@ deleteQ qId m =
             Nothing -> sendMessageVoid m "Couldn't delete that quote!"
 
 renderQuoteMessage :: Quote -> Int64 -> Message -> DatabaseDiscord ()
-renderQuoteMessage (Quote txt author msgId cnlId dtm) qId m =
-  void $ sendEmbedMessage m "" (addColour Blue $ addTimestamp dtm $ addFooter (pack $ "Quote #" ++ show qId) $ simpleEmbed ((pack txt) <> " - " <> (pack author) <> maybeAddFooter link))
+renderQuoteMessage = renderCustomQuoteMessage ""
+
+renderCustomQuoteMessage :: Text -> Quote -> Int64 -> Message -> DatabaseDiscord ()
+renderCustomQuoteMessage t (Quote txt author msgId cnlId dtm) qId m =
+  void $ sendEmbedMessage m t (addColour Blue $ addTimestamp dtm $ addFooter (pack $ "Quote #" ++ show qId) $ simpleEmbed ((pack txt) <> "\n - " <> (pack author) <> maybeAddFooter link))
   where
     link = getMessageLink (messageGuild m) (fmap fromIntegral cnlId) (fmap fromIntegral msgId)
     maybeAddFooter l = if l == "" then "" else ("\n[source](" <> pack l <> ")")
