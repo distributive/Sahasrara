@@ -56,7 +56,7 @@ baseHelp (a, _, Simple (short, long)) = HelpPage a short ("**" <> toTitle a <> "
 -- | @basicPlugin@ assembles the call and response commands into a simple command list.
 basicPlugin :: Plugin
 basicPlugin =
-  plug
+  (plug "basic")
     { commands = map baseCommand basicCommands,
       helpPages = map baseHelp basicCommands
     }

@@ -76,4 +76,4 @@ catHelp = HelpPage "cat" "displays an image of a cat" "**Cat**\nGets a random ca
 
 -- | @catPlugin@ assembles these commands into a plugin containing cat
 catPlugin :: Plugin
-catPlugin = plug {commands = [cat], helpPages = [catHelp]}
+catPlugin = (plug "cats") {commands = [cat], helpPages = [catHelp]}

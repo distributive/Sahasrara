@@ -44,4 +44,4 @@ pongHelp = HelpPage "pong" "show a more different debug message" "**Pong**\nShow
 -- | @pingPlugin@ assembles these commands into a plugin containing both ping
 -- and pong.
 pingPlugin :: Plugin
-pingPlugin = plug {commands = [ping, pong], helpPages = [pingHelp, pongHelp]}
+pingPlugin = (plug "ping") {commands = [ping, pong], helpPages = [pingHelp, pongHelp]}

@@ -144,7 +144,7 @@ Uses duckling (<https://github.com/facebook/duckling>) to parse time and dates, 
 -- @reminderCron@) and the database information.
 reminderPlugin :: Plugin
 reminderPlugin =
-  plug
+  (plug "reminder")
     { commands = [reminderCommand],
       cronJobs = [CronJob 60000000 reminderCron],
       migrations = [reminderMigration],

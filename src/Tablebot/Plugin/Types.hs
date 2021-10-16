@@ -200,7 +200,8 @@ data RequiredPermission = None | Any | Exec | Moderator | Both | Superuser deriv
 -- | A plugin. Directly constructing these should be avoided (hence why it is
 -- not exported by "Tablebot.Plugin") as this structure could change.
 data Plugin = Pl
-  { commands :: [Command],
+  { pluginName :: Text,
+    commands :: [Command],
     inlineCommands :: [InlineCommand],
     onMessageChanges :: [MessageChange],
     onReactionAdds :: [ReactionAdd],
@@ -217,18 +218,19 @@ data Plugin = Pl
 --
 -- Examples of this in use can be found in the imports of
 -- "Tablebot.Plugins".
-plug :: Plugin
-plug = Pl [] [] [] [] [] [] [] [] []
+plug :: Text -> Plugin
+plug name' = Pl name' [] [] [] [] [] [] [] [] []
 
 -- | Combines a list of plugins into a single plugin with the combined
 -- functionality. The bot actually runs a single plugin, which is just the
 -- combined version of all input plugins.
 combinePlugins :: [Plugin] -> Plugin
-combinePlugins [] = plug
+combinePlugins [] = plug "_root"
 combinePlugins (p : ps) =
   let p' = combinePlugins ps
    in Pl
-        { commands = merge commands p p',
+        { pluginName = "_root",
+          commands = merge commands p p',
           inlineCommands = merge inlineCommands p p',
           onMessageChanges = merge onMessageChanges p p',
           onReactionAdds = merge onReactionAdds p p',
