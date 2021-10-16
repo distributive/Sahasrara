@@ -15,6 +15,7 @@ module Tablebot.Plugins
 where
 
 import Tablebot.Plugin (Plugin)
+import Tablebot.Plugins.Administration (restartPlugin)
 import Tablebot.Plugins.Basic (basicPlugin)
 import Tablebot.Plugins.Cats (catPlugin)
 import Tablebot.Plugins.Flip (flipPlugin)
@@ -33,6 +34,7 @@ plugins =
     flipPlugin,
     quotePlugin,
     reminderPlugin,
+    restartPlugin,
     sayPlugin,
     welcomePlugin
   ]
