@@ -1,5 +1,6 @@
 module Main where
 
+import Control.Monad (forever)
 import Data.Maybe (fromMaybe)
 import Data.Text (pack)
 import LoadEnv (loadEnv)
@@ -8,7 +9,7 @@ import Tablebot (runTablebot)
 import Tablebot.Plugins (plugins)
 
 main :: IO ()
-main = do
+main = forever $ do
   loadEnv
   dToken <- pack <$> getEnv "DISCORD_TOKEN"
   prefix <- pack . fromMaybe "!" <$> lookupEnv "PREFIX"
