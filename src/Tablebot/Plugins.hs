@@ -15,7 +15,7 @@ module Tablebot.Plugins
 where
 
 import Tablebot.Plugin (Plugin)
-import Tablebot.Plugins.Administration (restartPlugin)
+import Tablebot.Plugins.Administration (administrationPlugin)
 import Tablebot.Plugins.Basic (basicPlugin)
 import Tablebot.Plugins.Cats (catPlugin)
 import Tablebot.Plugins.Flip (flipPlugin)
@@ -29,12 +29,12 @@ import Tablebot.Plugins.Welcome (welcomePlugin)
 plugins :: [Plugin]
 plugins =
   [ pingPlugin,
+    administrationPlugin,
     basicPlugin,
     catPlugin,
     flipPlugin,
     quotePlugin,
     reminderPlugin,
-    restartPlugin,
     sayPlugin,
     welcomePlugin
   ]
