@@ -26,6 +26,7 @@ import Control.Concurrent
   )
 import Control.Monad.IO.Class (MonadIO (liftIO))
 import Control.Monad.Logger (NoLoggingT (runNoLoggingT))
+import Control.Monad.Trans.Resource (runResourceT)
 import Data.Text (Text, pack)
 import qualified Data.Text.IO as TIO (putStrLn)
 import Database.Persist.Sqlite
@@ -35,6 +36,7 @@ import Database.Persist.Sqlite
   )
 import Discord
 import Tablebot.Handler (eventHandler, killCron, runCron)
+import Tablebot.Handler.Administration (adminMigration, currentBlacklist, removeBlacklisted)
 import Tablebot.Plugin (Plugin, combinePlugins, cronJobs, migrations)
 import Tablebot.Plugin.Help
 import Tablebot.Plugin.Utils (debugPrint)
@@ -51,26 +53,31 @@ import Tablebot.Plugin.Utils (debugPrint)
 -- bot close.
 runTablebot :: Text -> Text -> FilePath -> [Plugin] -> IO ()
 runTablebot dToken prefix dbpath plugins =
-  let !plugin = generateHelp $ combinePlugins plugins
-   in do
-        debugPrint ("DEBUG enabled. This is strongly not recommended in production!" :: String)
-        -- Create multiple database threads.
-        pool <- runNoLoggingT $ createSqlitePool (pack dbpath) 8
-        -- TODO: this might have issues with duplicates?
-        -- TODO: in production, this should probably run once and then never again.
-        mapM_ (\migration -> runSqlPool (runMigration migration) pool) $ migrations plugin
-        -- Create a var to kill any ongoing tasks.
-        mvar <- newEmptyMVar :: IO (MVar [ThreadId])
-        userFacingError <-
-          runDiscord $
-            def
-              { discordToken = dToken,
-                discordOnEvent =
-                  flip runSqlPool pool . eventHandler plugin prefix,
-                discordOnStart =
-                  -- Build list of cron jobs, saving them to the mvar.
-                  runSqlPool (mapM runCron (cronJobs plugin) >>= liftIO . putMVar mvar) pool,
-                -- Kill every cron job in the mvar.
-                discordOnEnd = takeMVar mvar >>= killCron
-              }
-        TIO.putStrLn userFacingError
+  do
+    debugPrint ("DEBUG enabled. This is strongly not recommended in production!" :: String)
+    -- Create multiple database threads.
+    pool <- runNoLoggingT $ createSqlitePool (pack dbpath) 8
+
+    -- Setup and then apply plugin blacklist from the database
+    runSqlPool (runMigration adminMigration) pool
+    blacklist <- runResourceT $ runNoLoggingT $ runSqlPool currentBlacklist pool
+    let !plugin = generateHelp $ combinePlugins (removeBlacklisted blacklist plugins)
+
+    -- TODO: this might have issues with duplicates?
+    -- TODO: in production, this should probably run once and then never again.
+    mapM_ (\migration -> runSqlPool (runMigration migration) pool) $ migrations plugin
+    -- Create a var to kill any ongoing tasks.
+    mvar <- newEmptyMVar :: IO (MVar [ThreadId])
+    userFacingError <-
+      runDiscord $
+        def
+          { discordToken = dToken,
+            discordOnEvent =
+              flip runSqlPool pool . eventHandler plugin prefix,
+            discordOnStart =
+              -- Build list of cron jobs, saving them to the mvar.
+              runSqlPool (mapM runCron (cronJobs plugin) >>= liftIO . putMVar mvar) pool,
+            -- Kill every cron job in the mvar.
+            discordOnEnd = takeMVar mvar >>= killCron
+          }
+    TIO.putStrLn userFacingError

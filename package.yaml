@@ -45,6 +45,7 @@ dependencies:
 - http-client
 - data-default
 - exception-transformers
+- resourcet
 
 library:
   source-dirs: src
