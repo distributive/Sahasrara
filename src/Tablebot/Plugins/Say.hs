@@ -42,4 +42,4 @@ Repeat the input.
 
 -- | @sayPlugin@ assembles the command into a plugin.
 sayPlugin :: Plugin
-sayPlugin = plug {commands = [say], helpPages = [sayHelp]}
+sayPlugin = (plug "say") {commands = [say], helpPages = [sayHelp]}

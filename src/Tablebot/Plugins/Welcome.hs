@@ -97,4 +97,4 @@ generateCategory catClass = do
 
 -- | @welcomePlugin@ assembles these commands into a plugin.
 welcomePlugin :: Plugin
-welcomePlugin = plug {commands = [favourite], helpPages = [favouriteHelp]}
+welcomePlugin = (plug "welcome") {commands = [favourite], helpPages = [favouriteHelp]}

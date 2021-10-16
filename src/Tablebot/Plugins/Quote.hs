@@ -115,4 +115,4 @@ quoteHelp = HelpPage "quote" "store and retrieve quotes" "**Quotes**\nAllows sto
 -- | @quotePlugin@ assembles the @quote@ command (consisting of @add@ and
 -- @show@) and the database migration into a plugin.
 quotePlugin :: Plugin
-quotePlugin = plug {commands = [quote], migrations = [quoteMigration], helpPages = [quoteHelp]}
+quotePlugin = (plug "quote") {commands = [quote], migrations = [quoteMigration], helpPages = [quoteHelp]}

@@ -145,7 +145,7 @@ Send a reminder to yourself or others. Pick a date and time, and the tablebot wi
 -- @reminderCron@) and the database information.
 reminderPlugin :: Plugin
 reminderPlugin =
-  plug
+  (plug "reminder")
     { commands = [reminderCommand],
       cronJobs = [CronJob 60000000 reminderCron],
       migrations = [reminderMigration],
