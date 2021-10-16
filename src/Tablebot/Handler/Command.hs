@@ -45,7 +45,7 @@ parseNewMessage pl prefix m =
 parseCommands :: [Command] -> Message -> Text -> DatabaseDiscord ()
 parseCommands cs m prefix = case parse (parser cs) "" (messageText m) of
   Right p -> p m
-  Left e -> sendEmbedMessage m "" $ embedError $ ParseException $ "```\n" ++ errorBundlePretty e ++ "```"
+  Left e -> sendEmbedMessage m "" $ embedError $ ParserException $ "```\n" ++ errorBundlePretty e ++ "```"
   where
     parser :: [Command] -> Parser (Message -> DatabaseDiscord ())
     parser cs' =

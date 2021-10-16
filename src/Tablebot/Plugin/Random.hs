@@ -26,7 +26,7 @@ chooseOne xs = (xs !!) <$> randomRIO (0, length xs - 1 :: Int)
 -- | @chooseOneWithDefault@ chooses a single random element from a given list
 -- with uniform distribution, or a given default value if the list is empty.
 chooseOneWithDefault :: a -> [a] -> IO a
-chooseOneWithDefault x xs = chooseOne xs `catch` \e -> return $ fst (x, e :: BotException)
+chooseOneWithDefault x xs = chooseOne xs `catchBot` \e -> return x
 
 -- | @chooseOneWeighted@ chooses a single random element from a given list with
 -- weighted distribution as defined by a given weighting function.
@@ -47,4 +47,4 @@ chooseOneWeighted weight xs
 -- list with weighted distribution as defined by a given weighting function, or
 -- a given default if the list is empty
 chooseOneWeightedWithDefault :: a -> (a -> Int) -> [a] -> IO a
-chooseOneWeightedWithDefault x weight xs = chooseOneWeighted weight xs `catch` \e -> return $ fst (x, e :: BotException)
+chooseOneWeightedWithDefault x weight xs = chooseOneWeighted weight xs `catchBot` \e -> return x
