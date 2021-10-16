@@ -66,4 +66,4 @@ If at any point something doesn't work, restart your computer first and try it a
 
 Congratulations, you now know the very basics needed to set up your own tablebot!
 
-To learn more about git, you should look up a tutorial or look at this video: <https://youtu.be/HOIC804Berc>
+To learn more about git, you should look up a tutorial or watch this video: <https://youtu.be/HOIC804Berc>
