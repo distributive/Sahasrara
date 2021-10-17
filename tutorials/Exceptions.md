@@ -49,64 +49,48 @@ The following example works using the `chooseOne` function from `Tablebot/Plugin
 
 ```haskell
 randomNumber :: Command
-randomNumber =
-  Command
-    "randomNumber"
-    ( parseComm $ \m -> do
-        low <- number
-        space
-        high <- number
-        x <- chooseOne [low..high]
-        sendMessage m $ pack $ show x
-    )
+randomNumber = Command "randomNumber" (parseComm randomComm)
+  where
+    randomComm :: Int -> Int -> Message -> DatabaseDiscord ()
+    randomComm low high m = do
+      x <- chooseOne [low..high]
+      sendMessage m $ pack $ show x
 ```
 
 But what happens if the user gives an invalid range of numbers, like 10 and 1? This range would result in the bot attempting to choose from the empty list `[]`. `chooseOne` throws a `RandomException` when it encounters an empty list, citing that it "cannot choose from empty list". However, this isn't very informative to Discord users who might not even know what list is even being chosen from. Let's detect the error ourselves and send a clearer message:
 
 ```haskell
 randomNumber :: Command
-randomNumber =
-  Command
-    "randomNumber"
-    ( parseComm $ \m -> do
-        low <- number
-        space
-        high <- number
-        x <- chooseOne [low..high] `catch` \e -> throwBot $ RandomException "Please provide a valid range. The first argument cannot be larger than the second"
-        sendMessage m $ pack $ show x
-    )
+randomNumber = Command "randomNumber" (parseComm randomComm)
+  where
+    randomComm :: Int -> Int -> Message -> DatabaseDiscord ()
+    randomComm low high m = do
+      x <- chooseOne [low..high] `catch` \e -> throwBot $ RandomException "Please provide a valid range. The first argument cannot be larger than the second"
+      sendMessage m $ pack $ show x
 ```
 
 Here, instead of the exception propagating to the handler, we catch it early and replace it with a new exception. The exception module supports this functionality with `transformException`:
 
 ```haskell
 randomNumber :: Command
-randomNumber =
-  Command
-    "randomNumber"
-    ( parseComm $ \m -> do
-        low <- number
-        space
-        high <- number
-        x <- chooseOne [low..high] `transformException` \e -> RandomException "Please provide a valid range. The first argument cannot be larger than the second"
-        sendMessage m $ pack $ show x
-    )
+randomNumber = Command "randomNumber" (parseComm randomComm)
+  where
+    randomComm :: Int -> Int -> Message -> DatabaseDiscord ()
+    randomComm low high m = do
+      x <- chooseOne [low..high] `transformException` \e -> RandomException "Please provide a valid range. The first argument cannot be larger than the second"
+      sendMessage m $ pack $ show x
 ```
 
 `transformException` takes a computation that may fail and a function that converts a BotException into a new BotException. In this case we don't care what the previous exception was, so we can use the simpler `transformExceptionConst`:
 
 ```haskell
 randomNumber :: Command
-randomNumber =
-  Command
-    "randomNumber"
-    ( parseComm $ \m -> do
-        low <- number
-        space
-        high <- number
-        x <- chooseOne [low..high] `transformExceptionConst` RandomException "Please provide a valid range. The first argument cannot be larger than the second"
-        sendMessage m $ pack $ show x
-    )
+randomNumber = Command "randomNumber" (parseComm randomComm)
+  where
+    randomComm :: Int -> Int -> Message -> DatabaseDiscord ()
+    randomComm low high m = do
+      x <- chooseOne [low..high] `transformExceptionConst` RandomException "Please provide a valid range. The first argument cannot be larger than the second"
+      sendMessage m $ pack $ show x
 ```
 
 ### Parser exceptions
@@ -115,7 +99,7 @@ Be aware that you don't have to catch parsing errors yourself. The parser automa
 
 ## Outputting errors
 
-The exception module provides a number of ways to format your exceptions nicely. All BotExceptions implement the following functions:
+The exception module provides a number of ways to format your exceptions nicely:
 
 ```haskell
 -- | Generates the name of a given error.
