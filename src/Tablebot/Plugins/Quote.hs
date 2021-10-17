@@ -117,14 +117,14 @@ randomQ :: Message -> DatabaseDiscord ()
 randomQ m = do
   num <- count allQuotes
   if num == 0
-    then sendMessageVoid m "Couldn't find any quotes!"
+    then sendMessage m "Couldn't find any quotes!"
     else do
       rindex <- liftIO $ randomRIO (0, (num - 1))
       key <- selectKeysList allQuotes [OffsetBy rindex, LimitTo 1]
       qu <- get $ head key
       case qu of
         Just q -> renderQuoteMessage q (fromSqlKey $ head key) m
-        Nothing -> sendMessageVoid m "Couldn't find any quotes!"
+        Nothing -> sendMessage m "Couldn't find any quotes!"
       return ()
   where
     allQuotes :: [Filter Quote]
@@ -137,14 +137,14 @@ authorQ :: String -> Message -> DatabaseDiscord ()
 authorQ t m = do
   num <- count userQuotes
   if num == 0
-    then sendMessageVoid m "Couldn't find any quotes matching that user!"
+    then sendMessage m "Couldn't find any quotes matching that user!"
     else do
       rindex <- liftIO $ randomRIO (0, (num - 1))
       key <- selectKeysList userQuotes [OffsetBy rindex, LimitTo 1]
       qu <- get $ head key
       case qu of
         Just q -> renderQuoteMessage q (fromSqlKey $ head key) m
-        Nothing -> sendMessageVoid m "Couldn't find any quotes matching that user!"
+        Nothing -> sendMessage m "Couldn't find any quotes matching that user!"
       return ()
   where
     userQuotes :: [Filter Quote]
@@ -173,7 +173,7 @@ thisQ m = do
       q2 <- getPrecedingMessage m
       case q2 of
         (Just q') -> addMessageQuote q' m
-        Nothing -> sendMessageVoid m "Unable to add quote"
+        Nothing -> sendMessage m "Unable to add quote"
 
 -- | @addMessageQuote@, adds a message as a quote to the database, checking that it passes the relevant tests
 addMessageQuote :: Message -> Message -> DatabaseDiscord ()
@@ -188,8 +188,8 @@ addMessageQuote q' m = do
           added <- insert $ new
           let res = pack $ show $ fromSqlKey added
           renderCustomQuoteMessage ("Quote added as #" `append` res) new (fromSqlKey added) m
-        else sendMessageVoid m "Can't quote a bot"
-    else sendMessageVoid m "Message already quoted"
+        else sendMessage m "Can't quote a bot"
+    else sendMessage m "Message already quoted"
 
 -- | @editQuote@, which looks for a message of the form
 -- @!quote edit n "quoted text" - author@, and then updates quote with id n in the
@@ -206,7 +206,7 @@ editQ qId qu author m =
               let new = Quote qu author (Just $ fromIntegral $ messageId m) (Just $ fromIntegral $ messageChannel m) now
               replace k $ new
               renderCustomQuoteMessage "Quote updated" new (fromIntegral $ messageId m) m
-            Nothing -> sendMessageVoid m "Couldn't update that quote!"
+            Nothing -> sendMessage m "Couldn't update that quote!"
 
 -- | @deleteQuote@, which looks for a message of the form @!quote delete n@,
 -- and removes it from the database.
@@ -219,7 +219,7 @@ deleteQ qId m =
           case qu of
             Just (Quote _ _ _ _ _) -> do
               delete k
-              sendMessageVoid m "Quote deleted"
+              sendMessage m "Quote deleted"
             Nothing -> sendMessage m "Couldn't delete that quote!"
 
 renderQuoteMessage :: Quote -> Int64 -> Message -> DatabaseDiscord ()
