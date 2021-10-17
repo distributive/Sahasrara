@@ -3,9 +3,8 @@
 -- |
 -- Module      : Tablebot
 -- Description : The main runner for the Tablebot Discord bot.
--- Copyright   : (c) Finnbar Keating 2021
 -- License     : MIT
--- Maintainer  : finnjkeating@gmail.com
+-- Maintainer  : tagarople@gmail.com
 -- Stability   : experimental
 -- Portability : POSIX
 --

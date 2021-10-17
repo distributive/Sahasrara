@@ -1,9 +1,8 @@
 -- |
 -- Module      : Tablebot.Plugins.Welcome
 -- Description : A plugin for generating welcome messages.
--- Copyright   : (c) Amelie WD 2021
 -- License     : MIT
--- Maintainer  : tablebot@ameliewd.com
+-- Maintainer  : tagarople@gmail.com
 -- Stability   : experimental
 -- Portability : POSIX
 --

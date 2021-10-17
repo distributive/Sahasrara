@@ -1,9 +1,8 @@
 -- |
 -- Module      : Tablebot.Handler.Event
 -- Description : The event handler for everything else.
--- Copyright   : (c) Finnbar Keating 2021
 -- License     : MIT
--- Maintainer  : finnjkeating@gmail.com
+-- Maintainer  : tagarople@gmail.com
 -- Stability   : experimental
 -- Portability : POSIX
 --
