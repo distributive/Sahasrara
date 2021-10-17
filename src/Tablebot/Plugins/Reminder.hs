@@ -3,9 +3,8 @@
 -- |
 -- Module      : Tablebot.Plugins.Quote
 -- Description : A complex example using databases and cron jobs.
--- Copyright   : (c) Finnbar Keating 2021
 -- License     : MIT
--- Maintainer  : finnjkeating@gmail.com
+-- Maintainer  : tagarople@gmail.com
 -- Stability   : experimental
 -- Portability : POSIX
 --
@@ -35,9 +34,9 @@ import Database.Persist qualified as P (delete)
 import Database.Persist.TH
 import Discord.Types
 import Tablebot.Plugin
-import Tablebot.Plugin.Discord (getMessage, sendMessageVoid)
+import Tablebot.Plugin.Discord (getMessage, sendMessage)
 import Tablebot.Plugin.Parser (number, quoted, space)
-import Tablebot.Util.Utils (debugPrint)
+import Tablebot.Plugin.Utils (debugPrint)
 import Text.Megaparsec
 import Text.RawString.QQ (r)
 
@@ -96,7 +95,7 @@ addReminder time content m = do
       (Snowflake mid) = messageId m
   added <- insert $ Reminder cid mid time content
   let res = pack $ show $ fromSqlKey added
-  sendMessageVoid m ("Reminder added as #" `append` res)
+  sendMessage m ("Reminder added as #" `append` res)
 
 -- | @reminderCommand@ is a command implementing the functionality in
 -- @reminderParser@ and @addReminder@.
@@ -123,7 +122,7 @@ reminderCron = do
             Left _ -> pure ()
             Right mess -> do
               let (Snowflake uid) = userId (messageAuthor mess)
-              sendMessageVoid mess $
+              sendMessage mess $
                 pack $
                   "Reminder to <@" ++ show uid ++ ">! " ++ content
               P.delete (entityKey re)

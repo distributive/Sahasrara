@@ -1,9 +1,8 @@
 -- |
 -- Module      : Tablebot.Plugins.Quote
 -- Description : A more complex example using databases.
--- Copyright   : (c) Finnbar Keating 2021
 -- License     : MIT
--- Maintainer  : finnjkeating@gmail.com
+-- Maintainer  : tagarople@gmail.com
 -- Stability   : experimental
 -- Portability : POSIX
 --
@@ -26,7 +25,7 @@ import Discord.Types (Emoji (emojiName), Message (messageAuthor, messageChannel,
 import GHC.Int (Int64)
 import System.Random (randomRIO)
 import Tablebot.Plugin
-import Tablebot.Plugin.Discord (getMessage, getMessageLink, getPrecedingMessage, getReplyMessage, sendEmbedMessage, sendMessageVoid, toMentionStr)
+import Tablebot.Plugin.Discord (getMessage, getMessageLink, getPrecedingMessage, getReplyMessage, sendEmbedMessage, sendMessage, toMentionStr)
 import Tablebot.Plugin.Embed
 import Tablebot.Plugin.Permission (requirePermission)
 import Tablebot.Plugin.SmartCommand
@@ -110,7 +109,7 @@ showQ qId m = do
   qu <- get $ toSqlKey qId
   case qu of
     Just q -> renderQuoteMessage q qId m
-    Nothing -> sendMessageVoid m "Couldn't get that quote!"
+    Nothing -> sendMessage m "Couldn't get that quote!"
 
 -- | @randomQuote@, which looks for a message of the form @!quote random@,
 -- selects a random quote from the database and responds with that quote.
@@ -221,7 +220,7 @@ deleteQ qId m =
             Just (Quote _ _ _ _ _) -> do
               delete k
               sendMessageVoid m "Quote deleted"
-            Nothing -> sendMessageVoid m "Couldn't delete that quote!"
+            Nothing -> sendMessage m "Couldn't delete that quote!"
 
 renderQuoteMessage :: Quote -> Int64 -> Message -> DatabaseDiscord ()
 renderQuoteMessage = renderCustomQuoteMessage ""

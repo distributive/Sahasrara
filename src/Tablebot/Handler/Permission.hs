@@ -15,7 +15,7 @@ import Discord.Types (GuildMember, Message, RoleId, memberRoles)
 import System.Environment (lookupEnv)
 import Tablebot.Plugin.Discord (getMessageMember)
 import Tablebot.Plugin.Types
-import Tablebot.Util.Utils (isDebug)
+import Tablebot.Plugin.Utils (isDebug)
 import Text.Read (readMaybe)
 
 data KnownRoles = KnownRoles

@@ -36,20 +36,12 @@ Our command parser requires us to return a function of type `Message -> Database
 
 Finally, `DatabaseDiscord ()` is the type of a _monadic action_ which provides us a few bits of functionality - namely Discord operations (such as sending messages), database operations and IO operations. We'll cover each of these as we build our more complex plugin. In general, you do not need to worry about the specifics of the underlying implementation (for those familiar with these kinds of libraries, `DatabaseDiscord` contains a stack of monads providing each bit of functionality) and instead stick with the library functions discussed in this tutorial.
 
-With all of that out of the way, we can finally get to implementing our Ping plugin. We use `noArguments :: (Message -> DatabaseDiscord ()) -> Parser (Message -> DatabaseDiscord ())` here, which provides us a parser for free that accepts commands with no arguments. We then need to actually respond - this is done using `sendMessage :: Message -> Text -> DatabaseDiscord (Either RestCallErrorCode Message)`, which sends a message in the same channel as the input `Message`, with content `Text`. This computation either returns the message you just sent, or an error - but for simplicity we will just ignore this. As such, our implementation is the following:
+With all of that out of the way, we can finally get to implementing our Ping plugin. We use `noArguments :: (Message -> DatabaseDiscord ()) -> Parser (Message -> DatabaseDiscord ())` here, which provides us a parser for free that accepts commands with no arguments. We then need to actually respond - this is done using `sendMessage :: Message -> Text -> DatabaseDiscord ()`, which sends a message in the same channel as the input `Message`, with content `Text`:
 
 ```haskell
 ping :: Command
 ping = Command "ping" (noArguments $ \m -> do
-    _ <- sendMessage m "pong"
-    return ())
-```
-
-This can be further simplified through `sendMessageVoid`, which discards the error for us:
-
-```haskell
-ping :: Command
-ping = Command "ping" (noArguments $ \m -> sendMessageVoid m "pong")
+    sendMessage m "pong")
 ```
 
 Now we just need to make a `Plugin`. This is done using `plug` (the default empty plugin) and a record update to add your commands in. To add commands to a plugin, simply update the `commands` field of the record as follows.
@@ -75,7 +67,7 @@ Smart commands are invocated through `parseComm :: PComm ty => ty -> Parser (Mes
 echo :: Command
 echo = Command "echo" (parseComm echoHelp)
     where echoHelp :: Text -> Message -> DatabaseDiscord ()
-          echoHelp t m = sendMessageVoid m t
+          echoHelp t m = sendMessage m t
 ```
 
 As you can see, we didn't have to even mention parsers here - we defined the sort of command that we wanted, and `parseComm` built the parser for us. However, the parser for `Text` only parses a single word, which may not be the entire input. As such, we provide a collection of new types that have slightly different parsers. These are instances of `CanParse` in `Tablebot.Plugin.SmartCommand` so can be seen in that documentation, but we also list the new ones here for convenience.
@@ -91,7 +83,7 @@ As you can see, we didn't have to even mention parsers here - we defined the sor
 echo :: Command
 echo = Command "echo" (parseComm echoHelp)
     where echoHelp :: RestOfInput Text -> Message -> DatabaseDiscord ()
-          echoHelp (ROI t) m = sendMessageVoid m t
+          echoHelp (ROI t) m = sendMessage m t
 ```
 
 As a bonus, we also map common types to helpful parsers.
@@ -132,7 +124,7 @@ ping' = Command "ping" (parseComm pingWithTime)
     where pingWithTime :: Message -> DatabaseDiscord ()
           pingWithTime m = do
               now <- liftIO $ systemToUTCTime <$> getSystemTime
-              sendMessageVoid $ "pong (" ++ show now ++ ")"
+              sendMessage $ "pong (" ++ show now ++ ")"
 ```
 
 Great!
@@ -191,7 +183,7 @@ Finally, we need to provide functionality for reporting this information back to
 
 ```haskell
               ...
-              sendMessageVoid m (show $ count record')
+              sendMessage m (show $ count record')
 ```
 
 Hooray!

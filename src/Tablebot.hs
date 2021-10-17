@@ -3,9 +3,8 @@
 -- |
 -- Module      : Tablebot
 -- Description : The main runner for the Tablebot Discord bot.
--- Copyright   : (c) Finnbar Keating 2021
 -- License     : MIT
--- Maintainer  : finnjkeating@gmail.com
+-- Maintainer  : tagarople@gmail.com
 -- Stability   : experimental
 -- Portability : POSIX
 --
@@ -37,7 +36,7 @@ import Discord
 import Tablebot.Handler (eventHandler, killCron, runCron)
 import Tablebot.Plugin (Plugin, combinePlugins, cronJobs, migrations)
 import Tablebot.Plugin.Help
-import Tablebot.Util.Utils (debugPrint)
+import Tablebot.Plugin.Utils (debugPrint)
 
 -- | runTablebot @dToken@ @prefix@ @dbpath@ @plugins@ runs the bot using the
 -- given Discord API token @dToken@ and SQLite connection string @dbpath@. Only

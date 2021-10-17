@@ -1,15 +1,15 @@
 -- |
 -- Module      : Tablebot.Plugins.Welcome
 -- Description : A plugin for generating welcome messages.
--- Copyright   : (c) Amelie WD 2021
 -- License     : MIT
--- Maintainer  : tablebot@ameliewd.com
+-- Maintainer  : tagarople@gmail.com
 -- Stability   : experimental
 -- Portability : POSIX
 --
 -- Commands for generating welcome messages.
 module Tablebot.Plugins.Welcome (welcomePlugin) where
 
+import Control.Monad.Exception
 import Control.Monad.IO.Class
 import Data.Aeson (FromJSON, eitherDecode)
 import qualified Data.ByteString.Lazy as B
@@ -19,9 +19,9 @@ import Data.Yaml.Internal (ParseException)
 import GHC.Generics (Generic)
 import Tablebot.Plugin
 import Tablebot.Plugin.Discord (sendMessage)
+import Tablebot.Plugin.Exception
+import Tablebot.Plugin.Random (chooseOne, chooseOneWeighted)
 import Tablebot.Plugin.SmartCommand
-import Tablebot.Util.Error
-import Tablebot.Util.Random (chooseOne, chooseOneWeighted)
 import Text.Printf
 import Text.RawString.QQ
 
@@ -32,9 +32,8 @@ favourite =
     "favourite"
     ( parseComm $ \m -> do
         cat <- liftIO $ generateCategory =<< randomCategoryClass
-        let formatted = either id id $ (\(i, c) -> i ++ " is your favourite:\n> " ++ c ++ "?") <$> cat
-        _ <- sendMessage m $ pack $ formatted
-        return ()
+        let formatted = (\(i, c) -> i ++ " is your favourite:\n> " ++ c ++ "?") cat
+        sendMessage m $ pack $ formatted
     )
 
 favouriteHelp :: HelpPage
@@ -74,7 +73,7 @@ categories = do
     Left err -> []
     Right out -> classes out
 
-randomCategoryClass :: IO (Either Error CategoryClass)
+randomCategoryClass :: IO CategoryClass
 randomCategoryClass = do
   cats <- categories
   chooseOneWeighted getWeight cats
@@ -83,11 +82,10 @@ randomCategoryClass = do
       Just x -> x
       Nothing -> length $ values c
 
-generateCategory :: Either Error CategoryClass -> IO (Either Error (String, String))
-generateCategory (Left err) = return $ Left err
-generateCategory (Right catClass) = do
+generateCategory :: CategoryClass -> IO (String, String)
+generateCategory catClass = do
   choice <- chooseOne $ values catClass
-  return $ (\x -> (getInterrogative catClass, printf (getTemplate catClass) x)) <$> choice
+  return $ (getInterrogative catClass, printf (getTemplate catClass) choice)
   where
     getTemplate c = case template c of
       Just x -> x
