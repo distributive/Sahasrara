@@ -27,6 +27,23 @@ Then you can run it on every file via
 
 You can see full documentation on the [Ormolu repo](https://github.com/tweag/ormolu#usage).
 
+You may also wish to set up Ormolu to run when you stage a file (get ready to commit it) - this can be done using `.gitattributes` and `.gitconfig` as follows.
+
+1. We need to define what runs on commit, which is done via a filter. Add the following to `~/.gitconfig`:
+```
+[filter "haskell-linting"]
+    clean = ormolu
+    smudge = cat
+```
+This globally defines a filter that you can call from individual git respositories.
+
+2. Now we need to tell this git repository that it should run this filter. Simply add the following to `.gitattributes`. Note that this has been added to `.gitignore` to avoid people who don't want this filter being forced to use it.
+```
+*.hs filter=haskell-linting
+```
+
+That's it! (With thanks to Sam Coy for explaining this process.)
+
 ## Good Practice Recommendations
 
 Here are some good practice tips for git and this project.
