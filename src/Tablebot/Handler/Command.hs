@@ -11,17 +11,28 @@
 -- command prefix in the case of 'Command's and then trying each plugin-defined
 -- parser to see if it matches.
 module Tablebot.Handler.Command
-  ( parseCommands,
+  ( parseNewMessage,
+    parseCommands,
     parseInlineCommands,
   )
 where
 
-import Data.Text (Text, pack)
+import Data.Text (Text, isPrefixOf, pack)
 import Discord.Types (Message (messageText))
 import Tablebot.Plugin
-import Tablebot.Plugin.Discord (sendMessageVoid)
+import Tablebot.Plugin.Discord (sendEmbedMessage)
+import Tablebot.Plugin.Exception
 import Tablebot.Plugin.Parser (skipSpace1, sp)
 import Text.Megaparsec
+
+-- | @parseNewMessage@ parses a new message, first by attempting to match the
+-- bot's prefix to the start of the message, then (if that fails) by attempting
+-- to find inline commands.
+parseNewMessage :: Plugin -> Text -> Message -> DatabaseDiscord ()
+parseNewMessage pl prefix m =
+  if prefix `isPrefixOf` messageText m
+    then parseCommands (commands pl) m prefix
+    else parseInlineCommands (inlineCommands pl) m
 
 -- | Given a list of 'Command' @cs@, the 'Message' that triggered the event
 -- @m@, and a command prefix @prefix@, construct a parser that parses commands.
@@ -34,7 +45,7 @@ import Text.Megaparsec
 parseCommands :: [Command] -> Message -> Text -> DatabaseDiscord ()
 parseCommands cs m prefix = case parse (parser cs) "" (messageText m) of
   Right p -> p m
-  Left e -> sendMessageVoid m . pack $ "```\n" ++ errorBundlePretty e ++ "```"
+  Left e -> sendEmbedMessage m "" $ embedError $ ParserException $ "```\n" ++ errorBundlePretty e ++ "```"
   where
     parser :: [Command] -> Parser (Message -> DatabaseDiscord ())
     parser cs' =

@@ -44,6 +44,7 @@ dependencies:
 - req
 - http-client
 - data-default
+- exception-transformers
 
 library:
   source-dirs: src
@@ -65,6 +66,7 @@ library:
   - DataKinds
   - FlexibleInstances
   - DeriveGeneric
+  - TypeApplications
 
 
 executables:

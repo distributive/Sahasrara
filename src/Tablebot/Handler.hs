@@ -24,14 +24,14 @@ import Control.Concurrent
     threadDelay,
   )
 import Control.Monad (unless)
+import Control.Monad.Exception
 import Control.Monad.IO.Class (MonadIO (liftIO))
 import Control.Monad.Trans.Class (MonadTrans (lift))
 import Control.Monad.Trans.Reader (ReaderT (runReaderT), ask)
 import Data.Text (Text)
 import Discord.Types
 import Tablebot.Handler.Command
-  ( parseCommands,
-    parseInlineCommands,
+  ( parseNewMessage,
   )
 import Tablebot.Handler.Event
   ( parseMessageChange,
@@ -40,6 +40,8 @@ import Tablebot.Handler.Event
     parseReactionDel,
   )
 import Tablebot.Plugin
+import Tablebot.Plugin.Discord (sendEmbedMessage)
+import Tablebot.Plugin.Exception
 
 -- | Given a combined plugin @pl@ and a command prefix @prefix@, builds an
 -- event handler. This takes in each Discord 'Event' received (present in
@@ -47,9 +49,8 @@ import Tablebot.Plugin
 -- combined plugin.
 eventHandler :: Plugin -> Text -> Event -> DatabaseDiscord ()
 eventHandler pl prefix = \case
-  MessageCreate m -> ifNotBot m $ do
-    parseCommands (commands pl) m prefix
-    parseInlineCommands (inlineCommands pl) m
+  MessageCreate m ->
+    ifNotBot m $ parseNewMessage pl prefix m `catch` \e -> sendEmbedMessage m "" $ embedError (e :: BotException)
   MessageUpdate cid mid ->
     parseMessageChange (onMessageChanges pl) True cid mid
   MessageDelete cid mid ->

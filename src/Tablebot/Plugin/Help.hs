@@ -14,7 +14,7 @@ import Data.Functor (void, ($>))
 import Data.Text (Text)
 import qualified Data.Text as T
 import Tablebot.Handler.Permission
-import Tablebot.Plugin.Discord (Message, sendMessageVoid)
+import Tablebot.Plugin.Discord (Message, sendMessage)
 import Tablebot.Plugin.Parser (skipSpace)
 import Tablebot.Plugin.Permission
 import Tablebot.Plugin.Types
@@ -49,7 +49,7 @@ parseHelpPage hp = do
 displayHelp :: HelpPage -> Message -> DatabaseDiscord ()
 displayHelp hp m = requirePermission (helpPermission hp) m $ do
   uPerm <- getSenderPermission m
-  sendMessageVoid m $ formatHelp uPerm hp
+  sendMessage m $ formatHelp uPerm hp
 
 formatHelp :: UserPermission -> HelpPage -> Text
 formatHelp up hp = helpBody hp <> formatSubpages hp
