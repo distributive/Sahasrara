@@ -74,10 +74,10 @@ If at any point something doesn't work, restart your computer first and try it a
         4. Type `git clone <your repo url>` into the terminal
         5. The folder should be filled with a bunch of files and folders
     3. terminal and git (Linux)
-        2. Navigate to an empty folder on your computer that you want to do your programming from (the project folder)
-        3. Shift-right click in the project folder and press "open in terminal"
-        4. Type `git clone <your repo url>` into the terminal
-        5. The folder should be filled with a bunch of files and folders
+        1. Navigate to an empty folder on your computer that you want to do your programming from (the project folder)
+        2. Shift-right click in the project folder and press "open in terminal"
+        3. Type `git clone <your repo url>` into the terminal
+        4. The folder should be filled with a bunch of files and folders
     4. vscode
         1. Install vscode from <https://code.visualstudio.com/>
         2. Install this <https://marketplace.visualstudio.com/items?itemName=ms-vscode-remote.vscode-remote-extensionpack>
