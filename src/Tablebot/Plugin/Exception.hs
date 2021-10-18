@@ -10,13 +10,17 @@
 -- A plugin for error handling.
 module Tablebot.Plugin.Exception
   ( BotException (..),
+    throwBot,
+    catchBot,
+    transformException,
+    transformExceptionConst,
     showError,
     showUserError,
     embedError,
   )
 where
 
-import Control.Monad.Exception (Exception)
+import Control.Monad.Exception (Exception, MonadException, catch, throw)
 import Data.Text (pack)
 import Discord.Internal.Types
 import Tablebot.Plugin.Embed
@@ -27,12 +31,29 @@ import Tablebot.Plugin.Types (DiscordColour (..))
 data BotException
   = GenericException String String
   | MessageSendException String
-  | ParseException String
+  | ParserException String
   | IndexOutOfBoundsException Int (Int, Int)
   | RandomException String
   deriving (Show, Eq)
 
 instance Exception BotException
+
+-- | Aliases for throw and catch that enforce the exception type.
+throwBot :: MonadException m => BotException -> m a
+throwBot = throw
+
+catchBot :: MonadException m => m a -> (BotException -> m a) -> m a
+catchBot = catch
+
+-- | @transformException@ takes a computation m that may fail, catches any
+-- exception it throws, and transforms it into a new one with transformer.
+transformException :: MonadException m => m a -> (BotException -> BotException) -> m a
+transformException m transformer = m `catchBot` (throwBot . transformer)
+
+-- | @transformExceptionConst@ takes a computation m that may fail and replaces
+-- any exception it throws with the constant exception e.
+transformExceptionConst :: MonadException m => m a -> BotException -> m a
+transformExceptionConst m e = m `catchBot` \_ -> throwBot e
 
 -- | @errorEmoji@ defines a Discord emoji in plaintext for use in error outputs.
 errorEmoji :: String
@@ -83,7 +104,7 @@ errorInfo :: BotException -> ErrorInfo
 -- declare new errors in the definition of BotException.
 errorInfo (GenericException name msg) = ErrorInfo name msg
 errorInfo (MessageSendException msg) = ErrorInfo "MessageSendException" msg
-errorInfo (ParseException msg) = ErrorInfo "ParseException" msg
+errorInfo (ParserException msg) = ErrorInfo "ParserException" msg
 errorInfo (IndexOutOfBoundsException index (a, b)) =
   ErrorInfo
     "IndexOutOfBoundsException"

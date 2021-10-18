@@ -1,9 +1,8 @@
 -- -- |
 -- Module      : Tablebot.Plugin.Help
 -- Description : Help text generation and storage
--- Copyright   : (c) A 2021
 -- License     : MIT
--- Maintainer  : finnjkeating@gmail.com
+-- Maintainer  : tagarople@gmail.com
 -- Stability   : experimental
 -- Portability : POSIX
 --

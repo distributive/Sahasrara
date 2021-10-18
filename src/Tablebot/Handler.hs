@@ -1,9 +1,8 @@
 -- |
 -- Module      : Tablebot.Handler
 -- Description : The event handler and cron runner for Tablebot.
--- Copyright   : (c) Finnbar Keating 2021
 -- License     : MIT
--- Maintainer  : finnjkeating@gmail.com
+-- Maintainer  : tagarople@gmail.com
 -- Stability   : experimental
 -- Portability : POSIX
 --
@@ -31,8 +30,7 @@ import Control.Monad.Trans.Reader (ReaderT (runReaderT), ask)
 import Data.Text (Text)
 import Discord.Types
 import Tablebot.Handler.Command
-  ( parseCommands,
-    parseInlineCommands,
+  ( parseNewMessage,
   )
 import Tablebot.Handler.Event
   ( parseMessageChange,
@@ -50,9 +48,8 @@ import Tablebot.Plugin.Exception
 -- combined plugin.
 eventHandler :: Plugin -> Text -> Event -> DatabaseDiscord ()
 eventHandler pl prefix = \case
-  MessageCreate m -> ifNotBot m $ do
-    parseCommands (commands pl) m prefix `catch` \e -> sendEmbedMessage m "" $ embedError $ (e :: BotException)
-    parseInlineCommands (inlineCommands pl) m
+  MessageCreate m ->
+    ifNotBot m $ parseNewMessage pl prefix m `catch` \e -> sendEmbedMessage m "" $ embedError (e :: BotException)
   MessageUpdate cid mid ->
     parseMessageChange (onMessageChanges pl) True cid mid
   MessageDelete cid mid ->

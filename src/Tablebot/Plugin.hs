@@ -1,9 +1,8 @@
 -- |
 -- Module      : Tablebot.Plugin
 -- Description : Helpful imports for building plugins.
--- Copyright   : (c) Finnbar Keating 2021
 -- License     : MIT
--- Maintainer  : finnjkeating@gmail.com
+-- Maintainer  : tagarople@gmail.com
 -- Stability   : experimental
 -- Portability : POSIX
 --
