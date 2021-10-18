@@ -2,9 +2,11 @@
 
 Welcome to the [University of Warwick Tabletop and Roleplaying Society](https://warwicktabletop.co.uk)'s Discord server bot! You can join our Discord server [here](https://warwicktabletop.co.uk/discord)! You can access the channel for developer discussion by giving yourself the @computer_person role.
 
-Please feel free to contribute to the code in whatever way you are able. We're more than happy to accept code, documentation, issues, and more! If you do start work on an issue, please first let us know in the issue's thread, or in our Discord server.
+Please feel free to contribute to the code in whatever way you are able. We're more than happy to accept new code, bug fixes, documentation, issues, and anything else you think will improve the bot! If you do start work on an issue, please first let us know in the issue's thread or in our Discord server to avoid competing pull requests.
 
-Our society has a [code of conduct](https://www.warwicktabletop.co.uk/page/codeofconduct/). We expect contributors to uphold it the same as we expect attendees of our events to.
+## Code of conduct
+
+Our society has a [code of conduct](https://www.warwicktabletop.co.uk/page/codeofconduct/). We expect it to be upheld by contributors in all our online spaces the same way we'd expect it to be upheld by attendees of our events.
 
 ## Good Practice Recommendations
 
