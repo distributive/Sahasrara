@@ -23,7 +23,7 @@ import Tablebot.Plugin
 import Tablebot.Plugin.Discord (Message, sendMessageVoid)
 import Tablebot.Plugin.Permission (requirePermission)
 import Tablebot.Plugin.SmartCommand
-import Text.RawString.QQ ( r )
+import Text.RawString.QQ (r)
 
 -- Our Quote table in the database. This is fairly standard for Persistent,
 -- however you should note the name of the migration made.
