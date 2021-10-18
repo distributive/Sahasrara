@@ -1,9 +1,8 @@
 -- |
 -- Module      : Tablebot.Plugins.Flip
 -- Description : A command that flips a coin, or randomly selects from a list.
--- Copyright   : (c) Amelie WD 2021
 -- License     : MIT
--- Maintainer  : tablebot@ameliewd.com
+-- Maintainer  : tagarople@gmail.com
 -- Stability   : experimental
 -- Portability : POSIX
 --
@@ -13,11 +12,11 @@ module Tablebot.Plugins.Flip (flipPlugin) where
 import Control.Monad.IO.Class (MonadIO (liftIO))
 import Data.Text (pack)
 import Tablebot.Plugin
-import Tablebot.Plugin.Discord (Message, sendMessageVoid)
-import Tablebot.Plugin.Parser (nonSpaceWord, space)
-import Tablebot.Util.Random (chooseOneWithDefault)
-import Text.Megaparsec (sepBy)
-import Text.RawString.QQ (r)
+import Tablebot.Plugin.Discord (Message, sendMessage)
+import Tablebot.Plugin.Parser
+import Tablebot.Plugin.Random (chooseOneWithDefault)
+import Text.Megaparsec
+import Text.RawString.QQ
 import Prelude hiding (flip)
 
 -- | @flip@ picks one of its arguments at random, or one of "heads" and "tails"
@@ -29,10 +28,10 @@ flip = Command "flip" flipcomm
     flipcomm = do
       args <- nonSpaceWord `sepBy` space
       return $ \m -> do
-        choice <- case length args of
+        c <- case length args of
           0 -> liftIO $ chooseOneWithDefault "" ["Heads", "Tails"]
           _ -> liftIO $ chooseOneWithDefault (head args) args
-        sendMessageVoid m $ pack choice
+        sendMessage m $ pack c
 
 flipHelp :: HelpPage
 flipHelp =

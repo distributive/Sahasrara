@@ -1,9 +1,8 @@
 -- |
 -- Module      : Tablebot.Plugin.Discord
 -- Description : Discord helpers for building plugins.
--- Copyright   : (c) Finnbar Keating 2021
 -- License     : MIT
--- Maintainer  : finnjkeating@gmail.com
+-- Maintainer  : tagarople@gmail.com
 -- Stability   : experimental
 -- Portability : POSIX
 --
@@ -11,9 +10,7 @@
 -- without having to lift Discord operations constantly.
 module Tablebot.Plugin.Discord
   ( sendMessage,
-    sendMessageVoid,
     sendEmbedMessage,
-    sendEmbedMessageVoid,
     reactToMessage,
     getMessage,
     getMessageMember,
@@ -21,7 +18,7 @@ module Tablebot.Plugin.Discord
   )
 where
 
-import Control.Monad (void)
+import Control.Monad.Exception
 import Control.Monad.Trans.Class (MonadTrans (lift))
 import Data.Text (Text)
 import Discord (RestCallErrorCode, restCall)
@@ -29,6 +26,7 @@ import qualified Discord.Requests as R
 import Discord.Types
 import Tablebot.Handler.Embed
 import Tablebot.Plugin (DatabaseDiscord)
+import Tablebot.Plugin.Exception (BotException (..))
 
 -- | @sendMessage@ sends the input message @t@ in the same channel as message
 -- @m@. This returns an @Either RestCallErrorCode Message@ to denote failure or
@@ -36,8 +34,12 @@ import Tablebot.Plugin (DatabaseDiscord)
 sendMessage ::
   Message ->
   Text ->
-  DatabaseDiscord (Either RestCallErrorCode Message)
-sendMessage m t = lift . restCall $ R.CreateMessage (messageChannel m) t
+  DatabaseDiscord ()
+sendMessage m t = do
+  res <- lift . restCall $ R.CreateMessage (messageChannel m) t
+  case res of
+    Left _ -> throw $ MessageSendException "Failed to send message."
+    Right _ -> return ()
 
 -- | @sendEmbedMessage@ sends the input message @t@ in the same channel as message
 -- @m@ with an additional full Embed. This returns an @Either RestCallErrorCode Message@ to denote failure or
@@ -51,20 +53,12 @@ sendEmbedMessage ::
   Message ->
   Text ->
   e ->
-  DatabaseDiscord (Either RestCallErrorCode Message)
-sendEmbedMessage m t e = lift . restCall $ TablebotEmbedRequest (messageChannel m) t (asEmbed e)
-
--- | @sendMessageVoid@ does the same as @sendMessage@, except it does not
--- return anything. Useful if you don't care whether a message successfully
--- sent or not.
-sendMessageVoid :: Message -> Text -> DatabaseDiscord ()
-sendMessageVoid m t = void $ sendMessage m t
-
--- | @sendEmbedMessageVoid@ does the same as @sendEmbedMessage@, except it does not
--- return anything. Useful if you don't care whether a message successfully
--- sent or not.
-sendEmbedMessageVoid :: Embeddable e => Message -> Text -> e -> DatabaseDiscord ()
-sendEmbedMessageVoid m t e = void $ sendEmbedMessage m t e
+  DatabaseDiscord ()
+sendEmbedMessage m t e = do
+  res <- lift . restCall $ TablebotEmbedRequest (messageChannel m) t (asEmbed e)
+  case res of
+    Left _ -> throw $ MessageSendException "Failed to send embed message."
+    Right _ -> return ()
 
 -- | @getMessage@ gets the relevant 'Message' object for a given 'ChannelId'
 -- and 'MessageId', or returns an error ('RestCallErrorCode').

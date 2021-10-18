@@ -12,7 +12,7 @@ module Tablebot.Plugin.Permission where
 
 import Discord.Internal.Rest (Message)
 import Tablebot.Handler.Permission
-import Tablebot.Plugin.Discord (sendMessageVoid)
+import Tablebot.Plugin.Discord (sendMessage)
 import Tablebot.Plugin.Types
 
 -- | @requirePermission@ only runs the inputted effect if permissions are matched. Otherwise it returns an error.
@@ -21,4 +21,4 @@ requirePermission perm m a = do
   p <- getSenderPermission m
   if userHasPermission perm p
     then a
-    else sendMessageVoid m "Sorry, you don't have permission to do that."
+    else sendMessage m "Sorry, you don't have permission to do that."

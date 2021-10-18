@@ -1,9 +1,8 @@
 -- |
 -- Module      : Tablebot.Plugins.Quote
 -- Description : A more complex example using databases.
--- Copyright   : (c) Finnbar Keating 2021
 -- License     : MIT
--- Maintainer  : finnjkeating@gmail.com
+-- Maintainer  : tagarople@gmail.com
 -- Stability   : experimental
 -- Portability : POSIX
 --
@@ -20,7 +19,7 @@ import Database.Persist.Sqlite
 import Database.Persist.TH
 import GHC.Int (Int64)
 import Tablebot.Plugin
-import Tablebot.Plugin.Discord (Message, sendMessageVoid)
+import Tablebot.Plugin.Discord (Message, sendMessage)
 import Tablebot.Plugin.Permission (requirePermission)
 import Tablebot.Plugin.SmartCommand
 import Text.RawString.QQ (r)
@@ -63,7 +62,7 @@ addQ :: String -> String -> Message -> DatabaseDiscord ()
 addQ qu author m = do
   added <- insert $ Quote qu author
   let res = pack $ show $ fromSqlKey added
-  sendMessageVoid m ("Quote added as #" `append` res)
+  sendMessage m ("Quote added as #" `append` res)
 
 -- | @showQuote@, which looks for a message of the form @!quote show n@, looks
 -- that quote up in the database and responds with that quote.
@@ -72,8 +71,8 @@ showQ qId m = do
   qu <- get $ toSqlKey qId
   case qu of
     Just (Quote txt author) ->
-      sendMessageVoid m $ pack $ txt ++ " - " ++ author
-    Nothing -> sendMessageVoid m "Couldn't get that quote!"
+      sendMessage m $ pack $ txt ++ " - " ++ author
+    Nothing -> sendMessage m "Couldn't get that quote!"
 
 -- | @deleteQuote@, which looks for a message of the form @!quote delete n@,
 -- and removes it from the database.
@@ -86,8 +85,8 @@ deleteQ qId m =
           case qu of
             Just (Quote _ _) -> do
               delete k
-              sendMessageVoid m "Quote deleted"
-            Nothing -> sendMessageVoid m "Couldn't get that quote!"
+              sendMessage m "Quote deleted"
+            Nothing -> sendMessage m "Couldn't get that quote!"
 
 showQuoteHelp :: HelpPage
 showQuoteHelp = HelpPage "show" "show a quote by number" "**Show Quote**\nShows a quote by id\n\n*Usage:* `quote show <id>`" [] None

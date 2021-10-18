@@ -1,10 +1,10 @@
 name:                tablebot
 version:             0.1.0.0
-github:              "finnbar/tablebot"
-license:             BSD3
-author:              "Finnbar Keating"
-maintainer:          "finnjkeating@gmail.com"
-copyright:           "2021 Finnbar Keating"
+github:              "WarwickTabletop/tablebot"
+license:             MIT
+author:              "Warwick Tabletop"
+maintainer:          "tagarople@gmail.com"
+copyright:           "2021 Warwick Tabletop"
 
 extra-source-files:
 - README.md
@@ -17,7 +17,7 @@ extra-source-files:
 # To avoid duplicated efforts in documentation and dealing with the
 # complications of embedding Haddock markup inside cabal files, it is
 # common to point users to the README.md file.
-description:         Please see the README on GitHub at <https://github.com/finnbar/tablebot#readme>
+description:         Please see the README on GitHub at <https://github.com/tagarople/tablebot#readme>
 
 dependencies:
 - base >= 4.7 && < 5
@@ -47,6 +47,7 @@ dependencies:
 - req
 - http-client
 - data-default
+- exception-transformers
 
 library:
   source-dirs: src
@@ -68,6 +69,7 @@ library:
   - DataKinds
   - FlexibleInstances
   - DeriveGeneric
+  - TypeApplications
   ghc-options:
   - -Wall
 

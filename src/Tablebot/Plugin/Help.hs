@@ -1,9 +1,8 @@
 -- -- |
 -- Module      : Tablebot.Plugin.Help
 -- Description : Help text generation and storage
--- Copyright   : (c) A 2021
 -- License     : MIT
--- Maintainer  : finnjkeating@gmail.com
+-- Maintainer  : tagarople@gmail.com
 -- Stability   : experimental
 -- Portability : POSIX
 --
@@ -13,12 +12,12 @@ module Tablebot.Plugin.Help where
 import Data.Functor (($>))
 import Data.Text (Text)
 import qualified Data.Text as T
-import Tablebot.Handler.Permission (getSenderPermission, userHasPermission)
-import Tablebot.Plugin.Discord (Message, sendMessageVoid)
+import Tablebot.Handler.Permission    ( userHasPermission, getSenderPermission )
 import Tablebot.Plugin.Parser (skipSpace)
 import Tablebot.Plugin.Permission (requirePermission)
 import Tablebot.Plugin.Types
 import Text.Megaparsec (choice, chunk, eof, try, (<?>), (<|>))
+import Tablebot.Plugin.Discord (Message, sendMessage)
 
 rootBody :: Text
 rootBody =
@@ -49,7 +48,7 @@ parseHelpPage hp = do
 displayHelp :: HelpPage -> Message -> DatabaseDiscord ()
 displayHelp hp m = requirePermission (helpPermission hp) m $ do
   uPerm <- getSenderPermission m
-  sendMessageVoid m $ formatHelp uPerm hp
+  sendMessage m $ formatHelp uPerm hp
 
 formatHelp :: UserPermission -> HelpPage -> Text
 formatHelp up hp = helpBody hp <> formatSubpages hp

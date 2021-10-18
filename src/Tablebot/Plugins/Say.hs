@@ -1,9 +1,8 @@
 -- |
 -- Module      : Tablebot.Plugins.Say
 -- Description : A command that outputs its input.
--- Copyright   : (c) Amelie WD 2021
 -- License     : MIT
--- Maintainer  : tablebot@ameliewd.com
+-- Maintainer  : tagarople@gmail.com
 -- Stability   : experimental
 -- Portability : POSIX
 --
@@ -13,7 +12,7 @@ module Tablebot.Plugins.Say (sayPlugin) where
 import Data.Text (pack)
 import Discord.Types (Message (messageAuthor), User (userId))
 import Tablebot.Plugin
-import Tablebot.Plugin.Discord (sendMessageVoid)
+import Tablebot.Plugin.Discord (sendMessage)
 import Tablebot.Plugin.Parser (untilEnd)
 import Text.RawString.QQ (r)
 
@@ -25,7 +24,7 @@ say = Command "say" saycomm
     saycomm = do
       input <- untilEnd
       return $ \m -> do
-        sendMessageVoid m $ pack $ "> " ++ input ++ "\n - <@" ++ show (userId $ messageAuthor m) ++ ">"
+        sendMessage m $ pack $ "> " ++ input ++ "\n - <@" ++ show (userId $ messageAuthor m) ++ ">"
 
 sayHelp :: HelpPage
 sayHelp =

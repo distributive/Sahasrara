@@ -3,9 +3,8 @@
 -- |
 -- Module      : Tablebot.Plugins.Quote
 -- Description : A complex example using databases and cron jobs.
--- Copyright   : (c) Finnbar Keating 2021
 -- License     : MIT
--- Maintainer  : finnjkeating@gmail.com
+-- Maintainer  : tagarople@gmail.com
 -- Stability   : experimental
 -- Portability : POSIX
 --
@@ -33,9 +32,9 @@ import Duckling.Core (Dimension (Time), Entity (value), Lang (EN), Region (GB), 
 import Duckling.Resolve (Context (..), DucklingTime, Options (..))
 import Duckling.Time.Types (InstantValue (InstantValue), SingleTimeValue (SimpleValue), TimeValue (TimeValue))
 import Tablebot.Plugin
-import Tablebot.Plugin.Discord (getMessage, sendMessageVoid)
 import Tablebot.Plugin.SmartCommand (PComm (parseComm), Quoted (Qu), RestOfInput (ROI))
-import Tablebot.Util.Utils (debugPrint)
+import Tablebot.Plugin.Discord (getMessage, sendMessage)
+import Tablebot.Plugin.Utils (debugPrint)
 import Text.RawString.QQ (r)
 
 -- Our Reminder table in the database. This is fairly standard for Persistent,
@@ -80,7 +79,7 @@ reminderParser (Qu content) (ROI rawString) m = do
   let mTime = ducklingDateTime now rawString
   time <- case mTime of
     Just a -> return a
-    Nothing -> sendMessageVoid m failText >> fail (unpack failText)
+    Nothing -> sendMessage m failText >> fail (unpack failText)
   addReminder time content m
   where
     failText = "Date could not be parsed: `" <> rawString <> "`"
@@ -94,7 +93,7 @@ addReminder time content m = do
       (Snowflake mid) = messageId m
   added <- insert $ Reminder cid mid time content
   let res = pack $ show $ fromSqlKey added
-  sendMessageVoid m ("Reminder " <> res <> " set for " <> (pack . show) time <> " with message `" <> pack content <> "`")
+  sendMessage m ("Reminder " <> res <> " set for " <> (pack . show) time <> " with message `" <> pack content <> "`")
 
 -- | @reminderCommand@ is a command implementing the functionality in
 -- @reminderParser@ and @addReminder@.
@@ -121,7 +120,7 @@ reminderCron = do
             Left _ -> pure ()
             Right mess -> do
               let (Snowflake uid) = userId (messageAuthor mess)
-              sendMessageVoid mess $
+              sendMessage mess $
                 pack $
                   "Reminder to <@" ++ show uid ++ ">! " ++ content
               P.delete (entityKey re)
