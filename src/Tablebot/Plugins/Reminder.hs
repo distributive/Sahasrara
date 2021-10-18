@@ -71,6 +71,7 @@ ducklingDateTime now rawString = do
 
 -- @reminderParser@ parses a reminder request of the form
 -- @!remind "reminder" <format>@, where format is a format that Duckling can parse.
+-- TODO: get timezone info and such ahead of time
 reminderParser :: Quoted String -> RestOfInput Text -> Message -> DatabaseDiscord ()
 reminderParser (Qu content) (ROI rawString) m = do
   let tz = "Europe/London" :: Text
