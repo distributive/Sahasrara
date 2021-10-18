@@ -1,9 +1,8 @@
 -- |
 -- Module      : Tablebot.Handler
 -- Description : The event handler and cron runner for Tablebot.
--- Copyright   : (c) Finnbar Keating 2021
 -- License     : MIT
--- Maintainer  : finnjkeating@gmail.com
+-- Maintainer  : tagarople@gmail.com
 -- Stability   : experimental
 -- Portability : POSIX
 --

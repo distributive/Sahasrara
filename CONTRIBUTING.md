@@ -2,9 +2,11 @@
 
 Welcome to the [University of Warwick Tabletop and Roleplaying Society](https://warwicktabletop.co.uk)'s Discord server bot! You can join our Discord server [here](https://warwicktabletop.co.uk/discord)! You can access the channel for developer discussion by giving yourself the @computer_person role.
 
-Please feel free to contribute to the code in whatever way you are able. We're more than happy to accept code, documentation, issues, and more! If you do start work on an issue, please first let us know in the issue's thread, or in our Discord server.
+Please feel free to contribute to the code in whatever way you are able. We're more than happy to accept new code, bug fixes, documentation, issues, and anything else you think will improve the bot! If you do start work on an issue, please first let us know in the issue's thread or in our Discord server to avoid competing pull requests.
 
-Our society has a [code of conduct](https://www.warwicktabletop.co.uk/page/codeofconduct/). We expect contributors to uphold it the same as we expect attendees of our events to.
+## Code of conduct
+
+Our society has a [code of conduct](https://www.warwicktabletop.co.uk/page/codeofconduct/). We expect it to be upheld by contributors in all our online spaces the same way we'd expect it to be upheld by attendees of our events.
 
 ## Good Practice Recommendations
 
@@ -12,11 +14,42 @@ Here are some good practice tips for git and this project.
 
 * Whenever a new feature is being worked on, create a new branch on your forked repo
 * When a feature is ready to be merged into the bot, make a pull request from the feature branch to the main repo
-* Before making a pull request, make sure your branch is up to date with main (and that it compiles and complies with `ormolu` - see the [README](https://github.com/WarwickTabletop/tablebot#readme) for details) so that it can be merged without hassle
+* Before making a pull request, make sure your branch is up to date with main (and that it compiles and complies with `ormolu` - see below for details) so that it can be merged without hassle
 * Write comments! This project will be maintained by many people, and it can be difficult to work out what others' code does
 * To communicate with the maintainers, please join the [Tabletop Discord server](https://warwicktabletop.co.uk/discord) and give yourself the @computer_person role to join the developer channel
 
 You can check out the [README](https://github.com/WarwickTabletop/tablebot#readme) for details on how to set up a local bot for testing. If you've never done something like this before, see the bottom of this document for a walkthrough.
+
+## Ormolu
+
+To maintain consistent formatting you must use Ormolu, which can be installed via stack:
+
+`stack install ormolu`
+
+Then you can run it on every file via
+
+`ormolu --mode inplace $(git ls-files '*.hs')`
+
+You can see full documentation on the [Ormolu repo](https://github.com/tweag/ormolu#usage).
+
+### Running Ormolu automatically with git
+
+You may also wish to set up Ormolu to run when you stage a file (get ready to commit it) - this can be done using `.gitattributes` and `.gitconfig` as follows.
+
+1. We need to define what runs on commit, which is done via a filter. Add the following to `~/.gitconfig`:
+```
+[filter "haskell-linting"]
+    clean = ormolu
+    smudge = cat
+```
+This globally defines a filter that you can call from individual git respositories.
+
+2. Now we need to tell this git repository that it should run this filter. Simply add the following to `.gitattributes`. Note that this has been added to `.gitignore` to avoid people who don't want this filter being forced to use it.
+```
+*.hs filter=haskell-linting
+```
+
+That's it! (With thanks to Sam Coy for explaining this process)
 
 ## What can I work on?
 
@@ -42,7 +75,7 @@ If at any point something doesn't work, restart your computer first and try it a
         5. The folder should be filled with a bunch of files and folders
     3. terminal and git (Linux)
         2. Navigate to an empty folder on your computer that you want to do your programming from (the project folder)
-        3. Shift-right click in the project folder and press "open in termainal"
+        3. Shift-right click in the project folder and press "open in terminal"
         4. Type `git clone <your repo url>` into the terminal
         5. The folder should be filled with a bunch of files and folders
     4. vscode

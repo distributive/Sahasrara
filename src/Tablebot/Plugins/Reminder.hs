@@ -3,9 +3,8 @@
 -- |
 -- Module      : Tablebot.Plugins.Quote
 -- Description : A complex example using databases and cron jobs.
--- Copyright   : (c) Finnbar Keating 2021
 -- License     : MIT
--- Maintainer  : finnjkeating@gmail.com
+-- Maintainer  : tagarople@gmail.com
 -- Stability   : experimental
 -- Portability : POSIX
 --

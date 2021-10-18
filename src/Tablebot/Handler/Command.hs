@@ -1,9 +1,8 @@
 -- |
 -- Module      : Tablebot.Handler.Command
 -- Description : The event handler for received messages.
--- Copyright   : (c) Finnbar Keating 2021
 -- License     : MIT
--- Maintainer  : finnjkeating@gmail.com
+-- Maintainer  : tagarople@gmail.com
 -- Stability   : experimental
 -- Portability : POSIX
 --
