@@ -18,7 +18,7 @@ Here are some good practice tips for git and this project.
 * Write comments! This project will be maintained by many people, and it can be difficult to work out what others' code does
 * To communicate with the maintainers, please join the [Tabletop Discord server](https://warwicktabletop.co.uk/discord) and give yourself the @computer_person role to join the developer channel
 
-You can check out the [README](https://github.com/WarwickTabletop/tablebot#readme) for details on how to set up a local bot for testing. If you've never done something like this before, see the bottom of this document for a walkthrough.
+You can check out the [README](https://github.com/WarwickTabletop/tablebot#readme) for a brief overview on how to set up a local bot for testing. If you've never done something like this before, see the bottom of this document for a walkthrough.
 
 ## Ormolu
 
@@ -26,7 +26,7 @@ To maintain consistent formatting you must use Ormolu, which can be installed vi
 
 `stack install ormolu`
 
-Then you can run it on every file via
+Then you can run it on every file via:
 
 `ormolu --mode inplace $(git ls-files '*.hs')`
 

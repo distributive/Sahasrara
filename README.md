@@ -15,4 +15,4 @@ Create a `.env` file containing the following keys. Consult `.env.example` if yo
 * `SQLITE_FILENAME` (mandatory) - a name for your SQLite database, for example `database.db`.
 * `CATAPI_TOKEN` (optional) - the api token to get cat pictures. Go to [The Cat API](https://thecatapi.com/) to create an account and get a token so you can enjoy cats.
 
-If you have any difficulties setting it up, see the [contributor's guide](https://github.com/WarwickTabletop/tablebot#contributing) for a walkthrough.
+If you have any difficulties setting it up, see the [contributor's guide](https://github.com/WarwickTabletop/tablebot/blob/main/CONTRIBUTING.md) for a walkthrough.
