@@ -52,7 +52,6 @@ extra-deps:
 - duckling-0.2.0.0
 - dependent-sum-0.7.1.0
 - constraints-extras-0.3.1.0
-- string-0.4.0
 
 # Override default flag values for local packages and extra-deps
 # flags: {}
