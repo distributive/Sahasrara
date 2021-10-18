@@ -32,8 +32,8 @@ import Duckling.Core (Dimension (Time), Entity (value), Lang (EN), Region (GB), 
 import Duckling.Resolve (Context (..), DucklingTime, Options (..))
 import Duckling.Time.Types (InstantValue (InstantValue), SingleTimeValue (SimpleValue), TimeValue (TimeValue))
 import Tablebot.Plugin
-import Tablebot.Plugin.SmartCommand (PComm (parseComm), Quoted (Qu), RestOfInput (ROI))
 import Tablebot.Plugin.Discord (getMessage, sendMessage)
+import Tablebot.Plugin.SmartCommand (PComm (parseComm), Quoted (Qu), RestOfInput (ROI))
 import Tablebot.Plugin.Utils (debugPrint)
 import Text.RawString.QQ (r)
 

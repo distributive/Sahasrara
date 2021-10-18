@@ -12,12 +12,12 @@ module Tablebot.Plugin.Help where
 import Data.Functor (($>))
 import Data.Text (Text)
 import qualified Data.Text as T
-import Tablebot.Handler.Permission    ( userHasPermission, getSenderPermission )
+import Tablebot.Handler.Permission (getSenderPermission, userHasPermission)
+import Tablebot.Plugin.Discord (Message, sendMessage)
 import Tablebot.Plugin.Parser (skipSpace)
 import Tablebot.Plugin.Permission (requirePermission)
 import Tablebot.Plugin.Types
 import Text.Megaparsec (choice, chunk, eof, try, (<?>), (<|>))
-import Tablebot.Plugin.Discord (Message, sendMessage)
 
 rootBody :: Text
 rootBody =

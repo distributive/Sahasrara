@@ -11,6 +11,7 @@ module Tablebot.Plugins.Welcome (welcomePlugin) where
 
 import Control.Monad.IO.Class
 import Data.Aeson (FromJSON)
+import Data.Maybe (fromMaybe)
 import Data.Text (pack)
 import Data.Yaml (decodeFileEither)
 import Data.Yaml.Internal (ParseException)
@@ -21,7 +22,6 @@ import Tablebot.Plugin.Random (chooseOne, chooseOneWeighted)
 import Tablebot.Plugin.SmartCommand (PComm (parseComm))
 import Text.Printf (printf)
 import Text.RawString.QQ (r)
-import Data.Maybe (fromMaybe)
 
 -- | @favourite@ is the user-facing command that generates categories.
 favourite :: Command
