@@ -9,12 +9,12 @@
 -- A command that picks one random element from its given arguments.
 module Tablebot.Plugins.Flip (flipPlugin) where
 
-import Control.Monad.IO.Class
-import Data.Text (Text, pack)
+import Control.Monad.IO.Class (MonadIO (liftIO))
+import Data.Text (pack)
 import Tablebot.Plugin
 import Tablebot.Plugin.Discord (Message, sendMessage)
 import Tablebot.Plugin.Parser
-import Tablebot.Plugin.Random
+import Tablebot.Plugin.Random (chooseOneWithDefault)
 import Text.Megaparsec
 import Text.RawString.QQ
 import Prelude hiding (flip)
@@ -28,10 +28,10 @@ flip = Command "flip" flipcomm
     flipcomm = do
       args <- nonSpaceWord `sepBy` space
       return $ \m -> do
-        choice <- case length args of
+        c <- case length args of
           0 -> liftIO $ chooseOneWithDefault "" ["Heads", "Tails"]
-          otherwise -> liftIO $ chooseOneWithDefault (head args) args
-        sendMessage m $ pack choice
+          _ -> liftIO $ chooseOneWithDefault (head args) args
+        sendMessage m $ pack c
 
 flipHelp :: HelpPage
 flipHelp =

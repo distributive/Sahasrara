@@ -9,13 +9,13 @@
 -- This module creates functions and data structures to help generate help text for commands
 module Tablebot.Plugin.Help where
 
-import Data.Functor (void, ($>))
+import Data.Functor (($>))
 import Data.Text (Text)
 import qualified Data.Text as T
-import Tablebot.Handler.Permission
+import Tablebot.Handler.Permission (getSenderPermission, userHasPermission)
 import Tablebot.Plugin.Discord (Message, sendMessage)
 import Tablebot.Plugin.Parser (skipSpace)
-import Tablebot.Plugin.Permission
+import Tablebot.Plugin.Permission (requirePermission)
 import Tablebot.Plugin.Types
 import Text.Megaparsec (choice, chunk, eof, try, (<?>), (<|>))
 

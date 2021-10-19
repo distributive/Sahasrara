@@ -4,3 +4,5 @@
 db.*
 database*
 *.cabal
+stack.yaml.lock
+.gitattributes

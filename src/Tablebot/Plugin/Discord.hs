@@ -23,10 +23,9 @@ module Tablebot.Plugin.Discord
   )
 where
 
-import Control.Monad (void)
 import Control.Monad.Exception
 import Control.Monad.Trans.Class (MonadTrans (lift))
-import Data.Text
+import Data.Text (Text, pack)
 import Discord (RestCallErrorCode, restCall)
 import qualified Discord.Requests as R
 import Discord.Types
@@ -44,8 +43,8 @@ sendMessage ::
 sendMessage m t = do
   res <- lift . restCall $ R.CreateMessage (messageChannel m) t
   case res of
-    Left e -> throw $ MessageSendException "Failed to send message."
-    Right m -> return ()
+    Left _ -> throw $ MessageSendException "Failed to send message."
+    Right _ -> return ()
 
 -- | @sendEmbedMessage@ sends the input message @t@ in the same channel as message
 -- @m@ with an additional full Embed. This returns an @Either RestCallErrorCode Message@ to denote failure or
@@ -63,8 +62,8 @@ sendEmbedMessage ::
 sendEmbedMessage m t e = do
   res <- lift . restCall $ TablebotEmbedRequest (messageChannel m) t (asEmbed e)
   case res of
-    Left e -> throw $ MessageSendException "Failed to send embed message."
-    Right m -> return ()
+    Left _ -> throw $ MessageSendException "Failed to send embed message."
+    Right _ -> return ()
 
 -- | @getMessage@ gets the relevant 'Message' object for a given 'ChannelId'
 -- and 'MessageId', or returns an error ('RestCallErrorCode').
