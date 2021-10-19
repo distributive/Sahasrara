@@ -40,6 +40,9 @@ dependencies:
 - http-conduit
 - raw-strings-qq
 - template-haskell
+- timezone-olson
+- duckling
+- unordered-containers
 - bytestring
 - req
 - http-client
@@ -67,6 +70,8 @@ library:
   - FlexibleInstances
   - DeriveGeneric
   - TypeApplications
+  ghc-options:
+  - -Wall
 
 
 executables:

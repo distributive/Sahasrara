@@ -16,12 +16,12 @@ module Tablebot.Handler.Command
   )
 where
 
-import Data.Text (Text, isPrefixOf, pack)
+import Data.Text (Text, isPrefixOf)
 import Discord.Types (Message (messageText))
 import Tablebot.Plugin
 import Tablebot.Plugin.Discord (sendEmbedMessage)
-import Tablebot.Plugin.Exception
-import Tablebot.Plugin.Parser (skipSpace1, sp)
+import Tablebot.Plugin.Exception (BotException (ParserException), embedError)
+import Tablebot.Plugin.Parser (skipSpace1)
 import Text.Megaparsec
 
 -- | @parseNewMessage@ parses a new message, first by attempting to match the

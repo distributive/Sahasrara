@@ -84,7 +84,7 @@ errorMsg = msg . errorInfo
 
 -- | @showError@ generates the command line output of a given error.
 showError :: BotException -> String
-showError e = (errorName e) ++ ": " ++ (errorMsg e)
+showError e = errorName e ++ ": " ++ errorMsg e
 
 -- | @showUserError@ generates a user-facing error for outputting to Discord.
 showUserError :: BotException -> String
@@ -93,7 +93,7 @@ showUserError e = formatUserError (errorName e) (errorMsg e)
 -- | @embedError@ takes an error and makes it into an embed.
 embedError :: BotException -> Embed
 embedError e =
-  addTitle (pack $ errorEmoji ++ " **" ++ (errorName e) ++ "** " ++ errorEmoji) $
+  addTitle (pack $ errorEmoji ++ " **" ++ errorName e ++ "** " ++ errorEmoji) $
     addColour Red $
       simpleEmbed (pack $ errorMsg e)
 
@@ -108,5 +108,5 @@ errorInfo (ParserException msg) = ErrorInfo "ParserException" msg
 errorInfo (IndexOutOfBoundsException index (a, b)) =
   ErrorInfo
     "IndexOutOfBoundsException"
-    $ "Index value of " ++ (show index) ++ " is not in the valid range [" ++ (show a) ++ ", " ++ (show b) ++ "]."
+    $ "Index value of " ++ show index ++ " is not in the valid range [" ++ show a ++ ", " ++ show b ++ "]."
 errorInfo (RandomException msg) = ErrorInfo "RandomException" msg
