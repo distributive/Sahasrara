@@ -25,6 +25,7 @@ where
 
 import Control.Monad.Exception
 import Control.Monad.Trans.Class (MonadTrans (lift))
+import Data.Maybe (listToMaybe)
 import Data.Text (Text, pack)
 import Discord (RestCallErrorCode, restCall)
 import qualified Discord.Requests as R
@@ -109,7 +110,7 @@ getPrecedingMessage m = do
   mlst <- lift . restCall $ R.GetChannelMessages (messageChannel m) (1, R.BeforeMessage (messageId m))
   case mlst of
     Right mlst' ->
-      return $ Just $ Prelude.head mlst'
+      return $ listToMaybe mlst'
     Left _ -> return Nothing
 
 -- | @getMessageMember@ returns the message member object if it was sent from a Discord server,
@@ -134,6 +135,5 @@ toMention u = pack $ toMentionStr u
 toMentionStr :: User -> String
 toMentionStr u = "<@!" ++ show (userId u) ++ ">"
 
-getMessageLink :: Maybe GuildId -> Maybe ChannelId -> Maybe MessageId -> String
-getMessageLink (Just g) (Just c) (Just m) = "https://discord.com/channels/" ++ show g ++ "/" ++ show c ++ "/" ++ show m
-getMessageLink _ _ _ = ""
+getMessageLink :: GuildId -> ChannelId -> MessageId -> String
+getMessageLink g c m = "https://discord.com/channels/" ++ show g ++ "/" ++ show c ++ "/" ++ show m
