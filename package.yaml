@@ -50,6 +50,7 @@ dependencies:
 - exception-transformers
 - resourcet
 - resource-pool
+- containers
 
 library:
   source-dirs: src

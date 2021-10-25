@@ -14,11 +14,10 @@ module Tablebot.Plugins.Quote
 where
 
 import Data.Text (append, pack)
-import Database.Persist
-import Database.Persist.Sqlite
 import Database.Persist.TH
 import GHC.Int (Int64)
 import Tablebot.Plugin
+import Tablebot.Plugin.Database
 import Tablebot.Plugin.Discord (Message, sendMessage)
 import Tablebot.Plugin.Permission (requirePermission)
 import Tablebot.Plugin.SmartCommand
@@ -63,7 +62,7 @@ quoteComm (WErr (Right (Right (_, qId)))) = deleteQ (fromIntegral qId)
 -- database, returning the ID used.
 addQ :: String -> String -> Message -> DatabaseDiscord SS ()
 addQ qu author m = do
-  added <- liftSql $ insert $ Quote qu author
+  added <- insert $ Quote qu author
   let res = pack $ show $ fromSqlKey added
   sendMessage m ("Quote added as #" `append` res)
 
@@ -71,7 +70,7 @@ addQ qu author m = do
 -- that quote up in the database and responds with that quote.
 showQ :: Int64 -> Message -> DatabaseDiscord SS ()
 showQ qId m = do
-  qu <- liftSql $ get $ toSqlKey qId
+  qu <- get $ toSqlKey qId
   case qu of
     Just (Quote txt author) ->
       sendMessage m $ pack $ txt ++ " - " ++ author
@@ -84,10 +83,10 @@ deleteQ qId m =
   requirePermission Any m $
     let k = toSqlKey qId
      in do
-          qu <- liftSql $ get k
+          qu <- get k
           case qu of
             Just (Quote _ _) -> do
-              liftSql $ delete k
+              delete k
               sendMessage m "Quote deleted"
             Nothing -> sendMessage m "Couldn't get that quote!"
 
