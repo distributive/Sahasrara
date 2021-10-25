@@ -10,21 +10,18 @@
 -- Commands that manage the loading and reloading of plugins
 module Tablebot.Plugins.Administration (administrationPlugin) where
 
-import Control.Monad.Trans.Class (MonadTrans (lift))
 import Data.Text (Text, pack)
 import qualified Data.Text as T
-import Database.Persist (Entity, Filter, delete, entityVal, exists, insert, selectKeysList, selectList, (==.))
-import Database.Persist.TH
+import Database.Persist (Entity, Filter, entityVal, (==.))
 import Discord (stopDiscord)
 import Discord.Types
 -- import from handler is unorthodox, but I don't want other plugins messing with that table...
 import Tablebot.Handler.Administration
 import Tablebot.Plugin
+import Tablebot.Plugin.Database
 import Tablebot.Plugin.Discord (sendMessage)
-import Tablebot.Plugin.Parser (word)
 import Tablebot.Plugin.Permission (requirePermission)
 import Tablebot.Plugin.SmartCommand
-import Text.Megaparsec (chunk, (<?>), (<|>))
 import Text.RawString.QQ
 
 -- | @SS@ denotes the type returned by the command setup. Here its unused.
@@ -51,26 +48,26 @@ blacklistComm (WErr (Right (_))) = listBlacklist
 
 addBlacklist :: String -> Message -> DatabaseDiscord SS ()
 addBlacklist pLabel m = requirePermission Superuser m $ do
-  extant <- liftSql $ exists [PluginBlacklistLabel ==. pLabel]
+  extant <- exists [PluginBlacklistLabel ==. pLabel]
   if not $ extant
     then do
-      _ <- liftSql $ insert $ PluginBlacklist pLabel
+      _ <- insert $ PluginBlacklist pLabel
       sendMessage m "Plugin added to blacklist. Please reload for it to take effect"
     else sendMessage m "Plugin already in blacklist"
 
 removeBlacklist :: String -> Message -> DatabaseDiscord SS ()
 removeBlacklist pLabel m = requirePermission Superuser m $ do
-  extant <- liftSql $ selectKeysList [PluginBlacklistLabel ==. pLabel] []
+  extant <- selectKeysList [PluginBlacklistLabel ==. pLabel] []
   if not $ null extant
     then do
-      _ <- liftSql $ delete (head extant)
+      _ <- delete (head extant)
       sendMessage m "Plugin removed from blacklist. Please reload for it to take effect"
     else sendMessage m "Plugin not in blacklist"
 
 -- | @listBlacklist@ shows the plugin names in the blacklist.
 listBlacklist :: Message -> DatabaseDiscord SS ()
 listBlacklist m = requirePermission Superuser m $ do
-  bl <- liftSql $ selectList allBlacklisted []
+  bl <- selectList allBlacklisted []
   sendMessage m (format $ bl)
   where
     allBlacklisted :: [Filter PluginBlacklist]

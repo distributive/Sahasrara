@@ -69,6 +69,9 @@ upsert r v = liftSql $ Sql.upsert r v
 count :: (Sql.PersistEntity record, Sql.PersistEntityBackend record ~ Sql.SqlBackend) => [Sql.Filter record] -> DatabaseDiscord d Int
 count r = liftSql $ Sql.count r
 
+exists :: (Sql.PersistEntity record, Sql.PersistEntityBackend record ~ Sql.SqlBackend) => [Sql.Filter record] -> DatabaseDiscord d Bool
+exists r = liftSql $ Sql.exists r
+
 selectFirst :: (Sql.PersistEntity record, Sql.PersistEntityBackend record ~ Sql.SqlBackend) => [Sql.Filter record] -> [Sql.SelectOpt record] -> DatabaseDiscord d (Maybe (Sql.Entity record))
 selectFirst r v = liftSql $ Sql.selectFirst r v
 
