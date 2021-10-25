@@ -35,8 +35,11 @@ Quote
     deriving Show
 |]
 
+-- | @SS@ denotes the type returned by the command setup. Here its unused.
+type SS = ()
+
 -- | Our quote command, which combines @addQuote@ and @showQuote@.
-quote :: Command
+quote :: Command SS
 quote =
   Command
     "quote"
@@ -50,7 +53,7 @@ quoteComm ::
         (Either (Exactly "show", Int) (Exactly "delete", Int))
     ) ->
   Message ->
-  DatabaseDiscord ()
+  DatabaseDiscord SS ()
 quoteComm (WErr (Left (_, Qu qu, _, ROI author))) = addQ qu author
 quoteComm (WErr (Right (Left (_, qId)))) = showQ (fromIntegral qId)
 quoteComm (WErr (Right (Right (_, qId)))) = deleteQ (fromIntegral qId)
@@ -58,17 +61,17 @@ quoteComm (WErr (Right (Right (_, qId)))) = deleteQ (fromIntegral qId)
 -- | @addQuote@, which looks for a message of the form
 -- @!quote add "quoted text" - author@, and then stores said quote in the
 -- database, returning the ID used.
-addQ :: String -> String -> Message -> DatabaseDiscord ()
+addQ :: String -> String -> Message -> DatabaseDiscord SS ()
 addQ qu author m = do
-  added <- insert $ Quote qu author
+  added <- liftSql $ insert $ Quote qu author
   let res = pack $ show $ fromSqlKey added
   sendMessage m ("Quote added as #" `append` res)
 
 -- | @showQuote@, which looks for a message of the form @!quote show n@, looks
 -- that quote up in the database and responds with that quote.
-showQ :: Int64 -> Message -> DatabaseDiscord ()
+showQ :: Int64 -> Message -> DatabaseDiscord SS ()
 showQ qId m = do
-  qu <- get $ toSqlKey qId
+  qu <- liftSql $ get $ toSqlKey qId
   case qu of
     Just (Quote txt author) ->
       sendMessage m $ pack $ txt ++ " - " ++ author
@@ -76,15 +79,15 @@ showQ qId m = do
 
 -- | @deleteQuote@, which looks for a message of the form @!quote delete n@,
 -- and removes it from the database.
-deleteQ :: Int64 -> Message -> DatabaseDiscord ()
+deleteQ :: Int64 -> Message -> DatabaseDiscord SS ()
 deleteQ qId m =
   requirePermission Any m $
     let k = toSqlKey qId
      in do
-          qu <- get k
+          qu <- liftSql $ get k
           case qu of
             Just (Quote _ _) -> do
-              delete k
+              liftSql $ delete k
               sendMessage m "Quote deleted"
             Nothing -> sendMessage m "Couldn't get that quote!"
 
@@ -112,5 +115,5 @@ quoteHelp = HelpPage "quote" "store and retrieve quotes" "**Quotes**\nAllows sto
 
 -- | @quotePlugin@ assembles the @quote@ command (consisting of @add@ and
 -- @show@) and the database migration into a plugin.
-quotePlugin :: Plugin
+quotePlugin :: Plugin SS
 quotePlugin = (plug "quote") {commands = [quote], migrations = [quoteMigration], helpPages = [quoteHelp]}

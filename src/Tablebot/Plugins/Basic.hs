@@ -11,11 +11,15 @@ module Tablebot.Plugins.Basic (basicPlugin) where
 
 import Data.Text (toTitle)
 import Data.Text.Internal (Text)
-import Tablebot.Plugin.Discord (sendMessage)
+import Tablebot.Plugin (DatabaseDiscord)
+import Tablebot.Plugin.Discord (Message, sendMessage)
 import Tablebot.Plugin.SmartCommand (parseComm)
 import Tablebot.Plugin.Types (Command (Command), HelpPage (HelpPage), Plugin (commands), RequiredPermission (None), helpPages, plug)
 
 -- * Some types to help clarify what's going on
+
+-- | @SS@ denotes the type returned by the command setup. Here its unused.
+type SS = ()
 
 -- | @MiniHelpPage@ simplifies creating the help pages. You can either provide just the short and long help text and let
 -- it autogenerate the formatting, or you can provide a full help page if you want more control
@@ -39,22 +43,24 @@ basicCommands =
     )
   ]
 
+-- | @echo@ pulled out to help resolve parser overlapping instances errors.
+-- Sends the provided text, regardless of received message.
+echo :: Text -> Message -> DatabaseDiscord SS ()
+echo t m = sendMessage m t
+
 -- | Given command text "a", reply with text "b".
-baseCommand :: BasicCommand -> Command
+baseCommand :: BasicCommand -> Command SS
 baseCommand (a, b, _) =
   Command
     a
-    ( parseComm $ \m -> do
-        _ <- sendMessage m b
-        return ()
-    )
+    (parseComm $ echo b)
 
 baseHelp :: BasicCommand -> HelpPage
 baseHelp (_, _, Advanced help) = help
 baseHelp (a, _, Simple (short, long)) = HelpPage a short ("**" <> toTitle a <> "**\n" <> long <> "\n\n*Usage:* `" <> a <> "`") [] None
 
 -- | @basicPlugin@ assembles the call and response commands into a simple command list.
-basicPlugin :: Plugin
+basicPlugin :: Plugin SS
 basicPlugin =
   (plug "basic")
     { commands = map baseCommand basicCommands,

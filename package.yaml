@@ -49,6 +49,7 @@ dependencies:
 - data-default
 - exception-transformers
 - resourcet
+- resource-pool
 
 library:
   source-dirs: src

@@ -16,7 +16,7 @@ import Tablebot.Plugin.Discord (sendMessage)
 import Tablebot.Plugin.Types
 
 -- | @requirePermission@ only runs the inputted effect if permissions are matched. Otherwise it returns an error.
-requirePermission :: RequiredPermission -> Message -> DatabaseDiscord () -> DatabaseDiscord ()
+requirePermission :: RequiredPermission -> Message -> DatabaseDiscord s () -> DatabaseDiscord s ()
 requirePermission perm m a = do
   p <- getSenderPermission m
   if userHasPermission perm p

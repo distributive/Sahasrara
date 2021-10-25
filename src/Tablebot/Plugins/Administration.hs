@@ -27,7 +27,10 @@ import Tablebot.Plugin.SmartCommand
 import Text.Megaparsec (chunk, (<?>), (<|>))
 import Text.RawString.QQ
 
-blacklist :: Command
+-- | @SS@ denotes the type returned by the command setup. Here its unused.
+type SS = ()
+
+blacklist :: Command SS
 blacklist = Command "blacklist" (parseComm blacklistComm)
 
 blacklistComm ::
@@ -41,33 +44,33 @@ blacklistComm ::
         (Exactly "list")
     ) ->
   Message ->
-  DatabaseDiscord ()
+  DatabaseDiscord SS ()
 blacklistComm (WErr (Left (Left (_, pLabel)))) = addBlacklist pLabel
 blacklistComm (WErr (Left (Right (_, pLabel)))) = removeBlacklist pLabel
 blacklistComm (WErr (Right (_))) = listBlacklist
 
-addBlacklist :: String -> Message -> DatabaseDiscord ()
+addBlacklist :: String -> Message -> DatabaseDiscord SS ()
 addBlacklist pLabel m = requirePermission Superuser m $ do
-  extant <- exists [PluginBlacklistLabel ==. pLabel]
+  extant <- liftSql $ exists [PluginBlacklistLabel ==. pLabel]
   if not $ extant
     then do
-      _ <- insert $ PluginBlacklist pLabel
+      _ <- liftSql $ insert $ PluginBlacklist pLabel
       sendMessage m "Plugin added to blacklist. Please reload for it to take effect"
     else sendMessage m "Plugin already in blacklist"
 
-removeBlacklist :: String -> Message -> DatabaseDiscord ()
+removeBlacklist :: String -> Message -> DatabaseDiscord SS ()
 removeBlacklist pLabel m = requirePermission Superuser m $ do
-  extant <- selectKeysList [PluginBlacklistLabel ==. pLabel] []
+  extant <- liftSql $ selectKeysList [PluginBlacklistLabel ==. pLabel] []
   if not $ null extant
     then do
-      _ <- delete (head extant)
+      _ <- liftSql $ delete (head extant)
       sendMessage m "Plugin removed from blacklist. Please reload for it to take effect"
     else sendMessage m "Plugin not in blacklist"
 
 -- | @listBlacklist@ shows the plugin names in the blacklist.
-listBlacklist :: Message -> DatabaseDiscord ()
+listBlacklist :: Message -> DatabaseDiscord SS ()
 listBlacklist m = requirePermission Superuser m $ do
-  bl <- selectList allBlacklisted []
+  bl <- liftSql $ selectList allBlacklisted []
   sendMessage m (format $ bl)
   where
     allBlacklisted :: [Filter PluginBlacklist]
@@ -78,13 +81,13 @@ listBlacklist m = requirePermission Superuser m $ do
     format' a = (pack $ pluginBlacklistLabel $ entityVal a) <> "\n"
 
 -- | @restart@ reloads the bot with any new configuration changes.
-reload :: Command
+reload :: Command SS
 reload = Command "reload" restartCommand
   where
-    restartCommand :: Parser (Message -> DatabaseDiscord ())
+    restartCommand :: Parser (Message -> DatabaseDiscord SS ())
     restartCommand = noArguments $ \m -> requirePermission Superuser m $ do
       sendMessage m "Reloading bot..."
-      lift $ stopDiscord
+      liftDiscord $ stopDiscord
 
 reloadHelp :: HelpPage
 reloadHelp =
@@ -148,5 +151,5 @@ Enable and disable plugins|]
 
 -- | @administrationPlugin@ assembles the commands into a plugin.
 -- Note the use of an underscore in the name, this prevents the plugin being disabled.
-administrationPlugin :: Plugin
+administrationPlugin :: Plugin SS
 administrationPlugin = (plug "_admin") {commands = [reload, blacklist], helpPages = [reloadHelp, blacklistHelp]}

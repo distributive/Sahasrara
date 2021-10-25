@@ -36,7 +36,8 @@ import Database.Persist.Sqlite
 import Discord
 import Tablebot.Handler (eventHandler, killCron, runCron)
 import Tablebot.Handler.Administration (adminMigration, currentBlacklist, removeBlacklisted)
-import Tablebot.Plugin (Plugin, combinePlugins, cronJobs, migrations)
+import Tablebot.Handler.Plugins
+import Tablebot.Handler.Types
 import Tablebot.Plugin.Help
 import Tablebot.Plugin.Utils (debugPrint)
 
@@ -50,7 +51,7 @@ import Tablebot.Plugin.Utils (debugPrint)
 -- This creates a small pool of database connections used by the event handler,
 -- builds an event handler and starts cron jobs. It also kills the cron jobs on
 -- bot close.
-runTablebot :: Text -> Text -> FilePath -> [Plugin] -> IO ()
+runTablebot :: Text -> Text -> FilePath -> [CompiledPlugin] -> IO ()
 runTablebot dToken prefix dbpath plugins =
   do
     debugPrint ("DEBUG enabled. This is strongly not recommended in production!" :: String)
@@ -60,11 +61,14 @@ runTablebot dToken prefix dbpath plugins =
     -- Setup and then apply plugin blacklist from the database
     runSqlPool (runMigration adminMigration) pool
     blacklist <- runResourceT $ runNoLoggingT $ runSqlPool currentBlacklist pool
-    let !plugin = generateHelp $ combinePlugins (removeBlacklisted blacklist plugins)
+    let cplugins = removeBlacklisted blacklist plugins
+    let !plugin = generateHelp $ combinePlugins cplugins
+    allactions <- mapM (\a -> runResourceT $ runNoLoggingT $ runSqlPool a pool) (combinedSetupAction plugin)
+    let !actions = combineActions allactions
 
     -- TODO: this might have issues with duplicates?
     -- TODO: in production, this should probably run once and then never again.
-    mapM_ (\migration -> runSqlPool (runMigration migration) pool) $ migrations plugin
+    mapM_ (\migration -> runSqlPool (runMigration migration) pool) $ combinedMigrations plugin
     -- Create a var to kill any ongoing tasks.
     mvar <- newEmptyMVar :: IO (MVar [ThreadId])
     userFacingError <-
@@ -72,10 +76,10 @@ runTablebot dToken prefix dbpath plugins =
         def
           { discordToken = dToken,
             discordOnEvent =
-              flip runSqlPool pool . eventHandler plugin prefix,
+              flip runSqlPool pool . eventHandler actions prefix,
             discordOnStart =
               -- Build list of cron jobs, saving them to the mvar.
-              runSqlPool (mapM runCron (cronJobs plugin) >>= liftIO . putMVar mvar) pool,
+              runSqlPool (mapM runCron (compiledCronJobs actions) >>= liftIO . putMVar mvar) pool,
             -- Kill every cron job in the mvar.
             discordOnEnd = takeMVar mvar >>= killCron
           }

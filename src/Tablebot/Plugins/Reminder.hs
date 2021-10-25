@@ -50,6 +50,9 @@ Reminder
     deriving Show
 |]
 
+-- | @SS@ denotes the type returned by the command setup. Here its unused.
+type SS = ()
+
 -- Below duckling code was greatly helped by dixonary's example project, below
 -- <https://github.com/dixonary/duckling-example>
 
@@ -71,7 +74,7 @@ ducklingDateTime now rawString = do
 -- @reminderParser@ parses a reminder request of the form
 -- @!remind "reminder" <format>@, where format is a format that Duckling can parse.
 -- TODO: get timezone info and such ahead of time
-reminderParser :: Quoted String -> RestOfInput Text -> Message -> DatabaseDiscord ()
+reminderParser :: Quoted String -> RestOfInput Text -> Message -> DatabaseDiscord SS ()
 reminderParser (Qu content) (ROI rawString) m = do
   let tz = "Europe/London" :: Text
   tzs <- liftIO $ getTimeZoneSeriesFromOlsonFile $ "/usr/share/zoneinfo/" <> unpack tz
@@ -87,30 +90,31 @@ reminderParser (Qu content) (ROI rawString) m = do
 -- @addReminder@ takes a @time@ to remind at and the @content@ of a reminder
 -- and adds a reminder at that time. Note that this is all done in UTC, so
 -- currently ignores the user's timezone... (TODO fix)
-addReminder :: UTCTime -> String -> Message -> DatabaseDiscord ()
+addReminder :: UTCTime -> String -> Message -> DatabaseDiscord SS ()
 addReminder time content m = do
   let (Snowflake cid) = messageChannel m
       (Snowflake mid) = messageId m
-  added <- insert $ Reminder cid mid time content
+  added <- liftSql $ insert $ Reminder cid mid time content
   let res = pack $ show $ fromSqlKey added
   sendMessage m ("Reminder " <> res <> " set for " <> (pack . show) time <> " with message `" <> pack content <> "`")
 
 -- | @reminderCommand@ is a command implementing the functionality in
 -- @reminderParser@ and @addReminder@.
-reminderCommand :: Command
+reminderCommand :: Command SS
 reminderCommand = Command "remind" (parseComm reminderParser)
 
 -- | @reminderCron@ is a cron job that checks every minute to see if a reminder
 -- has passed, and if so sends a message using the stored information about the
 -- message originally triggering it in the database.
-reminderCron :: DatabaseDiscord ()
+reminderCron :: DatabaseDiscord SS ()
 reminderCron = do
   now <- liftIO $ systemToUTCTime <$> getSystemTime
   liftIO $ debugPrint $ "running reminder cron at " ++ show now
-  entitydue <- select $
-    from $ \re -> do
-      where_ (re ^. ReminderTime <=. val now)
-      return re
+  entitydue <- liftSql $
+    select $
+      from $ \re -> do
+        where_ (re ^. ReminderTime <=. val now)
+        return re
   liftIO $ mapM_ (print . entityVal) entitydue
   forM_ entitydue $ \re ->
     let (Reminder cid mid _time content) = entityVal re
@@ -123,7 +127,7 @@ reminderCron = do
               sendMessage mess $
                 pack $
                   "Reminder to <@" ++ show uid ++ ">! " ++ content
-              P.delete (entityKey re)
+              liftSql $ P.delete (entityKey re)
 
 reminderHelp :: HelpPage
 reminderHelp =
@@ -142,7 +146,7 @@ Uses duckling (<https://github.com/facebook/duckling>) to parse time and dates, 
 -- | @reminderPlugin@ builds a plugin providing reminder asking functionality
 -- (@reminderCommand@), reminding functionality (via the cron job specified by
 -- @reminderCron@) and the database information.
-reminderPlugin :: Plugin
+reminderPlugin :: Plugin SS
 reminderPlugin =
   (plug "reminder")
     { commands = [reminderCommand],

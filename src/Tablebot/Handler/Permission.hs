@@ -13,6 +13,7 @@ module Tablebot.Handler.Permission where
 import Control.Monad.IO.Class (liftIO)
 import Discord.Types (GuildMember, Message, RoleId, memberRoles)
 import System.Environment (lookupEnv)
+import Tablebot.Handler.Types
 import Tablebot.Plugin.Discord (getMessageMember)
 import Tablebot.Plugin.Types
 import Tablebot.Plugin.Utils (isDebug)
@@ -58,7 +59,7 @@ permsFromGroups debug krls gps =
     elemish (Just a) b = a `elem` b
     elemish Nothing _ = False
 
-getSenderPermission :: Message -> DatabaseDiscord UserPermission
+getSenderPermission :: Message -> DatabaseDiscord s UserPermission
 getSenderPermission m = do
   member <- getMessageMember m
   knownroles <- liftIO getKnownRoles

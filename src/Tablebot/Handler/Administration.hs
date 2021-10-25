@@ -4,7 +4,7 @@ import Data.Text (Text, pack)
 import Database.Persist
 import Database.Persist.Sqlite (SqlPersistM)
 import Database.Persist.TH
-import Tablebot.Plugin.Types (Plugin, pluginName)
+import Tablebot.Handler.Types
 
 share
   [mkPersist sqlSettings, mkMigrate "adminMigration"]
@@ -24,7 +24,7 @@ currentBlacklist = do
     unentity :: (Entity a) -> a
     unentity a = entityVal a
 
-removeBlacklisted :: [Text] -> [Plugin] -> [Plugin]
+removeBlacklisted :: [Text] -> [CompiledPlugin] -> [CompiledPlugin]
 removeBlacklisted bl p = filter isNotBlacklisted p
   where
-    isNotBlacklisted p' = not (pluginName p' `elem` bl)
+    isNotBlacklisted p' = not (compliedName p' `elem` bl)

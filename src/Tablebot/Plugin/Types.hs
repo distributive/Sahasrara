@@ -12,9 +12,12 @@
 -- database and Discord operations within your features.
 module Tablebot.Plugin.Types where
 
+import Control.Monad (void)
+import Control.Monad.Trans.Class (lift)
+import Control.Monad.Trans.Reader (ReaderT)
 import Data.Text (Text)
 import Data.Void (Void)
-import Database.Persist.Sqlite (Migration, SqlPersistT)
+import Database.Persist.Sqlite (Migration, SqlPersistM, SqlPersistT)
 import Discord (DiscordHandler)
 import Discord.Types
   ( ChannelId,
@@ -34,12 +37,22 @@ import Text.Megaparsec (Parsec)
 --
 -- "Tablebot.Plugin.Discord" provides some helper functions for
 -- running Discord operations without excessive use of @lift@.
-type DatabaseDiscord = SqlPersistT DiscordHandler
+type DatabaseDiscord d = ReaderT d (SqlPersistT DiscordHandler)
+
+-- | @Database@ The monad transformer stack used to represent computations that work with
+-- the just the database for startup actions.
+type Database d = SqlPersistM d
 
 -- * Parser
 
 -- | A simple definition for parsers on Text.
 type Parser = Parsec Void Text
+
+liftSql :: SqlPersistT DiscordHandler a -> ReaderT d (SqlPersistT DiscordHandler) a
+liftSql = lift
+
+liftDiscord :: DiscordHandler a -> ReaderT d (SqlPersistT DiscordHandler) a
+liftDiscord = lift . lift
 
 -- * Features
 
@@ -49,55 +62,62 @@ type Parser = Parsec Void Text
 
 -- | For when you get a 'MessageCreate'. Checks that the @name@ is directly
 -- after the bot prefix, and then runs @commandParser@ on it.
-data Command = Command
+newtype StartUp d = StartUp
+  { -- | An action to run at startup
+    startAction :: Database d
+  }
+
+-- | For when you get a 'MessageCreate'. Checks that the @name@ is directly
+-- after the bot prefix, and then runs @commandParser@ on it.
+data Command d = Command
   { -- | The name of the command.
     name :: Text,
     -- | A parser to run on the command arguments, returning a computation to
     -- run in 'DatabaseDiscord'.
-    commandParser :: Parser (Message -> DatabaseDiscord ())
+    commandParser :: Parser (Message -> DatabaseDiscord d ())
   }
 
 -- | For when you get a 'MessageCreate', but instead of wanting to match on
 -- "!name args" (for prefix "!"), you want a more general match. Useful for
 -- commands that work with brackets or look for keywords.
-newtype InlineCommand = InlineCommand
+newtype InlineCommand d = InlineCommand
   { -- | The parser to run on every message (non-bot) received.
-    inlineCommandParser :: Parser (Message -> DatabaseDiscord ())
+    inlineCommandParser :: Parser (Message -> DatabaseDiscord d ())
   }
 
 -- | How to handle any messages changing. Called on Discord's 'MessageUpdate',
 -- 'MessageDelete' and 'MessageDeleteBulk'. Useful for admin bots such as the
 -- ub3rbot ub3rlog functionality.
-newtype MessageChange = MessageChange
+newtype MessageChange d = MessageChange
   { -- | A function to call on every message update. The first argument is
     -- whether the message was updated (True) or deleted (False).
     -- Will be run once per message if bulk deletion occurs.
-    onMessageChange :: Bool -> ChannelId -> MessageId -> DatabaseDiscord ()
+    onMessageChange :: Bool -> ChannelId -> MessageId -> DatabaseDiscord d ()
   }
 
 -- | Handles added reactions, which is useful for reaction-based functionality
 -- (e.g. a quote bot that quotes messages reacted to with a certain emoji).
 -- Tied to 'MessageReactionAdd' from Discord.
-newtype ReactionAdd = ReactionAdd
+newtype ReactionAdd d = ReactionAdd
   { -- | A function to call on every reaction add, which takes in details of
     -- that reaction ('ReactionInfo').
-    onReactionAdd :: ReactionInfo -> DatabaseDiscord ()
+    onReactionAdd :: ReactionInfo -> DatabaseDiscord d ()
   }
 
 -- | Handles removed reactions, which is useful in the same way as adding
 -- reactions. Called on 'MessageReactionRemove'.
-newtype ReactionDel = ReactionDel
+newtype ReactionDel d = ReactionDel
   { -- | A function to call on every individual reaction delete, which takes in
     -- details of that reaction ('ReactionInfo').
-    onReactionDelete :: ReactionInfo -> DatabaseDiscord ()
+    onReactionDelete :: ReactionInfo -> DatabaseDiscord d ()
   }
 
 -- | Handles events not covered by the other kinds of features. This is only
 -- relevant to specific admin functionality, such as the deletion of channels.
-newtype Other = Other
+newtype Other d = Other
   { -- | A function to call on every other event, which takes in details of
     -- that event.
-    onOtherEvent :: Event -> DatabaseDiscord ()
+    onOtherEvent :: Event -> DatabaseDiscord d ()
   }
 
 -- | A feature for cron jobs - events which are run every @timeframe@
@@ -106,11 +126,11 @@ newtype Other = Other
 --
 -- Note that the loop starts with calling @onCron@ and /then/ delaying, so they
 -- will all be invoked on bot start.
-data CronJob = CronJob
+data CronJob d = CronJob
   { -- | Delay between each call of @onCron@, in microseconds.
     timeframe :: Int,
     -- | Computation to do with each invocation of this cron job.
-    onCron :: DatabaseDiscord ()
+    onCron :: DatabaseDiscord d ()
   }
 
 -- | A feature for generating help text
@@ -199,15 +219,16 @@ data RequiredPermission = None | Any | Exec | Moderator | Both | Superuser deriv
 
 -- | A plugin. Directly constructing these should be avoided (hence why it is
 -- not exported by "Tablebot.Plugin") as this structure could change.
-data Plugin = Pl
+data Plugin d = Pl
   { pluginName :: Text,
-    commands :: [Command],
-    inlineCommands :: [InlineCommand],
-    onMessageChanges :: [MessageChange],
-    onReactionAdds :: [ReactionAdd],
-    onReactionDeletes :: [ReactionDel],
-    otherEvents :: [Other],
-    cronJobs :: [CronJob],
+    startUp :: StartUp d,
+    commands :: [Command d],
+    inlineCommands :: [InlineCommand d],
+    onMessageChanges :: [MessageChange d],
+    onReactionAdds :: [ReactionAdd d],
+    onReactionDeletes :: [ReactionDel d],
+    otherEvents :: [Other d],
+    cronJobs :: [CronJob d],
     helpPages :: [HelpPage],
     -- | A list of database migrations generated by Persistance.
     migrations :: [Migration]
@@ -218,35 +239,8 @@ data Plugin = Pl
 --
 -- Examples of this in use can be found in the imports of
 -- "Tablebot.Plugins".
-plug :: Text -> Plugin
-plug name' = Pl name' [] [] [] [] [] [] [] [] []
+plug :: Text -> Plugin ()
+plug name' = Pl name' (StartUp (return ())) [] [] [] [] [] [] [] [] []
 
--- | Combines a list of plugins into a single plugin with the combined
--- functionality. The bot actually runs a single plugin, which is just the
--- combined version of all input plugins.
-combinePlugins :: [Plugin] -> Plugin
-combinePlugins [] = plug "_root"
-combinePlugins (p : ps) =
-  let p' = combinePlugins ps
-   in Pl
-        { pluginName = "_root",
-          commands = merge commands p p',
-          inlineCommands = merge inlineCommands p p',
-          onMessageChanges = merge onMessageChanges p p',
-          onReactionAdds = merge onReactionAdds p p',
-          onReactionDeletes = merge onReactionDeletes p p',
-          otherEvents = merge otherEvents p p',
-          cronJobs = merge cronJobs p p',
-          migrations = merge migrations p p',
-          helpPages = merge helpPages p p'
-        }
-  where
-    merge f q q' = f q +++ f q'
-    -- We expect empty list to be very common in this process, so we add
-    -- the special case where the second element is empty. This is
-    -- because plugins are unlikely to define every possible kind of
-    -- event, so we will get many [] instances.
-    (+++) :: [a] -> [a] -> [a]
-    [] +++ ys = ys
-    xs +++ [] = xs
-    (x : xs) +++ ys = x : xs +++ ys
+startPlug :: Text -> StartUp d -> Plugin d
+startPlug name' startup = Pl name' startup [] [] [] [] [] [] [] [] []

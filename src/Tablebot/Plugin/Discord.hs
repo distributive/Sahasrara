@@ -19,13 +19,12 @@ module Tablebot.Plugin.Discord
 where
 
 import Control.Monad.Exception
-import Control.Monad.Trans.Class (MonadTrans (lift))
 import Data.Text (Text)
 import Discord (RestCallErrorCode, restCall)
 import qualified Discord.Requests as R
 import Discord.Types
 import Tablebot.Handler.Embed
-import Tablebot.Plugin (DatabaseDiscord)
+import Tablebot.Plugin (DatabaseDiscord, liftDiscord)
 import Tablebot.Plugin.Exception (BotException (..))
 
 -- | @sendMessage@ sends the input message @t@ in the same channel as message
@@ -34,9 +33,9 @@ import Tablebot.Plugin.Exception (BotException (..))
 sendMessage ::
   Message ->
   Text ->
-  DatabaseDiscord ()
+  DatabaseDiscord s ()
 sendMessage m t = do
-  res <- lift . restCall $ R.CreateMessage (messageChannel m) t
+  res <- liftDiscord . restCall $ R.CreateMessage (messageChannel m) t
   case res of
     Left _ -> throw $ MessageSendException "Failed to send message."
     Right _ -> return ()
@@ -53,9 +52,9 @@ sendEmbedMessage ::
   Message ->
   Text ->
   e ->
-  DatabaseDiscord ()
+  DatabaseDiscord s ()
 sendEmbedMessage m t e = do
-  res <- lift . restCall $ TablebotEmbedRequest (messageChannel m) t (asEmbed e)
+  res <- liftDiscord . restCall $ TablebotEmbedRequest (messageChannel m) t (asEmbed e)
   case res of
     Left _ -> throw $ MessageSendException "Failed to send embed message."
     Right _ -> return ()
@@ -65,8 +64,8 @@ sendEmbedMessage m t e = do
 getMessage ::
   ChannelId ->
   MessageId ->
-  DatabaseDiscord (Either RestCallErrorCode Message)
-getMessage cid mid = lift . restCall $ R.GetChannelMessage (cid, mid)
+  DatabaseDiscord s (Either RestCallErrorCode Message)
+getMessage cid mid = liftDiscord . restCall $ R.GetChannelMessage (cid, mid)
 
 -- | @reactToMessage@ reacts to the given message with the emoji specified
 -- by the text input (see README.md from discord-haskell). Returns @()@ if
@@ -74,21 +73,21 @@ getMessage cid mid = lift . restCall $ R.GetChannelMessage (cid, mid)
 reactToMessage ::
   Message ->
   Text ->
-  DatabaseDiscord (Either RestCallErrorCode ())
+  DatabaseDiscord s (Either RestCallErrorCode ())
 reactToMessage m e =
-  lift . restCall $
+  liftDiscord . restCall $
     R.CreateReaction (messageChannel m, messageId m) e
 
 -- | @getMessageMember@ returns the message member object if it was sent from a Discord server,
 -- or @Nothing@ if it was sent from a DM (or the API fails)
-getMessageMember :: Message -> DatabaseDiscord (Maybe GuildMember)
+getMessageMember :: Message -> DatabaseDiscord s (Maybe GuildMember)
 getMessageMember m = gMM (messageGuild m) m
   where
     maybeRight :: Either a b -> Maybe b
     maybeRight (Left _) = Nothing
     maybeRight (Right a) = Just a
-    gMM :: Maybe GuildId -> Message -> DatabaseDiscord (Maybe GuildMember)
+    gMM :: Maybe GuildId -> Message -> DatabaseDiscord s (Maybe GuildMember)
     gMM Nothing _ = return Nothing
     gMM (Just g') m' = do
-      a <- lift $ restCall $ R.GetGuildMember g' (userId $ messageAuthor m')
+      a <- liftDiscord $ restCall $ R.GetGuildMember g' (userId $ messageAuthor m')
       return $ maybeRight a

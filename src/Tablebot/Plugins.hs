@@ -14,6 +14,8 @@ module Tablebot.Plugins
   )
 where
 
+import Tablebot.Handler.Plugins (compilePlugin)
+import Tablebot.Handler.Types (CompiledPlugin)
 import Tablebot.Plugin (Plugin)
 import Tablebot.Plugins.Administration (administrationPlugin)
 import Tablebot.Plugins.Basic (basicPlugin)
@@ -26,15 +28,15 @@ import Tablebot.Plugins.Say (sayPlugin)
 import Tablebot.Plugins.Welcome (welcomePlugin)
 
 -- Use long list format to make additions and removals non-conflicting on git PRs
-plugins :: [Plugin]
+plugins :: [CompiledPlugin]
 plugins =
-  [ pingPlugin,
-    administrationPlugin,
-    basicPlugin,
-    catPlugin,
-    flipPlugin,
-    quotePlugin,
-    reminderPlugin,
-    sayPlugin,
-    welcomePlugin
+  [ compilePlugin pingPlugin,
+    compilePlugin administrationPlugin,
+    compilePlugin basicPlugin,
+    compilePlugin catPlugin,
+    compilePlugin flipPlugin,
+    compilePlugin quotePlugin,
+    compilePlugin reminderPlugin,
+    compilePlugin sayPlugin,
+    compilePlugin welcomePlugin
   ]
