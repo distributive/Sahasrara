@@ -61,10 +61,12 @@ runTablebot dToken prefix dbpath plugins =
     -- Setup and then apply plugin blacklist from the database
     runSqlPool (runMigration adminMigration) pool
     blacklist <- runResourceT $ runNoLoggingT $ runSqlPool currentBlacklist pool
-    let cplugins = removeBlacklisted blacklist plugins
-    let !plugin = generateHelp $ combinePlugins cplugins
-    allactions <- mapM (\a -> runResourceT $ runNoLoggingT $ runSqlPool a pool) (combinedSetupAction plugin)
-    let !actions = combineActions allactions
+    let filteredPlugins = removeBlacklisted blacklist plugins
+    -- Combine the list of plugins into both a combined plugin
+    let !plugin = generateHelp $ combinePlugins filteredPlugins
+    -- Run the setup actions of each plugin and collect the plugin actions into a single @PluginActions@ instance
+    allActions <- mapM (runResourceT . runNoLoggingT . flip runSqlPool pool) (combinedSetupAction plugin)
+    let !actions = combineActions allActions
 
     -- TODO: this might have issues with duplicates?
     -- TODO: in production, this should probably run once and then never again.
