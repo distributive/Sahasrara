@@ -1,4 +1,8 @@
-module Tablebot.Handler.Administration where
+module Tablebot.Handler.Administration
+  ( module Tablebot.Handler.Administration,
+    CompiledPlugin, -- Exfiltrate this to the admin plugin
+  )
+where
 
 import Data.Text (Text, pack)
 import Database.Persist
@@ -27,4 +31,4 @@ currentBlacklist = do
 removeBlacklisted :: [Text] -> [CompiledPlugin] -> [CompiledPlugin]
 removeBlacklisted bl p = filter isNotBlacklisted p
   where
-    isNotBlacklisted p' = not (compliedName p' `elem` bl)
+    isNotBlacklisted p' = not (compiledName p' `elem` bl)

@@ -16,7 +16,6 @@ where
 
 import Tablebot.Handler.Plugins (compilePlugin)
 import Tablebot.Handler.Types (CompiledPlugin)
-import Tablebot.Plugin (Plugin)
 import Tablebot.Plugins.Administration (administrationPlugin)
 import Tablebot.Plugins.Basic (basicPlugin)
 import Tablebot.Plugins.Cats (catPlugin)
@@ -30,13 +29,17 @@ import Tablebot.Plugins.Welcome (welcomePlugin)
 -- Use long list format to make additions and removals non-conflicting on git PRs
 plugins :: [CompiledPlugin]
 plugins =
-  [ compilePlugin pingPlugin,
-    compilePlugin administrationPlugin,
-    compilePlugin basicPlugin,
-    compilePlugin catPlugin,
-    compilePlugin flipPlugin,
-    compilePlugin quotePlugin,
-    compilePlugin reminderPlugin,
-    compilePlugin sayPlugin,
-    compilePlugin welcomePlugin
-  ]
+  addAdministrationPlugin
+    [ compilePlugin pingPlugin,
+      compilePlugin basicPlugin,
+      compilePlugin catPlugin,
+      compilePlugin flipPlugin,
+      compilePlugin quotePlugin,
+      compilePlugin reminderPlugin,
+      compilePlugin sayPlugin,
+      compilePlugin welcomePlugin
+    ]
+
+-- | @addAdministrationPlugin@ is needed to allow the administration plugin to be aware of the list of current plugins
+addAdministrationPlugin :: [CompiledPlugin] -> [CompiledPlugin]
+addAdministrationPlugin cps = compilePlugin (administrationPlugin cps) : cps

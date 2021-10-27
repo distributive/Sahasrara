@@ -10,13 +10,17 @@
 -- Commands that manage the loading and reloading of plugins
 module Tablebot.Plugins.Administration (administrationPlugin) where
 
+-- import from handler is unorthodox, but I don't want other plugins messing with that table...
+
+import Control.Monad (when)
+import Control.Monad.Trans.Reader (ask)
 import Data.Text (Text, pack)
 import qualified Data.Text as T
 import Database.Persist (Entity, Filter, entityVal, (==.))
 import Discord (stopDiscord)
 import Discord.Types
--- import from handler is unorthodox, but I don't want other plugins messing with that table...
 import Tablebot.Handler.Administration
+import Tablebot.Handler.Types (CompiledPlugin (compiledName))
 import Tablebot.Plugin
 import Tablebot.Plugin.Database
 import Tablebot.Plugin.Discord (sendMessage)
@@ -25,7 +29,7 @@ import Tablebot.Plugin.SmartCommand
 import Text.RawString.QQ
 
 -- | @SS@ denotes the type returned by the command setup. Here its unused.
-type SS = ()
+type SS = [Text]
 
 blacklist :: Command SS
 blacklist = Command "blacklist" (parseComm blacklistComm)
@@ -48,6 +52,10 @@ blacklistComm (WErr (Right (_))) = listBlacklist
 
 addBlacklist :: String -> Message -> DatabaseDiscord SS ()
 addBlacklist pLabel m = requirePermission Superuser m $ do
+  known <- ask
+  -- It's not an error to add an unknown plugin (so that you can pre-disable a plugin you know you're about to add),
+  -- but emmit a warning so people know if it wasn't deliberate
+  when ((pack pLabel) `notElem` known) $ sendMessage m "Warning, unknown plugin"
   extant <- exists [PluginBlacklistLabel ==. pLabel]
   if not $ extant
     then do
@@ -64,18 +72,33 @@ removeBlacklist pLabel m = requirePermission Superuser m $ do
       sendMessage m "Plugin removed from blacklist. Please reload for it to take effect"
     else sendMessage m "Plugin not in blacklist"
 
--- | @listBlacklist@ shows the plugin names in the blacklist.
+-- | @listBlacklist@ shows a list of the plugins eligible for disablement (those not starting with _),
+--  along with their current status.
 listBlacklist :: Message -> DatabaseDiscord SS ()
 listBlacklist m = requirePermission Superuser m $ do
   bl <- selectList allBlacklisted []
-  sendMessage m (format $ bl)
+  pl <- ask
+  sendMessage m (format pl (blacklisted bl))
   where
     allBlacklisted :: [Filter PluginBlacklist]
     allBlacklisted = []
-    format :: [Entity PluginBlacklist] -> Text
-    format a = "**Blacklisted Plugins:**\n" <> (T.concat $ map format' a)
-    format' :: Entity PluginBlacklist -> Text
-    format' a = (pack $ pluginBlacklistLabel $ entityVal a) <> "\n"
+    -- Oh gods, so much formatting.
+    format :: [Text] -> [Text] -> Text
+    format p bl = "**Plugins:**\n```\n" <> (T.concat $ map (format' len' bl) (filter (disableable . T.uncons) p)) <> "```" <> unknown (filter (`notElem` p) bl)
+      where
+        len' :: Int
+        len' = maximum $ map T.length p
+    blacklisted :: [Entity PluginBlacklist] -> [Text]
+    blacklisted pbl = map (pack . pluginBlacklistLabel . entityVal) pbl
+    disableable :: Maybe (Char, Text) -> Bool
+    disableable Nothing = False
+    disableable (Just ('_', _)) = False
+    disableable _ = True
+    format' :: Int -> [Text] -> Text -> Text
+    format' width bl a = (T.justifyLeft width ' ' a) <> " : " <> (if a `elem` bl then "DISABLED" else "ENABLED") <> "\n"
+    unknown :: [Text] -> Text
+    unknown [] = ""
+    unknown l = "**Unknown blacklisted plugins**\n```\n" <> (T.concat $ map (<> ("\n" :: Text)) l) <> "```"
 
 -- | @restart@ reloads the bot with any new configuration changes.
 reload :: Command SS
@@ -146,7 +169,12 @@ Enable and disable plugins|]
     [blacklistListHelp, blacklistAddHelp, blacklistRemoveHelp]
     Superuser
 
+adminStartup :: [CompiledPlugin] -> StartUp SS
+adminStartup cps =
+  StartUp
+    (return $ map compiledName cps)
+
 -- | @administrationPlugin@ assembles the commands into a plugin.
 -- Note the use of an underscore in the name, this prevents the plugin being disabled.
-administrationPlugin :: Plugin SS
-administrationPlugin = (plug "_admin") {commands = [reload, blacklist], helpPages = [reloadHelp, blacklistHelp]}
+administrationPlugin :: [CompiledPlugin] -> Plugin SS
+administrationPlugin cps = (startPlug "_admin" $ adminStartup cps) {commands = [reload, blacklist], helpPages = [reloadHelp, blacklistHelp]}

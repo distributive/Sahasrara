@@ -23,7 +23,7 @@ type CompiledDatabaseDiscord = SqlPersistT DiscordHandler
 -- Its main job is to convert all the plugins into one type by collapsing
 -- it down to a single action that returns the respective actions
 data CompiledPlugin = CPl
-  { compliedName :: Text,
+  { compiledName :: Text,
     setupAction :: Database PluginActions,
     helpPages :: [HelpPage],
     migrations :: [Migration]

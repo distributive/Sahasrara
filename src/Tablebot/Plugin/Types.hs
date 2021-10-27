@@ -12,7 +12,6 @@
 -- database and Discord operations within your features.
 module Tablebot.Plugin.Types where
 
-import Control.Monad (void)
 import Control.Monad.Trans.Class (lift)
 import Control.Monad.Trans.Reader (ReaderT)
 import Data.Text (Text)
