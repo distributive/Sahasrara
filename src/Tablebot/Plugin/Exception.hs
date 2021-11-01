@@ -62,8 +62,8 @@ errorEmoji = ":warning:"
 -- | @formatUserError@ takes an error's name and message and makes it pretty for
 -- Discord.
 formatUserError :: String -> String -> String
-formatUserError name message =
-  errorEmoji ++ " **" ++ name ++ "** " ++ errorEmoji ++ "\n"
+formatUserError name' message =
+  errorEmoji ++ " **" ++ name' ++ "** " ++ errorEmoji ++ "\n"
     ++ "An error was encountered while resolving your command:\n"
     ++ "> `"
     ++ message
@@ -102,11 +102,11 @@ errorInfo :: BotException -> ErrorInfo
 
 -- | Add new errors here. Do not modify anything above this line except to
 -- declare new errors in the definition of BotException.
-errorInfo (GenericException name msg) = ErrorInfo name msg
-errorInfo (MessageSendException msg) = ErrorInfo "MessageSendException" msg
-errorInfo (ParserException msg) = ErrorInfo "ParserException" msg
+errorInfo (GenericException name' msg') = ErrorInfo name' msg'
+errorInfo (MessageSendException msg') = ErrorInfo "MessageSendException" msg'
+errorInfo (ParserException msg') = ErrorInfo "ParserException" msg'
 errorInfo (IndexOutOfBoundsException index (a, b)) =
   ErrorInfo
     "IndexOutOfBoundsException"
     $ "Index value of " ++ show index ++ " is not in the valid range [" ++ show a ++ ", " ++ show b ++ "]."
-errorInfo (RandomException msg) = ErrorInfo "RandomException" msg
+errorInfo (RandomException msg') = ErrorInfo "RandomException" msg'
