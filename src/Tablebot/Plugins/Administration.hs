@@ -1,9 +1,8 @@
 -- |
 -- Module      : Tablebot.Plugins.Administration
--- Description : A command that outputs its input.
--- Copyright   : (c) Anna Bruce 2021
+-- Description : A set of commands that allows an administrator to manage the whole bot.
 -- License     : MIT
--- Maintainer  : tablebot@ameliewd.com
+-- Maintainer  : tagarople@gmail.com
 -- Stability   : experimental
 -- Portability : POSIX
 --
