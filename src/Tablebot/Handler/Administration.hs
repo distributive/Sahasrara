@@ -21,12 +21,10 @@ PluginBlacklist
 currentBlacklist :: SqlPersistM [Text]
 currentBlacklist = do
   bl <- selectList allBlacklisted []
-  return $ fmap (pack . pluginBlacklistLabel . unentity) bl
+  return $ fmap (pack . pluginBlacklistLabel . entityVal) bl
   where
     allBlacklisted :: [Filter PluginBlacklist]
     allBlacklisted = []
-    unentity :: (Entity a) -> a
-    unentity a = entityVal a
 
 removeBlacklisted :: [Text] -> [CompiledPlugin] -> [CompiledPlugin]
 removeBlacklisted bl p = filter isNotBlacklisted p
