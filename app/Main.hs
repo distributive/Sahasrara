@@ -8,6 +8,7 @@ import System.Environment (getEnv, lookupEnv)
 import Tablebot (runTablebot)
 import Tablebot.Plugins (plugins)
 
+-- @main@ runs forever. This allows bot reloading by fully shutting down the bot and letting it restart.
 main :: IO ()
 main = forever $ do
   loadEnv
