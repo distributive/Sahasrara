@@ -35,7 +35,7 @@ blacklist = Command "blacklist" (parseComm blacklistComm)
 
 blacklistComm ::
   WithError
-    "Unknown quote functionality."
+    "Unknown blacklist functionality."
     ( Either
         ( Either
             (Exactly "add", String)
