@@ -57,7 +57,7 @@ addBlacklist pLabel m = requirePermission Superuser m $ do
   -- but emmit a warning so people know if it wasn't deliberate
   when ((pack pLabel) `notElem` known) $ sendMessage m "Warning, unknown plugin"
   extant <- exists [PluginBlacklistLabel ==. pLabel]
-  if not $ extant
+  if not extant
     then do
       _ <- insert $ PluginBlacklist pLabel
       sendMessage m "Plugin added to blacklist. Please reload for it to take effect"
