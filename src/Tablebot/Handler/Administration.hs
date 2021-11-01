@@ -18,7 +18,7 @@ PluginBlacklist
     deriving Show
 |]
 
-currentBlacklist :: SqlPersistM ([Text])
+currentBlacklist :: SqlPersistM [Text]
 currentBlacklist = do
   bl <- selectList allBlacklisted []
   return $ fmap (pack . pluginBlacklistLabel . unentity) bl
