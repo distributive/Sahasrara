@@ -14,17 +14,14 @@ import Tablebot.Plugin
 import Tablebot.Plugin.Discord (Message, sendMessage)
 import Tablebot.Plugin.SmartCommand (parseComm)
 
--- | @SS@ denotes the type returned by the command setup. Here its unused.
-type SS = ()
-
 -- | @echo@ pulled out to help resolve parser overlapping instances errors.
 -- Sends the provided text, regardless of received message.
-echo :: Text -> Message -> DatabaseDiscord SS ()
+echo :: Text -> Message -> DatabaseDiscord ()
 echo t m = sendMessage m t
 
 -- | @ping@ is a command that takes no arguments (using 'noArguments') and
 -- replies with "pong".
-ping :: Command SS
+ping :: Command
 ping =
   Command
     "ping"
@@ -33,7 +30,7 @@ ping =
 
 -- | @pong@ is a command that takes no arguments (using 'noArguments') and
 -- replies with "ping". It is the younger sibling of @ping@.
-pong :: Command SS
+pong :: Command
 pong =
   Command
     "pong"
@@ -48,5 +45,5 @@ pongHelp = HelpPage "pong" "show a more different debug message" "**Pong**\nShow
 
 -- | @pingPlugin@ assembles these commands into a plugin containing both ping
 -- and pong.
-pingPlugin :: Plugin SS
+pingPlugin :: Plugin
 pingPlugin = (plug "ping") {commands = [ping, pong], helpPages = [pingHelp, pongHelp]}

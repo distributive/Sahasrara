@@ -16,14 +16,11 @@ import Tablebot.Plugin.Discord (sendMessage)
 import Tablebot.Plugin.Parser (untilEnd)
 import Text.RawString.QQ (r)
 
--- | @SS@ denotes the type returned by the command setup. Here its unused.
-type SS = ()
-
 -- | @say@ outputs its input.
-say :: Command SS
+say :: Command
 say = Command "say" saycomm
   where
-    saycomm :: Parser (Message -> DatabaseDiscord SS ())
+    saycomm :: Parser (Message -> DatabaseDiscord ())
     saycomm = do
       input <- untilEnd
       return $ \m -> do
@@ -42,5 +39,5 @@ Repeat the input.
     None
 
 -- | @sayPlugin@ assembles the command into a plugin.
-sayPlugin :: Plugin SS
+sayPlugin :: Plugin
 sayPlugin = (plug "say") {commands = [say], helpPages = [sayHelp]}

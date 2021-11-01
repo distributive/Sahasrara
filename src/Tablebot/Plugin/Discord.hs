@@ -24,7 +24,7 @@ import Discord (RestCallErrorCode, restCall)
 import qualified Discord.Requests as R
 import Discord.Types
 import Tablebot.Handler.Embed
-import Tablebot.Plugin (DatabaseDiscord, liftDiscord)
+import Tablebot.Plugin (EnvDatabaseDiscord, liftDiscord)
 import Tablebot.Plugin.Exception (BotException (..))
 
 -- | @sendMessage@ sends the input message @t@ in the same channel as message
@@ -33,7 +33,7 @@ import Tablebot.Plugin.Exception (BotException (..))
 sendMessage ::
   Message ->
   Text ->
-  DatabaseDiscord s ()
+  EnvDatabaseDiscord s ()
 sendMessage m t = do
   res <- liftDiscord . restCall $ R.CreateMessage (messageChannel m) t
   case res of
@@ -52,7 +52,7 @@ sendEmbedMessage ::
   Message ->
   Text ->
   e ->
-  DatabaseDiscord s ()
+  EnvDatabaseDiscord s ()
 sendEmbedMessage m t e = do
   res <- liftDiscord . restCall $ TablebotEmbedRequest (messageChannel m) t (asEmbed e)
   case res of
@@ -64,7 +64,7 @@ sendEmbedMessage m t e = do
 getMessage ::
   ChannelId ->
   MessageId ->
-  DatabaseDiscord s (Either RestCallErrorCode Message)
+  EnvDatabaseDiscord s (Either RestCallErrorCode Message)
 getMessage cid mid = liftDiscord . restCall $ R.GetChannelMessage (cid, mid)
 
 -- | @reactToMessage@ reacts to the given message with the emoji specified
@@ -73,20 +73,20 @@ getMessage cid mid = liftDiscord . restCall $ R.GetChannelMessage (cid, mid)
 reactToMessage ::
   Message ->
   Text ->
-  DatabaseDiscord s (Either RestCallErrorCode ())
+  EnvDatabaseDiscord s (Either RestCallErrorCode ())
 reactToMessage m e =
   liftDiscord . restCall $
     R.CreateReaction (messageChannel m, messageId m) e
 
 -- | @getMessageMember@ returns the message member object if it was sent from a Discord server,
 -- or @Nothing@ if it was sent from a DM (or the API fails)
-getMessageMember :: Message -> DatabaseDiscord s (Maybe GuildMember)
+getMessageMember :: Message -> EnvDatabaseDiscord s (Maybe GuildMember)
 getMessageMember m = gMM (messageGuild m) m
   where
     maybeRight :: Either a b -> Maybe b
     maybeRight (Left _) = Nothing
     maybeRight (Right a) = Just a
-    gMM :: Maybe GuildId -> Message -> DatabaseDiscord s (Maybe GuildMember)
+    gMM :: Maybe GuildId -> Message -> EnvDatabaseDiscord s (Maybe GuildMember)
     gMM Nothing _ = return Nothing
     gMM (Just g') m' = do
       a <- liftDiscord $ restCall $ R.GetGuildMember g' (userId $ messageAuthor m')

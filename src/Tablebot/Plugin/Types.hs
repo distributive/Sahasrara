@@ -36,7 +36,9 @@ import Text.Megaparsec (Parsec)
 --
 -- "Tablebot.Plugin.Discord" provides some helper functions for
 -- running Discord operations without excessive use of @lift@.
-type DatabaseDiscord d = ReaderT d (SqlPersistT DiscordHandler)
+type EnvDatabaseDiscord d = ReaderT d (SqlPersistT DiscordHandler)
+
+type DatabaseDiscord = EnvDatabaseDiscord ()
 
 -- | @Database@ The monad transformer stack used to represent computations that work with
 -- the just the database for startup actions.
@@ -68,56 +70,68 @@ newtype StartUp d = StartUp
 
 -- | For when you get a 'MessageCreate'. Checks that the @name@ is directly
 -- after the bot prefix, and then runs @commandParser@ on it.
-data Command d = Command
+data EnvCommand d = Command
   { -- | The name of the command.
     name :: Text,
     -- | A parser to run on the command arguments, returning a computation to
     -- run in 'DatabaseDiscord'.
-    commandParser :: Parser (Message -> DatabaseDiscord d ())
+    commandParser :: Parser (Message -> EnvDatabaseDiscord d ())
   }
+
+type Command = EnvCommand ()
 
 -- | For when you get a 'MessageCreate', but instead of wanting to match on
 -- "!name args" (for prefix "!"), you want a more general match. Useful for
 -- commands that work with brackets or look for keywords.
-newtype InlineCommand d = InlineCommand
+newtype EnvInlineCommand d = InlineCommand
   { -- | The parser to run on every message (non-bot) received.
-    inlineCommandParser :: Parser (Message -> DatabaseDiscord d ())
+    inlineCommandParser :: Parser (Message -> EnvDatabaseDiscord d ())
   }
+
+type InlineCommand = EnvInlineCommand ()
 
 -- | How to handle any messages changing. Called on Discord's 'MessageUpdate',
 -- 'MessageDelete' and 'MessageDeleteBulk'. Useful for admin bots such as the
 -- ub3rbot ub3rlog functionality.
-newtype MessageChange d = MessageChange
+newtype EnvMessageChange d = MessageChange
   { -- | A function to call on every message update. The first argument is
     -- whether the message was updated (True) or deleted (False).
     -- Will be run once per message if bulk deletion occurs.
-    onMessageChange :: Bool -> ChannelId -> MessageId -> DatabaseDiscord d ()
+    onMessageChange :: Bool -> ChannelId -> MessageId -> EnvDatabaseDiscord d ()
   }
+
+type MessageChange = EnvMessageChange ()
 
 -- | Handles added reactions, which is useful for reaction-based functionality
 -- (e.g. a quote bot that quotes messages reacted to with a certain emoji).
 -- Tied to 'MessageReactionAdd' from Discord.
-newtype ReactionAdd d = ReactionAdd
+newtype EnvReactionAdd d = ReactionAdd
   { -- | A function to call on every reaction add, which takes in details of
     -- that reaction ('ReactionInfo').
-    onReactionAdd :: ReactionInfo -> DatabaseDiscord d ()
+    onReactionAdd :: ReactionInfo -> EnvDatabaseDiscord d ()
   }
+
+type ReactionAdd = EnvReactionAdd ()
 
 -- | Handles removed reactions, which is useful in the same way as adding
 -- reactions. Called on 'MessageReactionRemove'.
-newtype ReactionDel d = ReactionDel
+newtype EnvReactionDel d = ReactionDel
   { -- | A function to call on every individual reaction delete, which takes in
     -- details of that reaction ('ReactionInfo').
-    onReactionDelete :: ReactionInfo -> DatabaseDiscord d ()
+    onReactionDelete :: ReactionInfo -> EnvDatabaseDiscord d ()
   }
+
+type ReactionDel = EnvReactionAdd ()
 
 -- | Handles events not covered by the other kinds of features. This is only
 -- relevant to specific admin functionality, such as the deletion of channels.
-newtype Other d = Other
+newtype EnvOther d = Other
   { -- | A function to call on every other event, which takes in details of
     -- that event.
-    onOtherEvent :: Event -> DatabaseDiscord d ()
+    onOtherEvent :: Event -> EnvDatabaseDiscord d ()
   }
+
+type Other = EnvOther ()
 
 -- | A feature for cron jobs - events which are run every @timeframe@
 -- microseconds, regardless of any other interaction with the bot. Useful for
@@ -125,12 +139,14 @@ newtype Other d = Other
 --
 -- Note that the loop starts with calling @onCron@ and /then/ delaying, so they
 -- will all be invoked on bot start.
-data CronJob d = CronJob
+data EnvCronJob d = CronJob
   { -- | Delay between each call of @onCron@, in microseconds.
     timeframe :: Int,
     -- | Computation to do with each invocation of this cron job.
-    onCron :: DatabaseDiscord d ()
+    onCron :: EnvDatabaseDiscord d ()
   }
+
+type CronJob = EnvCronJob ()
 
 -- | A feature for generating help text
 -- Each help text page consists of a explanation body, as well as a list of sub-pages
@@ -218,28 +234,30 @@ data RequiredPermission = None | Any | Exec | Moderator | Both | Superuser deriv
 
 -- | A plugin. Directly constructing these should be avoided (hence why it is
 -- not exported by "Tablebot.Plugin") as this structure could change.
-data Plugin d = Pl
+data EnvPlugin d = Pl
   { pluginName :: Text,
     startUp :: StartUp d,
-    commands :: [Command d],
-    inlineCommands :: [InlineCommand d],
-    onMessageChanges :: [MessageChange d],
-    onReactionAdds :: [ReactionAdd d],
-    onReactionDeletes :: [ReactionDel d],
-    otherEvents :: [Other d],
-    cronJobs :: [CronJob d],
+    commands :: [EnvCommand d],
+    inlineCommands :: [EnvInlineCommand d],
+    onMessageChanges :: [EnvMessageChange d],
+    onReactionAdds :: [EnvReactionAdd d],
+    onReactionDeletes :: [EnvReactionDel d],
+    otherEvents :: [EnvOther d],
+    cronJobs :: [EnvCronJob d],
     helpPages :: [HelpPage],
     -- | A list of database migrations generated by Persistance.
     migrations :: [Migration]
   }
+
+type Plugin = EnvPlugin ()
 
 -- | The empty plugin. This is the recommended method for constructing plugins
 -- - use record update syntax with this rather than using @Pl@ directly.
 --
 -- Examples of this in use can be found in the imports of
 -- "Tablebot.Plugins".
-plug :: Text -> Plugin ()
+plug :: Text -> Plugin
 plug name' = Pl name' (StartUp (return ())) [] [] [] [] [] [] [] [] []
 
-startPlug :: Text -> StartUp d -> Plugin d
-startPlug name' startup = Pl name' startup [] [] [] [] [] [] [] [] []
+envPlug :: Text -> StartUp d -> EnvPlugin d
+envPlug name' startup = Pl name' startup [] [] [] [] [] [] [] [] []

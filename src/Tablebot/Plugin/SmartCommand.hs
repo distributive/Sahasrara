@@ -19,7 +19,7 @@ import Data.Text (Text, pack)
 import Discord.Types (Message)
 import GHC.TypeLits
 import Tablebot.Plugin.Parser
-import Tablebot.Plugin.Types (DatabaseDiscord, Parser)
+import Tablebot.Plugin.Types (DatabaseDiscord, EnvDatabaseDiscord, Parser)
 import Text.Megaparsec
 
 -- | @PComm@ defines function types that we can automatically turn into parsers
@@ -29,15 +29,15 @@ import Text.Megaparsec
 -- those to run the provided function with the arguments parsed and the message
 -- itself.
 class PComm commandty s where
-  parseComm :: commandty -> Parser (Message -> DatabaseDiscord s ())
+  parseComm :: commandty -> Parser (Message -> EnvDatabaseDiscord s ())
 
 -- As a base case, remove the spacing and check for eof.
-instance {-# OVERLAPPING #-} PComm (Message -> DatabaseDiscord s ()) s where
+instance {-# OVERLAPPING #-} PComm (Message -> EnvDatabaseDiscord s ()) s where
   parseComm comm = skipSpace >> eof >> return comm
 
 -- Second base case is the single argument - no trailing space is wanted so we
 -- have to specify this case.
-instance {-# OVERLAPPING #-} CanParse a => PComm (a -> Message -> DatabaseDiscord s ()) s where
+instance {-# OVERLAPPING #-} CanParse a => PComm (a -> Message -> EnvDatabaseDiscord s ()) s where
   parseComm comm = do
     this <- pars @a
     parseComm (comm this)
@@ -152,5 +152,5 @@ instance FromString a => CanParse (RestOfInput a) where
 
 -- | @noArguments@ is a type-specific alias for @parseComm@ for commands that
 -- have no arguments (thus making it extremely clear).
-noArguments :: (Message -> DatabaseDiscord d ()) -> Parser (Message -> DatabaseDiscord d ())
+noArguments :: (Message -> EnvDatabaseDiscord d ()) -> Parser (Message -> EnvDatabaseDiscord d ())
 noArguments = parseComm

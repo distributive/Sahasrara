@@ -29,7 +29,7 @@ import Text.RawString.QQ (r)
 type SS = [CategoryClass]
 
 -- | @favourite@ is the user-facing command that generates categories.
-favourite :: Command SS
+favourite :: EnvCommand SS
 favourite =
   Command
     "favourite"
@@ -93,9 +93,9 @@ generateCategory catClass = do
     getTemplate c = fromMaybe "%s" (template c)
     getInterrogative c = fromMaybe "What" (interrogative c)
 
-welcomeStartUp :: StartUp (SS)
+welcomeStartUp :: StartUp SS
 welcomeStartUp = StartUp $ liftIO readCategories
 
 -- | @welcomePlugin@ assembles these commands into a plugin.
-welcomePlugin :: Plugin SS
-welcomePlugin = (startPlug "welcome" welcomeStartUp) {commands = [favourite], helpPages = [favouriteHelp]}
+welcomePlugin :: EnvPlugin SS
+welcomePlugin = (envPlug "welcome" welcomeStartUp) {commands = [favourite], helpPages = [favouriteHelp]}

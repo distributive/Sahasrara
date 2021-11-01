@@ -34,11 +34,8 @@ Quote
     deriving Show
 |]
 
--- | @SS@ denotes the type returned by the command setup. Here its unused.
-type SS = ()
-
 -- | Our quote command, which combines @addQuote@ and @showQuote@.
-quote :: Command SS
+quote :: Command
 quote =
   Command
     "quote"
@@ -52,7 +49,7 @@ quoteComm ::
         (Either (Exactly "show", Int) (Exactly "delete", Int))
     ) ->
   Message ->
-  DatabaseDiscord SS ()
+  DatabaseDiscord ()
 quoteComm (WErr (Left (_, Qu qu, _, ROI author))) = addQ qu author
 quoteComm (WErr (Right (Left (_, qId)))) = showQ (fromIntegral qId)
 quoteComm (WErr (Right (Right (_, qId)))) = deleteQ (fromIntegral qId)
@@ -60,7 +57,7 @@ quoteComm (WErr (Right (Right (_, qId)))) = deleteQ (fromIntegral qId)
 -- | @addQuote@, which looks for a message of the form
 -- @!quote add "quoted text" - author@, and then stores said quote in the
 -- database, returning the ID used.
-addQ :: String -> String -> Message -> DatabaseDiscord SS ()
+addQ :: String -> String -> Message -> DatabaseDiscord ()
 addQ qu author m = do
   added <- insert $ Quote qu author
   let res = pack $ show $ fromSqlKey added
@@ -68,7 +65,7 @@ addQ qu author m = do
 
 -- | @showQuote@, which looks for a message of the form @!quote show n@, looks
 -- that quote up in the database and responds with that quote.
-showQ :: Int64 -> Message -> DatabaseDiscord SS ()
+showQ :: Int64 -> Message -> DatabaseDiscord ()
 showQ qId m = do
   qu <- get $ toSqlKey qId
   case qu of
@@ -78,7 +75,7 @@ showQ qId m = do
 
 -- | @deleteQuote@, which looks for a message of the form @!quote delete n@,
 -- and removes it from the database.
-deleteQ :: Int64 -> Message -> DatabaseDiscord SS ()
+deleteQ :: Int64 -> Message -> DatabaseDiscord ()
 deleteQ qId m =
   requirePermission Any m $
     let k = toSqlKey qId
@@ -114,5 +111,5 @@ quoteHelp = HelpPage "quote" "store and retrieve quotes" "**Quotes**\nAllows sto
 
 -- | @quotePlugin@ assembles the @quote@ command (consisting of @add@ and
 -- @show@) and the database migration into a plugin.
-quotePlugin :: Plugin SS
+quotePlugin :: Plugin
 quotePlugin = (plug "quote") {commands = [quote], migrations = [quoteMigration], helpPages = [quoteHelp]}

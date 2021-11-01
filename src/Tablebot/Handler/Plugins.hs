@@ -50,7 +50,7 @@ combineActions (p : ps) =
     [] +++ a = a
     a +++ b = a ++ b
 
-compilePlugin :: Plugin b -> CompiledPlugin
+compilePlugin :: EnvPlugin b -> CompiledPlugin
 compilePlugin p = CPl (pluginName p) sa (helpPages p) (migrations p)
   where
     sa :: Database PluginActions
@@ -79,11 +79,11 @@ compilePlugin p = CPl (pluginName p) sa (helpPages p) (migrations p)
 -- * Helper converters
 
 -- |
-compileParser :: s -> Parser (Message -> DatabaseDiscord s a) -> Parser (Message -> CompiledDatabaseDiscord a)
+compileParser :: s -> Parser (Message -> EnvDatabaseDiscord s a) -> Parser (Message -> CompiledDatabaseDiscord a)
 compileParser s = fmap (changeMessageAction s)
 
-changeMessageAction :: s -> (Message -> DatabaseDiscord s a) -> Message -> CompiledDatabaseDiscord a
+changeMessageAction :: s -> (Message -> EnvDatabaseDiscord s a) -> Message -> CompiledDatabaseDiscord a
 changeMessageAction s action message = runReaderT (action message) s
 
-changeAction :: s -> DatabaseDiscord s a -> CompiledDatabaseDiscord a
+changeAction :: s -> EnvDatabaseDiscord s a -> CompiledDatabaseDiscord a
 changeAction s action = runReaderT action s

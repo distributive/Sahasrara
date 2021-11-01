@@ -31,7 +31,7 @@ import Text.RawString.QQ
 -- | @SS@ denotes the type returned by the command setup. Here its unused.
 type SS = [Text]
 
-blacklist :: Command SS
+blacklist :: EnvCommand SS
 blacklist = Command "blacklist" (parseComm blacklistComm)
 
 blacklistComm ::
@@ -45,12 +45,12 @@ blacklistComm ::
         (Exactly "list")
     ) ->
   Message ->
-  DatabaseDiscord SS ()
+  EnvDatabaseDiscord SS ()
 blacklistComm (WErr (Left (Left (_, pLabel)))) = addBlacklist pLabel
 blacklistComm (WErr (Left (Right (_, pLabel)))) = removeBlacklist pLabel
 blacklistComm (WErr (Right (_))) = listBlacklist
 
-addBlacklist :: String -> Message -> DatabaseDiscord SS ()
+addBlacklist :: String -> Message -> EnvDatabaseDiscord SS ()
 addBlacklist pLabel m = requirePermission Superuser m $ do
   known <- ask
   -- It's not an error to add an unknown plugin (so that you can pre-disable a plugin you know you're about to add),
@@ -63,7 +63,7 @@ addBlacklist pLabel m = requirePermission Superuser m $ do
       sendMessage m "Plugin added to blacklist. Please reload for it to take effect"
     else sendMessage m "Plugin already in blacklist"
 
-removeBlacklist :: String -> Message -> DatabaseDiscord SS ()
+removeBlacklist :: String -> Message -> EnvDatabaseDiscord SS ()
 removeBlacklist pLabel m = requirePermission Superuser m $ do
   extant <- selectKeysList [PluginBlacklistLabel ==. pLabel] []
   if not $ null extant
@@ -74,7 +74,7 @@ removeBlacklist pLabel m = requirePermission Superuser m $ do
 
 -- | @listBlacklist@ shows a list of the plugins eligible for disablement (those not starting with _),
 --  along with their current status.
-listBlacklist :: Message -> DatabaseDiscord SS ()
+listBlacklist :: Message -> EnvDatabaseDiscord SS ()
 listBlacklist m = requirePermission Superuser m $ do
   bl <- selectList allBlacklisted []
   pl <- ask
@@ -120,10 +120,10 @@ listBlacklist m = requirePermission Superuser m $ do
         (T.concat $ map (<> ("\n" :: Text)) l)
 
 -- | @restart@ reloads the bot with any new configuration changes.
-reload :: Command SS
+reload :: EnvCommand SS
 reload = Command "reload" restartCommand
   where
-    restartCommand :: Parser (Message -> DatabaseDiscord SS ())
+    restartCommand :: Parser (Message -> EnvDatabaseDiscord SS ())
     restartCommand = noArguments $ \m -> requirePermission Superuser m $ do
       sendMessage m "Reloading bot..."
       liftDiscord $ stopDiscord
@@ -195,5 +195,5 @@ adminStartup cps =
 
 -- | @administrationPlugin@ assembles the commands into a plugin.
 -- Note the use of an underscore in the name, this prevents the plugin being disabled.
-administrationPlugin :: [CompiledPlugin] -> Plugin SS
-administrationPlugin cps = (startPlug "_admin" $ adminStartup cps) {commands = [reload, blacklist], helpPages = [reloadHelp, blacklistHelp]}
+administrationPlugin :: [CompiledPlugin] -> EnvPlugin SS
+administrationPlugin cps = (envPlug "_admin" $ adminStartup cps) {commands = [reload, blacklist], helpPages = [reloadHelp, blacklistHelp]}

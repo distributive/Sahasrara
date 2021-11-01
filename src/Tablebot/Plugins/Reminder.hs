@@ -50,9 +50,6 @@ Reminder
     deriving Show
 |]
 
--- | @SS@ denotes the type returned by the command setup. Here its unused.
-type SS = ()
-
 -- Below duckling code was greatly helped by dixonary's example project, below
 -- <https://github.com/dixonary/duckling-example>
 
@@ -74,7 +71,7 @@ ducklingDateTime now rawString = do
 -- @reminderParser@ parses a reminder request of the form
 -- @!remind "reminder" <format>@, where format is a format that Duckling can parse.
 -- TODO: get timezone info and such ahead of time
-reminderParser :: Quoted String -> RestOfInput Text -> Message -> DatabaseDiscord SS ()
+reminderParser :: Quoted String -> RestOfInput Text -> Message -> DatabaseDiscord ()
 reminderParser (Qu content) (ROI rawString) m = do
   let tz = "Europe/London" :: Text
   tzs <- liftIO $ getTimeZoneSeriesFromOlsonFile $ "/usr/share/zoneinfo/" <> unpack tz
@@ -90,7 +87,7 @@ reminderParser (Qu content) (ROI rawString) m = do
 -- @addReminder@ takes a @time@ to remind at and the @content@ of a reminder
 -- and adds a reminder at that time. Note that this is all done in UTC, so
 -- currently ignores the user's timezone... (TODO fix)
-addReminder :: UTCTime -> String -> Message -> DatabaseDiscord SS ()
+addReminder :: UTCTime -> String -> Message -> DatabaseDiscord ()
 addReminder time content m = do
   let (Snowflake cid) = messageChannel m
       (Snowflake mid) = messageId m
@@ -100,13 +97,13 @@ addReminder time content m = do
 
 -- | @reminderCommand@ is a command implementing the functionality in
 -- @reminderParser@ and @addReminder@.
-reminderCommand :: Command SS
+reminderCommand :: Command
 reminderCommand = Command "remind" (parseComm reminderParser)
 
 -- | @reminderCron@ is a cron job that checks every minute to see if a reminder
 -- has passed, and if so sends a message using the stored information about the
 -- message originally triggering it in the database.
-reminderCron :: DatabaseDiscord SS ()
+reminderCron :: DatabaseDiscord ()
 reminderCron = do
   now <- liftIO $ systemToUTCTime <$> getSystemTime
   liftIO $ debugPrint $ "running reminder cron at " ++ show now
@@ -146,7 +143,7 @@ Uses duckling (<https://github.com/facebook/duckling>) to parse time and dates, 
 -- | @reminderPlugin@ builds a plugin providing reminder asking functionality
 -- (@reminderCommand@), reminding functionality (via the cron job specified by
 -- @reminderCron@) and the database information.
-reminderPlugin :: Plugin SS
+reminderPlugin :: Plugin
 reminderPlugin =
   (plug "reminder")
     { commands = [reminderCommand],
