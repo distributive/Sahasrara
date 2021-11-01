@@ -18,6 +18,7 @@ import qualified Data.Text as T
 import Database.Persist (Entity, Filter, entityVal, (==.))
 import Discord (stopDiscord)
 import Discord.Types
+import Language.Haskell.Printf (s)
 import Tablebot.Handler.Administration
 import Tablebot.Handler.Types (CompiledPlugin (compiledName))
 import Tablebot.Plugin
@@ -83,7 +84,15 @@ listBlacklist m = requirePermission Superuser m $ do
     allBlacklisted = []
     -- Oh gods, so much formatting.
     format :: [Text] -> [Text] -> Text
-    format p bl = "**Plugins:**\n```\n" <> (T.concat $ map (format' len' bl) (filter (disableable . T.uncons) p)) <> "```" <> unknown (filter (`notElem` p) bl)
+    format p bl =
+      pack $
+        [s|**Plugins**
+```
+%Q
+```
+%Q|]
+        (T.concat $ map (formatPluginState len' bl) (filter (disableable . T.uncons) p))
+        (formatUnknownDisabledPlugins (filter (`notElem` p) bl))
       where
         len' :: Int
         len' = maximum $ map T.length p
@@ -93,11 +102,22 @@ listBlacklist m = requirePermission Superuser m $ do
     disableable Nothing = False
     disableable (Just ('_', _)) = False
     disableable _ = True
-    format' :: Int -> [Text] -> Text -> Text
-    format' width bl a = (T.justifyLeft width ' ' a) <> " : " <> (if a `elem` bl then "DISABLED" else "ENABLED") <> "\n"
-    unknown :: [Text] -> Text
-    unknown [] = ""
-    unknown l = "**Unknown blacklisted plugins**\n```\n" <> (T.concat $ map (<> ("\n" :: Text)) l) <> "```"
+    formatPluginState :: Int -> [Text] -> Text -> Text
+    formatPluginState width bl a =
+      pack $
+        [s|%Q : %Q
+|]
+        (T.justifyLeft width ' ' a)
+        (if a `elem` bl then "DISABLED" else "ENABLED")
+    formatUnknownDisabledPlugins :: [Text] -> Text
+    formatUnknownDisabledPlugins [] = ""
+    formatUnknownDisabledPlugins l =
+      pack $
+        [s|**Unknown blacklisted plugins**
+```
+%Q
+```|]
+        (T.concat $ map (<> ("\n" :: Text)) l)
 
 -- | @restart@ reloads the bot with any new configuration changes.
 reload :: Command SS

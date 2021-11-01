@@ -51,6 +51,7 @@ dependencies:
 - resourcet
 - resource-pool
 - containers
+- th-printf
 
 library:
   source-dirs: src
