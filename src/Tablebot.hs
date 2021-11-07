@@ -79,9 +79,10 @@ runTablebot dToken prefix dbpath plugins =
           { discordToken = dToken,
             discordOnEvent =
               flip runSqlPool pool . eventHandler actions prefix,
-            discordOnStart =
+            discordOnStart = do
               -- Build list of cron jobs, saving them to the mvar.
-              runSqlPool (mapM runCron (compiledCronJobs actions) >>= liftIO . putMVar mvar) pool,
+              runSqlPool (mapM runCron (compiledCronJobs actions) >>= liftIO . putMVar mvar) pool
+              liftIO $ putStrLn "Tablebot lives!",
             -- Kill every cron job in the mvar.
             discordOnEnd = takeMVar mvar >>= killCron
           }
