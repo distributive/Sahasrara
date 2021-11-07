@@ -49,4 +49,4 @@ Randomly picks one element from its arguments or, if none are provided, picks fr
 
 -- | @flipPlugin@ assembles the command into a plugin.
 flipPlugin :: Plugin
-flipPlugin = plug {commands = [flip], helpPages = [flipHelp]}
+flipPlugin = (plug "flip") {commands = [flip], helpPages = [flipHelp]}

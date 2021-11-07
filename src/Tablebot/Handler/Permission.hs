@@ -58,7 +58,7 @@ permsFromGroups debug krls gps =
     elemish (Just a) b = a `elem` b
     elemish Nothing _ = False
 
-getSenderPermission :: Message -> DatabaseDiscord UserPermission
+getSenderPermission :: Message -> EnvDatabaseDiscord s UserPermission
 getSenderPermission m = do
   member <- getMessageMember m
   knownroles <- liftIO getKnownRoles

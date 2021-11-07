@@ -14,11 +14,10 @@ module Tablebot.Plugins.Quote
 where
 
 import Data.Text (append, pack)
-import Database.Persist
-import Database.Persist.Sqlite
 import Database.Persist.TH
 import GHC.Int (Int64)
 import Tablebot.Plugin
+import Tablebot.Plugin.Database
 import Tablebot.Plugin.Discord (Message, sendMessage)
 import Tablebot.Plugin.Permission (requirePermission)
 import Tablebot.Plugin.SmartCommand
@@ -113,4 +112,4 @@ quoteHelp = HelpPage "quote" "store and retrieve quotes" "**Quotes**\nAllows sto
 -- | @quotePlugin@ assembles the @quote@ command (consisting of @add@ and
 -- @show@) and the database migration into a plugin.
 quotePlugin :: Plugin
-quotePlugin = plug {commands = [quote], migrations = [quoteMigration], helpPages = [quoteHelp]}
+quotePlugin = (plug "quote") {commands = [quote], migrations = [quoteMigration], helpPages = [quoteHelp]}

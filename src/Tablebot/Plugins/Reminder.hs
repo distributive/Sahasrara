@@ -24,14 +24,14 @@ import Data.Time.Clock.System (getSystemTime, systemToUTCTime)
 import Data.Time.LocalTime (ZonedTime, zonedTimeToUTC)
 import Data.Time.LocalTime.TimeZone.Olson.Parse (getTimeZoneSeriesFromOlsonFile)
 import Data.Word (Word64)
-import Database.Esqueleto
-import Database.Persist qualified as P (delete)
+import Database.Esqueleto hiding (delete, insert)
 import Database.Persist.TH
 import Discord.Types
 import Duckling.Core (Dimension (Time), Entity (value), Lang (EN), Region (GB), ResolvedVal (RVal), Seal (Seal), currentReftime, makeLocale, parse)
 import Duckling.Resolve (Context (..), DucklingTime, Options (..))
 import Duckling.Time.Types (InstantValue (InstantValue), SingleTimeValue (SimpleValue), TimeValue (TimeValue))
 import Tablebot.Plugin
+import Tablebot.Plugin.Database
 import Tablebot.Plugin.Discord (getMessage, sendMessage)
 import Tablebot.Plugin.SmartCommand (PComm (parseComm), Quoted (Qu), RestOfInput (ROI))
 import Tablebot.Plugin.Utils (debugPrint)
@@ -107,10 +107,11 @@ reminderCron :: DatabaseDiscord ()
 reminderCron = do
   now <- liftIO $ systemToUTCTime <$> getSystemTime
   liftIO $ debugPrint $ "running reminder cron at " ++ show now
-  entitydue <- select $
-    from $ \re -> do
-      where_ (re ^. ReminderTime <=. val now)
-      return re
+  entitydue <- liftSql $
+    select $
+      from $ \re -> do
+        where_ (re ^. ReminderTime <=. val now)
+        return re
   liftIO $ mapM_ (print . entityVal) entitydue
   forM_ entitydue $ \re ->
     let (Reminder cid mid _time content) = entityVal re
@@ -123,7 +124,7 @@ reminderCron = do
               sendMessage mess $
                 pack $
                   "Reminder to <@" ++ show uid ++ ">! " ++ content
-              P.delete (entityKey re)
+              delete (entityKey re)
 
 reminderHelp :: HelpPage
 reminderHelp =
@@ -144,7 +145,7 @@ Uses duckling (<https://github.com/facebook/duckling>) to parse time and dates, 
 -- @reminderCron@) and the database information.
 reminderPlugin :: Plugin
 reminderPlugin =
-  plug
+  (plug "reminder")
     { commands = [reminderCommand],
       cronJobs = [CronJob 60000000 reminderCron],
       migrations = [reminderMigration],

@@ -48,6 +48,10 @@ dependencies:
 - http-client
 - data-default
 - exception-transformers
+- resourcet
+- resource-pool
+- containers
+- th-printf
 
 library:
   source-dirs: src

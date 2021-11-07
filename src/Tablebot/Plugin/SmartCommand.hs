@@ -19,31 +19,31 @@ import Data.Text (Text, pack)
 import Discord.Types (Message)
 import GHC.TypeLits
 import Tablebot.Plugin.Parser
-import Tablebot.Plugin.Types (DatabaseDiscord, Parser)
+import Tablebot.Plugin.Types (DatabaseDiscord, EnvDatabaseDiscord, Parser)
 import Text.Megaparsec
 
 -- | @PComm@ defines function types that we can automatically turn into parsers
 -- by composing a parser per input of the function provided.
--- For example, @Int -> Maybe Text -> Message -> DatabaseDiscord ()@ builds a
+-- For example, @Int -> Maybe Text -> Message -> DatabaseDiscord s ()@ builds a
 -- parser that reads in an @Int@, then some optional @Text@, and then uses
 -- those to run the provided function with the arguments parsed and the message
 -- itself.
-class PComm commandty where
-  parseComm :: commandty -> Parser (Message -> DatabaseDiscord ())
+class PComm commandty s where
+  parseComm :: commandty -> Parser (Message -> EnvDatabaseDiscord s ())
 
 -- As a base case, remove the spacing and check for eof.
-instance {-# OVERLAPPING #-} PComm (Message -> DatabaseDiscord ()) where
+instance {-# OVERLAPPING #-} PComm (Message -> EnvDatabaseDiscord s ()) s where
   parseComm comm = skipSpace >> eof >> return comm
 
 -- Second base case is the single argument - no trailing space is wanted so we
 -- have to specify this case.
-instance {-# OVERLAPPING #-} CanParse a => PComm (a -> Message -> DatabaseDiscord ()) where
+instance {-# OVERLAPPING #-} CanParse a => PComm (a -> Message -> EnvDatabaseDiscord s ()) s where
   parseComm comm = do
     this <- pars @a
     parseComm (comm this)
 
 -- Recursive case is to parse the domain of the function type, then the rest.
-instance {-# OVERLAPPABLE #-} (CanParse a, PComm as) => PComm (a -> as) where
+instance {-# OVERLAPPABLE #-} (CanParse a, PComm as s) => PComm (a -> as) s where
   parseComm comm = do
     this <- pars @a
     space
@@ -152,5 +152,5 @@ instance FromString a => CanParse (RestOfInput a) where
 
 -- | @noArguments@ is a type-specific alias for @parseComm@ for commands that
 -- have no arguments (thus making it extremely clear).
-noArguments :: (Message -> DatabaseDiscord ()) -> Parser (Message -> DatabaseDiscord ())
+noArguments :: (Message -> EnvDatabaseDiscord d ()) -> Parser (Message -> EnvDatabaseDiscord d ())
 noArguments = parseComm
