@@ -27,6 +27,7 @@ ping =
     "ping"
     ( parseComm $ echo "pong"
     )
+    []
 
 -- | @pong@ is a command that takes no arguments (using 'noArguments') and
 -- replies with "ping". It is the younger sibling of @ping@.
@@ -36,6 +37,7 @@ pong =
     "pong"
     ( parseComm $ echo "ping"
     )
+    []
 
 pingHelp :: HelpPage
 pingHelp = HelpPage "ping" "show a debug message" "**Ping**\nShows a debug message\n\n*Usage:* `ping`" [] None

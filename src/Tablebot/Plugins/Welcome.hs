@@ -39,6 +39,7 @@ favourite =
         let formatted = (\(i, c) -> i ++ " is your favourite:\n> " ++ c ++ "?") cat
         sendMessage m $ pack formatted
     )
+    []
 
 favouriteHelp :: HelpPage
 favouriteHelp =

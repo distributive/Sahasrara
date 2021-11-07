@@ -40,6 +40,7 @@ quote =
   Command
     "quote"
     (parseComm quoteComm)
+    []
 
 quoteComm ::
   WithError

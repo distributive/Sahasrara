@@ -50,6 +50,7 @@ cat =
   Command
     "cat"
     (parseComm sendCat)
+    []
   where
     sendCat :: Message -> DatabaseDiscord ()
     sendCat m = do

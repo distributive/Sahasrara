@@ -60,6 +60,7 @@ baseCommand (a, b, _) =
   Command
     a
     (parseComm $ echo b)
+    []
 
 baseHelp :: BasicCommand -> HelpPage
 baseHelp (_, _, Advanced help) = help

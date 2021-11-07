@@ -33,7 +33,7 @@ helpHelpPage = HelpPage "help" "show information about commands" "**Help**\nShow
 generateHelp :: CombinedPlugin -> CombinedPlugin
 generateHelp p =
   p
-    { combinedSetupAction = return (PA [CCommand "help" (handleHelp (helpHelpPage : combinedHelpPages p))] [] [] [] [] [] []) : combinedSetupAction p
+    { combinedSetupAction = return (PA [CCommand "help" (handleHelp (helpHelpPage : combinedHelpPages p)) []] [] [] [] [] [] []) : combinedSetupAction p
     }
 
 handleHelp :: [HelpPage] -> Parser (Message -> CompiledDatabaseDiscord ())
