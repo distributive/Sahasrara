@@ -10,6 +10,7 @@
 module Tablebot.Plugins.Welcome (welcomePlugin) where
 
 import Control.Monad.IO.Class
+import Control.Monad.Trans.Reader (ask)
 import Data.Aeson (FromJSON)
 import Data.Maybe (fromMaybe)
 import Data.Text (pack)
@@ -23,16 +24,22 @@ import Tablebot.Plugin.SmartCommand (PComm (parseComm))
 import Text.Printf (printf)
 import Text.RawString.QQ (r)
 
+-- | @SS@ denotes the type returned by the command setup.
+-- Here it contains the loaded categories from the yaml file so that only needs to be done once.
+type SS = [CategoryClass]
+
 -- | @favourite@ is the user-facing command that generates categories.
-favourite :: Command
+favourite :: EnvCommand SS
 favourite =
   Command
     "favourite"
     ( parseComm $ \m -> do
-        cat <- liftIO $ generateCategory =<< randomCategoryClass
+        cats <- ask
+        cat <- liftIO $ generateCategory =<< randomCategoryClass cats
         let formatted = (\(i, c) -> i ++ " is your favourite:\n> " ++ c ++ "?") cat
         sendMessage m $ pack formatted
     )
+    []
 
 favouriteHelp :: HelpPage
 favouriteHelp =
@@ -64,16 +71,15 @@ instance FromJSON FileData
 yamlFile :: FilePath
 yamlFile = "resources/welcome_messages.yaml"
 
-categories :: IO [CategoryClass]
-categories = do
+readCategories :: IO [CategoryClass]
+readCategories = do
   cats <- decodeFileEither yamlFile :: IO (Either ParseException FileData)
   return $ case cats of
     Left _ -> []
     Right out -> classes out
 
-randomCategoryClass :: IO CategoryClass
-randomCategoryClass = do
-  cats <- categories
+randomCategoryClass :: [CategoryClass] -> IO CategoryClass
+randomCategoryClass cats = do
   chooseOneWeighted getWeight cats
   where
     getWeight c = case weight c of
@@ -88,6 +94,9 @@ generateCategory catClass = do
     getTemplate c = fromMaybe "%s" (template c)
     getInterrogative c = fromMaybe "What" (interrogative c)
 
+welcomeStartUp :: StartUp SS
+welcomeStartUp = StartUp $ liftIO readCategories
+
 -- | @welcomePlugin@ assembles these commands into a plugin.
-welcomePlugin :: Plugin
-welcomePlugin = plug {commands = [favourite], helpPages = [favouriteHelp]}
+welcomePlugin :: EnvPlugin SS
+welcomePlugin = (envPlug "welcome" welcomeStartUp) {commands = [favourite], helpPages = [favouriteHelp]}

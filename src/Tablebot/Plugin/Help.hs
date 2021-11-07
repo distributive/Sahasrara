@@ -13,10 +13,12 @@ import Data.Functor (($>))
 import Data.Text (Text)
 import qualified Data.Text as T
 import Tablebot.Handler.Permission (getSenderPermission, userHasPermission)
+import Tablebot.Handler.Plugins (changeAction)
+import Tablebot.Handler.Types
 import Tablebot.Plugin.Discord (Message, sendMessage)
 import Tablebot.Plugin.Parser (skipSpace)
 import Tablebot.Plugin.Permission (requirePermission)
-import Tablebot.Plugin.Types
+import Tablebot.Plugin.Types hiding (helpPages)
 import Text.Megaparsec (choice, chunk, eof, try, (<?>), (<|>))
 
 rootBody :: Text
@@ -28,25 +30,25 @@ rootBody =
 helpHelpPage :: HelpPage
 helpHelpPage = HelpPage "help" "show information about commands" "**Help**\nShows information about bot commands\n\n*Usage:* `help <page>`" [] None
 
-generateHelp :: Plugin -> Plugin
+generateHelp :: CombinedPlugin -> CombinedPlugin
 generateHelp p =
   p
-    { commands = Command "help" (handleHelp (helpHelpPage : helpPages p)) : commands p
+    { combinedSetupAction = return (PA [CCommand "help" (handleHelp (helpHelpPage : combinedHelpPages p)) []] [] [] [] [] [] []) : combinedSetupAction p
     }
 
-handleHelp :: [HelpPage] -> Parser (Message -> DatabaseDiscord ())
+handleHelp :: [HelpPage] -> Parser (Message -> CompiledDatabaseDiscord ())
 handleHelp hp = parseHelpPage root
   where
     root = HelpPage "" "" rootBody hp None
 
-parseHelpPage :: HelpPage -> Parser (Message -> DatabaseDiscord ())
+parseHelpPage :: HelpPage -> Parser (Message -> CompiledDatabaseDiscord ())
 parseHelpPage hp = do
   _ <- chunk (helpName hp)
   skipSpace
   (try eof $> displayHelp hp) <|> choice (map parseHelpPage $ helpSubpages hp) <?> "Unknown Subcommand"
 
-displayHelp :: HelpPage -> Message -> DatabaseDiscord ()
-displayHelp hp m = requirePermission (helpPermission hp) m $ do
+displayHelp :: HelpPage -> Message -> CompiledDatabaseDiscord ()
+displayHelp hp m = changeAction () . requirePermission (helpPermission hp) m $ do
   uPerm <- getSenderPermission m
   sendMessage m $ formatHelp uPerm hp
 

@@ -24,14 +24,13 @@ module Tablebot.Plugin.Discord
 where
 
 import Control.Monad.Exception
-import Control.Monad.Trans.Class (MonadTrans (lift))
 import Data.Maybe (listToMaybe)
 import Data.Text (Text, pack)
 import Discord (RestCallErrorCode, restCall)
 import qualified Discord.Requests as R
 import Discord.Types
 import Tablebot.Handler.Embed
-import Tablebot.Plugin (DatabaseDiscord)
+import Tablebot.Plugin (EnvDatabaseDiscord, liftDiscord)
 import Tablebot.Plugin.Exception (BotException (..))
 
 -- | @sendMessage@ sends the input message @t@ in the same channel as message
@@ -40,9 +39,9 @@ import Tablebot.Plugin.Exception (BotException (..))
 sendMessage ::
   Message ->
   Text ->
-  DatabaseDiscord ()
+  EnvDatabaseDiscord s ()
 sendMessage m t = do
-  res <- lift . restCall $ R.CreateMessage (messageChannel m) t
+  res <- liftDiscord . restCall $ R.CreateMessage (messageChannel m) t
   case res of
     Left _ -> throw $ MessageSendException "Failed to send message."
     Right _ -> return ()
@@ -59,9 +58,9 @@ sendEmbedMessage ::
   Message ->
   Text ->
   e ->
-  DatabaseDiscord ()
+  EnvDatabaseDiscord s ()
 sendEmbedMessage m t e = do
-  res <- lift . restCall $ TablebotEmbedRequest (messageChannel m) t (asEmbed e)
+  res <- liftDiscord . restCall $ TablebotEmbedRequest (messageChannel m) t (asEmbed e)
   case res of
     Left _ -> throw $ MessageSendException "Failed to send embed message."
     Right _ -> return ()
@@ -71,8 +70,8 @@ sendEmbedMessage m t e = do
 getMessage ::
   ChannelId ->
   MessageId ->
-  DatabaseDiscord (Either RestCallErrorCode Message)
-getMessage cid mid = lift . restCall $ R.GetChannelMessage (cid, mid)
+  EnvDatabaseDiscord s (Either RestCallErrorCode Message)
+getMessage cid mid = liftDiscord . restCall $ R.GetChannelMessage (cid, mid)
 
 -- | @reactToMessage@ reacts to the given message with the emoji specified
 -- by the text input (see README.md from discord-haskell). Returns @()@ if
@@ -80,13 +79,13 @@ getMessage cid mid = lift . restCall $ R.GetChannelMessage (cid, mid)
 reactToMessage ::
   Message ->
   Text ->
-  DatabaseDiscord (Either RestCallErrorCode ())
+  EnvDatabaseDiscord s (Either RestCallErrorCode ())
 reactToMessage m e =
-  lift . restCall $
+  liftDiscord . restCall $
     R.CreateReaction (messageChannel m, messageId m) e
 
 -- | @getReplyMessage@ returns the message being replied to (if applicable)
-getReplyMessage :: Message -> DatabaseDiscord (Maybe Message)
+getReplyMessage :: Message -> EnvDatabaseDiscord s (Maybe Message)
 getReplyMessage m = do
   let m' = referencedMessage m
   let mRef = messageReference m
@@ -96,7 +95,7 @@ getReplyMessage m = do
       Nothing -> return Nothing
       Just mRef' -> maybeGetMessage (referenceChannelId mRef') (referenceMessageId mRef')
   where
-    maybeGetMessage :: Maybe ChannelId -> Maybe MessageId -> DatabaseDiscord (Maybe Message)
+    maybeGetMessage :: Maybe ChannelId -> Maybe MessageId -> EnvDatabaseDiscord s (Maybe Message)
     maybeGetMessage (Just cId) (Just mId) = do
       m' <- getMessage cId mId
       case m' of
@@ -105,9 +104,9 @@ getReplyMessage m = do
     maybeGetMessage _ _ = return Nothing
 
 -- | @getPrecedingMessage@ returns the message immediately above the provided message
-getPrecedingMessage :: Message -> DatabaseDiscord (Maybe Message)
+getPrecedingMessage :: Message -> EnvDatabaseDiscord s (Maybe Message)
 getPrecedingMessage m = do
-  mlst <- lift . restCall $ R.GetChannelMessages (messageChannel m) (1, R.BeforeMessage (messageId m))
+  mlst <- liftDiscord . restCall $ R.GetChannelMessages (messageChannel m) (1, R.BeforeMessage (messageId m))
   case mlst of
     Right mlst' ->
       return $ listToMaybe mlst'
@@ -115,16 +114,16 @@ getPrecedingMessage m = do
 
 -- | @getMessageMember@ returns the message member object if it was sent from a Discord server,
 -- or @Nothing@ if it was sent from a DM (or the API fails)
-getMessageMember :: Message -> DatabaseDiscord (Maybe GuildMember)
+getMessageMember :: Message -> EnvDatabaseDiscord s (Maybe GuildMember)
 getMessageMember m = gMM (messageGuild m) m
   where
     maybeRight :: Either a b -> Maybe b
     maybeRight (Left _) = Nothing
     maybeRight (Right a) = Just a
-    gMM :: Maybe GuildId -> Message -> DatabaseDiscord (Maybe GuildMember)
+    gMM :: Maybe GuildId -> Message -> EnvDatabaseDiscord s (Maybe GuildMember)
     gMM Nothing _ = return Nothing
     gMM (Just g') m' = do
-      a <- lift $ restCall $ R.GetGuildMember g' (userId $ messageAuthor m')
+      a <- liftDiscord $ restCall $ R.GetGuildMember g' (userId $ messageAuthor m')
       return $ maybeRight a
 
 -- | @toMention@ converts a user to its corresponding mention

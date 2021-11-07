@@ -22,7 +22,7 @@ import Prelude hiding (flip)
 -- | @flip@ picks one of its arguments at random, or one of "heads" and "tails"
 -- if none are provided.
 flip :: Command
-flip = Command "flip" flipcomm
+flip = Command "flip" flipcomm []
   where
     flipcomm :: Parser (Message -> DatabaseDiscord ())
     flipcomm = do
@@ -49,4 +49,4 @@ Randomly picks one element from its arguments or, if none are provided, picks fr
 
 -- | @flipPlugin@ assembles the command into a plugin.
 flipPlugin :: Plugin
-flipPlugin = plug {commands = [flip], helpPages = [flipHelp]}
+flipPlugin = (plug "flip") {commands = [flip], helpPages = [flipHelp]}

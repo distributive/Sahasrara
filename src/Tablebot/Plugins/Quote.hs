@@ -18,14 +18,14 @@ import Control.Monad (void)
 import Control.Monad.IO.Class (liftIO)
 import Data.Text (Text, append, pack, unpack)
 import Data.Time.Clock.System (getSystemTime, systemToUTCTime)
-import Database.Persist
-import Database.Persist.Sqlite
+import Database.Persist.Sqlite (Filter, SelectOpt (LimitTo, OffsetBy), (==.))
 import Database.Persist.TH
 import Discord.Internal.Types.Events (ReactionInfo (reactionChannelId, reactionEmoji, reactionMessageId))
 import Discord.Types (Emoji (emojiName), Message (messageAuthor, messageChannel, messageId, messageText), UTCTime, messageGuild, userIsBot)
 import GHC.Int (Int64)
 import System.Random (randomRIO)
 import Tablebot.Plugin
+import Tablebot.Plugin.Database
 import Tablebot.Plugin.Discord (getMessage, getMessageLink, getPrecedingMessage, getReplyMessage, sendEmbedMessage, sendMessage, toMentionStr)
 import Tablebot.Plugin.Embed
 import Tablebot.Plugin.Permission (requirePermission)
@@ -65,6 +65,7 @@ quote =
   Command
     "quote"
     (parseComm quoteComm)
+    []
 
 quoteComm ::
   WithError
@@ -321,7 +322,7 @@ Calling without arguments returns a random quote
 -- @show@) and the database migration into a plugin.
 quotePlugin :: Plugin
 quotePlugin =
-  plug
+  (plug "quote")
     { commands = [quote],
       onReactionAdds = [quoteReactionAdd],
       migrations = [quoteMigration],
