@@ -40,20 +40,27 @@ quote =
   Command
     "quote"
     (parseComm quoteComm)
-    []
+    [showQuote, deleteQuote]
+
+showQuote :: Command
+showQuote = Command "show" (parseComm showComm) []
+
+deleteQuote :: Command
+deleteQuote = Command "delete" (parseComm deleteComm) []
 
 quoteComm ::
   WithError
     "Unknown quote functionality."
-    ( Either
-        (Exactly "add", Quoted String, Exactly "-", RestOfInput String)
-        (Either (Exactly "show", Int) (Exactly "delete", Int))
-    ) ->
+    (Exactly "add", Quoted String, Exactly "-", RestOfInput String) ->
   Message ->
   DatabaseDiscord ()
-quoteComm (WErr (Left (_, Qu qu, _, ROI author))) = addQ qu author
-quoteComm (WErr (Right (Left (_, qId)))) = showQ (fromIntegral qId)
-quoteComm (WErr (Right (Right (_, qId)))) = deleteQ (fromIntegral qId)
+quoteComm (WErr (_, Qu qu, _, ROI author)) = addQ qu author
+
+deleteComm :: Int -> Message -> DatabaseDiscord ()
+deleteComm qId = deleteQ (fromIntegral qId)
+
+showComm :: Int -> Message -> DatabaseDiscord ()
+showComm qId = showQ (fromIntegral qId)
 
 -- | @addQuote@, which looks for a message of the form
 -- @!quote add "quoted text" - author@, and then stores said quote in the
