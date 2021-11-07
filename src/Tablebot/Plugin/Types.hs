@@ -70,7 +70,7 @@ newtype StartUp d = StartUp
 
 -- | For when you get a 'MessageCreate'. Checks that the @name@ is directly
 -- after the bot prefix, and then runs @commandParser@ on it.
--- It will
+-- It will first try to match against any subcommands, and if that fails it runs the commandParser
 data EnvCommand d = Command
   { -- | The name of the command.
     name :: Text,
