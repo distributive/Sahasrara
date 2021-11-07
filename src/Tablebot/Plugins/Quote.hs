@@ -65,42 +65,57 @@ quote =
   Command
     "quote"
     (parseComm quoteComm)
-    []
+    [addQuote, editQuote, thisQuote, authorQuote, showQuote, deleteQuote, randomQuote]
+
+addQuote :: Command
+addQuote = Command "add" (parseComm addComm) []
+
+editQuote :: Command
+editQuote = Command "edit" (parseComm editComm) []
+
+thisQuote :: Command
+thisQuote = Command "this" (parseComm thisComm) []
+
+authorQuote :: Command
+authorQuote = Command "author" (parseComm authorComm) []
+
+showQuote :: Command
+showQuote = Command "show" (parseComm showComm) []
+
+deleteQuote :: Command
+deleteQuote = Command "delete" (parseComm deleteComm) []
+
+randomQuote :: Command
+randomQuote = Command "random" (parseComm randomComm) []
 
 quoteComm ::
   WithError
     "Unknown quote functionality."
-    ( Either
-        ( Either
-            ( Either
-                (Exactly "add", Quoted String, Exactly "-", RestOfInput String)
-                (Exactly "edit", Int, Quoted String, Exactly "-", RestOfInput String)
-            )
-            ( Either
-                (Exactly "this")
-                (Exactly "user", RestOfInput String)
-            )
-        )
-        ( Either
-            ( Either
-                (Exactly "show", Int)
-                (Exactly "delete", Int)
-            )
-            ( Either
-                (Exactly "random")
-                ()
-            )
-        )
-    ) ->
+    () ->
   Message ->
   DatabaseDiscord ()
-quoteComm (WErr (Left (Left (Left (_, Qu qu, _, ROI author))))) = addQ qu author
-quoteComm (WErr (Left (Left (Right (_, qId, Qu qu, _, ROI author))))) = editQ (fromIntegral qId) qu author
-quoteComm (WErr (Left (Right (Left (_))))) = thisQ
-quoteComm (WErr (Left (Right (Right (_, ROI author))))) = authorQ author
-quoteComm (WErr (Right (Left (Left (_, qId))))) = showQ (fromIntegral qId)
-quoteComm (WErr (Right (Left (Right (_, qId))))) = deleteQ (fromIntegral qId)
-quoteComm (WErr (Right (Right (_)))) = randomQ
+quoteComm (WErr ()) = randomQ
+
+addComm :: (Quoted String, Exactly "-", RestOfInput String) -> Message -> DatabaseDiscord ()
+addComm (Qu qu, _, ROI author) = addQ qu author
+
+editComm :: (Int64, Quoted String, Exactly "-", RestOfInput String) -> Message -> DatabaseDiscord ()
+editComm (qId, Qu qu, _, ROI author) = editQ qId qu author
+
+thisComm :: Message -> DatabaseDiscord ()
+thisComm = thisQ
+
+authorComm :: RestOfInput String -> Message -> DatabaseDiscord ()
+authorComm (ROI author) = authorQ author
+
+showComm :: Int64 -> Message -> DatabaseDiscord ()
+showComm qId = showQ qId
+
+deleteComm :: Int64 -> Message -> DatabaseDiscord ()
+deleteComm qId = deleteQ qId
+
+randomComm :: Message -> DatabaseDiscord ()
+randomComm = randomQ
 
 -- | @showQuote@, which looks for a message of the form @!quote show n@, looks
 -- that quote up in the database and responds with that quote.
@@ -199,7 +214,7 @@ editQ qId qu author m =
               now <- liftIO $ systemToUTCTime <$> getSystemTime
               let new = Quote qu author (fromIntegral $ messageId m) (fromIntegral $ messageChannel m) now
               replace k $ new
-              renderCustomQuoteMessage "Quote updated" new (fromIntegral $ messageId m) m
+              renderCustomQuoteMessage "Quote updated" new qId m
             Nothing -> sendMessage m "Couldn't update that quote!"
 
 -- | @deleteQuote@, which looks for a message of the form @!quote delete n@,
