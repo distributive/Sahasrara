@@ -51,7 +51,8 @@ data CombinedPlugin = CmPl
 
 data CompiledCommand = CCommand
   { commandName :: Text,
-    commandParser :: Parser (Message -> CompiledDatabaseDiscord ())
+    commandParser :: Parser (Message -> CompiledDatabaseDiscord ()),
+    commandSubcommands :: [CompiledCommand]
   }
 
 newtype CompiledInlineCommand = CInlineCommand

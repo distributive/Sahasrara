@@ -70,12 +70,15 @@ newtype StartUp d = StartUp
 
 -- | For when you get a 'MessageCreate'. Checks that the @name@ is directly
 -- after the bot prefix, and then runs @commandParser@ on it.
+-- It will
 data EnvCommand d = Command
   { -- | The name of the command.
     name :: Text,
     -- | A parser to run on the command arguments, returning a computation to
     -- run in 'DatabaseDiscord'.
-    commandParser :: Parser (Message -> EnvDatabaseDiscord d ())
+    commandParser :: Parser (Message -> EnvDatabaseDiscord d ()),
+    -- | A list of subcommands to attempt to parse before the bare command, matching their name.
+    subcommands :: [EnvCommand d]
   }
 
 type Command = EnvCommand ()
