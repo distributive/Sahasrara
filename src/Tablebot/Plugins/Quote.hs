@@ -16,17 +16,16 @@ where
 import Control.Applicative (liftA)
 import Control.Monad (void)
 import Control.Monad.IO.Class (liftIO)
-import Data.Text (Text, append, pack, unpack)
+import Data.Text (Text, append, pack)
 import Data.Time.Clock.System (getSystemTime, systemToUTCTime)
 import Database.Persist.Sqlite (Filter, SelectOpt (LimitTo, OffsetBy), (==.))
 import Database.Persist.TH
-import Discord.Internal.Types.Events (ReactionInfo (reactionChannelId, reactionEmoji, reactionMessageId))
-import Discord.Types (Emoji (emojiName), Message (messageAuthor, messageChannel, messageId, messageText), UTCTime, messageGuild, userIsBot)
+import Discord.Types
 import GHC.Int (Int64)
 import System.Random (randomRIO)
 import Tablebot.Plugin
 import Tablebot.Plugin.Database
-import Tablebot.Plugin.Discord (getMessage, getMessageLink, getPrecedingMessage, getReplyMessage, sendEmbedMessage, sendMessage, toMentionStr)
+import Tablebot.Plugin.Discord (getMessage, getMessageLink, getPrecedingMessage, getReplyMessage, sendEmbedMessage, sendMessage, findGuild, toMention, toMention')
 import Tablebot.Plugin.Embed
 import Tablebot.Plugin.Permission (requirePermission)
 import Tablebot.Plugin.SmartCommand
@@ -38,8 +37,9 @@ share
   [mkPersist sqlSettings, mkMigrate "quoteMigration"]
   [persistLowerCase|
 Quote
-    quote String
-    author String
+    quote Text
+    author Text
+    submitter Text
     msgId Int
     cnlId Int
     time UTCTime
@@ -56,7 +56,7 @@ quoteReactionAdd = ReactionAdd quoteReaction
         m <- getMessage (reactionChannelId ri) (reactionMessageId ri)
         case m of
           Left _ -> pure ()
-          Right mes -> addMessageQuote mes mes
+          Right mes -> addMessageQuote (reactionUserId ri) mes mes
       | otherwise = return ()
 
 -- | Our quote command, which combines various functions to create, display and update quotes.
@@ -96,16 +96,16 @@ quoteComm ::
   DatabaseDiscord ()
 quoteComm (WErr ()) = randomQ
 
-addComm :: (Quoted String, Exactly "-", RestOfInput String) -> Message -> DatabaseDiscord ()
+addComm :: (Quoted Text, Exactly "-", RestOfInput Text) -> Message -> DatabaseDiscord ()
 addComm (Qu qu, _, ROI author) = addQ qu author
 
-editComm :: (Int64, Quoted String, Exactly "-", RestOfInput String) -> Message -> DatabaseDiscord ()
+editComm :: (Int64, Quoted Text, Exactly "-", RestOfInput Text) -> Message -> DatabaseDiscord ()
 editComm (qId, Qu qu, _, ROI author) = editQ qId qu author
 
 thisComm :: Message -> DatabaseDiscord ()
 thisComm = thisQ
 
-authorComm :: RestOfInput String -> Message -> DatabaseDiscord ()
+authorComm :: RestOfInput Text -> Message -> DatabaseDiscord ()
 authorComm (ROI author) = authorQ author
 
 showComm :: Int64 -> Message -> DatabaseDiscord ()
@@ -134,7 +134,7 @@ randomQ = filteredRandomQuote [] "Couldn't find any quotes!"
 -- | @authorQuote@, which looks for a message of the form @!quote user u@,
 -- selects a random quote from the database attributed to u and responds with that quote.
 -- This is currently mis-documented in the help pages as its not quite working (the author matching is way to strict)
-authorQ :: String -> Message -> DatabaseDiscord ()
+authorQ :: Text -> Message -> DatabaseDiscord ()
 authorQ t = filteredRandomQuote [QuoteAuthor ==. t] "Couldn't find any quotes with that author!"
 
 -- | @filteredRandomQuote@ selects a random quote that meets a
@@ -156,10 +156,10 @@ filteredRandomQuote quoteFilter errorMessage m = do
 -- | @addQuote@, which looks for a message of the form
 -- @!quote add "quoted text" - author@, and then stores said quote in the
 -- database, returning the ID used.
-addQ :: String -> String -> Message -> DatabaseDiscord ()
+addQ :: Text -> Text -> Message -> DatabaseDiscord ()
 addQ qu author m = do
   now <- liftIO $ systemToUTCTime <$> getSystemTime
-  let new = Quote qu author (fromIntegral $ messageId m) (fromIntegral $ messageChannel m) now
+  let new = Quote qu author (toMention $ messageAuthor m) (fromIntegral $ messageId m) (fromIntegral $ messageChannel m) now
   added <- insert $ new
   let res = pack $ show $ fromSqlKey added
   renderCustomQuoteMessage ("Quote added as #" `append` res) new (fromSqlKey added) m
@@ -171,16 +171,16 @@ thisQ :: Message -> DatabaseDiscord ()
 thisQ m = do
   q <- getReplyMessage m
   case q of
-    (Just q') -> addMessageQuote q' m
+    (Just q') -> addMessageQuote (userId $ messageAuthor m) q' m
     Nothing -> do
       q2 <- getPrecedingMessage m
       case q2 of
-        (Just q') -> addMessageQuote q' m
+        (Just q') -> addMessageQuote (userId $ messageAuthor m) q' m
         Nothing -> sendMessage m "Unable to add quote"
 
 -- | @addMessageQuote@, adds a message as a quote to the database, checking that it passes the relevant tests
-addMessageQuote :: Message -> Message -> DatabaseDiscord ()
-addMessageQuote q' m = do
+addMessageQuote :: UserId -> Message -> Message -> DatabaseDiscord ()
+addMessageQuote submitter q' m = do
   num <- count [QuoteMsgId ==. (fromIntegral $ messageId q')]
   if num == 0
     then
@@ -189,8 +189,9 @@ addMessageQuote q' m = do
           now <- liftIO $ systemToUTCTime <$> getSystemTime
           let new =
                 Quote
-                  (unpack $ messageText q')
-                  (toMentionStr $ messageAuthor q')
+                  (messageText q')
+                  (toMention $ messageAuthor q')
+                  (toMention' $ submitter)
                   (fromIntegral $ messageId q')
                   (fromIntegral $ messageChannel q')
                   now
@@ -203,16 +204,16 @@ addMessageQuote q' m = do
 -- | @editQuote@, which looks for a message of the form
 -- @!quote edit n "quoted text" - author@, and then updates quote with id n in the
 -- database, to match the provided quote.
-editQ :: Int64 -> String -> String -> Message -> DatabaseDiscord ()
+editQ :: Int64 -> Text -> Text -> Message -> DatabaseDiscord ()
 editQ qId qu author m =
   requirePermission Any m $
     let k = toSqlKey qId
      in do
           oQu <- get k
           case oQu of
-            Just (Quote _ _ _ _ _) -> do
+            Just (Quote _ _ _ _ _ _) -> do
               now <- liftIO $ systemToUTCTime <$> getSystemTime
-              let new = Quote qu author (fromIntegral $ messageId m) (fromIntegral $ messageChannel m) now
+              let new = Quote qu author (toMention $ messageAuthor m) (fromIntegral $ messageId m) (fromIntegral $ messageChannel m) now
               replace k $ new
               renderCustomQuoteMessage "Quote updated" new qId m
             Nothing -> sendMessage m "Couldn't update that quote!"
@@ -226,7 +227,7 @@ deleteQ qId m =
      in do
           qu <- get k
           case qu of
-            Just (Quote _ _ _ _ _) -> do
+            Just (Quote _ _ _ _ _ _) -> do
               delete k
               sendMessage m "Quote deleted"
             Nothing -> sendMessage m "Couldn't delete that quote!"
@@ -235,7 +236,9 @@ renderQuoteMessage :: Quote -> Int64 -> Message -> DatabaseDiscord ()
 renderQuoteMessage = renderCustomQuoteMessage ""
 
 renderCustomQuoteMessage :: Text -> Quote -> Int64 -> Message -> DatabaseDiscord ()
-renderCustomQuoteMessage t (Quote txt author msgId cnlId dtm) qId m =
+renderCustomQuoteMessage t (Quote txt author submitter msgId cnlId dtm) qId m = do
+  guild <- findGuild m
+  let link = getLink guild
   void $
     sendEmbedMessage
       m
@@ -243,13 +246,13 @@ renderCustomQuoteMessage t (Quote txt author msgId cnlId dtm) qId m =
       ( addColour Blue $
           addTimestamp dtm $
             addFooter (pack $ "Quote #" ++ show qId) $
-              simpleEmbed ((pack txt) <> "\n - " <> (pack author) <> maybeAddFooter link)
+              simpleEmbed (txt <> "\n - " <> author <> maybeAddFooter link)
       )
   where
-    link :: Maybe String
-    link = liftA (\x -> getMessageLink x (fromIntegral cnlId) (fromIntegral msgId)) $ (messageGuild m)
-    maybeAddFooter :: Maybe String -> Text
-    maybeAddFooter (Just l) = ("\n[source](" <> pack l <> ")")
+    getLink :: Maybe GuildId -> Maybe Text
+    getLink = liftA (\x -> getMessageLink x (fromIntegral cnlId) (fromIntegral msgId))
+    maybeAddFooter :: Maybe Text -> Text
+    maybeAddFooter (Just l) = ("\n[source](" <> l <> ") - added by " <> submitter)
     maybeAddFooter Nothing = ""
 
 showQuoteHelp :: HelpPage

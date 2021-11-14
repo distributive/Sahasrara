@@ -12,14 +12,17 @@ module Tablebot.Plugin.Discord
   ( sendMessage,
     sendEmbedMessage,
     reactToMessage,
+    findGuild,
     getMessage,
     getMessageMember,
     getReplyMessage,
     getPrecedingMessage,
     toMention,
+    toMention',
     toMentionStr,
+    toMentionStr',
     getMessageLink,
-    Message,
+    Message
   )
 where
 
@@ -30,7 +33,7 @@ import Discord (RestCallErrorCode, restCall)
 import qualified Discord.Requests as R
 import Discord.Types
 import Tablebot.Handler.Embed
-import Tablebot.Plugin (EnvDatabaseDiscord, liftDiscord)
+import Tablebot.Plugin (EnvDatabaseDiscord, liftDiscord, DatabaseDiscord)
 import Tablebot.Plugin.Exception (BotException (..))
 
 -- | @sendMessage@ sends the input message @t@ in the same channel as message
@@ -64,6 +67,13 @@ sendEmbedMessage m t e = do
   case res of
     Left _ -> throw $ MessageSendException "Failed to send embed message."
     Right _ -> return ()
+
+-- | @getChannel@ gets the relevant Channel object for a given 'ChannelId'
+-- and 'MessageId', or returns an error ('RestCallErrorCode').
+getChannel ::
+  ChannelId ->
+  EnvDatabaseDiscord s (Either RestCallErrorCode Channel)
+getChannel cid = liftDiscord . restCall $ R.GetChannel cid
 
 -- | @getMessage@ gets the relevant 'Message' object for a given 'ChannelId'
 -- and 'MessageId', or returns an error ('RestCallErrorCode').
@@ -126,13 +136,30 @@ getMessageMember m = gMM (messageGuild m) m
       a <- liftDiscord $ restCall $ R.GetGuildMember g' (userId $ messageAuthor m')
       return $ maybeRight a
 
+findGuild :: Message -> DatabaseDiscord (Maybe GuildId)
+findGuild m = case messageGuild m of
+  Just a -> pure $ Just a
+  Nothing -> do
+    let chanId = messageChannel m 
+    channel <- getChannel chanId
+    case fmap channelGuild channel of
+      Right a -> pure $ Just a
+      Left _ -> pure Nothing
+
 -- | @toMention@ converts a user to its corresponding mention
 toMention :: User -> Text
-toMention u = pack $ toMentionStr u
+toMention = pack . toMentionStr
+
+-- | @toMention'@ converts a user ID to its corresponding mention
+toMention' :: UserId -> Text
+toMention' = pack . toMentionStr'
 
 -- | @toMentionStr@ converts a user to its corresponding mention, returning a string to prevent packing and unpacking
 toMentionStr :: User -> String
-toMentionStr u = "<@!" ++ show (userId u) ++ ">"
+toMentionStr = toMentionStr' . userId
 
-getMessageLink :: GuildId -> ChannelId -> MessageId -> String
-getMessageLink g c m = "https://discord.com/channels/" ++ show g ++ "/" ++ show c ++ "/" ++ show m
+toMentionStr' :: UserId -> String
+toMentionStr' u = "<@!" ++ show u ++ ">"
+
+getMessageLink :: GuildId -> ChannelId -> MessageId -> Text
+getMessageLink g c m = pack $ "https://discord.com/channels/" ++ show g ++ "/" ++ show c ++ "/" ++ show m
