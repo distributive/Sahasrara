@@ -98,7 +98,7 @@ addReminder time content m = do
 -- | @reminderCommand@ is a command implementing the functionality in
 -- @reminderParser@ and @addReminder@.
 reminderCommand :: Command
-reminderCommand = Command "remind" (parseComm reminderParser)
+reminderCommand = Command "remind" (parseComm reminderParser) []
 
 -- | @reminderCron@ is a cron job that checks every minute to see if a reminder
 -- has passed, and if so sends a message using the stored information about the

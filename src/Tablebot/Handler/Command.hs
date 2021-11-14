@@ -55,7 +55,7 @@ parseCommands cs m prefix = case parse (parser cs) "" (messageText m) of
         choice (map toErroringParser cs') <?> "No command with that name was found!"
         <|> pure (\_ -> pure ())
     toErroringParser :: CompiledCommand -> Parser (Message -> CompiledDatabaseDiscord ())
-    toErroringParser c = try (chunk $ commandName c) *> (skipSpace1 <|> eof) *> commandParser c
+    toErroringParser c = try (chunk $ commandName c) *> (skipSpace1 <|> eof) *> (try (choice $ map toErroringParser $ commandSubcommands c) <|> commandParser c)
 
 -- | Given a list of 'InlineCommand' @cs@ and a message @m@, run each inline
 -- command's parser on the message text until one succeeds. Errors are not sent

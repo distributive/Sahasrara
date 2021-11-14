@@ -18,7 +18,7 @@ import Text.RawString.QQ (r)
 
 -- | @say@ outputs its input.
 say :: Command
-say = Command "say" saycomm
+say = Command "say" saycomm []
   where
     saycomm :: Parser (Message -> DatabaseDiscord ())
     saycomm = do

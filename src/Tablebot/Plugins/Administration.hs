@@ -32,7 +32,7 @@ import Text.RawString.QQ
 type SS = [Text]
 
 blacklist :: EnvCommand SS
-blacklist = Command "blacklist" (parseComm blacklistComm)
+blacklist = Command "blacklist" (parseComm blacklistComm) []
 
 blacklistComm ::
   WithError
@@ -121,7 +121,7 @@ listBlacklist m = requirePermission Superuser m $ do
 
 -- | @restart@ reloads the bot with any new configuration changes.
 reload :: EnvCommand SS
-reload = Command "reload" restartCommand
+reload = Command "reload" restartCommand []
   where
     restartCommand :: Parser (Message -> EnvDatabaseDiscord SS ())
     restartCommand = noArguments $ \m -> requirePermission Superuser m $ do
