@@ -66,6 +66,12 @@ updateGet r v = liftSql $ Sql.updateGet r v
 upsert :: (Sql.OnlyOneUniqueKey record, Sql.PersistEntityBackend record ~ Sql.SqlBackend) => record -> [Sql.Update record] -> EnvDatabaseDiscord d (Sql.Entity record)
 upsert r v = liftSql $ Sql.upsert r v
 
+replace :: (Sql.PersistEntity record, Sql.PersistEntityBackend record ~ Sql.SqlBackend) => Sql.Key record -> record -> EnvDatabaseDiscord d ()
+replace r v = liftSql $ Sql.replace r v
+
+replaceUnique :: (Sql.PersistEntity record, Eq (Sql.Unique record), Sql.PersistEntityBackend record ~ Sql.SqlBackend) => Sql.Key record -> record -> EnvDatabaseDiscord d (Maybe (Sql.Unique record))
+replaceUnique r v = liftSql $ Sql.replaceUnique r v
+
 count :: (Sql.PersistEntity record, Sql.PersistEntityBackend record ~ Sql.SqlBackend) => [Sql.Filter record] -> EnvDatabaseDiscord d Int
 count r = liftSql $ Sql.count r
 
