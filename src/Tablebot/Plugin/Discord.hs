@@ -22,7 +22,7 @@ module Tablebot.Plugin.Discord
     toMentionStr,
     toMentionStr',
     getMessageLink,
-    Message
+    Message,
   )
 where
 
@@ -33,7 +33,7 @@ import Discord (RestCallErrorCode, restCall)
 import qualified Discord.Requests as R
 import Discord.Types
 import Tablebot.Handler.Embed
-import Tablebot.Plugin (EnvDatabaseDiscord, liftDiscord, DatabaseDiscord)
+import Tablebot.Plugin (DatabaseDiscord, EnvDatabaseDiscord, liftDiscord)
 import Tablebot.Plugin.Exception (BotException (..))
 
 -- | @sendMessage@ sends the input message @t@ in the same channel as message
@@ -140,7 +140,7 @@ findGuild :: Message -> DatabaseDiscord (Maybe GuildId)
 findGuild m = case messageGuild m of
   Just a -> pure $ Just a
   Nothing -> do
-    let chanId = messageChannel m 
+    let chanId = messageChannel m
     channel <- getChannel chanId
     case fmap channelGuild channel of
       Right a -> pure $ Just a

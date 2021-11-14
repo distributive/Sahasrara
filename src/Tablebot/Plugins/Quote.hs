@@ -25,7 +25,7 @@ import GHC.Int (Int64)
 import System.Random (randomRIO)
 import Tablebot.Plugin
 import Tablebot.Plugin.Database
-import Tablebot.Plugin.Discord (getMessage, getMessageLink, getPrecedingMessage, getReplyMessage, sendEmbedMessage, sendMessage, findGuild, toMention, toMention')
+import Tablebot.Plugin.Discord (findGuild, getMessage, getMessageLink, getPrecedingMessage, getReplyMessage, sendEmbedMessage, sendMessage, toMention, toMention')
 import Tablebot.Plugin.Embed
 import Tablebot.Plugin.Permission (requirePermission)
 import Tablebot.Plugin.SmartCommand
