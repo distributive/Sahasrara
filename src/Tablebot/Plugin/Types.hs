@@ -26,6 +26,7 @@ import Discord.Types
     ReactionInfo,
   )
 import Text.Megaparsec (Parsec)
+import Control.Monad.Exception (MonadException)
 
 -- * DatabaseDiscord
 

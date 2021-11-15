@@ -19,7 +19,7 @@ import Data.Text (Text, pack)
 import Discord.Types (Message)
 import GHC.TypeLits
 import Tablebot.Plugin.Parser
-import Tablebot.Plugin.Types (DatabaseDiscord, EnvDatabaseDiscord, Parser)
+import Tablebot.Plugin.Types (EnvDatabaseDiscord, Parser)
 import Text.Megaparsec
 
 -- | @PComm@ defines function types that we can automatically turn into parsers
@@ -46,7 +46,7 @@ instance {-# OVERLAPPING #-} CanParse a => PComm (a -> Message -> EnvDatabaseDis
 instance {-# OVERLAPPABLE #-} (CanParse a, PComm as s) => PComm (a -> as) s where
   parseComm comm = do
     this <- pars @a
-    space
+    skipSpace1
     parseComm (comm this)
 
 -- | @FromString@ defines types that can be retrieved from @String@, which is
@@ -99,27 +99,27 @@ instance (CanParse a, CanParse b) => CanParse (Either a b) where
 instance (CanParse a, CanParse b) => CanParse (a, b) where
   pars = do
     x <- pars @a
-    space
+    skipSpace1
     y <- pars @b
     return (x, y)
 
 instance (CanParse a, CanParse b, CanParse c) => CanParse (a, b, c) where
   pars = do
     x <- pars @a
-    space
+    skipSpace1
     y <- pars @b
-    space
+    skipSpace1
     z <- pars @c
     return (x, y, z)
 
 instance (CanParse a, CanParse b, CanParse c, CanParse d) => CanParse (a, b, c, d) where
   pars = do
     x <- pars @a
-    space
+    skipSpace1
     y <- pars @b
-    space
+    skipSpace1
     z <- pars @c
-    space
+    skipSpace1
     w <- pars @d
     return (x, y, z, w)
 
