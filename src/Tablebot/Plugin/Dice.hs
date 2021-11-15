@@ -21,7 +21,7 @@ import System.Random (Random (randomRIO))
 import Tablebot.Plugin.Exception (BotException (EvaluationException), throwBot)
 import Tablebot.Plugin.Parser (posInteger, skipSpace, word)
 import Tablebot.Plugin.Random (chooseOne)
-import Tablebot.Plugin.SmartCommand (CanParse (..))
+import Tablebot.Plugin.SmartCommand (CanParse (..), FromString (fromString))
 import Tablebot.Plugin.Types (Parser)
 import Text.Megaparsec (MonadParsec (try), many, optional, (<|>))
 import Text.Megaparsec.Char (char, string)
@@ -39,6 +39,8 @@ brackets, integer, dice [base] {"(" expr ")"} {[0123456789]+} {dieops}
 multiple dice [mdie] {[0123456789]+ bdie}
 base die [bdie] {"d" base} {"d{" [0123456789]+ ("," [0123456789]+)* "}"}
 -}
+
+-- TODO: make this do something
 
 -- | The maximum depth that should be permitted. Used to limit number of dice and rerolls.
 maximumRecursion :: Integer
@@ -93,26 +95,27 @@ data Expr = Add Term Expr | Sub Term Expr | NoExpr Term
 
 --- Evaluating an expression. Uses IO because dice are random
 
+evalExpr :: Expr -> IO Integer
+evalExpr a = sumDiceVals <$> eval a
+
 sumDiceVals :: [(Integer, a)] -> Integer
 sumDiceVals = foldr (\(i, _) b -> i + b) 0
 
 toOutType :: Integer -> [(Integer, Die)]
 toOutType i = [(i, CustomDie [])]
 
-type IOEval a = MEval IO a
-
-class  MEval m a where
-  eval :: (MonadException m) => a -> m [(Integer, Die)]
-  evalSum :: (MonadException m) => a -> m Integer
+class IOEval a where
+  eval :: a -> IO [(Integer, Die)]
+  evalSum :: a -> IO Integer
   evalSum a = sumDiceVals <$> eval a
 
-instance MEval IO Base where
+instance IOEval Base where
   eval (NBase nb) = eval nb
   eval (DieOpBase dop) = do
     is <- eval dop
     return [(sumDiceVals is, CustomDie [])]
 
-instance MEval IO Die where
+instance IOEval Die where
   eval d@(CustomDie is) = do
     i <- chooseOne is
     return [(i, d)]
@@ -124,7 +127,7 @@ instance MEval IO Die where
         i <- randomRIO (1, upper)
         return [(i, d)]
 
-instance MEval IO MultiDie where
+instance IOEval MultiDie where
   eval (SingleDie d) = eval d
   eval (MultiDie nb d) = do
     i <- evalSum nb
@@ -134,7 +137,7 @@ instance MEval IO MultiDie where
         ds <- sequence $ genericReplicate i $ eval d
         return $ concat ds
 
-instance MEval IO DieOp where
+instance IOEval DieOp where
   eval (DieOpMulti md) = eval md
   eval (DieOp dop dopo) = do
     dop' <- eval dop
@@ -169,13 +172,13 @@ evalDieOpHelpKD Drop (Low i) = genericDrop i . sortOn fst
 evalDieOpHelpKD Drop (High i) = genericDrop i . sortOn (negate . fst)
 
 --- Pure evaluation functions for non-dice calculations
--- Was previously its own type class that wouldn't work for evaluating Base values
-instance MEval m Expr where
+-- Was previously its own type class that wouldn't work for evaluating Base values.
+instance IOEval Expr where
   eval (NoExpr t) = eval t
   eval (Add t e) = toOutType <$> (((+) <$> evalSum t) <*> evalSum e)
   eval (Sub t e) = toOutType <$> (((-) <$> evalSum t) <*> evalSum e)
 
-instance  MEval m Term where
+instance IOEval Term where
   eval (NoTerm f) = eval f
   eval (Multi f t) = toOutType <$> (((*) <$> evalSum f) <*> evalSum t)
   eval (Div f t) = do
@@ -185,15 +188,15 @@ instance  MEval m Term where
       then throwBot (EvaluationException "division by zero")
       else return $ toOutType $ div f' t'
 
-instance  MEval m Func where
+instance IOEval Func where
   eval (Id neg) = eval neg
   eval (Abs neg) = toOutType . abs <$> evalSum neg
 
-instance  MEval m Negation where
+instance IOEval Negation where
   eval (Neg expo) = toOutType . negate <$> evalSum expo
   eval (NoNeg expo) = eval expo
 
-instance  MEval m Expo where
+instance IOEval Expo where
   eval (NoExpo b) = eval b
   eval (Expo b expo) = do
     b' <- evalSum b
@@ -202,11 +205,7 @@ instance  MEval m Expo where
       then throwBot (EvaluationException "negative exponent")
       else return $ toOutType $ b' ^ expo'
 
-instance {-# OVERLAPPABLE #-} MEval m Base where
-  eval (NBase nb) = eval nb
-  eval (DieOpBase _) = throwBot $ EvaluationException "Cannot evaluate dice in a non-IO environment"
-
-instance  MEval m NumBase where
+instance IOEval NumBase where
   eval (Paren e) = eval e
   eval (Value i) = return $ toOutType i
 
@@ -246,7 +245,6 @@ instance Range Base where
 instance Range DieOp where
   range' (DieOpMulti md) = range' md
 
-
 instance Range NumBase where
   range' (Value i) = singleton i
   range' (Paren e) = range' e
@@ -272,6 +270,65 @@ instance Range Negation where
 instance Range Expo where
   range' (NoExpo b) = range' b
   range' (Expo b expo) = S.fromList $ ((^) <$> range b) <*> range expo
+
+--- Pretty printing the AST
+-- The output from this should be parseable
+
+class PrettyShow a where
+  prettyShow :: a -> String
+
+instance PrettyShow Die where
+  prettyShow (Die b) = "d" <> prettyShow b
+  prettyShow (CustomDie is) = "d{" <> tail (init (fromString $ show is)) <> "}"
+
+instance PrettyShow MultiDie where
+  prettyShow (SingleDie d) = prettyShow d
+  prettyShow (MultiDie nb d) = prettyShow nb <> prettyShow d
+
+instance PrettyShow NumBase where
+  prettyShow (Paren e) = "(" <> prettyShow e <> ")"
+  prettyShow (Value i) = fromString $ show i
+
+instance PrettyShow Base where
+  prettyShow (NBase nb) = prettyShow nb
+  prettyShow (DieOpBase dop) = prettyShow dop
+
+instance PrettyShow DieOp where
+  prettyShow (DieOpMulti md) = prettyShow md
+  prettyShow (DieOp dop dopo) = prettyShow dop <> helper dopo
+    where
+      fromOrdering LT i = "<" <> fromString (show i)
+      fromOrdering EQ i = "=" <> fromString (show i)
+      fromOrdering GT i = ">" <> fromString (show i)
+      fromLHW (Where o i) = "w" <> fromOrdering o i
+      fromLHW (Low i) = "l" <> fromString (show i)
+      fromLHW (High i) = "h" <> fromString (show i)
+      helper (Reroll True o i) = "ro" <> fromOrdering o i
+      helper (Reroll False o i) = "rr" <> fromOrdering o i
+      helper (DieOpOptionKD Keep lhw) = "k" <> fromLHW lhw
+      helper (DieOpOptionKD Drop lhw) = "d" <> fromLHW lhw
+
+instance PrettyShow Expr where
+  prettyShow (Add t e) = prettyShow t <> " + " <> prettyShow e
+  prettyShow (Sub t e) = prettyShow t <> " + " <> prettyShow e
+  prettyShow (NoExpr t) = prettyShow t
+
+instance PrettyShow Term where
+  prettyShow (Multi f t) = prettyShow f <> " * " <> prettyShow t
+  prettyShow (Div f t) = prettyShow f <> " / " <> prettyShow t
+  prettyShow (NoTerm f) = prettyShow f
+
+instance PrettyShow Func where
+  prettyShow (Abs n) = "abs " <> prettyShow n
+  prettyShow (Id n) = prettyShow n
+
+instance PrettyShow Negation where
+  prettyShow (Neg expo) = "-" <> prettyShow expo
+  prettyShow (NoNeg expo) = prettyShow expo
+
+instance PrettyShow Expo where
+  prettyShow (NoExpo b) = prettyShow b
+  prettyShow (Expo b expo) = prettyShow b <> "^" <> prettyShow expo
 
 --- Parsing expressions below this line
 
