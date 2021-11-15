@@ -34,6 +34,7 @@ data BotException
   | ParserException String
   | IndexOutOfBoundsException Int (Int, Int)
   | RandomException String
+  | EvaluationException String
   deriving (Show, Eq)
 
 instance Exception BotException
@@ -110,3 +111,4 @@ errorInfo (IndexOutOfBoundsException index (a, b)) =
     "IndexOutOfBoundsException"
     $ "Index value of " ++ show index ++ " is not in the valid range [" ++ show a ++ ", " ++ show b ++ "]."
 errorInfo (RandomException msg') = ErrorInfo "RandomException" msg'
+errorInfo (EvaluationException msg') = ErrorInfo "EvaluationException" msg'
