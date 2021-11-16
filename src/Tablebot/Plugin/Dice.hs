@@ -13,7 +13,6 @@ module Tablebot.Plugin.Dice where
 import Data.Functor ((<&>))
 import Data.List (genericDrop, genericReplicate, genericTake, sortOn)
 import Data.Map.Strict as M (Map, fromList, member, (!))
-import Data.Maybe (isJust)
 import Data.Set as S (Set, fromList, singleton, toList)
 import Data.Text (pack, unpack)
 import System.Random (Random (randomRIO))
@@ -48,39 +47,57 @@ maximumRecursion = 100
 
 -- TODO: full check over of bounds. make this thing AIR TIGHT.
 
-data LowHighWhere = Low Integer | High Integer | Where Ordering Integer deriving (Show, Eq)
+-- | The type of the top level expression. Represents one of addition, subtraction, or a
+-- single term.
+data Expr = Add Term Expr | Sub Term Expr | NoExpr Term
+  deriving (Show, Eq)
 
-data KeepDrop = Keep | Drop deriving (Show, Eq)
+-- | The type representing multiplication, division, or a single function application.
+data Term = Multi Func Term | Div Func Term | NoTerm Func
+  deriving (Show, Eq)
 
+-- | The type representing a single function application on a negated item.
+data Func = Id Negation | Abs Negation
+  deriving (Show, Eq)
+
+-- | The type representing a possibly negated value.
+data Negation = Neg Expo | NoNeg Expo
+  deriving (Show, Eq)
+
+-- | The type representing a value with exponentials.
+data Expo = Expo Base Expo | NoExpo Base
+  deriving (Show, Eq)
+
+-- | The type representing an integer value or an expression in brackets.
+data NumBase = Paren Expr | Value Integer
+  deriving (Show, Eq)
+
+-- | The type representing a numeric base value value or a dice value.
+data Base = NBase NumBase | DieOpBase DieOp
+  deriving (Show, Eq)
+
+-- | The type representing a simple N sided die or a custom die.
 data Die = Die Base | CustomDie [Integer] deriving (Show, Eq)
 
+-- | The type representing either multiple dice or a single die.
 data MultiDie = MultiDie NumBase Die | SingleDie Die
   deriving (Show, Eq)
 
-data DieOpOption
-  = Reroll {rerollOnce :: Bool, condition :: Ordering, limit :: Integer}
-  | DieOpOptionKD KeepDrop LowHighWhere
-  deriving (Show, Eq)
-
+-- | The type representing multiple dice or dice being modified by some die op option.
 data DieOp
   = DieOp DieOp DieOpOption
   | DieOpMulti MultiDie
   deriving (Show, Eq)
 
-data NumBase = Paren Expr | Value Integer
+-- | The type representing a die op option.
+data DieOpOption
+  = Reroll {rerollOnce :: Bool, condition :: Ordering, limit :: Integer}
+  | DieOpOptionKD KeepDrop LowHighWhere
   deriving (Show, Eq)
 
-data Base = NBase NumBase | DieOpBase DieOp
-  deriving (Show, Eq)
+data LowHighWhere = Low Integer | High Integer | Where Ordering Integer deriving (Show, Eq)
 
-data Expo = Expo Base Expo | NoExpo Base
-  deriving (Show, Eq)
-
-data Negation = Neg Expo | NoNeg Expo
-  deriving (Show, Eq)
-
-data Func = Id Negation | Abs Negation
-  deriving (Show, Eq)
+data KeepDrop = Keep | Drop deriving (Show, Eq)
 
 supportedFunctions :: Map String (Negation -> Func, Integer -> Integer)
 supportedFunctions =
@@ -89,11 +106,9 @@ supportedFunctions =
       ("id", (Id, id))
     ]
 
-data Term = Multi Func Term | Div Func Term | NoTerm Func
-  deriving (Show, Eq)
-
-data Expr = Add Term Expr | Sub Term Expr | NoExpr Term
-  deriving (Show, Eq)
+functionDetails :: Func -> (String, Negation)
+functionDetails (Id a) = ("id", a)
+functionDetails (Abs a) = ("abs", a)
 
 --- Evaluating an expression. Uses IO because dice are random
 
@@ -321,8 +336,9 @@ instance PrettyShow Term where
   prettyShow (NoTerm f) = prettyShow f
 
 instance PrettyShow Func where
-  prettyShow (Abs n) = "abs " <> prettyShow n
-  prettyShow (Id n) = prettyShow n
+  prettyShow f = s <> " " <> prettyShow n
+    where
+      (s, n) = functionDetails f
 
 instance PrettyShow Negation where
   prettyShow (Neg expo) = "-" <> prettyShow expo
@@ -361,12 +377,8 @@ instance CanParse Func where
 
 instance CanParse Negation where
   pars = do
-    minus <- optional $ try (char '-') <* skipSpace
-    t <- pars
-    return $
-      if isJust minus
-        then Neg t
-        else NoNeg t
+    try (char '-') *> skipSpace *> (Neg <$> pars)
+      <|> NoNeg <$> pars
 
 instance CanParse Expo where
   pars = do
