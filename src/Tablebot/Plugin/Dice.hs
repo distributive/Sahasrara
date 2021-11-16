@@ -10,8 +10,7 @@
 -- expression that contains dice
 module Tablebot.Plugin.Dice where
 
-import Control.Monad.Exception (MonadException)
-import Data.Functor
+import Data.Functor ((<&>))
 import Data.List (genericDrop, genericReplicate, genericTake, sortOn)
 import Data.Map.Strict as M (Map, fromList, member, (!))
 import Data.Maybe (isJust)
@@ -26,6 +25,7 @@ import Tablebot.Plugin.Types (Parser)
 import Text.Megaparsec (MonadParsec (try), many, optional, (<|>))
 import Text.Megaparsec.Char (char, string)
 
+-- TODO: update the parsing stuff below so people can actually make sense of the stuff down below
 {- What is the parse tree from lowest precedence to highest?
 
 addition/subtraction [expr] {term [+-] term}
@@ -45,6 +45,8 @@ base die [bdie] {"d" base} {"d{" [0123456789]+ ("," [0123456789]+)* "}"}
 -- | The maximum depth that should be permitted. Used to limit number of dice and rerolls.
 maximumRecursion :: Integer
 maximumRecursion = 100
+
+-- TODO: full check over of bounds. make this thing AIR TIGHT.
 
 data LowHighWhere = Low Integer | High Integer | Where Ordering Integer deriving (Show, Eq)
 
