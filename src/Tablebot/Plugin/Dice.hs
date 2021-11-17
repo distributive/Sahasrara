@@ -76,6 +76,8 @@ data NumBase = Paren Expr | Value Integer
 data Base = NBase NumBase | DieOpBase DieOp
   deriving (Show, Eq)
 
+-- Dice Operations after this point
+
 -- | The type representing a simple N sided die or a custom die.
 data Die = Die Base | CustomDie [Integer] deriving (Show, Eq)
 
@@ -99,6 +101,8 @@ data LowHighWhere = Low Integer | High Integer | Where Ordering Integer deriving
 
 data KeepDrop = Keep | Drop deriving (Show, Eq)
 
+-- Mappings for what functions are supported
+
 supportedFunctions :: Map String (Negation -> Func, Integer -> Integer)
 supportedFunctions =
   M.fromList
@@ -121,6 +125,8 @@ sumDiceVals = foldr (\(i, _) b -> i + b) 0
 toOutType :: Integer -> [(Integer, Die)]
 toOutType i = [(i, CustomDie [])]
 
+-- TODO: make eval's type evalSum's type, and add a function that builds an output string
+--  representing the change
 class IOEval a where
   eval :: a -> IO [(Integer, Die)]
   evalSum :: a -> IO Integer
@@ -184,8 +190,8 @@ evalDieOpHelpKD :: KeepDrop -> LowHighWhere -> [(Integer, Die)] -> [(Integer, Di
 evalDieOpHelpKD Keep (Where cmp i) = filter (\(i', _) -> compare i' i == cmp)
 evalDieOpHelpKD Drop (Where cmp i) = filter (\(i', _) -> compare i' i /= cmp)
 evalDieOpHelpKD Keep (Low i) = genericTake i . sortOn fst
-evalDieOpHelpKD Keep (High i) = genericTake i . sortOn (negate . fst)
 evalDieOpHelpKD Drop (Low i) = genericDrop i . sortOn fst
+evalDieOpHelpKD Keep (High i) = genericTake i . sortOn (negate . fst)
 evalDieOpHelpKD Drop (High i) = genericDrop i . sortOn (negate . fst)
 
 --- Pure evaluation functions for non-dice calculations
@@ -227,7 +233,8 @@ instance IOEval NumBase where
   eval (Value i) = return $ toOutType i
 
 --- Finding the range of an expression.
--- `DieOp` still needs to be completed
+-- TODO: `DieOp` still needs to be completed
+-- it would also be good to have custom maxvals and ranges for everything
 
 class Range a where
   range :: a -> [Integer]
@@ -238,33 +245,6 @@ class Range a where
   maxVal = maximum . range
   minVal :: a -> Integer
   minVal = minimum . range
-
-instance Range Die where
-  range' (CustomDie is) = S.fromList is
-  range' (Die b) = S.fromList [1 .. (maxVal b)]
-
-instance Range MultiDie where
-  range' (SingleDie d) = range' d
-  range' (MultiDie nb d) = S.fromList $ do
-    i <- [nbMin' .. nbMax]
-    foldr (\a b -> ((+) <$> a) <*> b) [0] $ genericReplicate i (range d)
-    where
-      nbRange = range nb
-      nbMin = minimum nbRange
-      nbMax = maximum nbRange
-      nbMin' = max 0 nbMin
-
-instance Range Base where
-  range' (NBase nb) = range' nb
-  range' (DieOpBase dop) = range' dop
-
--- TODO: this
-instance Range DieOp where
-  range' (DieOpMulti md) = range' md
-
-instance Range NumBase where
-  range' (Value i) = singleton i
-  range' (Paren e) = range' e
 
 instance Range Expr where
   range' (Add t e) = S.fromList $ ((+) <$> range t) <*> range e
@@ -288,42 +268,38 @@ instance Range Expo where
   range' (NoExpo b) = range' b
   range' (Expo b expo) = S.fromList $ ((^) <$> range b) <*> range expo
 
+instance Range NumBase where
+  range' (Value i) = singleton i
+  range' (Paren e) = range' e
+
+instance Range Base where
+  range' (NBase nb) = range' nb
+  range' (DieOpBase dop) = range' dop
+
+instance Range Die where
+  range' (CustomDie is) = S.fromList is
+  range' (Die b) = S.fromList [1 .. (maxVal b)]
+
+instance Range MultiDie where
+  range' (SingleDie d) = range' d
+  range' (MultiDie nb d) = S.fromList $ do
+    i <- [nbMin' .. nbMax]
+    foldr (\a b -> ((+) <$> a) <*> b) [0] $ genericReplicate i (range d)
+    where
+      nbRange = range nb
+      nbMin = minimum nbRange
+      nbMax = maximum nbRange
+      nbMin' = max 0 nbMin
+
+-- TODO: this
+instance Range DieOp where
+  range' (DieOpMulti md) = range' md
+
 --- Pretty printing the AST
 -- The output from this should be parseable
 
 class PrettyShow a where
   prettyShow :: a -> String
-
-instance PrettyShow Die where
-  prettyShow (Die b) = "d" <> prettyShow b
-  prettyShow (CustomDie is) = "d{" <> tail (init (fromString $ show is)) <> "}"
-
-instance PrettyShow MultiDie where
-  prettyShow (SingleDie d) = prettyShow d
-  prettyShow (MultiDie nb d) = prettyShow nb <> prettyShow d
-
-instance PrettyShow NumBase where
-  prettyShow (Paren e) = "(" <> prettyShow e <> ")"
-  prettyShow (Value i) = fromString $ show i
-
-instance PrettyShow Base where
-  prettyShow (NBase nb) = prettyShow nb
-  prettyShow (DieOpBase dop) = prettyShow dop
-
-instance PrettyShow DieOp where
-  prettyShow (DieOpMulti md) = prettyShow md
-  prettyShow (DieOp dop dopo) = prettyShow dop <> helper dopo
-    where
-      fromOrdering LT i = "<" <> fromString (show i)
-      fromOrdering EQ i = "=" <> fromString (show i)
-      fromOrdering GT i = ">" <> fromString (show i)
-      fromLHW (Where o i) = "w" <> fromOrdering o i
-      fromLHW (Low i) = "l" <> fromString (show i)
-      fromLHW (High i) = "h" <> fromString (show i)
-      helper (Reroll True o i) = "ro" <> fromOrdering o i
-      helper (Reroll False o i) = "rr" <> fromOrdering o i
-      helper (DieOpOptionKD Keep lhw) = "k" <> fromLHW lhw
-      helper (DieOpOptionKD Drop lhw) = "d" <> fromLHW lhw
 
 instance PrettyShow Expr where
   prettyShow (Add t e) = prettyShow t <> " + " <> prettyShow e
@@ -347,6 +323,37 @@ instance PrettyShow Negation where
 instance PrettyShow Expo where
   prettyShow (NoExpo b) = prettyShow b
   prettyShow (Expo b expo) = prettyShow b <> "^" <> prettyShow expo
+
+instance PrettyShow NumBase where
+  prettyShow (Paren e) = "(" <> prettyShow e <> ")"
+  prettyShow (Value i) = fromString $ show i
+
+instance PrettyShow Base where
+  prettyShow (NBase nb) = prettyShow nb
+  prettyShow (DieOpBase dop) = prettyShow dop
+
+instance PrettyShow Die where
+  prettyShow (Die b) = "d" <> prettyShow b
+  prettyShow (CustomDie is) = "d{" <> (init . tail . fromString . show) is <> "}"
+
+instance PrettyShow MultiDie where
+  prettyShow (SingleDie d) = prettyShow d
+  prettyShow (MultiDie nb d) = prettyShow nb <> prettyShow d
+
+instance PrettyShow DieOp where
+  prettyShow (DieOpMulti md) = prettyShow md
+  prettyShow (DieOp dop dopo) = prettyShow dop <> helper dopo
+    where
+      fromOrdering LT i = "<" <> fromString (show i)
+      fromOrdering EQ i = "=" <> fromString (show i)
+      fromOrdering GT i = ">" <> fromString (show i)
+      fromLHW (Where o i) = "w" <> fromOrdering o i
+      fromLHW (Low i) = "l" <> fromString (show i)
+      fromLHW (High i) = "h" <> fromString (show i)
+      helper (Reroll True o i) = "ro" <> fromOrdering o i
+      helper (Reroll False o i) = "rr" <> fromOrdering o i
+      helper (DieOpOptionKD Keep lhw) = "k" <> fromLHW lhw
+      helper (DieOpOptionKD Drop lhw) = "d" <> fromLHW lhw
 
 --- Parsing expressions below this line
 
@@ -376,7 +383,7 @@ instance CanParse Func where
         | otherwise = fail $ "Could not find function with name" ++ unpack s
 
 instance CanParse Negation where
-  pars = do
+  pars = 
     try (char '-') *> skipSpace *> (Neg <$> pars)
       <|> NoNeg <$> pars
 
@@ -387,16 +394,34 @@ instance CanParse Expo where
       <|> (return . NoExpo) t
 
 instance CanParse NumBase where
-  pars = do
+  pars = 
     (try (skipSpace *> char '(') *> skipSpace *> (Paren <$> pars) <* skipSpace <* char ')')
       <|> try (Value <$> posInteger)
       <|> fail "could not parse numBase"
 
 instance CanParse Base where
-  pars = do
+  pars =
     try (DieOpBase <$> pars)
       <|> try (NBase <$> pars)
       <|> fail "Could not match a base token"
+
+instance CanParse Die where
+  pars = do
+    _ <- char 'd'
+    try (Die <$> pars)
+      <|> CustomDie <$> (try (char '{' *> skipSpace) *> (posInteger >>= (\i -> (i :) <$> many (try (skipSpace *> char ',' *> skipSpace) *> posInteger))) <* skipSpace <* char '}')
+      <|> fail "recursed to die expression and could not find a die"
+
+instance CanParse MultiDie where
+  pars = do
+    t <- optional $ try pars
+    bd <- pars
+    return $ maybe (SingleDie bd) (`MultiDie` bd) t
+
+instance CanParse DieOp where
+  pars = do
+    dop <- DieOpMulti <$> pars
+    parseDieOpHelp dop
 
 parseOrdering :: Parser Ordering
 parseOrdering = (char '<' <|> char '=' <|> char '>') >>= matchO
@@ -426,21 +451,3 @@ parseDieOpHelp :: DieOp -> Parser DieOp
 parseDieOpHelp dop = do
   (try parseDieOpOption >>= parseDieOpHelp . DieOp dop)
     <|> return dop
-
-instance CanParse DieOp where
-  pars = do
-    dop <- DieOpMulti <$> pars
-    parseDieOpHelp dop
-
-instance CanParse MultiDie where
-  pars = do
-    t <- optional $ try pars
-    bd <- pars
-    return $ maybe (SingleDie bd) (`MultiDie` bd) t
-
-instance CanParse Die where
-  pars = do
-    _ <- char 'd'
-    try (Die <$> pars)
-      <|> CustomDie <$> (try (char '{' *> skipSpace) *> (posInteger >>= (\i -> (i :) <$> many (try (skipSpace *> char ',' *> skipSpace) *> posInteger))) <* skipSpace <* char '}')
-      <|> fail "recursed to die expression and could not find a die"
