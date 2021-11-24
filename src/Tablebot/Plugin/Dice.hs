@@ -240,45 +240,80 @@ class Range a where
   range :: a -> [Integer]
   range = toList . range'
   range' :: a -> Set Integer
-
   maxVal :: a -> Integer
-  maxVal = maximum . range
   minVal :: a -> Integer
-  minVal = minimum . range
 
 instance Range Expr where
   range' (Add t e) = S.fromList $ ((+) <$> range t) <*> range e
   range' (Sub t e) = S.fromList $ ((-) <$> range t) <*> range e
   range' (NoExpr t) = range' t
+  maxVal (Add t e) = maxVal t + maxVal e
+  maxVal (Sub t e) = maxVal t - minVal e
+  maxVal (NoExpr t) = maxVal t
+  minVal (Add t e) = minVal t + minVal e
+  minVal (Sub t e) = minVal t - maxVal e
+  minVal (NoExpr t) = minVal t
 
 instance Range Term where
   range' (Multi f t) = S.fromList $ ((*) <$> range f) <*> range t
   range' (Div f t) = S.fromList $ (div <$> range f) <*> filter (/= 0) (range t)
   range' (NoTerm f) = range' f
+  maxVal (Multi f t) = maxVal f * maxVal t
+  maxVal (Div f t) = maxVal f `div` minVal t
+  maxVal (NoTerm f) = maxVal f
+  minVal (Multi f t) = minVal f * minVal t
+  minVal (Div f t) = minVal f `div` maxVal t
+  minVal (NoTerm f) = minVal f
 
 instance Range Func where
   range' (Abs n) = S.fromList $ abs <$> range n
   range' (Id n) = range' n
+  maxVal (Abs n) = max (abs $ maxVal n) (abs $ minVal n)
+  maxVal (Id n) = maxVal n
+  minVal (Abs n) = minimum $ abs <$> range n
+  -- minVal (Abs n) = abs $ minVal n
+  -- TODO: finish Abs min val.
+  minVal (Id n) = minVal n
 
 instance Range Negation where
   range' (Neg expo) = S.fromList $ negate <$> range expo
   range' (NoNeg expo) = range' expo
+  maxVal (NoNeg expo) = maxVal expo
+  maxVal (Neg expo) = negate $ minVal expo
+  minVal (NoNeg expo) = minVal expo
+  minVal (Neg expo) = negate $ maxVal expo
 
 instance Range Expo where
   range' (NoExpo b) = range' b
   range' (Expo b expo) = S.fromList $ ((^) <$> range b) <*> range expo
+  maxVal (NoExpo b) = maxVal b
+  maxVal (Expo b expo) = maxVal b ^ maxVal expo
+  minVal (NoExpo b) = minVal b
+  minVal (Expo b expo) = minVal b ^ minVal expo
 
 instance Range NumBase where
   range' (Value i) = singleton i
   range' (Paren e) = range' e
+  maxVal (Value i) = i
+  maxVal (Paren e) = maxVal e
+  minVal (Value i) = i
+  minVal (Paren e) = minVal e
 
 instance Range Base where
   range' (NBase nb) = range' nb
   range' (DieOpBase dop) = range' dop
+  maxVal (NBase nb) = maxVal nb
+  maxVal (DieOpBase dop) = maxVal dop
+  minVal (NBase nb) = minVal nb
+  minVal (DieOpBase dop) = minVal dop
 
 instance Range Die where
   range' (CustomDie is) = S.fromList is
   range' (Die b) = S.fromList [1 .. (maxVal b)]
+  maxVal (CustomDie is) = maximum is
+  maxVal (Die b) = maxVal b
+  minVal (CustomDie is) = minimum is
+  minVal (Die b) = minVal b
 
 instance Range MultiDie where
   range' (SingleDie d) = range' d
@@ -290,6 +325,11 @@ instance Range MultiDie where
       nbMin = minimum nbRange
       nbMax = maximum nbRange
       nbMin' = max 0 nbMin
+
+  maxVal (SingleDie d) = maxVal d
+  maxVal (MultiDie nb d) = maxVal nb * maxVal d
+  minVal (SingleDie d) = maxVal d
+  minVal (MultiDie nb d) = minVal nb * minVal d
 
 -- TODO: this
 instance Range DieOp where
@@ -383,7 +423,7 @@ instance CanParse Func where
         | otherwise = fail $ "Could not find function with name" ++ unpack s
 
 instance CanParse Negation where
-  pars = 
+  pars =
     try (char '-') *> skipSpace *> (Neg <$> pars)
       <|> NoNeg <$> pars
 
@@ -394,7 +434,7 @@ instance CanParse Expo where
       <|> (return . NoExpo) t
 
 instance CanParse NumBase where
-  pars = 
+  pars =
     (try (skipSpace *> char '(') *> skipSpace *> (Paren <$> pars) <* skipSpace <* char ')')
       <|> try (Value <$> posInteger)
       <|> fail "could not parse numBase"
