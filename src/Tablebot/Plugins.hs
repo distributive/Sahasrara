@@ -38,8 +38,8 @@ plugins =
       compilePlugin quotePlugin,
       compilePlugin reminderPlugin,
       compilePlugin sayPlugin,
-      compilePlugin welcomePlugin,
-      compilePlugin rollPlugin
+      compilePlugin rollPlugin,
+      compilePlugin welcomePlugin
     ]
 
 -- | @addAdministrationPlugin@ is needed to allow the administration plugin to be aware of the list of current plugins
