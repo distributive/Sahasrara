@@ -10,7 +10,7 @@
 module Tablebot.Plugins.Shibe (shibePlugin) where
 
 import Control.Monad.IO.Class (MonadIO (liftIO))
-import Data.Aeson (FromJSON, Object, eitherDecode)
+import Data.Aeson (FromJSON, eitherDecode)
 import Data.Functor ((<&>))
 import Data.Text (Text, pack)
 import GHC.Generics (Generic)
@@ -29,20 +29,16 @@ import Tablebot.Plugin.Types
     plug,
   )
 
--- | @ShibeAPI@ is the basic data type for the JSON object that theShibeAPI returns
+-- | @ShibeAPI@ is the basic data type for the JSON object that the Shibe API returns
 data ShibeAPI = ShibeAPI
-  { breeds :: ![Object],
-    id :: !Text,
-    url :: !Text,
-    width :: !Int,
-    height :: !Int
+  { url :: !Text
   }
   deriving (Show, Generic)
 
 instance FromJSON ShibeAPI
 
 -- | @shibe@ is a command that takes no arguments (using 'noArguments') and
--- replies with an image of a cat. Uses https://shibe.online/ for shibes.
+-- replies with an image of a shibe. Uses https://shibe.online/ for shibe images.
 shibe :: Command
 shibe =
   Command
@@ -67,13 +63,13 @@ getShibeAPI = do
     eitherHead (x : _) = Right x
 
 -- | @getShibe@ is a helper function that turns the Either of @getShibeAPI@
--- into either an error message or the url of the cat image.
+-- into either an error message or the url of the shibe image.
 getShibe :: Either String ShibeAPI -> Text
 getShibe esc = case esc of
   (Left r) -> "no shibe today, sorry :(. (error is `" <> pack r <> "`)"
   (Right r) -> url r
 
--- | @shibeHelp@ has the help text for the cat command
+-- | @shibeHelp@ has the help text for the shibe command
 shibeHelp :: HelpPage
 shibeHelp = HelpPage "shibe" "displays an image of a shibe" "**Shibe**\nGets a random shibe image using <https://shibe.online//>.\n\n*Usage:* `shibe`" [] None
 
