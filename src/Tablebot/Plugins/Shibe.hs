@@ -73,6 +73,6 @@ getShibe esc = case esc of
 shibeHelp :: HelpPage
 shibeHelp = HelpPage "shibe" "displays an image of a shibe" "**Shibe**\nGets a random shibe image using <https://shibe.online//>.\n\n*Usage:* `shibe`" [] None
 
--- | @shibePlugin@ assembles these commands into a plugin containing cat
+-- | @shibePlugin@ assembles these commands into a plugin containing shibe
 shibePlugin :: Plugin
 shibePlugin = (plug "shibe") {commands = [shibe], helpPages = [shibeHelp]}
