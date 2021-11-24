@@ -53,6 +53,7 @@ dependencies:
 - containers
 - th-printf
 - mtl
+- safe
 
 library:
   source-dirs: src

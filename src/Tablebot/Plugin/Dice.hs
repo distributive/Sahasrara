@@ -13,11 +13,13 @@ module Tablebot.Plugin.Dice where
 import Data.Functor ((<&>))
 import Data.List (genericDrop, genericReplicate, genericTake, sortOn)
 import Data.Map.Strict as M (Map, fromList, member, (!))
-import Data.Set as S (Set, fromList, singleton, toList)
+import Data.Maybe (fromMaybe)
+import Data.Set as S (Set, fromList, singleton, toList, unions)
 import Data.Text (pack, unpack)
+import Safe.Foldable (maximumMay, minimumMay)
 import System.Random (Random (randomRIO))
 import Tablebot.Plugin.Exception (BotException (EvaluationException), throwBot)
-import Tablebot.Plugin.Parser (posInteger, skipSpace, word)
+import Tablebot.Plugin.Parser (posInteger, skipSpace, skipSpace1, word)
 import Tablebot.Plugin.Random (chooseOne)
 import Tablebot.Plugin.SmartCommand (CanParse (..), FromString (fromString))
 import Tablebot.Plugin.Types (Parser)
@@ -43,7 +45,7 @@ base die [bdie] {"d" base} {"d{" [0123456789]+ ("," [0123456789]+)* "}"}
 
 -- | The maximum depth that should be permitted. Used to limit number of dice and rerolls.
 maximumRecursion :: Integer
-maximumRecursion = 100
+maximumRecursion = 150
 
 -- TODO: full check over of bounds. make this thing AIR TIGHT.
 
@@ -85,6 +87,14 @@ data Die = Die Base | CustomDie [Integer] deriving (Show, Eq)
 data MultiDie = MultiDie NumBase Die | SingleDie Die
   deriving (Show, Eq)
 
+getDie :: MultiDie -> Die
+getDie (SingleDie d) = d
+getDie (MultiDie _ d) = d
+
+getNumberOfDice :: MultiDie -> NumBase
+getNumberOfDice (SingleDie _) = Value 1
+getNumberOfDice (MultiDie nb _) = nb
+
 -- | The type representing multiple dice or dice being modified by some die op option.
 data DieOp
   = DieOp DieOp DieOpOption
@@ -98,6 +108,11 @@ data DieOpOption
   deriving (Show, Eq)
 
 data LowHighWhere = Low Integer | High Integer | Where Ordering Integer deriving (Show, Eq)
+
+getValueLowHigh :: LowHighWhere -> Maybe Integer
+getValueLowHigh (Low i) = Just i
+getValueLowHigh (High i) = Just i
+getValueLowHigh (Where _ _) = Nothing
 
 data KeepDrop = Keep | Drop deriving (Show, Eq)
 
@@ -140,25 +155,34 @@ instance IOEval Base where
 
 instance IOEval Die where
   eval d@(CustomDie is) = do
-    i <- chooseOne is
-    return [(i, d)]
-  eval d@(Die b) = do
-    upper <- evalSum b
-    if upper < 1
-      then throwBot $ EvaluationException "Cannot roll a < 1 sided die"
+    if length is >= fromIntegral maximumRecursion
+      then throwBot (EvaluationException $ "tried to roll a custom die with more than " ++ show maximumRecursion ++ " sides")
       else do
-        i <- randomRIO (1, upper)
+        i <- chooseOne is
         return [(i, d)]
+  eval d@(Die b) = do
+    if maxVal b >= maximumRecursion
+      then throwBot (EvaluationException $ "tried to roll a die with more than " ++ show maximumRecursion ++ " sides")
+      else do
+        upper <- evalSum b
+        if upper < 1
+          then throwBot $ EvaluationException "Cannot roll a < 1 sided die"
+          else do
+            i <- randomRIO (1, upper)
+            return [(i, d)]
 
 instance IOEval MultiDie where
   eval (SingleDie d) = eval d
   eval (MultiDie nb d) = do
-    i <- evalSum nb
-    if i < 0
-      then throwBot (EvaluationException "tried to give a negative value to the number of dice")
+    if maxVal nb >= maximumRecursion
+      then throwBot (EvaluationException $ "tried to roll more than " ++ show maximumRecursion ++ " dice")
       else do
-        ds <- sequence $ genericReplicate i $ eval d
-        return $ concat ds
+        i <- evalSum nb
+        if i < 0
+          then throwBot (EvaluationException "tried to give a negative value to the number of dice")
+          else do
+            ds <- sequence $ genericReplicate i $ eval d
+            return $ concat ds
 
 instance IOEval DieOp where
   eval (DieOpMulti md) = eval md
@@ -233,8 +257,6 @@ instance IOEval NumBase where
   eval (Value i) = return $ toOutType i
 
 --- Finding the range of an expression.
--- TODO: `DieOp` still needs to be completed
--- it would also be good to have custom maxvals and ranges for everything
 
 class Range a where
   range :: a -> [Integer]
@@ -318,22 +340,80 @@ instance Range Die where
 instance Range MultiDie where
   range' (SingleDie d) = range' d
   range' (MultiDie nb d) = S.fromList $ do
-    i <- [nbMin' .. nbMax]
+    i <- range nb
     foldr (\a b -> ((+) <$> a) <*> b) [0] $ genericReplicate i (range d)
-    where
-      nbRange = range nb
-      nbMin = minimum nbRange
-      nbMax = maximum nbRange
-      nbMin' = max 0 nbMin
 
   maxVal (SingleDie d) = maxVal d
   maxVal (MultiDie nb d) = maxVal nb * maxVal d
   minVal (SingleDie d) = maxVal d
-  minVal (MultiDie nb d) = minVal nb * minVal d
+  minVal (MultiDie nb d) = max 0 (minVal nb) * minVal d
 
--- TODO: this
+-- TODO: check this more
 instance Range DieOp where
   range' (DieOpMulti md) = range' md
+  range' d = S.unions $ fmap foldF counts
+    where
+      (counts, dr) = dieOpVals d
+      foldF' i js
+        | i < 1 = []
+        | i == 1 = js
+        | otherwise = ((+) <$> dr) <*> foldF' (i - 1) js
+      foldF i = S.fromList $ foldF' i dr
+
+  maxVal (DieOpMulti md) = maxVal md
+  maxVal d
+    | mxdr < 0 = fromMaybe 0 (minimumMay counts) * mxdr
+    | otherwise = fromMaybe 0 (maximumMay counts) * mxdr
+    where
+      (counts, dr) = dieOpVals d
+      mxdr = fromMaybe 0 $ maximumMay dr
+
+  minVal (DieOpMulti md) = minVal md
+  minVal d
+    | mndr < 0 = fromMaybe 0 (maximumMay counts) * mndr
+    | otherwise = fromMaybe 0 (minimumMay counts) * mndr
+    where
+      (counts, dr) = dieOpVals d
+      mndr = fromMaybe 0 $ minimumMay dr
+
+type DieRange = [Integer]
+
+applyDieOpVal :: DieOpOption -> ([Integer], DieRange, DieRange) -> ([Integer], DieRange, DieRange)
+applyDieOpVal (Reroll True c l) t@(is, cdr, dr)
+  | any boolF cdr = (is, dr, dr)
+  | otherwise = t
+  where
+    boolF i' = compare i' l == c
+applyDieOpVal (Reroll False c l) t@(is, cdr, dr)
+  | any boolF cdr = (is, filter (not . boolF) dr, dr)
+  | otherwise = t
+  where
+    boolF i' = compare i' l == c
+applyDieOpVal (DieOpOptionKD _ (Where o i)) (is, cdr, dr)
+  | any boolF cdr = ([0 .. maximum is], filter (not . boolF) cdr, dr)
+  | otherwise = (is, cdr, dr)
+  where
+    boolF i' = compare i' i == o
+applyDieOpVal (DieOpOptionKD Keep lh) (is, cdr, dr) = (fmap (f (getValueLowHigh lh)) is, cdr, dr)
+  where
+    f (Just i) i' = min i i'
+    f Nothing i' = i'
+applyDieOpVal (DieOpOptionKD Drop lh) (is, cdr, dr) = (fmap (f (getValueLowHigh lh)) is, cdr, dr)
+  where
+    f (Just i) i' = max 0 (i' - i)
+    f Nothing i' = i'
+
+dieOpVals :: DieOp -> ([Integer], DieRange)
+dieOpVals dop = (filter (>= 0) counts, dr)
+  where
+    (counts, dr, _) = dieOpVals' dop
+
+dieOpVals' :: DieOp -> ([Integer], DieRange, DieRange)
+dieOpVals' (DieOpMulti md) = (numberOfDiceRange, dieVals, range (getDie md))
+  where
+    dieVals = range (getDie md)
+    numberOfDiceRange = range (getNumberOfDice md)
+dieOpVals' (DieOp dop doo) = applyDieOpVal doo (dieOpVals' dop)
 
 --- Pretty printing the AST
 -- The output from this should be parseable
@@ -352,6 +432,7 @@ instance PrettyShow Term where
   prettyShow (NoTerm f) = prettyShow f
 
 instance PrettyShow Func where
+  prettyShow (Id n) = prettyShow n
   prettyShow f = s <> " " <> prettyShow n
     where
       (s, n) = functionDetails f
@@ -413,14 +494,14 @@ instance CanParse Term where
 
 instance CanParse Func where
   pars = do
-    funcName <- optional $ try (pack <$> word) <* skipSpace
+    funcName <- optional $ try ((pack <$> word) <* skipSpace1)
     t <- pars
     matchFuncName funcName t
     where
       matchFuncName Nothing t = return $ Id t
       matchFuncName (Just s) t
         | unpack s `member` supportedFunctions = (return . fst (supportedFunctions M.! unpack s)) t
-        | otherwise = fail $ "Could not find function with name" ++ unpack s
+        | otherwise = fail $ "Could not find function with name `" ++ unpack s ++ "`"
 
 instance CanParse Negation where
   pars =
