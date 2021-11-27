@@ -16,7 +16,11 @@ module Tablebot.Handler.Command
   )
 where
 
+import qualified Data.List.NonEmpty as NE
+import Data.Set (singleton, toList)
 import Data.Text (Text, isPrefixOf)
+import Data.Void (Void)
+import Debug.Trace (traceShowId)
 import Discord.Types (Message (messageText))
 import Tablebot.Handler.Plugins (changeAction)
 import Tablebot.Handler.Types
@@ -46,7 +50,7 @@ parseNewMessage pl prefix m =
 parseCommands :: [CompiledCommand] -> Message -> Text -> CompiledDatabaseDiscord ()
 parseCommands cs m prefix = case parse (parser cs) "" (messageText m) of
   Right p -> p m
-  Left e -> changeAction () . sendEmbedMessage m "" $ embedError $ ParserException $ "```\n" ++ errorBundlePretty e ++ "```"
+  Left e -> changeAction () . sendEmbedMessage m "" $ embedError $ ParserException $ "```\n" ++ errorBundlePretty (makeBundleReadable e) ++ "```"
   where
     parser :: [CompiledCommand] -> Parser (Message -> CompiledDatabaseDiscord ())
     parser cs' =
@@ -56,6 +60,41 @@ parseCommands cs m prefix = case parse (parser cs) "" (messageText m) of
         <|> pure (\_ -> pure ())
     toErroringParser :: CompiledCommand -> Parser (Message -> CompiledDatabaseDiscord ())
     toErroringParser c = try (chunk $ commandName c) *> (skipSpace1 <|> eof) *> (try (choice $ map toErroringParser $ commandSubcommands c) <|> commandParser c)
+
+data ReadableError = UnknownError | KnownError String [String]
+  deriving (Show, Eq, Ord)
+
+instance ShowErrorComponent ReadableError where
+  showErrorComponent UnknownError = "Unknown error!"
+  showErrorComponent (KnownError l possibles) =
+    l <> ending
+    where
+      ending = if null possibles then "" else "\nMaybe you meant one of: " <> commaSep possibles
+      commaSep :: [String] -> String
+      commaSep [] = ""
+      commaSep [x] = x <> "."
+      commaSep [x, y] = x <> " or " <> y
+      commaSep (x : xs) = x <> ", " <> commaSep xs
+
+makeBundleReadable :: ParseErrorBundle Text Void -> ParseErrorBundle Text ReadableError
+makeBundleReadable (ParseErrorBundle errs state) = ParseErrorBundle (NE.map makeReadable errs) state
+
+-- | Transform our errors into more useful ones.
+-- This uses the Label hidden within each error to build an error message,
+-- as we have used labels to give parsers user-facing errors.
+makeReadable :: ParseError Text Void -> ParseError Text ReadableError
+makeReadable (TrivialError i _ good) =
+  let (lab, others) = getLabel (toList good)
+   in case lab of
+        Just l -> FancyError i . singleton . ErrorCustom $ KnownError l others
+        Nothing -> FancyError i . singleton $ ErrorCustom UnknownError
+  where
+    getLabel :: [ErrorItem (Token Text)] -> (Maybe String, [String])
+    getLabel [] = (Nothing, [])
+    getLabel ((Tokens nel) : xs) = (Nothing, [NE.toList nel]) <> getLabel xs
+    getLabel ((Label ls) : xs) = (Just (NE.toList ls), []) <> getLabel xs
+    getLabel (EndOfInput : xs) = (Nothing, ["no more input"]) <> getLabel xs
+makeReadable e = mapParseError (const UnknownError) e
 
 -- | Given a list of 'InlineCommand' @cs@ and a message @m@, run each inline
 -- command's parser on the message text until one succeeds. Errors are not sent
