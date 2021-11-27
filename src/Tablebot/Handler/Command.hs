@@ -73,7 +73,7 @@ instance ShowErrorComponent ReadableError where
       commaSep :: [String] -> String
       commaSep [] = ""
       commaSep [x] = x <> "."
-      commaSep [x, y] = x <> " or " <> y
+      commaSep [x, y] = x <> " or " <> y <> "."
       commaSep (x : xs) = x <> ", " <> commaSep xs
 
 makeBundleReadable :: ParseErrorBundle Text Void -> ParseErrorBundle Text ReadableError
