@@ -22,8 +22,8 @@ rollDice = Command "roll" diceComm []
   where
     rollDice' :: Expr -> Message -> DatabaseDiscord ()
     rollDice' e m = do
-      v <- liftIO $ evalExpr e
-      sendMessage m $ pack $ "You rolled `" ++ prettyShow e ++ "`.\nOutput: " ++ show v
+      (v, s) <- liftIO $ evalExpr e
+      sendMessage m $ pack $ "You rolled " ++ s ++ ".\nOutput: " ++ show v
     diceComm = parseComm rollDice'
 
 -- TODO: help page

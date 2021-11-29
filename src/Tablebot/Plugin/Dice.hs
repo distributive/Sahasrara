@@ -8,12 +8,15 @@
 --
 -- This plugin contains the neccessary parsers and stucture to get the AST for an
 -- expression that contains dice
-module Tablebot.Plugin.Dice where
+module Tablebot.Plugin.Dice (evalExpr, Expr, PrettyShow (..)) where
 
+import Control.Monad.Exception (MonadException)
 import Data.Functor ((<&>))
-import Data.List (genericDrop, genericReplicate, genericTake, sortOn)
-import Data.Map.Strict as M (Map, fromList, member, (!))
-import Data.Maybe (fromMaybe)
+import Data.List (genericDrop, genericReplicate, genericTake, sortBy)
+import Data.List.NonEmpty (NonEmpty, (<|))
+import Data.List.NonEmpty qualified as NE
+import Data.Map as M (Map, findWithDefault, fromList, map, member, (!))
+import Data.Maybe (fromMaybe, isNothing)
 import Data.Set as S (Set, fromList, singleton, toList, unions)
 import Data.Text (pack, unpack)
 import Safe.Foldable (maximumMay, minimumMay)
@@ -114,10 +117,19 @@ getValueLowHigh (Low i) = Just i
 getValueLowHigh (High i) = Just i
 getValueLowHigh (Where _ _) = Nothing
 
+isLow :: LowHighWhere -> Bool
+isLow (Low _) = True
+isLow _ = False
+
+isHigh :: LowHighWhere -> Bool
+isHigh (High _) = True
+isHigh _ = False
+
 data KeepDrop = Keep | Drop deriving (Show, Eq)
 
 -- Mappings for what functions are supported
-
+-- TODO: come up with a way that this can be used with function details so less has to be
+-- repeated
 supportedFunctions :: Map String (Negation -> Func, Integer -> Integer)
 supportedFunctions =
   M.fromList
@@ -125,136 +137,226 @@ supportedFunctions =
       ("id", (Id, id))
     ]
 
+getFunc :: MonadException m => String -> m (Negation -> Func, Integer -> Integer)
+getFunc s = M.findWithDefault (throwBot $ EvaluationException $ "could not find function `" ++ s ++ "`") s (M.map return supportedFunctions)
+
 functionDetails :: Func -> (String, Negation)
 functionDetails (Id a) = ("id", a)
 functionDetails (Abs a) = ("abs", a)
 
 --- Evaluating an expression. Uses IO because dice are random
 
-evalExpr :: Expr -> IO Integer
-evalExpr a = sumDiceVals <$> eval a
-
-sumDiceVals :: [(Integer, a)] -> Integer
-sumDiceVals = foldr (\(i, _) b -> i + b) 0
-
-toOutType :: Integer -> [(Integer, Die)]
-toOutType i = [(i, CustomDie [])]
+evalExpr :: Expr -> IO (Integer, String)
+evalExpr = evalShow
 
 -- TODO: make eval's type evalSum's type, and add a function that builds an output string
 --  representing the change
+
+dieShow :: (PrettyShow a, MonadException m) => (Integer, Integer) -> a -> [(Integer, Maybe Bool)] -> m String
+dieShow _ _ [] = throwBot $ EvaluationException "tried to show empty set of results"
+dieShow (lc, hc) d ls = return $ prettyShow d ++ " [" ++ foldl1 (\rst n -> rst ++ ", " ++ n) adjustList ++ "]"
+  where
+    toCrit i
+      | i == lc || i == hc = "**" ++ show i ++ "**"
+      | otherwise = show i
+    toCrossedOut (i,Just False) = "~~" ++ toCrit i ++ "~~"
+    toCrossedOut (i,Just True) = "~~__" ++ toCrit i ++ "__~~"
+    toCrossedOut (i,_) = toCrit i
+    adjustList = fmap toCrossedOut ls
+
 class IOEval a where
-  eval :: a -> IO [(Integer, Die)]
-  evalSum :: a -> IO Integer
-  evalSum a = sumDiceVals <$> eval a
+  evalShow :: a -> IO (Integer, String)
 
 instance IOEval Base where
-  eval (NBase nb) = eval nb
-  eval (DieOpBase dop) = do
-    is <- eval dop
-    return [(sumDiceVals is, CustomDie [])]
+  evalShow (NBase nb) = evalShow nb
+  evalShow (DieOpBase dop) = evalShow dop
 
 instance IOEval Die where
-  eval d@(CustomDie is) = do
+  evalShow d@(CustomDie is) = do
     if length is >= fromIntegral maximumRecursion
       then throwBot (EvaluationException $ "tried to roll a custom die with more than " ++ show maximumRecursion ++ " sides")
       else do
         i <- chooseOne is
-        return [(i, d)]
-  eval d@(Die b) = do
-    if maxVal b >= maximumRecursion
+        ds <- dieShow (minimum is, maximum is) d [(i, Nothing)]
+        return (i, ds)
+  evalShow d@(Die b) = do
+    (bound, _) <- evalShow b
+    if bound >= maximumRecursion
       then throwBot (EvaluationException $ "tried to roll a die with more than " ++ show maximumRecursion ++ " sides")
       else do
-        upper <- evalSum b
-        if upper < 1
-          then throwBot $ EvaluationException "Cannot roll a < 1 sided die"
+        if bound < 1
+          then throwBot $ EvaluationException $ "Cannot roll a < 1 sided die (`" ++ prettyShow b ++ "`)"
           else do
-            i <- randomRIO (1, upper)
-            return [(i, d)]
+            i <- randomRIO (1, bound)
+            ds <- dieShow (1, maxVal b) d [(i, Nothing)]
+            return (i, ds)
 
 instance IOEval MultiDie where
-  eval (SingleDie d) = eval d
-  eval (MultiDie nb d) = do
-    if maxVal nb >= maximumRecursion
+  evalShow (SingleDie d) = evalShow d
+  evalShow md@(MultiDie nb d) = do
+    (dieNum, _) <- evalShow nb
+    if dieNum >= maximumRecursion
       then throwBot (EvaluationException $ "tried to roll more than " ++ show maximumRecursion ++ " dice")
       else do
-        i <- evalSum nb
-        if i < 0
+        if dieNum < 0
           then throwBot (EvaluationException "tried to give a negative value to the number of dice")
           else do
-            ds <- sequence $ genericReplicate i $ eval d
-            return $ concat ds
+            ds <- sequence $ genericReplicate dieNum $ fst <$> evalShow d
+            dieshow <- dieShow (minVal d, maxVal d) md (fmap (,Nothing) ds)
+            return (sum ds, dieshow)
 
 instance IOEval DieOp where
-  eval (DieOpMulti md) = eval md
-  eval (DieOp dop dopo) = do
-    dop' <- eval dop
-    evalDieOp dopo dop'
+  evalShow dop = do
+    (lst,rng) <- evalDieOp dop
+    let vs = fromEvalDieOpList lst
+    s <- dieShow (minimum rng, maximum rng) dop vs
+    return (sum (fst <$> filter (isNothing . snd) vs), s)
+  -- evalShow (DieOpMulti md) = evalShow md
 
-evalDieOp :: DieOpOption -> [(Integer, Die)] -> IO [(Integer, Die)]
-evalDieOp (DieOpOptionKD kd lhw) is = return (evalDieOpHelpKD kd lhw is)
-evalDieOp r@(Reroll once o i) is = do
-  if once
-    then mapM rerollOnceF is
-    else do
-      let dierange = fmap (\(i', d) -> (i', d, filter (\i'' -> compare i'' i /= o) (range d))) is
-      if any (\(_, _, x) -> null x) dierange
-        then throwBot (EvaluationException $ "Infinite reroll request out of bounds (" ++ show r ++ ")")
-        else mapM (\(i', d, lst) -> if compare i' i == o then chooseOne lst >>= \i'' -> return (i'', d) else return (i', d)) dierange
+--   eval (DieOpMulti md) = eval md
+--   eval (DieOp dop dopo) = do
+--     dop' <- eval dop
+--     evalDieOp dopo dop'
+
+-- evalDieOp :: DieOpOption -> [(Integer, Die)] -> IO [(Integer, Die)]
+-- evalDieOp (DieOpOptionKD kd lhw) is = return (evalDieOpHelpKD kd lhw is)
+-- evalDieOp r@(Reroll once o i) is = do
+--   if once
+--     then mapM rerollOnceF is
+--     else do
+--       let dierange = fmap (\(i', d) -> (i', d, filter (\i'' -> compare i'' i /= o) (range d))) is
+--       if any (\(_, _, x) -> null x) dierange
+--         then throwBot (EvaluationException $ "Infinite reroll request out of bounds (" ++ show r ++ ")")
+--         else mapM (\(i', d, lst) -> if compare i' i == o then chooseOne lst >>= \i'' -> return (i'', d) else return (i', d)) dierange
+--   where
+--     rerollOnceF g@(i', d) =
+--       if compare i' i == o
+--         then do
+--           val <- eval d
+--           if null val
+--             then fail "could not get die value (reroll)"
+--             else return $ head val
+--         else return g
+
+-- evalDieOpHelpKD :: KeepDrop -> LowHighWhere -> [(Integer, Die)] -> [(Integer, Die)]
+-- evalDieOpHelpKD Keep (Where cmp i) = filter (\(i', _) -> compare i' i == cmp)
+-- evalDieOpHelpKD Drop (Where cmp i) = filter (\(i', _) -> compare i' i /= cmp)
+-- evalDieOpHelpKD Keep (Low i) = genericTake i . sortOn fst
+-- evalDieOpHelpKD Drop (Low i) = genericDrop i . sortOn fst
+-- evalDieOpHelpKD Keep (High i) = genericTake i . sortOn (negate . fst)
+-- evalDieOpHelpKD Drop (High i) = genericDrop i . sortOn (negate . fst)
+
+-- the bool is false if it has been dropped
+-- true if it's still in
+
+-- getUndropped :: [(NonEmpty Integer, Bool)] -> [(NonEmpty Integer, Bool)]
+-- getUndropped = filter snd
+-- getDropped :: [(NonEmpty Integer, Bool)] -> [(NonEmpty Integer, Bool)]
+-- getDropped = filter (not.snd)
+
+fromEvalDieOpList :: [(NonEmpty Integer, Bool)] -> [(Integer, Maybe Bool)]
+fromEvalDieOpList = foldr foldF []
+  where foldF (is, b) lst = let is' =(,Just False) <$> NE.tail is in (NE.head is,) (if b then Nothing else Just True) : is' ++  lst
+
+evalDieOp :: DieOp -> IO ([(NonEmpty Integer, Bool)], [Integer])
+evalDieOp (DieOpMulti md) = do
+  (nbDice,_) <- evalShow (getNumberOfDice md)
+  rolls <- mapM (\d ->  evalShow d <&> fst) (genericReplicate nbDice (getDie md))
+  return (fmap (\i -> (i NE.:| [],True)) rolls,range $ getDie md)
+evalDieOp (DieOp dop dopo) = do
+  (vs,rng) <- evalDieOp dop
+  rs <- evalDieOp' dopo rng vs
+  return (rs, rng)
+
+evalDieOp' :: DieOpOption -> [Integer] -> [(NonEmpty Integer, Bool)] -> IO [(NonEmpty Integer, Bool)]
+evalDieOp' (DieOpOptionKD kd lhw) _ is = return $ evalDieOpHelpKD kd lhw is
+evalDieOp' (Reroll once o i) rng is = mapM rerollF is
   where
-    rerollOnceF g@(i', d) =
-      if compare i' i == o
+    rerollF g@(i', b) =
+      if b && compare (NE.head i') i == o
         then do
-          val <- eval d
-          if null val
-            then fail "could not get die value (reroll)"
-            else return $ head val
+          v <- chooseOne rerollRange
+          return (v <| i', b)
         else return g
+    rerollRange = if not once then filter (\i' -> not $ o == compare i' i) rng else rng
 
-evalDieOpHelpKD :: KeepDrop -> LowHighWhere -> [(Integer, Die)] -> [(Integer, Die)]
-evalDieOpHelpKD Keep (Where cmp i) = filter (\(i', _) -> compare i' i == cmp)
-evalDieOpHelpKD Drop (Where cmp i) = filter (\(i', _) -> compare i' i /= cmp)
-evalDieOpHelpKD Keep (Low i) = genericTake i . sortOn fst
-evalDieOpHelpKD Drop (Low i) = genericDrop i . sortOn fst
-evalDieOpHelpKD Keep (High i) = genericTake i . sortOn (negate . fst)
-evalDieOpHelpKD Drop (High i) = genericDrop i . sortOn (negate . fst)
+separateKeptDropped :: [(NonEmpty Integer, Bool)] -> ([(NonEmpty Integer, Bool)], [(NonEmpty Integer, Bool)])
+separateKeptDropped = foldr f ([], [])
+  where
+    f a@(_, True) (kept, dropped) = (a : kept, dropped)
+    f a@(_, False) (kept, dropped) = (kept, a : dropped)
 
---- Pure evaluation functions for non-dice calculations
--- Was previously its own type class that wouldn't work for evaluating Base values.
+setToDropped :: [(NonEmpty Integer, Bool)] -> [(NonEmpty Integer, Bool)]
+setToDropped = fmap (\(is, _) -> (is, False))
+
+evalDieOpHelpKD :: KeepDrop -> LowHighWhere -> [(NonEmpty Integer, Bool)] -> [(NonEmpty Integer, Bool)]
+evalDieOpHelpKD Keep (Where cmp i) is = fmap (\(iis, b) -> (iis, b && compare (NE.head iis) i == cmp)) is
+evalDieOpHelpKD Drop (Where cmp i) is = fmap (\(iis, b) -> (iis, b && compare (NE.head iis) i /= cmp)) is
+evalDieOpHelpKD kd lh is = d ++ setToDropped (getDrop i sk) ++ getKeep i sk
+  where
+    (k, d) = separateKeptDropped is
+    order l l' = if isLow lh then compare l l' else compare l' l
+    sk = sortBy order k
+    i = fromMaybe 0 (getValueLowHigh lh)
+    (getDrop, getKeep) = if kd == Keep then (genericDrop, genericTake) else (genericTake, genericDrop)
+
+-- --- Pure evaluation functions for non-dice calculations
+-- -- Was previously its own type class that wouldn't work for evaluating Base values.
 instance IOEval Expr where
-  eval (NoExpr t) = eval t
-  eval (Add t e) = toOutType <$> (((+) <$> evalSum t) <*> evalSum e)
-  eval (Sub t e) = toOutType <$> (((-) <$> evalSum t) <*> evalSum e)
+  evalShow (NoExpr t) = evalShow t
+  evalShow (Add t e) = do
+    (t', t's) <- evalShow t
+    (e', e's) <- evalShow e
+    return (t' + e', t's ++ " + " ++ e's)
+  evalShow (Sub t e) = do
+    (t', t's) <- evalShow t
+    (e', e's) <- evalShow e
+    return (t' - e', t's ++ " - " ++ e's)
 
 instance IOEval Term where
-  eval (NoTerm f) = eval f
-  eval (Multi f t) = toOutType <$> (((*) <$> evalSum f) <*> evalSum t)
-  eval (Div f t) = do
-    f' <- evalSum f
-    t' <- evalSum t
-    if t' == 0
+  evalShow (NoTerm f) = evalShow f
+  evalShow (Multi f t) = do
+    (f', f's) <- evalShow f
+    (t', t's) <- evalShow t
+    return (f' * t', f's ++ " * " ++ t's)
+  evalShow (Div f t) = do
+    (f', f's) <- evalShow f
+    (t', t's) <- evalShow t
+    if t' == 0 -- TODO: check and make sure this bound check is correct
       then throwBot (EvaluationException "division by zero")
-      else return $ toOutType $ div f' t'
+      else return (div f' t', f's ++ " / " ++ t's)
 
 instance IOEval Func where
-  eval (Id neg) = eval neg
-  eval (Abs neg) = toOutType . abs <$> evalSum neg
+  evalShow (Id neg) = evalShow neg
+  evalShow func = do
+    let (fname, n) = functionDetails func
+    (n', n's) <- evalShow n
+    (_, f) <- getFunc fname
+    return (f n', fname ++ " " ++ n's)
+
+-- evalShow (Abs neg) = toOutType . abs <$> evalSum neg
 
 instance IOEval Negation where
-  eval (Neg expo) = toOutType . negate <$> evalSum expo
-  eval (NoNeg expo) = eval expo
+  evalShow (Neg expo) = do
+    (expo', expo's) <- evalShow expo
+    return (negate expo', "-" ++ expo's)
+  evalShow (NoNeg expo) = evalShow expo
 
 instance IOEval Expo where
-  eval (NoExpo b) = eval b
-  eval (Expo b expo) = do
-    b' <- evalSum b
-    expo' <- evalSum expo
-    if expo' < 0
-      then throwBot (EvaluationException "negative exponent")
-      else return $ toOutType $ b' ^ expo'
+  evalShow (NoExpo b) = evalShow b
+  evalShow (Expo b expo) =
+    if minVal expo < 0
+      then throwBot (EvaluationException "the exponent is either negative or can be negative")
+      else do
+        (b', b's) <- evalShow b
+        (expo', expo's) <- evalShow expo
+        return (b' ^ expo', b's ++ " ^ " ++ expo's)
 
 instance IOEval NumBase where
-  eval (Paren e) = eval e
-  eval (Value i) = return $ toOutType i
+  evalShow (Paren e) = do
+    (r, s) <- evalShow e
+    return (r, "(" ++ s ++ ")")
+  evalShow (Value i) = return (i, show i)
 
 --- Finding the range of an expression.
 
@@ -335,7 +437,7 @@ instance Range Die where
   maxVal (CustomDie is) = maximum is
   maxVal (Die b) = maxVal b
   minVal (CustomDie is) = minimum is
-  minVal (Die b) = minVal b
+  minVal (Die _) = 1
 
 instance Range MultiDie where
   range' (SingleDie d) = range' d
@@ -423,7 +525,7 @@ class PrettyShow a where
 
 instance PrettyShow Expr where
   prettyShow (Add t e) = prettyShow t <> " + " <> prettyShow e
-  prettyShow (Sub t e) = prettyShow t <> " + " <> prettyShow e
+  prettyShow (Sub t e) = prettyShow t <> " - " <> prettyShow e
   prettyShow (NoExpr t) = prettyShow t
 
 instance PrettyShow Term where
@@ -443,7 +545,7 @@ instance PrettyShow Negation where
 
 instance PrettyShow Expo where
   prettyShow (NoExpo b) = prettyShow b
-  prettyShow (Expo b expo) = prettyShow b <> "^" <> prettyShow expo
+  prettyShow (Expo b expo) = prettyShow b <> " ^ " <> prettyShow expo
 
 instance PrettyShow NumBase where
   prettyShow (Paren e) = "(" <> prettyShow e <> ")"
@@ -501,7 +603,7 @@ instance CanParse Func where
       matchFuncName Nothing t = return $ Id t
       matchFuncName (Just s) t
         | unpack s `member` supportedFunctions = (return . fst (supportedFunctions M.! unpack s)) t
-        | otherwise = fail $ "Could not find function with name `" ++ unpack s ++ "`"
+        | otherwise = fail $ "could not find function with name `" ++ unpack s ++ "`"
 
 instance CanParse Negation where
   pars =
