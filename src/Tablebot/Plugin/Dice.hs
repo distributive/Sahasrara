@@ -210,7 +210,7 @@ instance IOEval DieOp where
 fromEvalDieOpList :: [(NonEmpty Integer, Bool)] -> [(Integer, Maybe Bool)]
 fromEvalDieOpList = foldr foldF []
   where
-    foldF (is, b) lst = let is' = (,Just False) <$> NE.tail is in (NE.head is,if b then Nothing else Just True) : is' ++ lst
+    foldF (is, b) lst = let is' = (,Just False) <$> NE.tail is in (NE.head is, if b then Nothing else Just True) : is' ++ lst
 
 evalDieOp :: DieOp -> IO ([(NonEmpty Integer, Bool)], [Integer])
 evalDieOp (DieOpMulti md) = do
