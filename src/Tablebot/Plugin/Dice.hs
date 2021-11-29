@@ -14,7 +14,7 @@ import Control.Monad.Exception (MonadException)
 import Data.Functor ((<&>))
 import Data.List (genericDrop, genericReplicate, genericTake, sortBy)
 import Data.List.NonEmpty (NonEmpty, (<|))
-import Data.List.NonEmpty qualified as NE
+import qualified Data.List.NonEmpty as NE
 import Data.Map as M (Map, findWithDefault, fromList, map, member, (!))
 import Data.Maybe (fromMaybe, isNothing)
 import Data.Set as S (Set, fromList, singleton, toList, unions)
@@ -43,8 +43,6 @@ brackets, integer, dice [base] {"(" expr ")"} {[0123456789]+} {dieops}
 multiple dice [mdie] {[0123456789]+ bdie}
 base die [bdie] {"d" base} {"d{" [0123456789]+ ("," [0123456789]+)* "}"}
 -}
-
--- TODO: make this do something
 
 -- | The maximum depth that should be permitted. Used to limit number of dice and rerolls.
 maximumRecursion :: Integer
@@ -149,9 +147,6 @@ functionDetails (Abs a) = ("abs", a)
 evalExpr :: Expr -> IO (Integer, String)
 evalExpr = evalShow
 
--- TODO: make eval's type evalSum's type, and add a function that builds an output string
---  representing the change
-
 dieShow :: (PrettyShow a, MonadException m) => (Integer, Integer) -> a -> [(Integer, Maybe Bool)] -> m String
 dieShow _ _ [] = throwBot $ EvaluationException "tried to show empty set of results"
 dieShow (lc, hc) d ls = return $ prettyShow d ++ " [" ++ foldl1 (\rst n -> rst ++ ", " ++ n) adjustList ++ "]"
@@ -159,9 +154,9 @@ dieShow (lc, hc) d ls = return $ prettyShow d ++ " [" ++ foldl1 (\rst n -> rst +
     toCrit i
       | i == lc || i == hc = "**" ++ show i ++ "**"
       | otherwise = show i
-    toCrossedOut (i,Just False) = "~~" ++ toCrit i ++ "~~"
-    toCrossedOut (i,Just True) = "~~__" ++ toCrit i ++ "__~~"
-    toCrossedOut (i,_) = toCrit i
+    toCrossedOut (i, Just False) = "~~" ++ toCrit i ++ "~~"
+    toCrossedOut (i, Just True) = "~~__" ++ toCrit i ++ "__~~"
+    toCrossedOut (i, _) = toCrit i
     adjustList = fmap toCrossedOut ls
 
 class IOEval a where
@@ -207,64 +202,23 @@ instance IOEval MultiDie where
 
 instance IOEval DieOp where
   evalShow dop = do
-    (lst,rng) <- evalDieOp dop
+    (lst, rng) <- evalDieOp dop
     let vs = fromEvalDieOpList lst
     s <- dieShow (minimum rng, maximum rng) dop vs
     return (sum (fst <$> filter (isNothing . snd) vs), s)
-  -- evalShow (DieOpMulti md) = evalShow md
-
---   eval (DieOpMulti md) = eval md
---   eval (DieOp dop dopo) = do
---     dop' <- eval dop
---     evalDieOp dopo dop'
-
--- evalDieOp :: DieOpOption -> [(Integer, Die)] -> IO [(Integer, Die)]
--- evalDieOp (DieOpOptionKD kd lhw) is = return (evalDieOpHelpKD kd lhw is)
--- evalDieOp r@(Reroll once o i) is = do
---   if once
---     then mapM rerollOnceF is
---     else do
---       let dierange = fmap (\(i', d) -> (i', d, filter (\i'' -> compare i'' i /= o) (range d))) is
---       if any (\(_, _, x) -> null x) dierange
---         then throwBot (EvaluationException $ "Infinite reroll request out of bounds (" ++ show r ++ ")")
---         else mapM (\(i', d, lst) -> if compare i' i == o then chooseOne lst >>= \i'' -> return (i'', d) else return (i', d)) dierange
---   where
---     rerollOnceF g@(i', d) =
---       if compare i' i == o
---         then do
---           val <- eval d
---           if null val
---             then fail "could not get die value (reroll)"
---             else return $ head val
---         else return g
-
--- evalDieOpHelpKD :: KeepDrop -> LowHighWhere -> [(Integer, Die)] -> [(Integer, Die)]
--- evalDieOpHelpKD Keep (Where cmp i) = filter (\(i', _) -> compare i' i == cmp)
--- evalDieOpHelpKD Drop (Where cmp i) = filter (\(i', _) -> compare i' i /= cmp)
--- evalDieOpHelpKD Keep (Low i) = genericTake i . sortOn fst
--- evalDieOpHelpKD Drop (Low i) = genericDrop i . sortOn fst
--- evalDieOpHelpKD Keep (High i) = genericTake i . sortOn (negate . fst)
--- evalDieOpHelpKD Drop (High i) = genericDrop i . sortOn (negate . fst)
-
--- the bool is false if it has been dropped
--- true if it's still in
-
--- getUndropped :: [(NonEmpty Integer, Bool)] -> [(NonEmpty Integer, Bool)]
--- getUndropped = filter snd
--- getDropped :: [(NonEmpty Integer, Bool)] -> [(NonEmpty Integer, Bool)]
--- getDropped = filter (not.snd)
 
 fromEvalDieOpList :: [(NonEmpty Integer, Bool)] -> [(Integer, Maybe Bool)]
 fromEvalDieOpList = foldr foldF []
-  where foldF (is, b) lst = let is' =(,Just False) <$> NE.tail is in (NE.head is,) (if b then Nothing else Just True) : is' ++  lst
+  where
+    foldF (is, b) lst = let is' = (,Just False) <$> NE.tail is in (NE.head is,if b then Nothing else Just True) : is' ++ lst
 
 evalDieOp :: DieOp -> IO ([(NonEmpty Integer, Bool)], [Integer])
 evalDieOp (DieOpMulti md) = do
-  (nbDice,_) <- evalShow (getNumberOfDice md)
-  rolls <- mapM (\d ->  evalShow d <&> fst) (genericReplicate nbDice (getDie md))
-  return (fmap (\i -> (i NE.:| [],True)) rolls,range $ getDie md)
+  (nbDice, _) <- evalShow (getNumberOfDice md)
+  rolls <- mapM (\d -> evalShow d <&> fst) (genericReplicate nbDice (getDie md))
+  return (fmap (\i -> (i NE.:| [], True)) rolls, range $ getDie md)
 evalDieOp (DieOp dop dopo) = do
-  (vs,rng) <- evalDieOp dop
+  (vs, rng) <- evalDieOp dop
   rs <- evalDieOp' dopo rng vs
   return (rs, rng)
 
@@ -289,6 +243,7 @@ separateKeptDropped = foldr f ([], [])
 setToDropped :: [(NonEmpty Integer, Bool)] -> [(NonEmpty Integer, Bool)]
 setToDropped = fmap (\(is, _) -> (is, False))
 
+-- TODO: make the keep/drop on low/high not require a sort somehow, or if it does to not change the output order of the values
 evalDieOpHelpKD :: KeepDrop -> LowHighWhere -> [(NonEmpty Integer, Bool)] -> [(NonEmpty Integer, Bool)]
 evalDieOpHelpKD Keep (Where cmp i) is = fmap (\(iis, b) -> (iis, b && compare (NE.head iis) i == cmp)) is
 evalDieOpHelpKD Drop (Where cmp i) is = fmap (\(iis, b) -> (iis, b && compare (NE.head iis) i /= cmp)) is
@@ -300,8 +255,8 @@ evalDieOpHelpKD kd lh is = d ++ setToDropped (getDrop i sk) ++ getKeep i sk
     i = fromMaybe 0 (getValueLowHigh lh)
     (getDrop, getKeep) = if kd == Keep then (genericDrop, genericTake) else (genericTake, genericDrop)
 
--- --- Pure evaluation functions for non-dice calculations
--- -- Was previously its own type class that wouldn't work for evaluating Base values.
+--- Pure evaluation functions for non-dice calculations
+-- Was previously its own type class that wouldn't work for evaluating Base values.
 instance IOEval Expr where
   evalShow (NoExpr t) = evalShow t
   evalShow (Add t e) = do
