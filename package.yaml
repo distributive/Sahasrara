@@ -79,6 +79,7 @@ library:
   - MultiWayIf
   - TupleSections
   - ConstraintKinds 
+  - ImportQualifiedPost
   ghc-options:
   - -Wall
 

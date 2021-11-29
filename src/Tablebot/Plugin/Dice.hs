@@ -14,7 +14,7 @@ import Control.Monad.Exception (MonadException)
 import Data.Functor ((<&>))
 import Data.List (genericDrop, genericReplicate, genericTake, sortBy)
 import Data.List.NonEmpty (NonEmpty, (<|))
-import qualified Data.List.NonEmpty as NE
+import Data.List.NonEmpty qualified as NE
 import Data.Map as M (Map, findWithDefault, fromList, map, member, (!))
 import Data.Maybe (fromMaybe, isNothing)
 import Data.Set as S (Set, fromList, singleton, toList, unions)
@@ -60,7 +60,7 @@ data Term = Multi Func Term | Div Func Term | NoTerm Func
   deriving (Show, Eq)
 
 -- | The type representing a single function application on a negated item.
-data Func = Id Negation | Abs Negation
+data Func = Func String Negation
   deriving (Show, Eq)
 
 -- | The type representing a possibly negated value.
@@ -128,19 +128,18 @@ data KeepDrop = Keep | Drop deriving (Show, Eq)
 -- Mappings for what functions are supported
 -- TODO: come up with a way that this can be used with function details so less has to be
 -- repeated
-supportedFunctions :: Map String (Negation -> Func, Integer -> Integer)
+supportedFunctions :: Map String (Integer -> Integer)
 supportedFunctions =
   M.fromList
-    [ ("abs", (Abs, abs)),
-      ("id", (Id, id))
+    [ ("abs", abs),
+      ("id", id)
     ]
 
-getFunc :: MonadException m => String -> m (Negation -> Func, Integer -> Integer)
+getFunc :: MonadException m => String -> m (Integer -> Integer)
 getFunc s = M.findWithDefault (throwBot $ EvaluationException $ "could not find function `" ++ s ++ "`") s (M.map return supportedFunctions)
 
 functionDetails :: Func -> (String, Negation)
-functionDetails (Id a) = ("id", a)
-functionDetails (Abs a) = ("abs", a)
+functionDetails (Func s a) = (s, a)
 
 --- Evaluating an expression. Uses IO because dice are random
 
@@ -232,7 +231,7 @@ evalDieOp' (Reroll once o i) rng is = mapM rerollF is
           v <- chooseOne rerollRange
           return (v <| i', b)
         else return g
-    rerollRange = if not once then filter (\i' -> not $ o == compare i' i) rng else rng
+    rerollRange = if not once then filter (\i' -> o /= compare i' i) rng else rng
 
 separateKeptDropped :: [(NonEmpty Integer, Bool)] -> ([(NonEmpty Integer, Bool)], [(NonEmpty Integer, Bool)])
 separateKeptDropped = foldr f ([], [])
@@ -282,12 +281,11 @@ instance IOEval Term where
       else return (div f' t', f's ++ " / " ++ t's)
 
 instance IOEval Func where
-  evalShow (Id neg) = evalShow neg
-  evalShow func = do
-    let (fname, n) = functionDetails func
-    (n', n's) <- evalShow n
-    (_, f) <- getFunc fname
-    return (f n', fname ++ " " ++ n's)
+  evalShow (Func "id" neg) = evalShow neg
+  evalShow (Func s neg) = do
+    (neg', neg's) <- evalShow neg
+    f <- getFunc s
+    return (f neg', s ++ " " ++ neg's)
 
 -- evalShow (Abs neg) = toOutType . abs <$> evalSum neg
 
@@ -344,15 +342,12 @@ instance Range Term where
   minVal (Div f t) = minVal f `div` maxVal t
   minVal (NoTerm f) = minVal f
 
+-- NOTE: this is unsafe since the function requested may not be defined
+-- if using the dice parser functions, it'll be safe, but for all other uses, beware
 instance Range Func where
-  range' (Abs n) = S.fromList $ abs <$> range n
-  range' (Id n) = range' n
-  maxVal (Abs n) = max (abs $ maxVal n) (abs $ minVal n)
-  maxVal (Id n) = maxVal n
-  minVal (Abs n) = minimum $ abs <$> range n
-  -- minVal (Abs n) = abs $ minVal n
-  -- TODO: finish Abs min val.
-  minVal (Id n) = minVal n
+  range' (Func s n) = S.fromList $ (supportedFunctions M.! s) <$> range n
+  maxVal f = maximum (range f)
+  minVal f = minimum (range f)
 
 instance Range Negation where
   range' (Neg expo) = S.fromList $ negate <$> range expo
@@ -489,7 +484,7 @@ instance PrettyShow Term where
   prettyShow (NoTerm f) = prettyShow f
 
 instance PrettyShow Func where
-  prettyShow (Id n) = prettyShow n
+  prettyShow (Func "id" n) = prettyShow n
   prettyShow f = s <> " " <> prettyShow n
     where
       (s, n) = functionDetails f
@@ -555,9 +550,9 @@ instance CanParse Func where
     t <- pars
     matchFuncName funcName t
     where
-      matchFuncName Nothing t = return $ Id t
+      matchFuncName Nothing t = return $ Func "id" t
       matchFuncName (Just s) t
-        | unpack s `member` supportedFunctions = (return . fst (supportedFunctions M.! unpack s)) t
+        | unpack s `member` supportedFunctions = (return . Func (unpack s)) t
         | otherwise = fail $ "could not find function with name `" ++ unpack s ++ "`"
 
 instance CanParse Negation where
