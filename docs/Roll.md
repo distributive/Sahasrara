@@ -19,7 +19,7 @@ Below are listed the current full capabilities of the bot for rolling dice and e
 
 As well as the arithmetic operators above, dice can be rolled, hence the name of the command.
 
-The basic format for this is `dX` where X is some number, meaning a single die of size X. Multiple dice can be rolled using `YdX`, meaning that Y dice are rolled of size X. Parentheses can be used for both Y and X in this case. If Y or X are greater than a number determined by the bot owner (150 by default), the roll will not be executed.
+The basic format for this is `dX` where X is some number, meaning a single die of size X. Multiple dice can be rolled using `YdX`, meaning that Y dice are rolled of size X. Parentheses can be used for both Y and X in this case. If Y is greater than a number determined by the bot owner (150 by default), the roll will not be executed. This is the same number that governs the total amount of RNG calls allowed within a command's execution
 
 There are operators that can be performed on dice rolling, listed below. Wherever there is `X`, means an integer. Wherever there is a `#`, means one of `<`,`=`,`>`.
 

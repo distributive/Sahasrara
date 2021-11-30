@@ -10,6 +10,7 @@
 -- expression that contains dice
 module Tablebot.Plugin.Dice (evalExpr, Expr, PrettyShow (..), supportedFunctionsList) where
 
+import Control.Monad (when)
 import Control.Monad.Exception (MonadException)
 import Data.Functor ((<&>))
 import Data.List (genericDrop, genericReplicate, genericTake, sortBy)
@@ -44,8 +45,12 @@ base die [bdie] {"d" base} {"d{" [0123456789]+ ("," [0123456789]+)* "}"}
 -}
 
 -- | The maximum depth that should be permitted. Used to limit number of dice and rerolls.
-maximumRecursion :: Integer
-maximumRecursion = 150
+maximumRNG :: Integer
+maximumRNG = 150
+
+checkRNGCount :: Integer -> IO ()
+checkRNGCount i =
+  when (i > maximumRNG) $ throwBot $ EvaluationException $ "exceeded maximum rng count (" ++ show maximumRNG ++ "). rng count reached: " ++ show i
 
 -- | The limit to how big a factorial value is permitted. Notably, the factorial function doesn't operate above this limit.
 factorialLimit :: Integer
@@ -154,7 +159,7 @@ getFunc s = M.findWithDefault (throwBot $ EvaluationException $ "could not find 
 
 -- | Given an expression, evaluate it, getting the pretty printed string and the value of
 -- the result
-evalExpr :: Expr -> IO (Integer, String)
+evalExpr :: Expr -> IO (Integer, String, Integer)
 evalExpr = evalShow
 
 -- | Utility function to display dice.
@@ -181,9 +186,10 @@ dieShow (lc, hc) d ls = return $ prettyShow d ++ " [" ++ foldl1 (\rst n -> rst +
 -- | This type class gives a function which evaluates the value to an integer and a
 -- string.
 class IOEval a where
-  -- | Evaluate the given item to an integer and a string representation of the value. If
-  -- the `a` value is a dice value, the values of the dice should be displayed.
-  evalShow :: a -> IO (Integer, String)
+  -- | Evaluate the given item to an integer, a string representation of the value, and
+  -- the number of RNG calls it took. If the `a` value is a dice value, the values of the
+  -- dice should be displayed.
+  evalShow :: a -> IO (Integer, String, Integer)
 
 instance IOEval Base where
   evalShow (NBase nb) = evalShow nb
@@ -191,37 +197,34 @@ instance IOEval Base where
 
 instance IOEval Die where
   evalShow d@(CustomDie is) = do
-    if length is >= fromIntegral maximumRecursion
-      then throwBot (EvaluationException $ "tried to roll a custom die with more than " ++ show maximumRecursion ++ " sides")
-      else do
-        i <- chooseOne is
-        ds <- dieShow (minimum is, maximum is) d [(i, Nothing)]
-        return (i, ds)
+    i <- chooseOne is
+    ds <- dieShow (minimum is, maximum is) d [(i, Nothing)]
+    return (i, ds, 1)
   evalShow d@(Die b) = do
-    (bound, _) <- evalShow b
-    if bound >= maximumRecursion
-      then throwBot (EvaluationException $ "tried to roll a die with more than " ++ show maximumRecursion ++ " sides")
+    (bound, _, rngCount) <- evalShow b
+    checkRNGCount rngCount
+    if bound < 1
+      then throwBot $ EvaluationException $ "Cannot roll a < 1 sided die (`" ++ prettyShow b ++ "`)"
       else do
-        if bound < 1
-          then throwBot $ EvaluationException $ "Cannot roll a < 1 sided die (`" ++ prettyShow b ++ "`)"
-          else do
-            i <- randomRIO (1, bound)
-            ds <- dieShow (1, maxVal b) d [(i, Nothing)]
-            return (i, ds)
+        i <- randomRIO (1, bound)
+        ds <- dieShow (1, maxVal b) d [(i, Nothing)]
+        checkRNGCount (rngCount + 1)
+        return (i, ds, 1 + rngCount)
 
 instance IOEval Dice where
   evalShow dop = do
-    (lst, rng) <- evalDieOp dop
+    (lst, rng, rngCount) <- evalDieOp dop
+    checkRNGCount rngCount
     let vs = fromEvalDieOpList lst
     s <- dieShow (minimum rng, maximum rng) dop vs
-    return (sum (fst <$> filter (isNothing . snd) vs), s)
+    return (sum (fst <$> filter (isNothing . snd) vs), s, rngCount)
 
 -- | Utility function to transform the output list type of other utility functions into
 -- one that `dieShow` recognises
 fromEvalDieOpList :: [(NonEmpty Integer, Bool)] -> [(Integer, Maybe Bool)]
 fromEvalDieOpList = foldr foldF []
   where
-    foldF (is, b) lst = let is' = (,Just False) <$> NE.tail is in (NE.head is, if b then Nothing else Just True) : is' ++ lst
+    foldF (is, b) lst = let is' = (,Just False) <$> NE.tail is in ((NE.head is, if b then Nothing else Just True) : is' ++ lst)
 
 -- | Helper function that takes a set of Dice and returns a tuple of two items. The second
 -- item is the range of the base die. The first item is a list representing each die - a
@@ -230,58 +233,68 @@ fromEvalDieOpList = foldr foldF []
 --
 -- The function itself checks to make sure the number of dice being rolleed is less than
 -- the maximum recursion and is non-negative.
-evalDieOp :: Dice -> IO ([(NonEmpty Integer, Bool)], [Integer])
+evalDieOp :: Dice -> IO ([(NonEmpty Integer, Bool)], [Integer], Integer)
 evalDieOp (Dice b ds dopo) = do
-  (nbDice, _) <- evalShow b
-  if nbDice >= maximumRecursion
-    then throwBot (EvaluationException $ "tried to roll more than " ++ show maximumRecursion ++ " dice")
+  (nbDice, _, rngCountb) <- evalShow b
+  checkRNGCount rngCountb
+  if nbDice >= maximumRNG
+    then throwBot (EvaluationException $ "tried to roll more than " ++ show maximumRNG ++ " dice")
     else do
       if nbDice < 0
         then throwBot (EvaluationException "tried to give a negative value to the number of dice")
         else do
-          rolls <- mapM (\d -> evalShow d <&> fst) (genericReplicate nbDice ds)
-          let (vs, rng) = (fmap (\i -> (i :| [], True)) rolls, range ds)
+          rolls <- mapM (fmap mp . evalShow) (genericReplicate nbDice ds)
+          let (vs, rng) = (fmap (\(i, rngcnt) -> (i :| [], True, rngcnt)) rolls, range ds)
           rs <- evalDieOp' dopo rng vs
-          return (rs, rng)
+          let (rs', rngCount) = foldr (\(is, bo, cnt) (rs'', rngCount') -> ((is, bo) : rs'', cnt + rngCount')) ([], rngCountb) rs
+          checkRNGCount (rngCount)
+          return (rs', rng, rngCount)
+  where
+    mp (a, _, a') = (a, a')
 
 -- | Utility function that processes a `Maybe DieOpRecur`, when given a range for dice,
 -- and dice that have already been processed.
-evalDieOp' :: Maybe DieOpRecur -> [Integer] -> [(NonEmpty Integer, Bool)] -> IO [(NonEmpty Integer, Bool)]
+evalDieOp' :: Maybe DieOpRecur -> [Integer] -> [(NonEmpty Integer, Bool, Integer)] -> IO [(NonEmpty Integer, Bool, Integer)]
 evalDieOp' Nothing _ is = return is
-evalDieOp' (Just (DieOpRecur doo mdor)) rng is = evalDieOp'' doo rng is >>= evalDieOp' mdor rng
+evalDieOp' (Just (DieOpRecur doo mdor)) rng is = do
+  is' <- evalDieOp'' doo rng is
+  checkRNGCount $ sum $ fmap thrd is'
+  evalDieOp' mdor rng is'
+  where
+    thrd (_, _, i) = i
 
 -- | Utility function that processes a `DieOpOption`, when given a range for dice,
 -- and dice that have already been processed.
-evalDieOp'' :: DieOpOption -> [Integer] -> [(NonEmpty Integer, Bool)] -> IO [(NonEmpty Integer, Bool)]
+evalDieOp'' :: DieOpOption -> [Integer] -> [(NonEmpty Integer, Bool, Integer)] -> IO [(NonEmpty Integer, Bool, Integer)]
 evalDieOp'' (DieOpOptionKD kd lhw) _ is = return $ evalDieOpHelpKD kd lhw is
 evalDieOp'' (Reroll once o i) rng is = mapM rerollF is
   where
-    rerollF g@(i', b) =
+    rerollF g@(i', b, rngCount) =
       if b && compare (NE.head i') i == o
         then do
           v <- chooseOne rerollRange
-          return (v <| i', b)
+          return (v <| i', b, rngCount + 1)
         else return g
     rerollRange = if not once then filter (\i' -> o /= compare i' i) rng else rng
 
 -- | Given a list of dice values, separate them into kept values and dropped values
 -- respectively.
-separateKeptDropped :: [(NonEmpty Integer, Bool)] -> ([(NonEmpty Integer, Bool)], [(NonEmpty Integer, Bool)])
+separateKeptDropped :: [(NonEmpty Integer, Bool, Integer)] -> ([(NonEmpty Integer, Bool, Integer)], [(NonEmpty Integer, Bool, Integer)])
 separateKeptDropped = foldr f ([], [])
   where
-    f a@(_, True) (kept, dropped) = (a : kept, dropped)
-    f a@(_, False) (kept, dropped) = (kept, a : dropped)
+    f a@(_, True, _) (kept, dropped) = (a : kept, dropped)
+    f a@(_, False, _) (kept, dropped) = (kept, a : dropped)
 
 -- | Utility function to set all the values in the given list to be dropped.
-setToDropped :: [(NonEmpty Integer, Bool)] -> [(NonEmpty Integer, Bool)]
-setToDropped = fmap (\(is, _) -> (is, False))
+setToDropped :: [(NonEmpty Integer, Bool, Integer)] -> [(NonEmpty Integer, Bool, Integer)]
+setToDropped = fmap (\(is, _, cnt) -> (is, False, cnt))
 
 -- TODO: make the keep/drop on low/high not require a sort somehow, or if it does to not change the output order of the values
 
 -- | Helper function that executes the keep/drop commands on dice.
-evalDieOpHelpKD :: KeepDrop -> LowHighWhere -> [(NonEmpty Integer, Bool)] -> [(NonEmpty Integer, Bool)]
-evalDieOpHelpKD Keep (Where cmp i) is = fmap (\(iis, b) -> (iis, b && compare (NE.head iis) i == cmp)) is
-evalDieOpHelpKD Drop (Where cmp i) is = fmap (\(iis, b) -> (iis, b && compare (NE.head iis) i /= cmp)) is
+evalDieOpHelpKD :: KeepDrop -> LowHighWhere -> [(NonEmpty Integer, Bool, Integer)] -> [(NonEmpty Integer, Bool, Integer)]
+evalDieOpHelpKD Keep (Where cmp i) is = fmap (\(iis, b, cnt) -> (iis, b && compare (NE.head iis) i == cmp, cnt)) is
+evalDieOpHelpKD Drop (Where cmp i) is = fmap (\(iis, b, cnt) -> (iis, b && compare (NE.head iis) i /= cmp, cnt)) is
 evalDieOpHelpKD kd lh is = d ++ setToDropped (getDrop i sk) ++ getKeep i sk
   where
     (k, d) = separateKeptDropped is
@@ -295,62 +308,70 @@ evalDieOpHelpKD kd lh is = d ++ setToDropped (getDrop i sk) ++ getKeep i sk
 instance IOEval Expr where
   evalShow (NoExpr t) = evalShow t
   evalShow (Add t e) = do
-    (t', t's) <- evalShow t
-    (e', e's) <- evalShow e
-    return (t' + e', t's ++ " + " ++ e's)
+    (t', t's, rngCount) <- evalShow t
+    (e', e's, rngCount') <- evalShow e
+    checkRNGCount (rngCount + rngCount')
+    return (t' + e', t's ++ " + " ++ e's, rngCount + rngCount')
   evalShow (Sub t e) = do
-    (t', t's) <- evalShow t
-    (e', e's) <- evalShow e
-    return (t' - e', t's ++ " - " ++ e's)
+    (t', t's, rngCount) <- evalShow t
+    (e', e's, rngCount') <- evalShow e
+    checkRNGCount (rngCount + rngCount')
+    return (t' - e', t's ++ " - " ++ e's, rngCount + rngCount')
 
 instance IOEval Term where
   evalShow (NoTerm f) = evalShow f
   evalShow (Multi f t) = do
-    (f', f's) <- evalShow f
-    (t', t's) <- evalShow t
-    return (f' * t', f's ++ " * " ++ t's)
+    (f', f's, rngCount) <- evalShow f
+    (t', t's, rngCount') <- evalShow t
+    checkRNGCount (rngCount + rngCount')
+    return (f' * t', f's ++ " * " ++ t's, rngCount + rngCount')
   evalShow (Div f t) = do
-    (f', f's) <- evalShow f
-    (t', t's) <- evalShow t
+    (f', f's, rngCount) <- evalShow f
+    (t', t's, rngCount') <- evalShow t
+    checkRNGCount (rngCount + rngCount')
     if t' == 0
       then throwBot (EvaluationException "division by zero")
-      else return (div f' t', f's ++ " / " ++ t's)
+      else return (div f' t', f's ++ " / " ++ t's, rngCount + rngCount')
 
 instance IOEval Func where
   evalShow (Func "id" neg) = evalShow neg
   evalShow (Func "fact" neg) = do
-    (neg', neg's) <- evalShow neg
+    (neg', neg's, rngCount) <- evalShow neg
+    checkRNGCount (rngCount)
     if neg' > factorialLimit
       then throwBot $ EvaluationException $ "tried to evaluate a factorial with input number greater than the limit: `" ++ show neg' ++ "`"
       else do
         f <- getFunc "fact"
-        return (f neg', "fact" ++ " " ++ neg's)
+        return (f neg', "fact" ++ " " ++ neg's, rngCount)
   evalShow (Func s neg) = do
-    (neg', neg's) <- evalShow neg
+    (neg', neg's, rngCount) <- evalShow neg
+    checkRNGCount (rngCount)
     f <- getFunc s
-    return (f neg', s ++ " " ++ neg's)
+    return (f neg', s ++ " " ++ neg's, rngCount)
 
 instance IOEval Negation where
   evalShow (Neg expo) = do
-    (expo', expo's) <- evalShow expo
-    return (negate expo', "-" ++ expo's)
+    (expo', expo's, rngCount) <- evalShow expo
+    checkRNGCount (rngCount)
+    return (negate expo', "-" ++ expo's, rngCount)
   evalShow (NoNeg expo) = evalShow expo
 
 instance IOEval Expo where
   evalShow (NoExpo b) = evalShow b
-  evalShow (Expo b expo) =
-    if minVal expo < 0
-      then throwBot (EvaluationException "the exponent is either negative or can be negative")
+  evalShow (Expo b expo) = do
+    (expo', expo's, rngCount) <- evalShow expo
+    if expo' < 0
+      then throwBot (EvaluationException "the exponent is negative")
       else do
-        (b', b's) <- evalShow b
-        (expo', expo's) <- evalShow expo
-        return (b' ^ expo', b's ++ " ^ " ++ expo's)
+        (b', b's, rngCount') <- evalShow b
+        checkRNGCount (rngCount + rngCount')
+        return (b' ^ expo', b's ++ " ^ " ++ expo's, rngCount + rngCount')
 
 instance IOEval NumBase where
   evalShow (Paren e) = do
-    (r, s) <- evalShow e
-    return (r, "(" ++ s ++ ")")
-  evalShow (Value i) = return (i, show i)
+    (r, s, rngCount) <- evalShow e
+    return (r, "(" ++ s ++ ")", rngCount)
+  evalShow (Value i) = return (i, show i, 0)
 
 --- Finding the range of an expression.
 
