@@ -21,7 +21,7 @@ import Data.Text (pack, unpack)
 import Safe.Foldable (maximumMay, minimumMay)
 import System.Random (Random (randomRIO))
 import Tablebot.Plugin.Exception (BotException (EvaluationException), throwBot)
-import Tablebot.Plugin.Parser (posInteger, skipSpace, skipSpace1, word)
+import Tablebot.Plugin.Parser (integer, posInteger, skipSpace, skipSpace1, word)
 import Tablebot.Plugin.Random (chooseOne)
 import Tablebot.Plugin.SmartCommand (CanParse (..), FromString (fromString))
 import Tablebot.Plugin.Types (Parser)
@@ -92,6 +92,9 @@ data Dice = Dice Base Die (Maybe DieOpRecur)
 data DieOpRecur = DieOpRecur DieOpOption (Maybe DieOpRecur)
   deriving (Show, Eq)
 
+-- TODO: change rerolls and LowHighWhere to use NumBase instead of Integer... even if it
+-- makes my life harder.
+
 -- | The type representing a die option.
 data DieOpOption
   = Reroll {rerollOnce :: Bool, condition :: Ordering, limit :: Integer}
@@ -123,8 +126,6 @@ isHigh _ = False
 data KeepDrop = Keep | Drop deriving (Show, Eq)
 
 -- Mappings for what functions are supported
--- TODO: come up with a way that this can be used with function details so less has to be
--- repeated
 
 -- | Mapping from function names to the functions themselves.
 supportedFunctions :: Map String (Integer -> Integer)
@@ -170,6 +171,8 @@ dieShow (lc, hc) d ls = return $ prettyShow d ++ " [" ++ foldl1 (\rst n -> rst +
 -- | This type class gives a function which evaluates the value to an integer and a
 -- string.
 class IOEval a where
+  -- | Evaluate the given item to an integer and a string representation of the value. If
+  -- the `a` value is a dice value, the values of the dice should be displayed.
   evalShow :: a -> IO (Integer, String)
 
 instance IOEval Base where
@@ -210,14 +213,20 @@ fromEvalDieOpList = foldr foldF []
   where
     foldF (is, b) lst = let is' = (,Just False) <$> NE.tail is in (NE.head is, if b then Nothing else Just True) : is' ++ lst
 
--- TODO: continue commenting from here
+-- | Helper function that takes a set of Dice and returns a tuple of two items. The second
+-- item is the range of the base die. The first item is a list representing each die - a
+-- tuple with a history of the die being rolled, and whether the die has been dropped or
+-- not. The first item of each die record is the current value of the die.
+--
+-- The function itself checks to make sure the number of dice being rolleed is less than
+-- the maximum recursion and is non-negative.
 evalDieOp :: Dice -> IO ([(NonEmpty Integer, Bool)], [Integer])
 evalDieOp (Dice b ds dopo) = do
   (nbDice, _) <- evalShow b
   if nbDice >= maximumRecursion
     then throwBot (EvaluationException $ "tried to roll more than " ++ show maximumRecursion ++ " dice")
     else do
-      if dieNum < 0
+      if nbDice < 0
         then throwBot (EvaluationException "tried to give a negative value to the number of dice")
         else do
           rolls <- mapM (\d -> evalShow d <&> fst) (genericReplicate nbDice ds)
@@ -225,10 +234,14 @@ evalDieOp (Dice b ds dopo) = do
           rs <- evalDieOp' dopo rng vs
           return (rs, rng)
 
+-- | Utility function that processes a `Maybe DieOpRecur`, when given a range for dice,
+-- and dice that have already been processed.
 evalDieOp' :: Maybe DieOpRecur -> [Integer] -> [(NonEmpty Integer, Bool)] -> IO [(NonEmpty Integer, Bool)]
 evalDieOp' Nothing _ is = return is
 evalDieOp' (Just (DieOpRecur doo mdor)) rng is = evalDieOp'' doo rng is >>= evalDieOp' mdor rng
 
+-- | Utility function that processes a `DieOpOption`, when given a range for dice,
+-- and dice that have already been processed.
 evalDieOp'' :: DieOpOption -> [Integer] -> [(NonEmpty Integer, Bool)] -> IO [(NonEmpty Integer, Bool)]
 evalDieOp'' (DieOpOptionKD kd lhw) _ is = return $ evalDieOpHelpKD kd lhw is
 evalDieOp'' (Reroll once o i) rng is = mapM rerollF is
@@ -241,16 +254,21 @@ evalDieOp'' (Reroll once o i) rng is = mapM rerollF is
         else return g
     rerollRange = if not once then filter (\i' -> o /= compare i' i) rng else rng
 
+-- | Given a list of dice values, separate them into kept values and dropped values
+-- respectively.
 separateKeptDropped :: [(NonEmpty Integer, Bool)] -> ([(NonEmpty Integer, Bool)], [(NonEmpty Integer, Bool)])
 separateKeptDropped = foldr f ([], [])
   where
     f a@(_, True) (kept, dropped) = (a : kept, dropped)
     f a@(_, False) (kept, dropped) = (kept, a : dropped)
 
+-- | Utility function to set all the values in the given list to be dropped.
 setToDropped :: [(NonEmpty Integer, Bool)] -> [(NonEmpty Integer, Bool)]
 setToDropped = fmap (\(is, _) -> (is, False))
 
 -- TODO: make the keep/drop on low/high not require a sort somehow, or if it does to not change the output order of the values
+
+-- | Helper function that executes the keep/drop commands on dice.
 evalDieOpHelpKD :: KeepDrop -> LowHighWhere -> [(NonEmpty Integer, Bool)] -> [(NonEmpty Integer, Bool)]
 evalDieOpHelpKD Keep (Where cmp i) is = fmap (\(iis, b) -> (iis, b && compare (NE.head iis) i == cmp)) is
 evalDieOpHelpKD Drop (Where cmp i) is = fmap (\(iis, b) -> (iis, b && compare (NE.head iis) i /= cmp)) is
@@ -284,7 +302,7 @@ instance IOEval Term where
   evalShow (Div f t) = do
     (f', f's) <- evalShow f
     (t', t's) <- evalShow t
-    if t' == 0 -- TODO: check and make sure this bound check is correct
+    if t' == 0
       then throwBot (EvaluationException "division by zero")
       else return (div f' t', f's ++ " / " ++ t's)
 
@@ -294,8 +312,6 @@ instance IOEval Func where
     (neg', neg's) <- evalShow neg
     f <- getFunc s
     return (f neg', s ++ " " ++ neg's)
-
--- evalShow (Abs neg) = toOutType . abs <$> evalSum neg
 
 instance IOEval Negation where
   evalShow (Neg expo) = do
@@ -321,6 +337,10 @@ instance IOEval NumBase where
 
 --- Finding the range of an expression.
 
+-- TODO: make range return all possible values, repeated the number of times they would be
+-- present (so it can be used for statistics)
+
+-- | Type class to find the range and bounds of a given value.
 class Range a where
   range :: a -> [Integer]
   range = toList . range'
@@ -354,7 +374,9 @@ instance Range Term where
 -- if using the dice parser functions, it'll be safe, but for all other uses, beware
 instance Range Func where
   range' (Func s n) = S.fromList $ (supportedFunctions M.! s) <$> range n
+  maxVal (Func "id" n) = maxVal n
   maxVal f = maximum (range f)
+  minVal (Func "id" n) = minVal n
   minVal f = minimum (range f)
 
 instance Range Negation where
@@ -410,7 +432,6 @@ instance Range Die where
 
 -- TODO: check this more
 instance Range Dice where
-  -- range' (DieOpMulti md) = range' md
   range' d = S.unions $ fmap foldF counts
     where
       (counts, dr) = diceVals d
@@ -419,16 +440,12 @@ instance Range Dice where
         | i == 1 = js
         | otherwise = ((+) <$> dr) <*> foldF' (i - 1) js
       foldF i = S.fromList $ foldF' i dr
-
-  -- maxVal (DieOpMulti md) = maxVal md
   maxVal d
     | mxdr < 0 = fromMaybe 0 (minimumMay counts) * mxdr
     | otherwise = fromMaybe 0 (maximumMay counts) * mxdr
     where
       (counts, dr) = diceVals d
       mxdr = fromMaybe 0 $ maximumMay dr
-
-  -- minVal (DieOpMulti md) = minVal md
   minVal d
     | mndr < 0 = fromMaybe 0 (maximumMay counts) * mndr
     | otherwise = fromMaybe 0 (minimumMay counts) * mndr
@@ -439,49 +456,44 @@ instance Range Dice where
 type DieRange = [Integer]
 
 -- the tuple is the range of the number of dice, the current die range, and the total die range possible with the dice being used
+
+-- | Applies a given die operation to the current die ranges. The tuple given and returned
+-- represents the number of dice, the current range of the die, and the base die range.
 applyDieOpVal :: DieOpOption -> ([Integer], DieRange, DieRange) -> ([Integer], DieRange, DieRange)
-applyDieOpVal (Reroll True c l) t@(is, cdr, dr)
-  | any boolF cdr = (is, dr, dr)
+applyDieOpVal (Reroll ro c l) t@(is, cdr, dr)
+  | any boolF cdr = (is, applyBoolF dr, dr)
   | otherwise = t
   where
     boolF i' = compare i' l == c
-applyDieOpVal (Reroll False c l) t@(is, cdr, dr)
-  | any boolF cdr = (is, filter (not . boolF) dr, dr)
-  | otherwise = t
-  where
-    boolF i' = compare i' l == c
-applyDieOpVal (DieOpOptionKD _ (Where o i)) (is, cdr, dr)
-  | any boolF cdr = ([0 .. maximum is], filter (not . boolF) cdr, dr)
+    applyBoolF = if ro then id else filter (not . boolF)
+applyDieOpVal (DieOpOptionKD kd (Where o i)) (is, cdr, dr)
+  | any boolF cdr = ([0 .. maximum is], filter boolF cdr, dr)
   | otherwise = (is, cdr, dr)
   where
-    boolF i' = compare i' i == o
-applyDieOpVal (DieOpOptionKD Keep lh) (is, cdr, dr) = (fmap (f (getValueLowHigh lh)) is, cdr, dr)
+    boolF i' = (if kd == Keep then id else not) $ compare i' i == o
+applyDieOpVal (DieOpOptionKD kd lh) (is, cdr, dr) = (f (getValueLowHigh lh) <$> is, cdr, dr)
   where
-    f (Just i) i' = min i i'
-    f Nothing i' = i'
-applyDieOpVal (DieOpOptionKD Drop lh) (is, cdr, dr) = (fmap (f (getValueLowHigh lh)) is, cdr, dr)
-  where
-    f (Just i) i' = max 0 (i' - i)
+    f (Just i) i' = if kd == Keep then min i i' else max 0 (i' - i)
     f Nothing i' = i'
 
+-- | Get the number of dice and the die range of a given set of dice.
 diceVals :: Dice -> ([Integer], DieRange)
 diceVals (Dice b d mdor) = (filter (>= 0) counts, dr)
   where
-    (counts, dr, _) = diceVals' mdor (range b, dieVals, dieVals)
+    (counts, dr, _) = diceVals' mdor (filter (>= 0) (range b), dieVals, dieVals)
     dieVals = range d
 
+-- | Helper function to iterate through all the `DieOpOption`s for a give set of dice.
 diceVals' :: Maybe DieOpRecur -> ([Integer], DieRange, DieRange) -> ([Integer], DieRange, DieRange)
--- dieOpVals' (DieOpMulti md) = (numberOfDiceRange, dieVals, range (getDie md))
---   where
---     dieVals = range (getDie md)
---     numberOfDiceRange = range (getNumberOfDice md)
 diceVals' Nothing t = t
 diceVals' (Just (DieOpRecur doo mdor)) t = diceVals' mdor (applyDieOpVal doo t)
 
 --- Pretty printing the AST
 -- The output from this should be parseable
 
+-- | Type class to display an expression prettily (not neccessarily accurately).
 class PrettyShow a where
+  -- | Print the given value prettily.
   prettyShow :: a -> String
 
 instance PrettyShow Expr where
@@ -514,6 +526,7 @@ instance PrettyShow Base where
   prettyShow (NBase nb) = prettyShow nb
   prettyShow (DiceBase dop) = prettyShow dop
 
+-- TODO: better way to display custom die
 instance PrettyShow Die where
   prettyShow (Die b) = "d" <> prettyShow b
   prettyShow (CustomDie is) = "d{" <> (init . Prelude.tail . fromString . show) is <> "}"
@@ -588,7 +601,12 @@ instance CanParse Die where
   pars = do
     _ <- char 'd'
     try (Die <$> pars)
-      <|> CustomDie <$> (try (char '{' *> skipSpace) *> (posInteger >>= (\i -> (i :) <$> many (try (skipSpace *> char ',' *> skipSpace) *> posInteger))) <* skipSpace <* char '}')
+      <|> CustomDie
+        <$> ( try (char '{' *> skipSpace)
+                *> (integer >>= (\i -> (i :) <$> many (try (skipSpace *> char ',' *> skipSpace) *> integer)))
+                <* skipSpace
+                <* char '}'
+            )
       <|> fail "recursed to die expression and could not find a die"
 
 instance CanParse Dice where
@@ -598,6 +616,9 @@ instance CanParse Dice where
     let t' = NBase $ fromMaybe (Value 1) t
     return $ bd t'
 
+-- | Helper for parsing Dice, where as many `Dice` as possible are parsed and a function
+-- that takes a `Base` value and returns a `Dice` value is returned. This `Base` value is
+-- meant to be first value that `Dice` have.
 parseDice' :: Parser (Base -> Dice)
 parseDice' = do
   d <- pars :: Parser Die
@@ -608,6 +629,7 @@ parseDice' = do
     )
     <|> return (\b -> Dice b d mdor)
 
+-- | Parse a `<`, `=`, or `>` as an `Ordering`.
 parseOrdering :: Parser Ordering
 parseOrdering = (char '<' <|> char '=' <|> char '>') >>= matchO
   where
@@ -616,6 +638,7 @@ parseOrdering = (char '<' <|> char '=' <|> char '>') >>= matchO
     matchO '>' = return GT
     matchO _ = fail "tried to get an ordering that didn't exist"
 
+-- | Parse a `LowHighWhere`, which is an `h` followed by a positive integer.
 parseLowHigh :: Parser LowHighWhere
 parseLowHigh = (char 'h' <|> char 'l' <|> char 'w') >>= helper
   where
@@ -624,6 +647,7 @@ parseLowHigh = (char 'h' <|> char 'l' <|> char 'w') >>= helper
     helper 'w' = parseOrdering >>= \o -> posInteger <&> Where o
     helper _ = fail "could not determine whether to keep/drop highest/lowest"
 
+-- | Parse a bunch of die options.
 parseDieOpRecur :: Parser (Maybe DieOpRecur)
 parseDieOpRecur = do
   dopo <- optional (try parseDieOpOption)
@@ -633,6 +657,7 @@ parseDieOpRecur = do
       dor <- parseDieOpRecur
       return $ (DieOpRecur <$> dopo) <*> Just dor
 
+-- | Parse a single die option.
 parseDieOpOption :: Parser DieOpOption
 parseDieOpOption = do
   (try (string "ro") *> parseOrdering >>= \o -> Reroll True o <$> posInteger)

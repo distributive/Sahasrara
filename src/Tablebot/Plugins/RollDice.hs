@@ -13,7 +13,7 @@ import Control.Monad.Writer (MonadIO (liftIO))
 import Data.Text (pack)
 import Discord.Types (Message)
 import Tablebot.Plugin
-import Tablebot.Plugin.Dice (Expr, PrettyShow (prettyShow), evalExpr)
+import Tablebot.Plugin.Dice (Expr, evalExpr)
 import Tablebot.Plugin.Discord (sendMessage)
 import Tablebot.Plugin.SmartCommand (PComm (parseComm))
 
