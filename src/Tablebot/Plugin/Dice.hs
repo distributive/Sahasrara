@@ -337,7 +337,6 @@ instance IOEval Func where
   evalShow (Func "id" neg) = evalShow neg
   evalShow (Func "fact" neg) = do
     (neg', neg's, rngCount) <- evalShow neg
-    checkRNGCount (rngCount)
     if neg' > factorialLimit
       then throwBot $ EvaluationException $ "tried to evaluate a factorial with input number greater than the limit: `" ++ show neg' ++ "`"
       else do
@@ -345,14 +344,12 @@ instance IOEval Func where
         return (f neg', "fact" ++ " " ++ neg's, rngCount)
   evalShow (Func s neg) = do
     (neg', neg's, rngCount) <- evalShow neg
-    checkRNGCount (rngCount)
     f <- getFunc s
     return (f neg', s ++ " " ++ neg's, rngCount)
 
 instance IOEval Negation where
   evalShow (Neg expo) = do
     (expo', expo's, rngCount) <- evalShow expo
-    checkRNGCount (rngCount)
     return (negate expo', "-" ++ expo's, rngCount)
   evalShow (NoNeg expo) = evalShow expo
 
