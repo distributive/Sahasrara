@@ -47,6 +47,10 @@ base die [bdie] {"d" base} {"d{" [0123456789]+ ("," [0123456789]+)* "}"}
 maximumRecursion :: Integer
 maximumRecursion = 150
 
+-- | The limit to how big a factorial value is permitted. Notably, the factorial function doesn't operate above this limit.
+factorialLimit :: Integer
+factorialLimit = 50
+
 -- TODO: full check over of bounds. make this thing AIR TIGHT.
 
 -- | The type of the top level expression. Represents one of addition, subtraction, or a
@@ -128,12 +132,14 @@ supportedFunctions =
   M.fromList
     [ ("abs", abs),
       ("id", id),
-      ("fact", fact)
+      ("fact", fact),
+      ("negate", negate)
     ]
   where
     fact n
       | n < 0 = 0
       | n == 0 = 1
+      | n > factorialLimit = fact factorialLimit
       | otherwise = n * fact (n - 1)
 
 supportedFunctionsList :: [String]
@@ -312,6 +318,13 @@ instance IOEval Term where
 
 instance IOEval Func where
   evalShow (Func "id" neg) = evalShow neg
+  evalShow (Func "fact" neg) = do
+    (neg', neg's) <- evalShow neg
+    if neg' > factorialLimit
+      then throwBot $ EvaluationException $ "tried to evaluate a factorial with input number greater than the limit: `" ++ show neg' ++ "`"
+      else do
+        f <- getFunc "fact"
+        return (f neg', "fact" ++ " " ++ neg's)
   evalShow (Func s neg) = do
     (neg', neg's) <- evalShow neg
     f <- getFunc s
