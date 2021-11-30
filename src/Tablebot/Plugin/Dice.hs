@@ -75,7 +75,7 @@ data NumBase = Paren Expr | Value Integer
   deriving (Show, Eq)
 
 -- | The type representing a numeric base value value or a dice value.
-data Base = NBase NumBase | DiceBase !Dice
+data Base = NBase NumBase | DiceBase Dice
   deriving (Show, Eq)
 
 -- Dice Operations after this point
@@ -83,40 +83,50 @@ data Base = NBase NumBase | DiceBase !Dice
 -- | The type representing a simple N sided die or a custom die.
 data Die = Die NumBase | CustomDie [Integer] deriving (Show, Eq)
 
--- | The type representing either multiple dice or a single die.
+-- | The type representing a number of dice equal to the `Base` value, and possibly some
+-- die options.
 data Dice = Dice Base Die (Maybe DieOpRecur)
   deriving (Show, Eq)
 
--- | The type representing multiple dice or dice being modified by some die op option.
+-- | The type representing one or more die options.
 data DieOpRecur = DieOpRecur DieOpOption (Maybe DieOpRecur)
   deriving (Show, Eq)
 
--- | The type representing a die op option.
+-- | The type representing a die option.
 data DieOpOption
   = Reroll {rerollOnce :: Bool, condition :: Ordering, limit :: Integer}
   | DieOpOptionKD KeepDrop LowHighWhere
   deriving (Show, Eq)
 
+-- | A type used to designate how the keep/drop option should work
 data LowHighWhere = Low Integer | High Integer | Where Ordering Integer deriving (Show, Eq)
 
+-- | Utility function to get the integer determining how many values to get given a
+-- `LowHighWhere`. If the given value is `Low` or `High`, then Just the integer contained
+-- is returned. Else, Nothing is returned.
 getValueLowHigh :: LowHighWhere -> Maybe Integer
 getValueLowHigh (Low i) = Just i
 getValueLowHigh (High i) = Just i
 getValueLowHigh (Where _ _) = Nothing
 
+-- | Returns whether the given `LowHighWhere` is `Low` or not.
 isLow :: LowHighWhere -> Bool
 isLow (Low _) = True
 isLow _ = False
 
+-- | Returns whether the given `LowHighWhere` is `High` or not.
 isHigh :: LowHighWhere -> Bool
 isHigh (High _) = True
 isHigh _ = False
 
+-- | Utility value for whether to keep or drop values.
 data KeepDrop = Keep | Drop deriving (Show, Eq)
 
 -- Mappings for what functions are supported
 -- TODO: come up with a way that this can be used with function details so less has to be
 -- repeated
+
+-- | Mapping from function names to the functions themselves.
 supportedFunctions :: Map String (Integer -> Integer)
 supportedFunctions =
   M.fromList
@@ -124,17 +134,27 @@ supportedFunctions =
       ("id", id)
     ]
 
+-- | Functions that looks up the given function name in the map, and will either throw an
+-- error or return the function (wrapped inside the given monad)
 getFunc :: MonadException m => String -> m (Integer -> Integer)
 getFunc s = M.findWithDefault (throwBot $ EvaluationException $ "could not find function `" ++ s ++ "`") s (M.map return supportedFunctions)
 
-functionDetails :: Func -> (String, Negation)
-functionDetails (Func s a) = (s, a)
-
 --- Evaluating an expression. Uses IO because dice are random
 
+-- | Given an expression, evaluate it, getting the pretty printed string and the value of
+-- the result
 evalExpr :: Expr -> IO (Integer, String)
 evalExpr = evalShow
 
+-- | Utility function to display dice.
+--
+-- The tuple of integers denotes what the critvalues of this dice value are. The `a`
+-- denotes the value that is being printed, and needs to have `PrettyShow` defined for it.
+-- Finally, the list of tuples denotes all the values that the `a` value has gone through.
+-- If the `Maybe Bool` value is `Nothing`, the number is displayed as normal. If the value
+-- is `Just False`, the value has been rerolled over, and is displayed crossed out. If the
+-- value is `Just True`, the value has been dropped, and the number is crossed out and
+-- underlined.
 dieShow :: (PrettyShow a, MonadException m) => (Integer, Integer) -> a -> [(Integer, Maybe Bool)] -> m String
 dieShow _ _ [] = throwBot $ EvaluationException "tried to show empty set of results"
 dieShow (lc, hc) d ls = return $ prettyShow d ++ " [" ++ foldl1 (\rst n -> rst ++ ", " ++ n) adjustList ++ "]"
@@ -147,6 +167,8 @@ dieShow (lc, hc) d ls = return $ prettyShow d ++ " [" ++ foldl1 (\rst n -> rst +
     toCrossedOut (i, _) = toCrit i
     adjustList = fmap toCrossedOut ls
 
+-- | This type class gives a function which evaluates the value to an integer and a
+-- string.
 class IOEval a where
   evalShow :: a -> IO (Integer, String)
 
@@ -174,19 +196,6 @@ instance IOEval Die where
             ds <- dieShow (1, maxVal b) d [(i, Nothing)]
             return (i, ds)
 
--- instance IOEval Dice where
---   evalShow md@(MultiDie nb d) = do
---     (dieNum, _) <- evalShow nb
---     if dieNum >= maximumRecursion
---       then throwBot (EvaluationException $ "tried to roll more than " ++ show maximumRecursion ++ " dice")
---       else do
---         if dieNum < 0
---           then throwBot (EvaluationException "tried to give a negative value to the number of dice")
---           else do
---             ds <- sequence $ genericReplicate dieNum $ fst <$> evalShow d
---             dieshow <- dieShow (minVal d, maxVal d) md (fmap (,Nothing) ds)
---             return (sum ds, dieshow)
-
 instance IOEval Dice where
   evalShow dop = do
     (lst, rng) <- evalDieOp dop
@@ -194,23 +203,27 @@ instance IOEval Dice where
     s <- dieShow (minimum rng, maximum rng) dop vs
     return (sum (fst <$> filter (isNothing . snd) vs), s)
 
+-- | Utility function to transform the output list type of other utility functions into
+-- one that `dieShow` recognises
 fromEvalDieOpList :: [(NonEmpty Integer, Bool)] -> [(Integer, Maybe Bool)]
 fromEvalDieOpList = foldr foldF []
   where
     foldF (is, b) lst = let is' = (,Just False) <$> NE.tail is in (NE.head is, if b then Nothing else Just True) : is' ++ lst
 
+-- TODO: continue commenting from here
 evalDieOp :: Dice -> IO ([(NonEmpty Integer, Bool)], [Integer])
--- evalDieOp (DieOpMulti md) = do
---   (nbDice, _) <- evalShow (getNumberOfDice md)
---   rolls <- mapM (\d -> evalShow d <&> fst) (genericReplicate nbDice (getDie md))
---   return (fmap (\i -> (i NE.:| [], True)) rolls, range $ getDie md)
 evalDieOp (Dice b ds dopo) = do
   (nbDice, _) <- evalShow b
-  rolls <- mapM (\d -> evalShow d <&> fst) (genericReplicate nbDice ds)
-  let (vs, rng) = (fmap (\i -> (i :| [], True)) rolls, range ds)
-  -- (vs, rng) <- evalDieOp dop
-  rs <- evalDieOp' dopo rng vs
-  return (rs, rng)
+  if nbDice >= maximumRecursion
+    then throwBot (EvaluationException $ "tried to roll more than " ++ show maximumRecursion ++ " dice")
+    else do
+      if dieNum < 0
+        then throwBot (EvaluationException "tried to give a negative value to the number of dice")
+        else do
+          rolls <- mapM (\d -> evalShow d <&> fst) (genericReplicate nbDice ds)
+          let (vs, rng) = (fmap (\i -> (i :| [], True)) rolls, range ds)
+          rs <- evalDieOp' dopo rng vs
+          return (rs, rng)
 
 evalDieOp' :: Maybe DieOpRecur -> [Integer] -> [(NonEmpty Integer, Bool)] -> IO [(NonEmpty Integer, Bool)]
 evalDieOp' Nothing _ is = return is
@@ -483,9 +496,7 @@ instance PrettyShow Term where
 
 instance PrettyShow Func where
   prettyShow (Func "id" n) = prettyShow n
-  prettyShow f = s <> " " <> prettyShow n
-    where
-      (s, n) = functionDetails f
+  prettyShow (Func s n) = s <> " " <> prettyShow n
 
 instance PrettyShow Negation where
   prettyShow (Neg expo) = "-" <> prettyShow expo
