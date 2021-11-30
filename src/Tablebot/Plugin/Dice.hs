@@ -8,13 +8,13 @@
 --
 -- This plugin contains the neccessary parsers and stucture to get the AST for an
 -- expression that contains dice
-module Tablebot.Plugin.Dice (evalExpr, Expr, PrettyShow (..)) where
+module Tablebot.Plugin.Dice (evalExpr, Expr, PrettyShow (..), supportedFunctionsList) where
 
 import Control.Monad.Exception (MonadException)
 import Data.Functor ((<&>))
 import Data.List (genericDrop, genericReplicate, genericTake, sortBy)
 import Data.List.NonEmpty as NE (NonEmpty ((:|)), head, tail, (<|))
-import Data.Map as M (Map, findWithDefault, fromList, map, member, (!))
+import Data.Map as M (Map, findWithDefault, fromList, keys, map, member, (!))
 import Data.Maybe (fromMaybe, isNothing)
 import Data.Set as S (Set, fromList, singleton, toList, unions)
 import Data.Text (pack, unpack)
@@ -117,11 +117,6 @@ isLow :: LowHighWhere -> Bool
 isLow (Low _) = True
 isLow _ = False
 
--- | Returns whether the given `LowHighWhere` is `High` or not.
-isHigh :: LowHighWhere -> Bool
-isHigh (High _) = True
-isHigh _ = False
-
 -- | Utility value for whether to keep or drop values.
 data KeepDrop = Keep | Drop deriving (Show, Eq)
 
@@ -132,8 +127,17 @@ supportedFunctions :: Map String (Integer -> Integer)
 supportedFunctions =
   M.fromList
     [ ("abs", abs),
-      ("id", id)
+      ("id", id),
+      ("fact", fact)
     ]
+  where
+    fact n
+      | n < 0 = 0
+      | n == 0 = 1
+      | otherwise = n * fact (n - 1)
+
+supportedFunctionsList :: [String]
+supportedFunctionsList = M.keys supportedFunctions
 
 -- | Functions that looks up the given function name in the map, and will either throw an
 -- error or return the function (wrapped inside the given monad)
