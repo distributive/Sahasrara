@@ -13,8 +13,7 @@ module Tablebot.Plugin.Dice (evalExpr, Expr, PrettyShow (..)) where
 import Control.Monad.Exception (MonadException)
 import Data.Functor ((<&>))
 import Data.List (genericDrop, genericReplicate, genericTake, sortBy)
-import Data.List.NonEmpty (NonEmpty, (<|))
-import Data.List.NonEmpty qualified as NE
+import Data.List.NonEmpty as NE (NonEmpty ((:|)), head, tail, (<|))
 import Data.Map as M (Map, findWithDefault, fromList, map, member, (!))
 import Data.Maybe (fromMaybe, isNothing)
 import Data.Set as S (Set, fromList, singleton, toList, unions)
@@ -76,30 +75,20 @@ data NumBase = Paren Expr | Value Integer
   deriving (Show, Eq)
 
 -- | The type representing a numeric base value value or a dice value.
-data Base = NBase NumBase | DieOpBase DieOp
+data Base = NBase NumBase | DiceBase !Dice
   deriving (Show, Eq)
 
 -- Dice Operations after this point
 
 -- | The type representing a simple N sided die or a custom die.
-data Die = Die Base | CustomDie [Integer] deriving (Show, Eq)
+data Die = Die NumBase | CustomDie [Integer] deriving (Show, Eq)
 
 -- | The type representing either multiple dice or a single die.
-data MultiDie = MultiDie NumBase Die | SingleDie Die
+data Dice = Dice Base Die (Maybe DieOpRecur)
   deriving (Show, Eq)
 
-getDie :: MultiDie -> Die
-getDie (SingleDie d) = d
-getDie (MultiDie _ d) = d
-
-getNumberOfDice :: MultiDie -> NumBase
-getNumberOfDice (SingleDie _) = Value 1
-getNumberOfDice (MultiDie nb _) = nb
-
 -- | The type representing multiple dice or dice being modified by some die op option.
-data DieOp
-  = DieOp DieOp DieOpOption
-  | DieOpMulti MultiDie
+data DieOpRecur = DieOpRecur DieOpOption (Maybe DieOpRecur)
   deriving (Show, Eq)
 
 -- | The type representing a die op option.
@@ -163,7 +152,7 @@ class IOEval a where
 
 instance IOEval Base where
   evalShow (NBase nb) = evalShow nb
-  evalShow (DieOpBase dop) = evalShow dop
+  evalShow (DiceBase dice) = evalShow dice
 
 instance IOEval Die where
   evalShow d@(CustomDie is) = do
@@ -185,21 +174,20 @@ instance IOEval Die where
             ds <- dieShow (1, maxVal b) d [(i, Nothing)]
             return (i, ds)
 
-instance IOEval MultiDie where
-  evalShow (SingleDie d) = evalShow d
-  evalShow md@(MultiDie nb d) = do
-    (dieNum, _) <- evalShow nb
-    if dieNum >= maximumRecursion
-      then throwBot (EvaluationException $ "tried to roll more than " ++ show maximumRecursion ++ " dice")
-      else do
-        if dieNum < 0
-          then throwBot (EvaluationException "tried to give a negative value to the number of dice")
-          else do
-            ds <- sequence $ genericReplicate dieNum $ fst <$> evalShow d
-            dieshow <- dieShow (minVal d, maxVal d) md (fmap (,Nothing) ds)
-            return (sum ds, dieshow)
+-- instance IOEval Dice where
+--   evalShow md@(MultiDie nb d) = do
+--     (dieNum, _) <- evalShow nb
+--     if dieNum >= maximumRecursion
+--       then throwBot (EvaluationException $ "tried to roll more than " ++ show maximumRecursion ++ " dice")
+--       else do
+--         if dieNum < 0
+--           then throwBot (EvaluationException "tried to give a negative value to the number of dice")
+--           else do
+--             ds <- sequence $ genericReplicate dieNum $ fst <$> evalShow d
+--             dieshow <- dieShow (minVal d, maxVal d) md (fmap (,Nothing) ds)
+--             return (sum ds, dieshow)
 
-instance IOEval DieOp where
+instance IOEval Dice where
   evalShow dop = do
     (lst, rng) <- evalDieOp dop
     let vs = fromEvalDieOpList lst
@@ -211,19 +199,26 @@ fromEvalDieOpList = foldr foldF []
   where
     foldF (is, b) lst = let is' = (,Just False) <$> NE.tail is in (NE.head is, if b then Nothing else Just True) : is' ++ lst
 
-evalDieOp :: DieOp -> IO ([(NonEmpty Integer, Bool)], [Integer])
-evalDieOp (DieOpMulti md) = do
-  (nbDice, _) <- evalShow (getNumberOfDice md)
-  rolls <- mapM (\d -> evalShow d <&> fst) (genericReplicate nbDice (getDie md))
-  return (fmap (\i -> (i NE.:| [], True)) rolls, range $ getDie md)
-evalDieOp (DieOp dop dopo) = do
-  (vs, rng) <- evalDieOp dop
+evalDieOp :: Dice -> IO ([(NonEmpty Integer, Bool)], [Integer])
+-- evalDieOp (DieOpMulti md) = do
+--   (nbDice, _) <- evalShow (getNumberOfDice md)
+--   rolls <- mapM (\d -> evalShow d <&> fst) (genericReplicate nbDice (getDie md))
+--   return (fmap (\i -> (i NE.:| [], True)) rolls, range $ getDie md)
+evalDieOp (Dice b ds dopo) = do
+  (nbDice, _) <- evalShow b
+  rolls <- mapM (\d -> evalShow d <&> fst) (genericReplicate nbDice ds)
+  let (vs, rng) = (fmap (\i -> (i :| [], True)) rolls, range ds)
+  -- (vs, rng) <- evalDieOp dop
   rs <- evalDieOp' dopo rng vs
   return (rs, rng)
 
-evalDieOp' :: DieOpOption -> [Integer] -> [(NonEmpty Integer, Bool)] -> IO [(NonEmpty Integer, Bool)]
-evalDieOp' (DieOpOptionKD kd lhw) _ is = return $ evalDieOpHelpKD kd lhw is
-evalDieOp' (Reroll once o i) rng is = mapM rerollF is
+evalDieOp' :: Maybe DieOpRecur -> [Integer] -> [(NonEmpty Integer, Bool)] -> IO [(NonEmpty Integer, Bool)]
+evalDieOp' Nothing _ is = return is
+evalDieOp' (Just (DieOpRecur doo mdor)) rng is = evalDieOp'' doo rng is >>= evalDieOp' mdor rng
+
+evalDieOp'' :: DieOpOption -> [Integer] -> [(NonEmpty Integer, Bool)] -> IO [(NonEmpty Integer, Bool)]
+evalDieOp'' (DieOpOptionKD kd lhw) _ is = return $ evalDieOpHelpKD kd lhw is
+evalDieOp'' (Reroll once o i) rng is = mapM rerollF is
   where
     rerollF g@(i', b) =
       if b && compare (NE.head i') i == o
@@ -375,11 +370,11 @@ instance Range NumBase where
 
 instance Range Base where
   range' (NBase nb) = range' nb
-  range' (DieOpBase dop) = range' dop
+  range' (DiceBase dop) = range' dop
   maxVal (NBase nb) = maxVal nb
-  maxVal (DieOpBase dop) = maxVal dop
+  maxVal (DiceBase dop) = maxVal dop
   minVal (NBase nb) = minVal nb
-  minVal (DieOpBase dop) = minVal dop
+  minVal (DiceBase dop) = minVal dop
 
 instance Range Die where
   range' (CustomDie is) = S.fromList is
@@ -389,47 +384,48 @@ instance Range Die where
   minVal (CustomDie is) = minimum is
   minVal (Die _) = 1
 
-instance Range MultiDie where
-  range' (SingleDie d) = range' d
-  range' (MultiDie nb d) = S.fromList $ do
-    i <- range nb
-    foldr (\a b -> ((+) <$> a) <*> b) [0] $ genericReplicate i (range d)
+-- instance Range MultiDie where
+--   range' (SingleDie d) = range' d
+--   range' (MultiDie nb d) = S.fromList $ do
+--     i <- range nb
+--     foldr (\a b -> ((+) <$> a) <*> b) [0] $ genericReplicate i (range d)
 
-  maxVal (SingleDie d) = maxVal d
-  maxVal (MultiDie nb d) = maxVal nb * maxVal d
-  minVal (SingleDie d) = maxVal d
-  minVal (MultiDie nb d) = max 0 (minVal nb) * minVal d
+--   maxVal (SingleDie d) = maxVal d
+--   maxVal (MultiDie nb d) = maxVal nb * maxVal d
+--   minVal (SingleDie d) = maxVal d
+--   minVal (MultiDie nb d) = max 0 (minVal nb) * minVal d
 
 -- TODO: check this more
-instance Range DieOp where
-  range' (DieOpMulti md) = range' md
+instance Range Dice where
+  -- range' (DieOpMulti md) = range' md
   range' d = S.unions $ fmap foldF counts
     where
-      (counts, dr) = dieOpVals d
+      (counts, dr) = diceVals d
       foldF' i js
         | i < 1 = []
         | i == 1 = js
         | otherwise = ((+) <$> dr) <*> foldF' (i - 1) js
       foldF i = S.fromList $ foldF' i dr
 
-  maxVal (DieOpMulti md) = maxVal md
+  -- maxVal (DieOpMulti md) = maxVal md
   maxVal d
     | mxdr < 0 = fromMaybe 0 (minimumMay counts) * mxdr
     | otherwise = fromMaybe 0 (maximumMay counts) * mxdr
     where
-      (counts, dr) = dieOpVals d
+      (counts, dr) = diceVals d
       mxdr = fromMaybe 0 $ maximumMay dr
 
-  minVal (DieOpMulti md) = minVal md
+  -- minVal (DieOpMulti md) = minVal md
   minVal d
     | mndr < 0 = fromMaybe 0 (maximumMay counts) * mndr
     | otherwise = fromMaybe 0 (minimumMay counts) * mndr
     where
-      (counts, dr) = dieOpVals d
+      (counts, dr) = diceVals d
       mndr = fromMaybe 0 $ minimumMay dr
 
 type DieRange = [Integer]
 
+-- the tuple is the range of the number of dice, the current die range, and the total die range possible with the dice being used
 applyDieOpVal :: DieOpOption -> ([Integer], DieRange, DieRange) -> ([Integer], DieRange, DieRange)
 applyDieOpVal (Reroll True c l) t@(is, cdr, dr)
   | any boolF cdr = (is, dr, dr)
@@ -455,17 +451,19 @@ applyDieOpVal (DieOpOptionKD Drop lh) (is, cdr, dr) = (fmap (f (getValueLowHigh 
     f (Just i) i' = max 0 (i' - i)
     f Nothing i' = i'
 
-dieOpVals :: DieOp -> ([Integer], DieRange)
-dieOpVals dop = (filter (>= 0) counts, dr)
+diceVals :: Dice -> ([Integer], DieRange)
+diceVals (Dice b d mdor) = (filter (>= 0) counts, dr)
   where
-    (counts, dr, _) = dieOpVals' dop
+    (counts, dr, _) = diceVals' mdor (range b, dieVals, dieVals)
+    dieVals = range d
 
-dieOpVals' :: DieOp -> ([Integer], DieRange, DieRange)
-dieOpVals' (DieOpMulti md) = (numberOfDiceRange, dieVals, range (getDie md))
-  where
-    dieVals = range (getDie md)
-    numberOfDiceRange = range (getNumberOfDice md)
-dieOpVals' (DieOp dop doo) = applyDieOpVal doo (dieOpVals' dop)
+diceVals' :: Maybe DieOpRecur -> ([Integer], DieRange, DieRange) -> ([Integer], DieRange, DieRange)
+-- dieOpVals' (DieOpMulti md) = (numberOfDiceRange, dieVals, range (getDie md))
+--   where
+--     dieVals = range (getDie md)
+--     numberOfDiceRange = range (getNumberOfDice md)
+diceVals' Nothing t = t
+diceVals' (Just (DieOpRecur doo mdor)) t = diceVals' mdor (applyDieOpVal doo t)
 
 --- Pretty printing the AST
 -- The output from this should be parseable
@@ -503,19 +501,14 @@ instance PrettyShow NumBase where
 
 instance PrettyShow Base where
   prettyShow (NBase nb) = prettyShow nb
-  prettyShow (DieOpBase dop) = prettyShow dop
+  prettyShow (DiceBase dop) = prettyShow dop
 
 instance PrettyShow Die where
   prettyShow (Die b) = "d" <> prettyShow b
-  prettyShow (CustomDie is) = "d{" <> (init . tail . fromString . show) is <> "}"
+  prettyShow (CustomDie is) = "d{" <> (init . Prelude.tail . fromString . show) is <> "}"
 
-instance PrettyShow MultiDie where
-  prettyShow (SingleDie d) = prettyShow d
-  prettyShow (MultiDie nb d) = prettyShow nb <> prettyShow d
-
-instance PrettyShow DieOp where
-  prettyShow (DieOpMulti md) = prettyShow md
-  prettyShow (DieOp dop dopo) = prettyShow dop <> helper dopo
+instance PrettyShow Dice where
+  prettyShow (Dice b d dor) = prettyShow b <> prettyShow d <> helper' dor
     where
       fromOrdering LT i = "<" <> fromString (show i)
       fromOrdering EQ i = "=" <> fromString (show i)
@@ -523,6 +516,8 @@ instance PrettyShow DieOp where
       fromLHW (Where o i) = "w" <> fromOrdering o i
       fromLHW (Low i) = "l" <> fromString (show i)
       fromLHW (High i) = "h" <> fromString (show i)
+      helper' Nothing = ""
+      helper' (Just (DieOpRecur dopo' dor')) = helper dopo' <> helper' dor'
       helper (Reroll True o i) = "ro" <> fromOrdering o i
       helper (Reroll False o i) = "rr" <> fromOrdering o i
       helper (DieOpOptionKD Keep lhw) = "k" <> fromLHW lhw
@@ -574,7 +569,7 @@ instance CanParse NumBase where
 
 instance CanParse Base where
   pars =
-    try (DieOpBase <$> pars)
+    try (DiceBase <$> pars)
       <|> try (NBase <$> pars)
       <|> fail "Could not match a base token"
 
@@ -585,16 +580,22 @@ instance CanParse Die where
       <|> CustomDie <$> (try (char '{' *> skipSpace) *> (posInteger >>= (\i -> (i :) <$> many (try (skipSpace *> char ',' *> skipSpace) *> posInteger))) <* skipSpace <* char '}')
       <|> fail "recursed to die expression and could not find a die"
 
-instance CanParse MultiDie where
+instance CanParse Dice where
   pars = do
-    t <- optional $ try pars
-    bd <- pars
-    return $ maybe (SingleDie bd) (`MultiDie` bd) t
+    t <- optional $ try (pars :: Parser NumBase)
+    bd <- parseDice'
+    let t' = NBase $ fromMaybe (Value 1) t
+    return $ bd t'
 
-instance CanParse DieOp where
-  pars = do
-    dop <- DieOpMulti <$> pars
-    parseDieOpHelp dop
+parseDice' :: Parser (Base -> Dice)
+parseDice' = do
+  d <- pars :: Parser Die
+  mdor <- parseDieOpRecur
+  ( do
+      bd <- try parseDice'
+      return (\b -> bd (DiceBase $ Dice b d mdor))
+    )
+    <|> return (\b -> Dice b d mdor)
 
 parseOrdering :: Parser Ordering
 parseOrdering = (char '<' <|> char '=' <|> char '>') >>= matchO
@@ -612,6 +613,15 @@ parseLowHigh = (char 'h' <|> char 'l' <|> char 'w') >>= helper
     helper 'w' = parseOrdering >>= \o -> posInteger <&> Where o
     helper _ = fail "could not determine whether to keep/drop highest/lowest"
 
+parseDieOpRecur :: Parser (Maybe DieOpRecur)
+parseDieOpRecur = do
+  dopo <- optional (try parseDieOpOption)
+  if isNothing dopo
+    then return Nothing
+    else do
+      dor <- parseDieOpRecur
+      return $ (DieOpRecur <$> dopo) <*> Just dor
+
 parseDieOpOption :: Parser DieOpOption
 parseDieOpOption = do
   (try (string "ro") *> parseOrdering >>= \o -> Reroll True o <$> posInteger)
@@ -619,8 +629,3 @@ parseDieOpOption = do
     <|> ((try (char 'k') *> parseLowHigh) <&> DieOpOptionKD Keep)
     <|> ((try (char 'd') *> parseLowHigh) <&> DieOpOptionKD Drop)
     <|> fail "could not parse dieOpOption"
-
-parseDieOpHelp :: DieOp -> Parser DieOp
-parseDieOpHelp dop = do
-  (try parseDieOpOption >>= parseDieOpHelp . DieOp dop)
-    <|> return dop
