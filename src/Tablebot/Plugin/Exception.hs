@@ -21,7 +21,7 @@ module Tablebot.Plugin.Exception
 where
 
 import Control.Monad.Exception (Exception, MonadException, catch, throw)
-import Data.List (intersperse)
+import Data.List (intercalate)
 import Data.Text (pack)
 import Discord.Internal.Types
 import Tablebot.Plugin.Embed
@@ -117,7 +117,8 @@ errorInfo (EvaluationException msg' locs) = ErrorInfo "EvaluationException" $ ms
     l = length locs
     ls = reverse $ take 3 locs
     fs = reverse $ drop (l - 3) locs
-    connectVs vs = "in `" ++ foldr (++) "`" (intersperse "`\nin `" vs)
+    connectVs vs = "in `" ++ intercalate "`\nin `" vs ++ "`"
+    -- connectVs vs = "in `" ++ foldr (++) "`" (intersperse "`\nin `" vs)
     str =
       if l > 6
         then connectVs fs ++ "\n...\n" ++ connectVs ls

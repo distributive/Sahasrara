@@ -12,8 +12,8 @@ module Tablebot.Plugin.Dice (evalExpr, Expr, PrettyShow (..), supportedFunctions
 
 import Control.Monad (when)
 import Control.Monad.Exception (MonadException)
-import Data.Functor ((<&>))
-import Data.List (genericDrop, genericReplicate, genericTake, sortBy)
+import Data.Functor ((<&>), ($>))
+import Data.List (genericDrop, genericReplicate, genericTake, sortBy, intercalate)
 import Data.List.NonEmpty as NE (NonEmpty ((:|)), head, tail, (<|))
 import Data.Map as M (Map, findWithDefault, fromList, keys, map, member)
 import Data.Maybe (fromMaybe, isNothing)
@@ -91,7 +91,7 @@ data Base = NBase NumBase | DiceBase Dice
 -- each time and sometimes are eval'd once and then that value is used
 
 -- | The type representing a simple N sided die or a custom die.
-data Die = Die NumBase | CustomDie [Integer] deriving (Show, Eq)
+data Die = Die NumBase | CustomDie [Base] | LazyDie Die deriving (Show, Eq)
 
 -- | The type representing a number of dice equal to the `Base` value, and possibly some
 -- die options.
@@ -107,8 +107,9 @@ data DieOpRecur = DieOpRecur DieOpOption (Maybe DieOpRecur)
 
 -- | The type representing a die option.
 data DieOpOption
-  = Reroll {rerollOnce :: Bool, condition :: Ordering, limit :: Integer}
+  = Reroll {rerollOnce :: Bool, condition :: Ordering, limit :: NumBase}
   | DieOpOptionKD KeepDrop LowHighWhere
+  | DieOpOptionLazy DieOpOption
   deriving (Show, Eq)
 
 -- | A type used to designate how the keep/drop option should work
@@ -172,11 +173,15 @@ evalExpr = evalShow 0
 -- is `Just False`, the value has been rerolled over, and is displayed crossed out. If the
 -- value is `Just True`, the value has been dropped, and the number is crossed out and
 -- underlined.
-dieShow :: (PrettyShow a, MonadException m) => (Integer, Integer) -> a -> [(Integer, Maybe Bool)] -> m String
+dieShow :: (PrettyShow a, MonadException m) => Maybe (Integer, Integer) -> a -> [(Integer, Maybe Bool)] -> m String
 dieShow _ a [] = throwBot $ EvaluationException "tried to show empty set of results" [prettyShow a]
-dieShow (lc, hc) d ls = return $ prettyShow d ++ " [" ++ foldr1 (\n rst -> n ++ ", " ++ rst) adjustList ++ "]"
+dieShow lchc d ls = return $ prettyShow d ++ " [" ++ foldr1 (\n rst -> n ++ ", " ++ rst) adjustList ++ "]"
   where
-    toCrit i
+    toCrit = if isNothing lchc
+      then show
+      else toCrit'
+    (lc,hc) = fromMaybe (0,0) lchc
+    toCrit' i
       | i == lc || i == hc = "**" ++ show i ++ "**"
       | otherwise = show i
     toCrossedOut (i, Just False) = "~~" ++ toCrit i ++ "~~"
@@ -206,18 +211,24 @@ instance IOEval Base where
   evalShow' rngCount (DiceBase dice) = evalShow rngCount dice
 
 instance IOEval Die where
+  evalShow' rngCount ld@(LazyDie d) = do
+    (i,_,rngCount') <- evalShow rngCount d
+    ds <- dieShow Nothing ld [(i, Nothing)]
+    return (i,ds,rngCount')
   evalShow' rngCount d@(CustomDie is) = do
     i <- chooseOne is
-    ds <- dieShow (minimum is, maximum is) d [(i, Nothing)]
-    checkRNGCount (rngCount + 1)
-    return (i, ds, rngCount + 1)
+    (i' , _, rngCount') <- evalShow rngCount i
+    ds <- dieShow Nothing d [(i', Nothing)]
+    checkRNGCount (rngCount' + 1)
+    return (i', ds, rngCount' + 1)
   evalShow' rngCount d@(Die b) = do
     (bound, _, rngCount') <- evalShow rngCount b
     if bound < 1
       then throwBot $ EvaluationException ("Cannot roll a < 1 sided die (`" ++ prettyShow b ++ "`)") []
       else do
-        i <- randomRIO (1, bound)
-        ds <- dieShow (1, bound) d [(i, Nothing)]
+        let dBounds = (1,bound)
+        i <- randomRIO dBounds
+        ds <- dieShow Nothing d [(i, Nothing)]
         checkRNGCount (rngCount' + 1)
         return (i, ds, rngCount' + 1)
 
@@ -244,7 +255,7 @@ fromEvalDieOpList = foldr foldF []
 --
 -- The function itself checks to make sure the number of dice being rolled is less than
 -- the maximum recursion and is non-negative.
-evalDieOp :: Dice -> Integer -> IO ([(NonEmpty Integer, Bool)], (Integer, Integer), Integer)
+evalDieOp :: Dice -> Integer -> IO ([(NonEmpty Integer, Bool)], Maybe (Integer, Integer), Integer)
 evalDieOp (Dice b ds dopo) rngCount = do
   (nbDice, _, rngCountB) <- evalShow rngCount b
   if nbDice >= maximumRNG
@@ -261,8 +272,11 @@ evalDieOp (Dice b ds dopo) rngCount = do
   where
     condenseDie rngCount' (Die dBase) = do
       (i, _, rngCount'') <- evalShow rngCount' dBase
-      return (Die (Value i), rngCount'', (1, i))
-    condenseDie rngCount' die@(CustomDie is) = return (die, rngCount', (minimum is, maximum is))
+      return (Die (Value i), rngCount'', Just (1, i))
+    condenseDie rngCount' (CustomDie is) = do
+      (is', rngCount'') <- foldr foldF (return ([],rngCount')) is
+      return (CustomDie (NBase . Value <$> is'), rngCount'', Nothing)
+    condenseDie rngCount' (LazyDie d) = return (d, rngCount', Nothing)
     foldF die sumrngcount = do
       (diceSoFar, rngCountTotal) <- sumrngcount
       (i, _, rngCountTemp) <- evalShow rngCountTotal die
@@ -420,10 +434,10 @@ instance PrettyShow Base where
   prettyShow (NBase nb) = prettyShow nb
   prettyShow (DiceBase dop) = prettyShow dop
 
--- TODO: better way to display custom die
 instance PrettyShow Die where
   prettyShow (Die b) = "d" <> prettyShow b
-  prettyShow (CustomDie is) = "d{" <> (init . Prelude.tail . fromString . show) is <> "}"
+  prettyShow (CustomDie is) = "d{" <> intercalate ", " (prettyShow <$> is) <> "}"
+  prettyShow (LazyDie d) = "d!" ++ Prelude.tail (prettyShow d)
 
 instance PrettyShow Dice where
   prettyShow (Dice b d dor) = prettyShow b <> prettyShow d <> helper' dor
@@ -494,10 +508,11 @@ instance CanParse Base where
 instance CanParse Die where
   pars = do
     _ <- char 'd'
-    try (Die <$> pars)
-      <|> CustomDie
+    lazyFunc <- (try (char '!') $>  LazyDie) <|> return id
+    try (lazyFunc . Die <$> pars)
+      <|> lazyFunc . CustomDie
         <$> ( try (char '{' *> skipSpace)
-                *> (integer >>= (\i -> (i :) <$> many (try (skipSpace *> char ',' *> skipSpace) *> integer)))
+                *> (pars >>= (\i -> (i :) <$> many (try (skipSpace *> char ',' *> skipSpace) *> pars)))
                 <* skipSpace
                 <* char '}'
             )
