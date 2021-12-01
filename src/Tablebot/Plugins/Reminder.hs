@@ -33,7 +33,7 @@ import Duckling.Time.Types (InstantValue (InstantValue), SingleTimeValue (Simple
 import Tablebot.Plugin
 import Tablebot.Plugin.Database
 import Tablebot.Plugin.Discord (getMessage, sendMessage)
-import Tablebot.Plugin.SmartCommand (PComm (parseComm), Quoted (Qu), RestOfInput (ROI))
+import Tablebot.Plugin.SmartCommand (PComm (parseComm), Quoted (Qu), RestOfInput (ROI), WithError (..))
 import Tablebot.Plugin.Utils (debugPrint)
 import Text.RawString.QQ (r)
 
@@ -71,8 +71,11 @@ ducklingDateTime now rawString = do
 -- @reminderParser@ parses a reminder request of the form
 -- @!remind "reminder" <format>@, where format is a format that Duckling can parse.
 -- TODO: get timezone info and such ahead of time
-reminderParser :: Quoted String -> RestOfInput Text -> Message -> DatabaseDiscord ()
-reminderParser (Qu content) (ROI rawString) m = do
+reminderParser ::
+  WithError "Reminder needs a reminder (in quotes) followed by the time to be reminded at!" (Quoted String, RestOfInput Text) ->
+  Message ->
+  DatabaseDiscord ()
+reminderParser (WErr (Qu content, ROI rawString)) m = do
   let tz = "Europe/London" :: Text
   tzs <- liftIO $ getTimeZoneSeriesFromOlsonFile $ "/usr/share/zoneinfo/" <> unpack tz
   now <- liftIO $ currentReftime (singleton tz tzs) tz
