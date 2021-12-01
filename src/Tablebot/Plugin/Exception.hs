@@ -21,6 +21,7 @@ module Tablebot.Plugin.Exception
 where
 
 import Control.Monad.Exception (Exception, MonadException, catch, throw)
+import Data.List (intersperse)
 import Data.Text (pack)
 import Discord.Internal.Types
 import Tablebot.Plugin.Embed
@@ -34,7 +35,7 @@ data BotException
   | ParserException String
   | IndexOutOfBoundsException Int (Int, Int)
   | RandomException String
-  | EvaluationException String
+  | EvaluationException String [String]
   deriving (Show, Eq)
 
 instance Exception BotException
@@ -111,4 +112,4 @@ errorInfo (IndexOutOfBoundsException index (a, b)) =
     "IndexOutOfBoundsException"
     $ "Index value of " ++ show index ++ " is not in the valid range [" ++ show a ++ ", " ++ show b ++ "]."
 errorInfo (RandomException msg') = ErrorInfo "RandomException" msg'
-errorInfo (EvaluationException msg') = ErrorInfo "EvaluationException" msg'
+errorInfo (EvaluationException msg' locs) = ErrorInfo "EvaluationException" $ msg' ++ ".\nException occurs in:\n`" ++ foldr (++) "`" (intersperse "`\nin\n`" (reverse locs))
