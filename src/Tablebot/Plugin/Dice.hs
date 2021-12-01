@@ -24,7 +24,7 @@ import Tablebot.Plugin.Parser (posInteger, skipSpace, skipSpace1, word)
 import Tablebot.Plugin.Random (chooseOne)
 import Tablebot.Plugin.SmartCommand (CanParse (..), FromString (fromString))
 import Tablebot.Plugin.Types (Parser)
-import Text.Megaparsec (MonadParsec (try), many, optional, (<|>))
+import Text.Megaparsec (MonadParsec (try), many, optional, (<?>), (<|>))
 import Text.Megaparsec.Char (char, string)
 
 -- TODO: update the parsing stuff below so people can actually make sense of the stuff down below
@@ -508,7 +508,7 @@ instance CanParse Func where
     where
       matchFuncName Nothing t = return $ Func "id" t
       matchFuncName (Just s) t
-        | unpack s `member` supportedFunctions = (return . Func (unpack s)) t
+        | unpack s `member` supportedFunctions = return $ Func (unpack s) t
         | otherwise = fail $ "could not find function with name `" ++ unpack s ++ "`"
 
 instance CanParse Negation where
@@ -524,28 +524,29 @@ instance CanParse Expo where
 
 instance CanParse NumBase where
   pars =
-    (try (skipSpace *> char '(') *> skipSpace *> (Paren <$> pars) <* skipSpace <* char ')')
-      <|> try (Value <$> posInteger)
-      <|> fail "could not parse numBase"
+    ( (try (skipSpace *> char '(') *> skipSpace *> (Paren <$> pars) <* skipSpace <* char ')')
+        <|> try (Value <$> posInteger)
+    )
+      <?> "could not parse numBase (parentheses, an integer)"
 
 instance CanParse Base where
   pars =
-    try (DiceBase <$> pars)
-      <|> try (NBase <$> pars)
-      <|> fail "Could not match a base token"
+    (try (DiceBase <$> pars) <|> try (NBase <$> pars))
+      <?> "could not match a base token (dice, parentheses, an integer)"
 
 instance CanParse Die where
   pars = do
     _ <- char 'd'
     lazyFunc <- (try (char '!') $> LazyDie) <|> return id
-    try (lazyFunc . Die <$> pars)
-      <|> lazyFunc . CustomDie
-        <$> ( try (char '{' *> skipSpace)
-                *> (pars >>= (\i -> (i :) <$> many (try (skipSpace *> char ',' *> skipSpace) *> pars)))
-                <* skipSpace
-                <* char '}'
-            )
-      <|> fail "recursed to die expression and could not find a die"
+    ( try (lazyFunc . Die <$> pars)
+        <|> lazyFunc . CustomDie
+          <$> ( try (char '{' *> skipSpace)
+                  *> (pars >>= (\i -> (i :) <$> many (try (skipSpace *> char ',' *> skipSpace) *> pars)))
+                  <* skipSpace
+                  <* char '}'
+              )
+      )
+      <?> "recursed to die expression and could not find a die"
 
 instance CanParse Dice where
   pars = do
@@ -569,7 +570,7 @@ parseDice' = do
 
 -- | Parse a `<`, `=`, or `>` as an `Ordering`.
 parseOrdering :: Parser Ordering
-parseOrdering = (char '<' <|> char '=' <|> char '>') >>= matchO
+parseOrdering = (try (char '<' <|> char '=' <|> char '>') <?> "could not parse an ordering") >>= matchO
   where
     matchO '<' = return LT
     matchO '=' = return EQ
@@ -578,7 +579,7 @@ parseOrdering = (char '<' <|> char '=' <|> char '>') >>= matchO
 
 -- | Parse a `LowHighWhere`, which is an `h` followed by an integer.
 parseLowHigh :: Parser LowHighWhere
-parseLowHigh = (char 'h' <|> char 'l' <|> char 'w') >>= helper
+parseLowHigh = (try (char 'h' <|> char 'l' <|> char 'w') <?> "could not parse high, low, where") >>= helper
   where
     helper 'h' = High <$> pars
     helper 'l' = Low <$> pars
@@ -604,4 +605,4 @@ parseDieOpOption = do
       <|> ((try (char 'k') *> parseLowHigh) <&> DieOpOptionKD Keep)
       <|> ((try (char 'd') *> parseLowHigh) <&> DieOpOptionKD Drop) <&> lazyFunc
     )
-    <|> fail "could not parse dieOpOption"
+    <?> "could not parse dieOpOption - expecting one of the options described in the doc (call `help roll` to access)"
