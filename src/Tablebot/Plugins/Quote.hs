@@ -96,23 +96,34 @@ quoteComm ::
   DatabaseDiscord ()
 quoteComm (WErr ()) = randomQ
 
-addComm :: (Quoted Text, Exactly "-", RestOfInput Text) -> Message -> DatabaseDiscord ()
-addComm (Qu qu, _, ROI author) = addQ qu author
+addComm ::
+  WithError "Quote format should be \"quote\" - author!" (Quoted Text, Exactly "-", RestOfInput Text) ->
+  Message ->
+  DatabaseDiscord ()
+addComm (WErr (Qu qu, _, ROI author)) = addQ qu author
 
-editComm :: (Int64, Quoted Text, Exactly "-", RestOfInput Text) -> Message -> DatabaseDiscord ()
-editComm (qId, Qu qu, _, ROI author) = editQ qId qu author
+editComm ::
+  WithError
+    "Edit format should be quoteId \"new quote\" - new author!"
+    (Int64, Quoted Text, Exactly "-", RestOfInput Text) ->
+  Message ->
+  DatabaseDiscord ()
+editComm (WErr (qId, Qu qu, _, ROI author)) = editQ qId qu author
 
 thisComm :: Message -> DatabaseDiscord ()
 thisComm = thisQ
 
-authorComm :: RestOfInput Text -> Message -> DatabaseDiscord ()
-authorComm (ROI author) = authorQ author
+authorComm ::
+  WithError "Expected author name to find quotes for!" (RestOfInput Text) ->
+  Message ->
+  DatabaseDiscord ()
+authorComm (WErr (ROI author)) = authorQ author
 
-showComm :: Int64 -> Message -> DatabaseDiscord ()
-showComm qId = showQ qId
+showComm :: WithError "Expected quote number to show!" Int64 -> Message -> DatabaseDiscord ()
+showComm (WErr qId) = showQ qId
 
-deleteComm :: Int64 -> Message -> DatabaseDiscord ()
-deleteComm qId = deleteQ qId
+deleteComm :: WithError "Expected quote number to delete!" Int64 -> Message -> DatabaseDiscord ()
+deleteComm (WErr qId) = deleteQ qId
 
 randomComm :: Message -> DatabaseDiscord ()
 randomComm = randomQ
