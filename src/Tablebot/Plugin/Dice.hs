@@ -13,7 +13,7 @@ module Tablebot.Plugin.Dice (evalExpr, Expr, PrettyShow (..), supportedFunctions
 import Control.Monad (when)
 import Control.Monad.Exception (MonadException)
 import Data.Functor ((<&>))
-import Data.List (genericDrop, genericReplicate, genericTake, sortBy, sort)
+import Data.List (genericDrop, genericReplicate, genericTake, sort, sortBy)
 import Data.List.NonEmpty as NE (NonEmpty ((:|)), head, tail, (<|))
 import Data.Map as M (Map, findWithDefault, fromList, keys, map, member)
 import Data.Maybe (fromMaybe, isNothing)
