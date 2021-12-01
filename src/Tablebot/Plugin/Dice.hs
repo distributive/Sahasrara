@@ -12,15 +12,15 @@ module Tablebot.Plugin.Dice (evalExpr, Expr, PrettyShow (..), supportedFunctions
 
 import Control.Monad (when)
 import Control.Monad.Exception (MonadException)
-import Data.Functor ((<&>), ($>))
-import Data.List (genericDrop, genericReplicate, genericTake, sortBy, intercalate)
+import Data.Functor (($>), (<&>))
+import Data.List (genericDrop, genericReplicate, genericTake, intercalate, sortBy)
 import Data.List.NonEmpty as NE (NonEmpty ((:|)), head, tail, (<|))
 import Data.Map as M (Map, findWithDefault, fromList, keys, map, member)
 import Data.Maybe (fromMaybe, isNothing)
 import Data.Text (pack, unpack)
 import System.Random (Random (randomRIO))
 import Tablebot.Plugin.Exception (BotException (EvaluationException), catchBot, throwBot)
-import Tablebot.Plugin.Parser (integer, posInteger, skipSpace, skipSpace1, word)
+import Tablebot.Plugin.Parser (posInteger, skipSpace, skipSpace1, word)
 import Tablebot.Plugin.Random (chooseOne)
 import Tablebot.Plugin.SmartCommand (CanParse (..), FromString (fromString))
 import Tablebot.Plugin.Types (Parser)
@@ -85,13 +85,16 @@ data NumBase = Paren Expr | Value Integer
 data Base = NBase NumBase | DiceBase Dice
   deriving (Show, Eq)
 
+fromIntegerToExpr :: Integer -> Expr
+fromIntegerToExpr = NoExpr . NoTerm . Func "id" . NoNeg . NoExpo . NBase . Value
+
 -- Dice Operations after this point
 
 -- TODO: create a lazy and a repeated eval die so that sometimes dice quantities are eval'd
 -- each time and sometimes are eval'd once and then that value is used
 
 -- | The type representing a simple N sided die or a custom die.
-data Die = Die NumBase | CustomDie [Base] | LazyDie Die deriving (Show, Eq)
+data Die = Die NumBase | CustomDie [Expr] | LazyDie Die deriving (Show, Eq)
 
 -- | The type representing a number of dice equal to the `Base` value, and possibly some
 -- die options.
@@ -113,12 +116,12 @@ data DieOpOption
   deriving (Show, Eq)
 
 -- | A type used to designate how the keep/drop option should work
-data LowHighWhere = Low Integer | High Integer | Where Ordering Integer deriving (Show, Eq)
+data LowHighWhere = Low NumBase | High NumBase | Where Ordering NumBase deriving (Show, Eq)
 
 -- | Utility function to get the integer determining how many values to get given a
--- `LowHighWhere`. If the given value is `Low` or `High`, then Just the integer contained
+-- `LowHighWhere`. If the given value is `Low` or `High`, then Just the NumBase contained
 -- is returned. Else, Nothing is returned.
-getValueLowHigh :: LowHighWhere -> Maybe Integer
+getValueLowHigh :: LowHighWhere -> Maybe NumBase
 getValueLowHigh (Low i) = Just i
 getValueLowHigh (High i) = Just i
 getValueLowHigh (Where _ _) = Nothing
@@ -177,10 +180,11 @@ dieShow :: (PrettyShow a, MonadException m) => Maybe (Integer, Integer) -> a -> 
 dieShow _ a [] = throwBot $ EvaluationException "tried to show empty set of results" [prettyShow a]
 dieShow lchc d ls = return $ prettyShow d ++ " [" ++ foldr1 (\n rst -> n ++ ", " ++ rst) adjustList ++ "]"
   where
-    toCrit = if isNothing lchc
-      then show
-      else toCrit'
-    (lc,hc) = fromMaybe (0,0) lchc
+    toCrit =
+      if isNothing lchc
+        then show
+        else toCrit'
+    (lc, hc) = fromMaybe (0, 0) lchc
     toCrit' i
       | i == lc || i == hc = "**" ++ show i ++ "**"
       | otherwise = show i
@@ -212,12 +216,12 @@ instance IOEval Base where
 
 instance IOEval Die where
   evalShow' rngCount ld@(LazyDie d) = do
-    (i,_,rngCount') <- evalShow rngCount d
+    (i, _, rngCount') <- evalShow rngCount d
     ds <- dieShow Nothing ld [(i, Nothing)]
-    return (i,ds,rngCount')
+    return (i, ds, rngCount')
   evalShow' rngCount d@(CustomDie is) = do
     i <- chooseOne is
-    (i' , _, rngCount') <- evalShow rngCount i
+    (i', _, rngCount') <- evalShow rngCount i
     ds <- dieShow Nothing d [(i', Nothing)]
     checkRNGCount (rngCount' + 1)
     return (i', ds, rngCount' + 1)
@@ -226,15 +230,14 @@ instance IOEval Die where
     if bound < 1
       then throwBot $ EvaluationException ("Cannot roll a < 1 sided die (`" ++ prettyShow b ++ "`)") []
       else do
-        let dBounds = (1,bound)
-        i <- randomRIO dBounds
+        i <- randomRIO (1, bound)
         ds <- dieShow Nothing d [(i, Nothing)]
         checkRNGCount (rngCount' + 1)
         return (i, ds, rngCount' + 1)
 
 instance IOEval Dice where
   evalShow' rngCount dop = do
-    (lst, mnmx, rngCount') <- evalDieOp dop rngCount
+    (lst, mnmx, rngCount') <- evalDieOp rngCount dop
     let vs = fromEvalDieOpList lst
     s <- dieShow mnmx dop vs
     return (sum (fst <$> filter (isNothing . snd) vs), s, rngCount')
@@ -255,8 +258,8 @@ fromEvalDieOpList = foldr foldF []
 --
 -- The function itself checks to make sure the number of dice being rolled is less than
 -- the maximum recursion and is non-negative.
-evalDieOp :: Dice -> Integer -> IO ([(NonEmpty Integer, Bool)], Maybe (Integer, Integer), Integer)
-evalDieOp (Dice b ds dopo) rngCount = do
+evalDieOp :: Integer -> Dice -> IO ([(NonEmpty Integer, Bool)], Maybe (Integer, Integer), Integer)
+evalDieOp rngCount (Dice b ds dopo) = do
   (nbDice, _, rngCountB) <- evalShow rngCount b
   if nbDice >= maximumRNG
     then throwBot (EvaluationException ("tried to roll more than " ++ show maximumRNG ++ " dice: " ++ show nbDice) [prettyShow b])
@@ -267,15 +270,15 @@ evalDieOp (Dice b ds dopo) rngCount = do
           (ds', rngCountCondense, crits) <- condenseDie rngCountB ds
           (rolls, rngCountRolls) <- foldr foldF (return ([], rngCountCondense)) (genericReplicate nbDice ds')
           let vs = fmap (\i -> (i :| [], True)) rolls
-          (rs, rngCountRs) <- evalDieOp' dopo ds' rngCountRolls vs
+          (rs, rngCountRs) <- evalDieOp' rngCountRolls dopo ds' vs
           return (sortBy sortByOption rs, crits, rngCountRs)
   where
     condenseDie rngCount' (Die dBase) = do
       (i, _, rngCount'') <- evalShow rngCount' dBase
       return (Die (Value i), rngCount'', Just (1, i))
     condenseDie rngCount' (CustomDie is) = do
-      (is', rngCount'') <- foldr foldF (return ([],rngCount')) is
-      return (CustomDie (NBase . Value <$> is'), rngCount'', Nothing)
+      (is', rngCount'') <- foldr foldF (return ([], rngCount')) is
+      return (CustomDie (fromIntegerToExpr <$> is'), rngCount'', Nothing)
     condenseDie rngCount' (LazyDie d) = return (d, rngCount', Nothing)
     foldF die sumrngcount = do
       (diceSoFar, rngCountTotal) <- sumrngcount
@@ -287,28 +290,48 @@ evalDieOp (Dice b ds dopo) rngCount = do
 
 -- | Utility function that processes a `Maybe DieOpRecur`, when given a range for dice,
 -- and dice that have already been processed.
-evalDieOp' :: Maybe DieOpRecur -> Die -> Integer -> [(NonEmpty Integer, Bool)] -> IO ([(NonEmpty Integer, Bool)], Integer)
-evalDieOp' Nothing _ rngCount is = return (is, rngCount)
-evalDieOp' (Just (DieOpRecur doo mdor)) die rngCount is = do
-  (is', rngCount') <- evalDieOp'' doo die rngCount is
-  evalDieOp' mdor die rngCount' is'
+evalDieOp' :: Integer -> Maybe DieOpRecur -> Die -> [(NonEmpty Integer, Bool)] -> IO ([(NonEmpty Integer, Bool)], Integer)
+evalDieOp' rngCount Nothing _ is = return (is, rngCount)
+evalDieOp' rngCount (Just (DieOpRecur doo mdor)) die is = do
+  (doo', rngCount') <- processDOO rngCount doo
+  (is', rngCount'') <- evalDieOp'' rngCount' doo' die is
+  evalDieOp' rngCount'' mdor die is'
+  where
+    processLHW rngCount' (Low i) = do
+      (i', _, rngCount'') <- evalShow rngCount' i
+      return (Low (Value i'), rngCount'')
+    processLHW rngCount' (High i) = do
+      (i', _, rngCount'') <- evalShow rngCount' i
+      return (High (Value i'), rngCount'')
+    processLHW rngCount' (Where o i) = do
+      (i', _, rngCount'') <- evalShow rngCount' i
+      return (Where o (Value i'), rngCount'')
+    processDOO rngCount' (DieOpOptionKD kd lhw) = do
+      (lhw', rngCount'') <- processLHW rngCount' lhw
+      return (DieOpOptionKD kd lhw', rngCount'')
+    processDOO rngCount' (Reroll once o i) = do
+      (i', _, rngCount'') <- evalShow rngCount' i
+      return (Reroll once o (Value i'), rngCount'')
+    processDOO rngCount' (DieOpOptionLazy doo') = return (doo', rngCount')
 
 -- | Utility function that processes a `DieOpOption`, when given a range for dice,
 -- and dice that have already been processed.
-evalDieOp'' :: DieOpOption -> Die -> Integer -> [(NonEmpty Integer, Bool)] -> IO ([(NonEmpty Integer, Bool)], Integer)
-evalDieOp'' (DieOpOptionKD kd lhw) _ rngCount is = return (evalDieOpHelpKD kd lhw is, rngCount)
-evalDieOp'' (Reroll once o i) die rngCount is = foldr rerollF (return ([], rngCount)) is
+evalDieOp'' :: Integer -> DieOpOption -> Die -> [(NonEmpty Integer, Bool)] -> IO ([(NonEmpty Integer, Bool)], Integer)
+evalDieOp'' rngCount (DieOpOptionLazy doo) die is = evalDieOp'' rngCount doo die is
+evalDieOp'' rngCount (DieOpOptionKD kd lhw) _ is = evalDieOpHelpKD rngCount kd lhw is
+evalDieOp'' rngCount (Reroll once o i) die is = foldr rerollF (return ([], rngCount)) is
   where
     rerollF g@(i', b) isRngCount' = do
       (is', rngCount') <- isRngCount'
-      if b && compare (NE.head i') i == o
+      (iEval, _, rngCount'') <- evalShow rngCount' i
+      if b && compare (NE.head i') iEval == o
         then do
-          (v, _, rngCount'') <- evalShow rngCount' die
+          (v, _, rngCount''') <- evalShow rngCount'' die
           let ret = (v <| i', b)
           if once
-            then return (ret : is', rngCount'')
-            else rerollF ret (return (is', rngCount''))
-        else return (g : is', rngCount')
+            then return (ret : is', rngCount''')
+            else rerollF ret (return (is', rngCount'''))
+        else return (g : is', rngCount'')
 
 -- | Given a list of dice values, separate them into kept values and dropped values
 -- respectively.
@@ -322,18 +345,23 @@ separateKeptDropped = foldr f ([], [])
 setToDropped :: [(NonEmpty Integer, Bool)] -> [(NonEmpty Integer, Bool)]
 setToDropped = fmap (\(is, _) -> (is, False))
 
--- TODO: make the keep/drop on low/high not require a sort somehow, or if it does to not change the output order of the values
-
 -- | Helper function that executes the keep/drop commands on dice.
-evalDieOpHelpKD :: KeepDrop -> LowHighWhere -> [(NonEmpty Integer, Bool)] -> [(NonEmpty Integer, Bool)]
-evalDieOpHelpKD Keep (Where cmp i) is = fmap (\(iis, b) -> (iis, b && compare (NE.head iis) i == cmp)) is
-evalDieOpHelpKD Drop (Where cmp i) is = fmap (\(iis, b) -> (iis, b && compare (NE.head iis) i /= cmp)) is
-evalDieOpHelpKD kd lh is = d ++ setToDropped (getDrop i sk) ++ getKeep i sk
+evalDieOpHelpKD :: Integer -> KeepDrop -> LowHighWhere -> [(NonEmpty Integer, Bool)] -> IO ([(NonEmpty Integer, Bool)], Integer)
+evalDieOpHelpKD rngCount kd (Where cmp i) is = foldr foldF (return ([], rngCount)) is
+  where
+    isKeep = if kd == Keep then id else not
+    foldF (iis, b) sumrngcount = do
+      (diceSoFar, rngCountTotal) <- sumrngcount
+      (i', _, rngCountTemp) <- evalShow rngCountTotal i
+      return ((iis, b && isKeep (compare (NE.head iis) i' == cmp)) : diceSoFar, rngCountTemp)
+evalDieOpHelpKD rngCount kd lh is = do
+  (i', _, rngCount') <- evalShow rngCount i
+  return (d ++ setToDropped (getDrop i' sk) ++ getKeep i' sk, rngCount')
   where
     (k, d) = separateKeptDropped is
     order l l' = if isLow lh then compare l l' else compare l' l
     sk = sortBy order k
-    i = fromMaybe 0 (getValueLowHigh lh)
+    i = fromMaybe (Value 0) (getValueLowHigh lh)
     (getDrop, getKeep) = if kd == Keep then (genericDrop, genericTake) else (genericTake, genericDrop)
 
 --- Pure evaluation functions for non-dice calculations
@@ -442,14 +470,15 @@ instance PrettyShow Die where
 instance PrettyShow Dice where
   prettyShow (Dice b d dor) = prettyShow b <> prettyShow d <> helper' dor
     where
-      fromOrdering LT i = "<" <> fromString (show i)
-      fromOrdering EQ i = "=" <> fromString (show i)
-      fromOrdering GT i = ">" <> fromString (show i)
+      fromOrdering LT i = "<" <> fromString (prettyShow i)
+      fromOrdering EQ i = "=" <> fromString (prettyShow i)
+      fromOrdering GT i = ">" <> fromString (prettyShow i)
       fromLHW (Where o i) = "w" <> fromOrdering o i
-      fromLHW (Low i) = "l" <> fromString (show i)
-      fromLHW (High i) = "h" <> fromString (show i)
+      fromLHW (Low i) = "l" <> fromString (prettyShow i)
+      fromLHW (High i) = "h" <> fromString (prettyShow i)
       helper' Nothing = ""
       helper' (Just (DieOpRecur dopo' dor')) = helper dopo' <> helper' dor'
+      helper (DieOpOptionLazy doo) = "!" <> helper doo
       helper (Reroll True o i) = "ro" <> fromOrdering o i
       helper (Reroll False o i) = "rr" <> fromOrdering o i
       helper (DieOpOptionKD Keep lhw) = "k" <> fromLHW lhw
@@ -508,7 +537,7 @@ instance CanParse Base where
 instance CanParse Die where
   pars = do
     _ <- char 'd'
-    lazyFunc <- (try (char '!') $>  LazyDie) <|> return id
+    lazyFunc <- (try (char '!') $> LazyDie) <|> return id
     try (lazyFunc . Die <$> pars)
       <|> lazyFunc . CustomDie
         <$> ( try (char '{' *> skipSpace)
@@ -551,9 +580,9 @@ parseOrdering = (char '<' <|> char '=' <|> char '>') >>= matchO
 parseLowHigh :: Parser LowHighWhere
 parseLowHigh = (char 'h' <|> char 'l' <|> char 'w') >>= helper
   where
-    helper 'h' = High <$> integer
-    helper 'l' = Low <$> integer
-    helper 'w' = parseOrdering >>= \o -> integer <&> Where o
+    helper 'h' = High <$> pars
+    helper 'l' = Low <$> pars
+    helper 'w' = parseOrdering >>= \o -> pars <&> Where o
     helper _ = fail "could not determine whether to keep/drop highest/lowest"
 
 -- | Parse a bunch of die options.
@@ -569,8 +598,10 @@ parseDieOpRecur = do
 -- | Parse a single die option.
 parseDieOpOption :: Parser DieOpOption
 parseDieOpOption = do
-  (try (string "ro") *> parseOrdering >>= \o -> Reroll True o <$> integer)
-    <|> (try (string "rr") *> parseOrdering >>= \o -> Reroll False o <$> integer)
-    <|> ((try (char 'k') *> parseLowHigh) <&> DieOpOptionKD Keep)
-    <|> ((try (char 'd') *> parseLowHigh) <&> DieOpOptionKD Drop)
+  lazyFunc <- (try (char '!') $> DieOpOptionLazy) <|> return id
+  ( (try (string "ro") *> parseOrdering >>= \o -> Reroll True o <$> pars)
+      <|> (try (string "rr") *> parseOrdering >>= \o -> Reroll False o <$> pars)
+      <|> ((try (char 'k') *> parseLowHigh) <&> DieOpOptionKD Keep)
+      <|> ((try (char 'd') *> parseLowHigh) <&> DieOpOptionKD Drop) <&> lazyFunc
+    )
     <|> fail "could not parse dieOpOption"
