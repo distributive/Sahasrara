@@ -48,7 +48,7 @@ This supports addition, subtraction, multiplication, integer division, exponenti
       ++ foldr (\s ss -> ss ++ ", " ++ s) (head supportedFunctionsList) (tail supportedFunctionsList)
       ++ [r|.
 
-To see a full list of uses and options, please go to <link>.
+To see a full list of uses and options, please go to <https://github.com/WarwickTabletop/tablebot/blob/main/docs/Roll.md>.
 
 *Usage:*
   - `roll 1d20` -> rolls a twenty sided die and returns the outcome
