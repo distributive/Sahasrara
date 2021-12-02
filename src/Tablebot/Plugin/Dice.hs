@@ -18,13 +18,15 @@ import Data.List (genericDrop, genericReplicate, genericTake, intercalate, sortB
 import Data.List.NonEmpty as NE (NonEmpty ((:|)), head, tail, (<|))
 import Data.Map as M (Map, findWithDefault, fromList, keys, map, member)
 import Data.Maybe (fromMaybe, isNothing)
+import Data.String (IsString (fromString))
 import Data.Text (pack, unpack)
 import Data.Tuple (swap)
 import System.Random (Random (randomRIO))
+import Tablebot.Plugin.Discord (Format (..), formatInput, formatText)
 import Tablebot.Plugin.Exception (BotException (EvaluationException), catchBot, throwBot)
 import Tablebot.Plugin.Parser (posInteger, skipSpace, skipSpace1, word)
 import Tablebot.Plugin.Random (chooseOne)
-import Tablebot.Plugin.SmartCommand (CanParse (..), FromString (fromString))
+import Tablebot.Plugin.SmartCommand (CanParse (..))
 import Tablebot.Plugin.Types (Parser)
 import Text.Megaparsec (MonadParsec (try), many, optional, (<?>), (<|>))
 import Text.Megaparsec.Char (char, string)
@@ -121,7 +123,7 @@ applyCompare (And os) a b = all (\o -> applyCompare o a b) os
 applyCompare (Or os) a b = any (\o -> applyCompare o a b) os
 applyCompare (Not o) a b = not (applyCompare o a b)
 
-advancedOrderingMapping :: (FromString a, Ord a) => (Map a AdvancedOrdering, Map AdvancedOrdering a)
+advancedOrderingMapping :: (IsString a, Ord a) => (Map a AdvancedOrdering, Map AdvancedOrdering a)
 advancedOrderingMapping = (M.fromList lst, M.fromList $ swap <$> lst)
   where
     lst =
@@ -185,7 +187,7 @@ supportedFunctionsList = M.keys supportedFunctions
 -- | Functions that looks up the given function name in the map, and will either throw an
 -- error or return the function (wrapped inside the given monad)
 getFunc :: MonadException m => String -> m (Integer -> Integer)
-getFunc s = M.findWithDefault (throwBot $ EvaluationException ("could not find function `" ++ s ++ "`") []) s (M.map return supportedFunctions)
+getFunc s = M.findWithDefault (throwBot $ EvaluationException ("could not find function " ++ formatText Code s) []) s (M.map return supportedFunctions)
 
 --- Evaluating an expression. Uses IO because dice are random
 
@@ -213,10 +215,10 @@ dieShow lchc d ls = return $ prettyShow d ++ " [" ++ foldr1 (\n rst -> n ++ ", "
         else toCrit'
     (lc, hc) = fromMaybe (0, 0) lchc
     toCrit' i
-      | i == lc || i == hc = "**" ++ show i ++ "**"
+      | i == lc || i == hc = formatInput Bold i
       | otherwise = show i
-    toCrossedOut (i, Just False) = "~~" ++ toCrit i ++ "~~"
-    toCrossedOut (i, Just True) = "~~__" ++ toCrit i ++ "__~~"
+    toCrossedOut (i, Just False) = formatText Strikethrough $ toCrit i
+    toCrossedOut (i, Just True) = formatText Strikethrough $ formatText Underline $ toCrit i
     toCrossedOut (i, _) = toCrit i
     adjustList = fmap toCrossedOut ls
 
@@ -255,7 +257,7 @@ instance IOEval Die where
   evalShow' rngCount d@(Die b) = do
     (bound, _, rngCount') <- evalShow rngCount b
     if bound < 1
-      then throwBot $ EvaluationException ("Cannot roll a < 1 sided die (`" ++ prettyShow b ++ "`)") []
+      then throwBot $ EvaluationException ("Cannot roll a < 1 sided die (" ++ formatText Code (prettyShow b) ++ ")") []
       else do
         i <- randomRIO (1, bound)
         ds <- dieShow Nothing d [(i, Nothing)]
@@ -289,10 +291,10 @@ evalDieOp :: Integer -> Dice -> IO ([(NonEmpty Integer, Bool)], Maybe (Integer, 
 evalDieOp rngCount (Dice b ds dopo) = do
   (nbDice, _, rngCountB) <- evalShow rngCount b
   if nbDice > maximumRNG
-    then throwBot (EvaluationException ("tried to roll more than " ++ show maximumRNG ++ " dice: " ++ show nbDice) [prettyShow b])
+    then throwBot (EvaluationException ("tried to roll more than " ++ formatInput Code maximumRNG ++ " dice: " ++ formatInput Code nbDice) [prettyShow b])
     else do
       if nbDice < 0
-        then throwBot (EvaluationException ("tried to give a negative value to the number of dice: " ++ show nbDice) [prettyShow b])
+        then throwBot (EvaluationException ("tried to give a negative value to the number of dice: " ++ formatInput Code nbDice) [prettyShow b])
         else do
           (ds', rngCountCondense, crits) <- condenseDie rngCountB ds
           (rolls, rngCountRolls) <- foldr foldF (return ([], rngCountCondense)) (genericReplicate nbDice ds')
@@ -420,7 +422,7 @@ instance IOEval Func where
   evalShow' rngCount (Func "fact" neg) = do
     (neg', neg's, rngCount') <- evalShow rngCount neg
     if neg' > factorialLimit
-      then throwBot $ EvaluationException ("tried to evaluate a factorial with input number greater than the limit (" ++ show factorialLimit ++ "): `" ++ show neg' ++ "`") []
+      then throwBot $ EvaluationException ("tried to evaluate a factorial with input number greater than the limit (" ++ formatInput Code factorialLimit ++ "): `" ++ formatInput Code neg' ++ "`") []
       else do
         f <- getFunc "fact"
         return (f neg', "fact" ++ " " ++ neg's, rngCount')
@@ -440,7 +442,7 @@ instance IOEval Expo where
   evalShow' rngCount (Expo b expo) = do
     (expo', expo's, rngCount') <- evalShow rngCount expo
     if expo' < 0
-      then throwBot (EvaluationException "the exponent is negative" [prettyShow expo])
+      then throwBot (EvaluationException ("the exponent is negative: " ++ formatInput Code expo') [prettyShow expo])
       else do
         (b', b's, rngCount'') <- evalShow rngCount' b
         return (b' ^ expo', b's ++ " ^ " ++ expo's, rngCount'')

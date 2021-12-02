@@ -15,6 +15,7 @@
 module Tablebot.Plugin.SmartCommand where
 
 import Data.Proxy
+import Data.String (IsString (fromString))
 import Data.Text (Text, pack)
 import Discord.Types (Message)
 import GHC.TypeLits
@@ -49,19 +50,6 @@ instance {-# OVERLAPPABLE #-} (CanParse a, PComm as s) => PComm (a -> as) s wher
     skipSpace1
     parseComm (comm this)
 
--- | @FromString@ defines types that can be retrieved from @String@, which is
--- the usual result of the common parsers.
--- Note that this is a pure function not a parser, so needs to always succeed
--- (hence why we don't have instances like @FromString Int@).
-class FromString x where
-  fromString :: String -> x
-
-instance FromString String where
-  fromString = id
-
-instance FromString Text where
-  fromString = pack
-
 -- | @CanParse@ defines types from which we can generate parsers.
 class CanParse a where
   pars :: Parser a
@@ -78,7 +66,7 @@ instance {-# OVERLAPPING #-} CanParse String where
 -- | @Quoted a@ defines an input of type @a@ that is contained within quotes.
 newtype Quoted a = Qu a
 
-instance FromString a => CanParse (Quoted a) where
+instance IsString a => CanParse (Quoted a) where
   pars = Qu . fromString <$> quoted
 
 -- A parser for @Maybe a@ attempts to parse @a@, returning @Just x@ if
@@ -163,7 +151,7 @@ instance CanParse () where
 -- | @RestOfInput a@ parses the rest of the input, giving a value of type @a@.
 newtype RestOfInput a = ROI a
 
-instance FromString a => CanParse (RestOfInput a) where
+instance IsString a => CanParse (RestOfInput a) where
   pars = ROI . fromString <$> untilEnd
 
 -- | @noArguments@ is a type-specific alias for @parseComm@ for commands that
