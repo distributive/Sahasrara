@@ -67,7 +67,7 @@ getShibeAPI = do
 getShibe :: Either String ShibeAPI -> Text
 getShibe esc = case esc of
   (Left r) -> "no shibe today, sorry :(. (error is `" <> pack r <> "`)"
-  (Right r) -> url r
+  (Right r) -> r
 
 -- | @shibeHelp@ has the help text for the shibe command
 shibeHelp :: HelpPage
