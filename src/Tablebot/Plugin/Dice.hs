@@ -266,7 +266,7 @@ fromEvalDieOpList = foldr foldF []
 evalDieOp :: Integer -> Dice -> IO ([(NonEmpty Integer, Bool)], Maybe (Integer, Integer), Integer)
 evalDieOp rngCount (Dice b ds dopo) = do
   (nbDice, _, rngCountB) <- evalShow rngCount b
-  if nbDice >= maximumRNG
+  if nbDice > maximumRNG
     then throwBot (EvaluationException ("tried to roll more than " ++ show maximumRNG ++ " dice: " ++ show nbDice) [prettyShow b])
     else do
       if nbDice < 0
@@ -529,10 +529,13 @@ instance CanParse Expo where
 
 instance CanParse NumBase where
   pars =
-    ( (try (skipSpace *> char '(') *> skipSpace *> (Paren <$> pars) <* skipSpace <* char ')')
+    ( (try (skipSpace *> char '(') *> skipSpace *> (Paren . unnest <$> pars) <* skipSpace <* char ')')
         <|> try (Value <$> posInteger)
     )
       <?> "could not parse numBase (parentheses, an integer)"
+    where
+      unnest (NoExpr (NoTerm (Func "id" (NoNeg (NoExpo (NBase (Paren e))))))) = e
+      unnest e = e
 
 instance CanParse Base where
   pars =
