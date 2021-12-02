@@ -12,12 +12,14 @@ module Tablebot.Plugin.Dice (evalExpr, Expr, PrettyShow (..), supportedFunctions
 
 import Control.Monad (when)
 import Control.Monad.Exception (MonadException)
+import Data.Bifunctor (Bifunctor (first))
 import Data.Functor (($>), (<&>))
 import Data.List (genericDrop, genericReplicate, genericTake, intercalate, sortBy)
 import Data.List.NonEmpty as NE (NonEmpty ((:|)), head, tail, (<|))
 import Data.Map as M (Map, findWithDefault, fromList, keys, map, member)
 import Data.Maybe (fromMaybe, isNothing)
 import Data.Text (pack, unpack)
+import Data.Tuple (swap)
 import System.Random (Random (randomRIO))
 import Tablebot.Plugin.Exception (BotException (EvaluationException), catchBot, throwBot)
 import Tablebot.Plugin.Parser (posInteger, skipSpace, skipSpace1, word)
@@ -110,18 +112,38 @@ data Dice = Dice Base Die (Maybe DieOpRecur)
 data DieOpRecur = DieOpRecur DieOpOption (Maybe DieOpRecur)
   deriving (Show, Eq)
 
--- TODO: change rerolls and LowHighWhere to use NumBase instead of Integer... even if it
--- makes my life harder.
+data AdvancedOrdering = Not AdvancedOrdering | OrderingId Ordering | And [AdvancedOrdering] | Or [AdvancedOrdering]
+  deriving (Show, Eq, Ord)
+
+applyCompare :: Ord a => AdvancedOrdering -> a -> a -> Bool
+applyCompare (OrderingId o) a b = o == compare a b
+applyCompare (And os) a b = all (\o -> applyCompare o a b) os
+applyCompare (Or os) a b = any (\o -> applyCompare o a b) os
+applyCompare (Not o) a b = not (applyCompare o a b)
+
+advancedOrderingMapping :: (FromString a, Ord a) => (Map a AdvancedOrdering, Map AdvancedOrdering a)
+advancedOrderingMapping = (M.fromList lst, M.fromList $ swap <$> lst)
+  where
+    lst =
+      fmap
+        (first fromString)
+        [ ("!=", Not (OrderingId EQ)),
+          ("<=", Or [OrderingId EQ, OrderingId LT]),
+          (">=", Or [OrderingId EQ, OrderingId GT]),
+          ("<", OrderingId LT),
+          ("=", OrderingId EQ),
+          (">", OrderingId GT)
+        ]
 
 -- | The type representing a die option.
 data DieOpOption
-  = Reroll {rerollOnce :: Bool, condition :: Ordering, limit :: NumBase}
+  = Reroll {rerollOnce :: Bool, condition :: AdvancedOrdering, limit :: NumBase}
   | DieOpOptionKD KeepDrop LowHighWhere
   | DieOpOptionLazy DieOpOption
   deriving (Show, Eq)
 
 -- | A type used to designate how the keep/drop option should work
-data LowHighWhere = Low NumBase | High NumBase | Where Ordering NumBase deriving (Show, Eq)
+data LowHighWhere = Low NumBase | High NumBase | Where AdvancedOrdering NumBase deriving (Show, Eq)
 
 -- | Utility function to get the integer determining how many values to get given a
 -- `LowHighWhere`. If the given value is `Low` or `High`, then Just the NumBase contained
@@ -329,7 +351,7 @@ evalDieOp'' rngCount (Reroll once o i) die is = foldr rerollF (return ([], rngCo
     rerollF g@(i', b) isRngCount' = do
       (is', rngCount') <- isRngCount'
       (iEval, _, rngCount'') <- evalShow rngCount' i
-      if b && compare (NE.head i') iEval == o
+      if b && applyCompare o (NE.head i') iEval
         then do
           (v, _, rngCount''') <- evalShow rngCount'' die
           let ret = (v <| i', b)
@@ -358,7 +380,7 @@ evalDieOpHelpKD rngCount kd (Where cmp i) is = foldr foldF (return ([], rngCount
     foldF (iis, b) sumrngcount = do
       (diceSoFar, rngCountTotal) <- sumrngcount
       (i', _, rngCountTemp) <- evalShow rngCountTotal i
-      return ((iis, b && isKeep (compare (NE.head iis) i' == cmp)) : diceSoFar, rngCountTemp)
+      return ((iis, b && isKeep (applyCompare cmp (NE.head iis) i')) : diceSoFar, rngCountTemp)
 evalDieOpHelpKD rngCount kd lh is = do
   (i', _, rngCount') <- evalShow rngCount i
   return (d ++ setToDropped (getDrop i' sk) ++ getKeep i' sk, rngCount')
@@ -475,17 +497,15 @@ instance PrettyShow Die where
 instance PrettyShow Dice where
   prettyShow (Dice b d dor) = prettyShow b <> prettyShow d <> helper' dor
     where
-      fromOrdering LT i = "<" <> fromString (prettyShow i)
-      fromOrdering EQ i = "=" <> fromString (prettyShow i)
-      fromOrdering GT i = ">" <> fromString (prettyShow i)
-      fromLHW (Where o i) = "w" <> fromOrdering o i
+      fromOrdering ao = M.findWithDefault "??" ao $ snd advancedOrderingMapping
+      fromLHW (Where o i) = "w" <> fromOrdering o <> prettyShow i
       fromLHW (Low i) = "l" <> fromString (prettyShow i)
       fromLHW (High i) = "h" <> fromString (prettyShow i)
       helper' Nothing = ""
       helper' (Just (DieOpRecur dopo' dor')) = helper dopo' <> helper' dor'
       helper (DieOpOptionLazy doo) = "!" <> helper doo
-      helper (Reroll True o i) = "ro" <> fromOrdering o i
-      helper (Reroll False o i) = "rr" <> fromOrdering o i
+      helper (Reroll True o i) = "ro" <> fromOrdering o <> prettyShow i
+      helper (Reroll False o i) = "rr" <> fromOrdering o <> prettyShow i
       helper (DieOpOptionKD Keep lhw) = "k" <> fromLHW lhw
       helper (DieOpOptionKD Drop lhw) = "d" <> fromLHW lhw
 
@@ -576,14 +596,11 @@ parseDice' = do
     )
     <|> return (\b -> Dice b d mdor)
 
--- | Parse a `<`, `=`, or `>` as an `Ordering`.
-parseOrdering :: Parser Ordering
-parseOrdering = (try (char '<' <|> char '=' <|> char '>') <?> "could not parse an ordering") >>= matchO
+-- | Parse a `!=`, `<=`, `>=`, `<`, `=`, `>` as an `AdvancedOrdering`.
+parseAdvancedOrdering :: Parser AdvancedOrdering
+parseAdvancedOrdering = (try (string "!=" <|> string ">=" <|> string "<=" <|> string "<" <|> string "=" <|> string ">") <?> "could not parse an ordering") >>= matchO
   where
-    matchO '<' = return LT
-    matchO '=' = return EQ
-    matchO '>' = return GT
-    matchO _ = fail "tried to get an ordering that didn't exist"
+    matchO s = M.findWithDefault (fail "could not parse an ordering") s (M.map return $ fst advancedOrderingMapping)
 
 -- | Parse a `LowHighWhere`, which is an `h` followed by an integer.
 parseLowHigh :: Parser LowHighWhere
@@ -591,7 +608,7 @@ parseLowHigh = (try (char 'h' <|> char 'l' <|> char 'w') <?> "could not parse hi
   where
     helper 'h' = High <$> pars
     helper 'l' = Low <$> pars
-    helper 'w' = parseOrdering >>= \o -> pars <&> Where o
+    helper 'w' = parseAdvancedOrdering >>= \o -> pars <&> Where o
     helper _ = fail "could not determine whether to keep/drop highest/lowest"
 
 -- | Parse a bunch of die options.
@@ -608,8 +625,8 @@ parseDieOpRecur = do
 parseDieOpOption :: Parser DieOpOption
 parseDieOpOption = do
   lazyFunc <- (try (char '!') $> DieOpOptionLazy) <|> return id
-  ( (try (string "ro") *> parseOrdering >>= \o -> Reroll True o <$> pars)
-      <|> (try (string "rr") *> parseOrdering >>= \o -> Reroll False o <$> pars)
+  ( (try (string "ro") *> parseAdvancedOrdering >>= \o -> Reroll True o <$> pars)
+      <|> (try (string "rr") *> parseAdvancedOrdering >>= \o -> Reroll False o <$> pars)
       <|> ((try (char 'k') *> parseLowHigh) <&> DieOpOptionKD Keep)
       <|> ((try (char 'd') *> parseLowHigh) <&> DieOpOptionKD Drop) <&> lazyFunc
     )
