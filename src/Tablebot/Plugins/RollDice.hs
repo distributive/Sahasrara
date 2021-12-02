@@ -11,16 +11,18 @@ module Tablebot.Plugins.RollDice (rollPlugin) where
 
 import Control.Monad.Writer (MonadIO (liftIO))
 import Data.List (intercalate)
+import Data.Maybe (fromMaybe)
 import Data.Text (Text, pack)
 import Discord.Types (Message)
 import Tablebot.Plugin
-import Tablebot.Plugin.Dice (Expr, evalExpr, supportedFunctionsList)
+import Tablebot.Plugin.Dice (Expr, defaultRoll, evalExpr, supportedFunctionsList)
 import Tablebot.Plugin.Discord (sendMessage)
 import Tablebot.Plugin.SmartCommand (PComm (parseComm))
 import Text.RawString.QQ (r)
 
-rollDice' :: Expr -> Message -> DatabaseDiscord ()
-rollDice' e m = do
+rollDice' :: Maybe Expr -> Message -> DatabaseDiscord ()
+rollDice' e' m = do
+  let e = fromMaybe defaultRoll e'
   (v, s, _) <- liftIO $ evalExpr e
   sendMessage m $ pack $ "You rolled " ++ s ++ ".\nOutput: " ++ show v
 
@@ -29,8 +31,6 @@ rollDice = Command "roll" (parseComm rollDice') []
 
 rollDiceEquiv :: Command
 rollDiceEquiv = Command "r" (parseComm rollDice') []
-
--- TODO: help page
 
 rollHelp :: HelpPage
 rollHelp =
