@@ -19,14 +19,16 @@ import Tablebot.Plugin.Discord (sendMessage)
 import Tablebot.Plugin.SmartCommand (PComm (parseComm))
 import Text.RawString.QQ (r)
 
+rollDice' :: Expr -> Message -> DatabaseDiscord ()
+rollDice' e m = do
+  (v, s, _) <- liftIO $ evalExpr e
+  sendMessage m $ pack $ "You rolled " ++ s ++ ".\nOutput: " ++ show v
+
 rollDice :: Command
-rollDice = Command "roll" diceComm []
-  where
-    rollDice' :: Expr -> Message -> DatabaseDiscord ()
-    rollDice' e m = do
-      (v, s, _) <- liftIO $ evalExpr e
-      sendMessage m $ pack $ "You rolled " ++ s ++ ".\nOutput: " ++ show v
-    diceComm = parseComm rollDice'
+rollDice = Command "roll" (parseComm rollDice') []
+
+rollDiceEquiv :: Command
+rollDiceEquiv = Command "r" (parseComm rollDice') []
 
 -- TODO: help page
 
@@ -58,6 +60,6 @@ To see a full list of uses and options, please go to <https://github.com/Warwick
   - `roll 5d10dl4` -> roll five d10s and drop the lowest four
 |]
 
--- | @sayPlugin@ assembles the command into a plugin.
+-- | @rollPlugin@ assembles the command into a plugin.
 rollPlugin :: Plugin
-rollPlugin = (plug "roll") {commands = [rollDice], helpPages = [rollHelp]}
+rollPlugin = (plug "roll") {commands = [rollDice, rollDiceEquiv], helpPages = [rollHelp]}
