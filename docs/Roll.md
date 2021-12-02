@@ -29,7 +29,7 @@ When the bot returns the result, it also shows the results of the die rolls of t
 
 ### Manipulating Dice
 
-There are operators that can be performed on dice rolling, listed below. Wherever there is `X`, means an integer (or an expression within parentheses; if the integer is negative it is instead treated as 0). Wherever there is a `#`, means one of `!=`, `<=`, `>=`, `<`, `=`, `>`.
+There are operators that can be performed on dice rolling, listed below. Wherever there is `X`, means an integer (or an expression within parentheses; if the integer is negative it is instead treated as 0). Wherever there is a `#`, means one of `/=`, `<=`, `>=`, `<`, `=`, `>`.
 
 - `khX` - keep highest X
 - `klX` - keep lowest X

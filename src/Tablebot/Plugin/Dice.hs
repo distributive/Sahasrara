@@ -127,7 +127,7 @@ advancedOrderingMapping = (M.fromList lst, M.fromList $ swap <$> lst)
     lst =
       fmap
         (first fromString)
-        [ ("!=", Not (OrderingId EQ)),
+        [ ("/=", Not (OrderingId EQ)),
           ("<=", Or [OrderingId EQ, OrderingId LT]),
           (">=", Or [OrderingId EQ, OrderingId GT]),
           ("<", OrderingId LT),
@@ -596,7 +596,7 @@ parseDice' = do
     )
     <|> return (\b -> Dice b d mdor)
 
--- | Parse a `!=`, `<=`, `>=`, `<`, `=`, `>` as an `AdvancedOrdering`.
+-- | Parse a `/=`, `<=`, `>=`, `<`, `=`, `>` as an `AdvancedOrdering`.
 parseAdvancedOrdering :: Parser AdvancedOrdering
 parseAdvancedOrdering = (try (string "!=" <|> string ">=" <|> string "<=" <|> string "<" <|> string "=" <|> string ">") <?> "could not parse an ordering") >>= matchO
   where
