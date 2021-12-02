@@ -8,7 +8,7 @@
 --
 -- This plugin contains the neccessary parsers and stucture to get the AST for an
 -- expression that contains dice, as well as evaluate that expression.
-module Tablebot.Plugin.Dice (evalExpr, Expr, PrettyShow (..), supportedFunctionsList) where
+module Tablebot.Plugin.Dice (evalExpr, Expr, PrettyShow (..), supportedFunctionsList, defaultRoll) where
 
 import Control.Monad (when)
 import Control.Monad.Exception (MonadException)
@@ -46,9 +46,14 @@ base die [bdie] {"d" base} {"d{" [0123456789]+ ("," [0123456789]+)* "}"}
 maximumRNG :: Integer
 maximumRNG = 150
 
+-- | Check whether the RNG count has been exceeded by the interger given.
 checkRNGCount :: Integer -> IO ()
 checkRNGCount i =
   when (i > maximumRNG) $ throwBot $ EvaluationException ("exceeded maximum rng count (" ++ show maximumRNG ++ ")") []
+
+-- | The default expression to evaluate if no expression is given.
+defaultRoll :: Expr
+defaultRoll = NoExpr $ NoTerm $ Func "id" $ NoNeg $ NoExpo $ DiceBase $ Dice (NBase (Value 1)) (Die (Value 20)) Nothing
 
 -- | The limit to how big a factorial value is permitted. Notably, the factorial function doesn't operate above this limit.
 factorialLimit :: Integer
@@ -143,7 +148,7 @@ supportedFunctions =
     [ ("abs", abs),
       ("id", id),
       ("fact", fact),
-      ("negate", negate)
+      ("neg", negate)
     ]
   where
     fact n
@@ -393,7 +398,7 @@ instance IOEval Func where
   evalShow' rngCount (Func "fact" neg) = do
     (neg', neg's, rngCount') <- evalShow rngCount neg
     if neg' > factorialLimit
-      then throwBot $ EvaluationException ("tried to evaluate a factorial with input number greater than the limit: `" ++ show neg' ++ "`") []
+      then throwBot $ EvaluationException ("tried to evaluate a factorial with input number greater than the limit (" ++ show factorialLimit ++ "): `" ++ show neg' ++ "`") []
       else do
         f <- getFunc "fact"
         return (f neg', "fact" ++ " " ++ neg's, rngCount')
