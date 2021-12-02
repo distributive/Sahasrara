@@ -25,6 +25,8 @@ In addition to the above, there is syntax for rolling dice with arbitrary sides 
 
 There is support for stacking dice. This means that if you write `2d4d5d6`, it will be parsed and executed as `((2d4)d5)d6`. Operations can be applied to the dice in this stack.
 
+When the bot returns the result, it also shows the results of the die rolls of the outer most dice. If values are bolded, they are "criticals" (they are the maximum or minimum value of the die; as such, they only work on standard dice). If values are crossed out (strike through) the die has been rerolled from that value and the next value it had is to the right (see below for reroll syntax). If the value is underlined, the die was dropped at some stage (see below for drop/keep syntax).
+
 ### Manipulating Dice
 
 There are operators that can be performed on dice rolling, listed below. Wherever there is `X`, means an integer (or an expression within parentheses; if the integer is negative it is instead treated as 0). Wherever there is a `#`, means one of `<`,`=`,`>`.
