@@ -65,7 +65,7 @@ quote =
   Command
     "quote"
     (parseComm quoteComm)
-    [addQuote, editQuote, thisQuote, authorQuote, showQuote, deleteQuote, randomQuote, importQuote]
+    [addQuote, editQuote, thisQuote, authorQuote, showQuote, deleteQuote, randomQuote]
   where
     quoteComm ::
       WithError
