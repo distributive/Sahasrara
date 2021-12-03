@@ -19,6 +19,7 @@ import Tablebot.Handler.Types (CompiledPlugin)
 import Tablebot.Plugins.Administration (administrationPlugin)
 import Tablebot.Plugins.Basic (basicPlugin)
 import Tablebot.Plugins.Cats (catPlugin)
+import Tablebot.Plugins.Shibe (shibePlugin)
 import Tablebot.Plugins.Flip (flipPlugin)
 import Tablebot.Plugins.Ping (pingPlugin)
 import Tablebot.Plugins.Quote (quotePlugin)
@@ -33,6 +34,7 @@ plugins =
     [ compilePlugin pingPlugin,
       compilePlugin basicPlugin,
       compilePlugin catPlugin,
+      compilePlugin shibePlugin,
       compilePlugin flipPlugin,
       compilePlugin quotePlugin,
       compilePlugin reminderPlugin,
