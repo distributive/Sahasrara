@@ -19,12 +19,12 @@ import Tablebot.Handler.Types (CompiledPlugin)
 import Tablebot.Plugins.Administration (administrationPlugin)
 import Tablebot.Plugins.Basic (basicPlugin)
 import Tablebot.Plugins.Cats (catPlugin)
-import Tablebot.Plugins.Shibe (shibePlugin)
 import Tablebot.Plugins.Flip (flipPlugin)
 import Tablebot.Plugins.Ping (pingPlugin)
 import Tablebot.Plugins.Quote (quotePlugin)
 import Tablebot.Plugins.Reminder (reminderPlugin)
 import Tablebot.Plugins.Say (sayPlugin)
+import Tablebot.Plugins.Shibe (shibePlugin)
 import Tablebot.Plugins.Welcome (welcomePlugin)
 
 -- Use long list format to make additions and removals non-conflicting on git PRs
