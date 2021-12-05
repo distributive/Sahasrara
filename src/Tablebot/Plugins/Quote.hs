@@ -79,7 +79,7 @@ addQuote :: Command
 addQuote = Command "add" (parseComm addComm) []
   where
     addComm ::
-      WithError "Quote format should be \"quote\" - author!" (Quoted Text, Exactly "-", RestOfInput Text) ->
+      WithError "Quote format incorrect!\nFormat is: .quote \"quote\" - author" (Quoted Text, Exactly "-", RestOfInput Text) ->
       Message ->
       DatabaseDiscord ()
     addComm (WErr (Qu qu, _, ROI author)) = addQ qu author
@@ -89,7 +89,7 @@ editQuote = Command "edit" (parseComm editComm) []
   where
     editComm ::
       WithError
-        "Edit format should be quoteId \"new quote\" - new author!"
+        "Edit format incorrect!\nFormat is: .quote edit quoteId \"new quote\" - author"
         (Int64, Quoted Text, Exactly "-", RestOfInput Text) ->
       Message ->
       DatabaseDiscord ()
@@ -105,7 +105,7 @@ authorQuote :: Command
 authorQuote = Command "author" (parseComm authorComm) []
   where
     authorComm ::
-      WithError "Expected author name to find quotes for!" (RestOfInput Text) ->
+      WithError "Quote format incorrect!\nExpected author name to find quotes for after .quote author" (RestOfInput Text) ->
       Message ->
       DatabaseDiscord ()
     authorComm (WErr (ROI author)) = authorQ author
@@ -113,13 +113,19 @@ authorQuote = Command "author" (parseComm authorComm) []
 showQuote :: Command
 showQuote = Command "show" (parseComm showComm) []
   where
-    showComm :: WithError "Expected quote number to show!" Int64 -> Message -> DatabaseDiscord ()
+    showComm ::
+      WithError "Quote format incorrect!\nExpected quote number to show, e.g. .quote show 420" Int64 ->
+      Message ->
+      DatabaseDiscord ()
     showComm (WErr qId) = showQ qId
 
 deleteQuote :: Command
 deleteQuote = Command "delete" (parseComm deleteComm) []
   where
-    deleteComm :: WithError "Expected quote number to delete!" Int64 -> Message -> DatabaseDiscord ()
+    deleteComm ::
+      WithError "Quote format incorrect!\nExpected quote number to delete, e.g. .quote delete 420" Int64 ->
+      Message ->
+      DatabaseDiscord ()
     deleteComm (WErr qId) = deleteQ qId
 
 randomQuote :: Command
