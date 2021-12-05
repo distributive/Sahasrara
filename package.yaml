@@ -52,6 +52,8 @@ dependencies:
 - resource-pool
 - containers
 - th-printf
+- mtl
+- safe
 
 library:
   source-dirs: src
@@ -74,6 +76,10 @@ library:
   - FlexibleInstances
   - DeriveGeneric
   - TypeApplications
+  - MultiWayIf
+  - TupleSections
+  - ConstraintKinds 
+  - ImportQualifiedPost
   ghc-options:
   - -Wall
 

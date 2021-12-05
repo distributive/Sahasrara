@@ -26,12 +26,16 @@ module Tablebot.Plugin.Discord
     toRelativeTime,
     getMessageLink,
     Message,
+    Format (..),
+    formatText,
+    formatInput,
     TimeFormat,
   )
 where
 
 import Control.Monad.Exception
 import Data.Maybe (listToMaybe)
+import Data.String (IsString (fromString))
 import Data.Text (Text, pack)
 import Data.Time.Clock (nominalDiffTimeToSeconds)
 import Data.Time.Clock.POSIX (utcTimeToPOSIXSeconds)
@@ -192,3 +196,17 @@ toRelativeTime = toTimestamp' Relative
 
 getMessageLink :: GuildId -> ChannelId -> MessageId -> Text
 getMessageLink g c m = pack $ "https://discord.com/channels/" ++ show g ++ "/" ++ show c ++ "/" ++ show m
+
+data Format = Bold | Underline | Strikethrough | Italics | Code | CodeBlock
+  deriving (Show, Eq)
+
+formatInput :: (IsString a, Show b, Semigroup a) => Format -> b -> a
+formatInput f b = formatText f (fromString $ show b)
+
+formatText :: (IsString a, Semigroup a) => Format -> a -> a
+formatText Bold s = "**" <> s <> "**"
+formatText Underline s = "__" <> s <> "__"
+formatText Strikethrough s = "~~" <> s <> "~~"
+formatText Italics s = "*" <> s <> "*"
+formatText Code s = "`" <> s <> "`"
+formatText CodeBlock s = "```" <> s <> "```"

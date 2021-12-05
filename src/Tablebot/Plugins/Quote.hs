@@ -1,3 +1,5 @@
+{-# OPTIONS_GHC -Wno-unused-top-binds #-}
+
 -- |
 -- Module      : Tablebot.Plugins.Quote
 -- Description : A more complex example using databases.
