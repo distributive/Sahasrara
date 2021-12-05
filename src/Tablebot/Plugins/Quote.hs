@@ -66,67 +66,67 @@ quote =
     "quote"
     (parseComm quoteComm)
     [addQuote, editQuote, thisQuote, authorQuote, showQuote, deleteQuote, randomQuote]
+  where
+    quoteComm ::
+      WithError
+        "Unknown quote functionality."
+        () ->
+      Message ->
+      DatabaseDiscord ()
+    quoteComm (WErr ()) = randomQ
 
 addQuote :: Command
 addQuote = Command "add" (parseComm addComm) []
+  where
+    addComm ::
+     WithError "Quote format should be \"quote\" - author!" (Quoted Text, Exactly "-", RestOfInput Text) ->
+     Message ->
+     DatabaseDiscord ()
+    addComm (WErr (Qu qu, _, ROI author)) = addQ qu author
 
 editQuote :: Command
 editQuote = Command "edit" (parseComm editComm) []
+  where
+    editComm ::
+      WithError
+        "Edit format should be quoteId \"new quote\" - new author!"
+        (Int64, Quoted Text, Exactly "-", RestOfInput Text) ->
+      Message ->
+      DatabaseDiscord ()
+    editComm (WErr (qId, Qu qu, _, ROI author)) = editQ qId qu author
 
 thisQuote :: Command
 thisQuote = Command "this" (parseComm thisComm) []
+  where
+    thisComm :: Message -> DatabaseDiscord ()
+    thisComm = thisQ
 
 authorQuote :: Command
 authorQuote = Command "author" (parseComm authorComm) []
+  where
+    authorComm ::
+      WithError "Expected author name to find quotes for!" (RestOfInput Text) ->
+      Message ->
+      DatabaseDiscord ()
+    authorComm (WErr (ROI author)) = authorQ author
 
 showQuote :: Command
 showQuote = Command "show" (parseComm showComm) []
+  where
+    showComm :: WithError "Expected quote number to show!" Int64 -> Message -> DatabaseDiscord ()
+    showComm (WErr qId) = showQ qId
 
 deleteQuote :: Command
 deleteQuote = Command "delete" (parseComm deleteComm) []
+  where
+    deleteComm :: WithError "Expected quote number to delete!" Int64 -> Message -> DatabaseDiscord ()
+    deleteComm (WErr qId) = deleteQ qId
 
 randomQuote :: Command
 randomQuote = Command "random" (parseComm randomComm) []
-
-quoteComm ::
-  WithError
-    "Unknown quote functionality."
-    () ->
-  Message ->
-  DatabaseDiscord ()
-quoteComm (WErr ()) = randomQ
-
-addComm ::
-  WithError "Quote format should be \"quote\" - author!" (Quoted Text, Exactly "-", RestOfInput Text) ->
-  Message ->
-  DatabaseDiscord ()
-addComm (WErr (Qu qu, _, ROI author)) = addQ qu author
-
-editComm ::
-  WithError
-    "Edit format should be quoteId \"new quote\" - new author!"
-    (Int64, Quoted Text, Exactly "-", RestOfInput Text) ->
-  Message ->
-  DatabaseDiscord ()
-editComm (WErr (qId, Qu qu, _, ROI author)) = editQ qId qu author
-
-thisComm :: Message -> DatabaseDiscord ()
-thisComm = thisQ
-
-authorComm ::
-  WithError "Expected author name to find quotes for!" (RestOfInput Text) ->
-  Message ->
-  DatabaseDiscord ()
-authorComm (WErr (ROI author)) = authorQ author
-
-showComm :: WithError "Expected quote number to show!" Int64 -> Message -> DatabaseDiscord ()
-showComm (WErr qId) = showQ qId
-
-deleteComm :: WithError "Expected quote number to delete!" Int64 -> Message -> DatabaseDiscord ()
-deleteComm (WErr qId) = deleteQ qId
-
-randomComm :: Message -> DatabaseDiscord ()
-randomComm = randomQ
+  where
+    randomComm :: Message -> DatabaseDiscord ()
+    randomComm = randomQ
 
 -- | @showQuote@, which looks for a message of the form @!quote show n@, looks
 -- that quote up in the database and responds with that quote.

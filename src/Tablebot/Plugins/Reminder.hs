@@ -32,7 +32,7 @@ import Duckling.Resolve (Context (..), DucklingTime, Options (..))
 import Duckling.Time.Types (InstantValue (InstantValue), SingleTimeValue (SimpleValue), TimeValue (TimeValue))
 import Tablebot.Plugin
 import Tablebot.Plugin.Database
-import Tablebot.Plugin.Discord (getMessage, sendMessage)
+import Tablebot.Plugin.Discord (getMessage, sendMessage, toTimestamp)
 import Tablebot.Plugin.SmartCommand (PComm (parseComm), Quoted (Qu), RestOfInput (ROI), WithError (..))
 import Tablebot.Plugin.Utils (debugPrint)
 import Text.RawString.QQ (r)
@@ -96,12 +96,15 @@ addReminder time content m = do
       (Snowflake mid) = messageId m
   added <- insert $ Reminder cid mid time content
   let res = pack $ show $ fromSqlKey added
-  sendMessage m ("Reminder " <> res <> " set for " <> (pack . show) time <> " with message `" <> pack content <> "`")
+  sendMessage m ("Reminder " <> res <> " set for " <> toTimestamp time <> " with message `" <> pack content <> "`")
 
 -- | @reminderCommand@ is a command implementing the functionality in
 -- @reminderParser@ and @addReminder@.
 reminderCommand :: Command
-reminderCommand = Command "remind" (parseComm reminderParser) []
+reminderCommand = Command "remind" (parseComm errorReminderParser) []
+  where
+    errorReminderParser :: WithError "Unknown reminder functionality." (Quoted String, RestOfInput Text) -> Message -> DatabaseDiscord ()
+    errorReminderParser (WErr (a, b)) = reminderParser a b
 
 -- | @reminderCron@ is a cron job that checks every minute to see if a reminder
 -- has passed, and if so sends a message using the stored information about the

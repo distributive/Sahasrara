@@ -21,14 +21,20 @@ module Tablebot.Plugin.Discord
     toMention',
     toMentionStr,
     toMentionStr',
+    toTimestamp,
+    toTimestamp',
+    toRelativeTime,
     getMessageLink,
     Message,
+    TimeFormat,
   )
 where
 
 import Control.Monad.Exception
 import Data.Maybe (listToMaybe)
 import Data.Text (Text, pack)
+import Data.Time.Clock (nominalDiffTimeToSeconds)
+import Data.Time.Clock.POSIX (utcTimeToPOSIXSeconds)
 import Discord (RestCallErrorCode, restCall)
 import qualified Discord.Requests as R
 import Discord.Types
@@ -160,6 +166,29 @@ toMentionStr = toMentionStr' . userId
 
 toMentionStr' :: UserId -> String
 toMentionStr' u = "<@!" ++ show u ++ ">"
+
+data TimeFormat = Default | ShortTime | LongTime | ShortDate | LongDate | ShortDateTime | LongDateTime | Relative deriving (Show, Enum, Eq)
+
+toTimestamp' :: TimeFormat -> UTCTime -> Text
+toTimestamp' format t = "<t:" <> pack (show $ toUtcSeconds t) <> toSuffix format <> ">"
+  where
+    toUtcSeconds :: UTCTime -> Integer
+    toUtcSeconds = truncate . nominalDiffTimeToSeconds . utcTimeToPOSIXSeconds
+    toSuffix :: TimeFormat -> Text
+    toSuffix Default = ""
+    toSuffix ShortTime = ":t"
+    toSuffix LongTime = ":T"
+    toSuffix ShortDate = ":d"
+    toSuffix LongDate = ":D"
+    toSuffix ShortDateTime = ":f"
+    toSuffix LongDateTime = ":F"
+    toSuffix Relative = ":R"
+
+toTimestamp :: UTCTime -> Text
+toTimestamp = toTimestamp' Default
+
+toRelativeTime :: UTCTime -> Text
+toRelativeTime = toTimestamp' Relative
 
 getMessageLink :: GuildId -> ChannelId -> MessageId -> Text
 getMessageLink g c m = pack $ "https://discord.com/channels/" ++ show g ++ "/" ++ show c ++ "/" ++ show m
