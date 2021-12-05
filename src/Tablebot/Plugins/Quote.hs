@@ -355,12 +355,15 @@ Calling without arguments returns a random quote
     [randomQuoteHelp, showQuoteHelp, authorQuoteHelp, addQuoteHelp, thisQuoteHelp, editQuoteHelp, deleteQuoteHelp]
     None
 
+quoteShort :: Command
+quoteShort = Command "q" (commandParser quote) (subcommands quote)
+
 -- | @quotePlugin@ assembles the @quote@ command (consisting of @add@ and
 -- @show@) and the database migration into a plugin.
 quotePlugin :: Plugin
 quotePlugin =
   (plug "quote")
-    { commands = [quote],
+    { commands = [quote, quoteShort],
       onReactionAdds = [quoteReactionAdd],
       migrations = [quoteMigration],
       helpPages = [quoteHelp]
