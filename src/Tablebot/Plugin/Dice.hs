@@ -19,7 +19,7 @@ import Data.List.NonEmpty as NE (NonEmpty ((:|)), head, tail, (<|))
 import Data.Map as M (Map, findWithDefault, fromList, keys, map, member)
 import Data.Maybe (fromMaybe, isNothing)
 import Data.String (IsString (fromString))
-import Data.Text (pack, unpack)
+import Data.Text (Text, pack, unpack)
 import Data.Tuple (swap)
 import System.Random (randomRIO)
 import Tablebot.Plugin.Discord (Format (..), formatInput, formatText)
@@ -193,8 +193,16 @@ getFunc s = M.findWithDefault (throwBot $ EvaluationException ("could not find f
 
 -- | Given an expression, evaluate it, getting the pretty printed string and the value of
 -- the result
-evalExpr :: Expr -> IO (Integer, String, Integer)
-evalExpr = evalShow 0
+evalExpr :: Expr -> IO (Integer, Text)
+evalExpr e = do
+  (i, s, _) <- evalShow 0 e
+  return $
+    if countFormatting s < 199
+      then (i, pack s)
+      else (i, pack $ prettyShow e ++ " `[could not display rolls]`")
+  where
+    countFormatting :: String -> Int
+    countFormatting s = (`div` 4) $ foldr (\c cf -> cf + (fromEnum (c `elem` ['~', '_', '*']))) 0 s
 
 -- | Utility function to display dice.
 --
@@ -209,13 +217,16 @@ dieShow :: (PrettyShow a, MonadException m) => Maybe (Integer, Integer) -> a -> 
 dieShow _ a [] = throwBot $ EvaluationException "tried to show empty set of results" [prettyShow a]
 dieShow lchc d ls = return $ prettyShow d ++ " [" ++ foldr1 (\n rst -> n ++ ", " ++ rst) adjustList ++ "]"
   where
-    toCrit =
+    -- countRemoved = foldr (fromEnum . isJust . snd) ls
+    -- countDropped = foldr () ls
+    -- countResults = foldr (\(i,mb) (remo,drp,crt) -> (remo + (fromEnum $ isJust mb),drp + (fromEnum $ fromMaybe False mb),crt+ fromEnum (isCrit i))) (0,0,0) ls
+    (toCrit, isCrit) =
       if isNothing lchc
-        then show
-        else toCrit'
+        then (show, const False)
+        else (toCrit', \i -> i == lc || i == hc)
     (lc, hc) = fromMaybe (0, 0) lchc
     toCrit' i
-      | i == lc || i == hc = formatInput Bold i
+      | isCrit i = formatInput Bold i
       | otherwise = show i
     toCrossedOut (i, Just False) = formatText Strikethrough $ toCrit i
     toCrossedOut (i, Just True) = formatText Strikethrough $ formatText Underline $ toCrit i

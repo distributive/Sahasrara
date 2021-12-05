@@ -13,18 +13,19 @@ import Control.Monad.Writer (MonadIO (liftIO))
 import Data.List (intercalate)
 import Data.Maybe (fromMaybe)
 import Data.Text (Text, pack)
-import Discord.Types (Message)
+import Discord.Types (Message (messageAuthor))
 import Tablebot.Plugin
 import Tablebot.Plugin.Dice (Expr, defaultRoll, evalExpr, supportedFunctionsList)
-import Tablebot.Plugin.Discord (sendMessage)
+import Tablebot.Plugin.Discord (sendMessage, toMention)
 import Tablebot.Plugin.SmartCommand (PComm (parseComm))
 import Text.RawString.QQ (r)
 
 rollDice' :: Maybe Expr -> Message -> DatabaseDiscord ()
 rollDice' e' m = do
   let e = fromMaybe defaultRoll e'
-  (v, s, _) <- liftIO $ evalExpr e
-  sendMessage m $ pack $ "You rolled " ++ s ++ ".\nOutput: " ++ show v
+  (v, s) <- liftIO $ evalExpr e
+  let msg = toMention (messageAuthor m) <> " rolled " <> s <> ".\nOutput: " <> pack (show v)
+  sendMessage m msg
 
 rollDice :: Command
 rollDice = Command "roll" (parseComm rollDice') []
