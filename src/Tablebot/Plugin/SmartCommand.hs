@@ -19,7 +19,7 @@ import Data.Text (Text, pack)
 import Discord.Types (Message)
 import GHC.TypeLits
 import Tablebot.Plugin.Parser
-import Tablebot.Plugin.Types (DatabaseDiscord, EnvDatabaseDiscord, Parser)
+import Tablebot.Plugin.Types (EnvDatabaseDiscord, Parser)
 import Text.Megaparsec
 
 -- | @PComm@ defines function types that we can automatically turn into parsers
