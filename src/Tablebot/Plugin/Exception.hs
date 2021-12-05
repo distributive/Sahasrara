@@ -32,7 +32,7 @@ import Tablebot.Plugin.Types (DiscordColour (..))
 data BotException
   = GenericException String String
   | MessageSendException String
-  | ParserException String
+  | ParserException String String
   | IndexOutOfBoundsException Int (Int, Int)
   | RandomException String
   | EvaluationException String [String]
@@ -106,7 +106,7 @@ errorInfo :: BotException -> ErrorInfo
 -- declare new errors in the definition of BotException.
 errorInfo (GenericException name' msg') = ErrorInfo name' msg'
 errorInfo (MessageSendException msg') = ErrorInfo "MessageSendException" msg'
-errorInfo (ParserException msg') = ErrorInfo "ParserException" msg'
+errorInfo (ParserException title msg') = ErrorInfo title msg'
 errorInfo (IndexOutOfBoundsException index (a, b)) =
   ErrorInfo
     "IndexOutOfBoundsException"

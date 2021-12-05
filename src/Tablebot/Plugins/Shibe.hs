@@ -10,10 +10,9 @@
 module Tablebot.Plugins.Shibe (shibePlugin) where
 
 import Control.Monad.IO.Class (MonadIO (liftIO))
-import Data.Aeson (FromJSON, eitherDecode)
+import Data.Aeson (eitherDecode)
 import Data.Functor ((<&>))
 import Data.Text (Text, pack)
-import GHC.Generics (Generic)
 import Network.HTTP.Conduit (Response (responseBody), parseRequest)
 import Network.HTTP.Simple (httpLBS)
 import Tablebot.Plugin.Discord (Message, sendMessage)
