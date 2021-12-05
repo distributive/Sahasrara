@@ -1,4 +1,4 @@
-{-# LANGUAGE ImportQualifiedPost #-}
+{-# OPTIONS_GHC -Wno-unused-top-binds #-}
 
 -- |
 -- Module      : Tablebot.Plugins.Quote
@@ -71,8 +71,11 @@ ducklingDateTime now rawString = do
 -- @reminderParser@ parses a reminder request of the form
 -- @!remind "reminder" <format>@, where format is a format that Duckling can parse.
 -- TODO: get timezone info and such ahead of time
-reminderParser :: Quoted String -> RestOfInput Text -> Message -> DatabaseDiscord ()
-reminderParser (Qu content) (ROI rawString) m = do
+reminderParser ::
+  WithError "Incorrect reminder format!\nReminder needs a reminder (in quotes) followed by the time to be reminded at." (Quoted String, RestOfInput Text) ->
+  Message ->
+  DatabaseDiscord ()
+reminderParser (WErr (Qu content, ROI rawString)) m = do
   let tz = "Europe/London" :: Text
   tzs <- liftIO $ getTimeZoneSeriesFromOlsonFile $ "/usr/share/zoneinfo/" <> unpack tz
   now <- liftIO $ currentReftime (singleton tz tzs) tz
@@ -98,10 +101,7 @@ addReminder time content m = do
 -- | @reminderCommand@ is a command implementing the functionality in
 -- @reminderParser@ and @addReminder@.
 reminderCommand :: Command
-reminderCommand = Command "remind" (parseComm errorReminderParser) []
-  where
-    errorReminderParser :: WithError "Unknown reminder functionality." (Quoted String, RestOfInput Text) -> Message -> DatabaseDiscord ()
-    errorReminderParser (WErr (a, b)) = reminderParser a b
+reminderCommand = Command "remind" (parseComm reminderParser) []
 
 -- | @reminderCron@ is a cron job that checks every minute to see if a reminder
 -- has passed, and if so sends a message using the stored information about the

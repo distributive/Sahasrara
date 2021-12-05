@@ -23,6 +23,7 @@ import Tablebot.Plugins.Flip (flipPlugin)
 import Tablebot.Plugins.Ping (pingPlugin)
 import Tablebot.Plugins.Quote (quotePlugin)
 import Tablebot.Plugins.Reminder (reminderPlugin)
+import Tablebot.Plugins.RollDice (rollPlugin)
 import Tablebot.Plugins.Say (sayPlugin)
 import Tablebot.Plugins.Shibe (shibePlugin)
 import Tablebot.Plugins.Welcome (welcomePlugin)
@@ -39,6 +40,7 @@ plugins =
       compilePlugin quotePlugin,
       compilePlugin reminderPlugin,
       compilePlugin sayPlugin,
+      compilePlugin rollPlugin,
       compilePlugin welcomePlugin
     ]
 

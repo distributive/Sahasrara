@@ -86,6 +86,12 @@ discordUser = do
 sp :: Parser ()
 sp = space <|> pure ()
 
+-- | @posInteger@ parses an integer with no "-".
+posInteger :: (Integral a, Read a) => Parser a
+posInteger = do
+  digits <- some digit
+  return (read digits)
+
 -- | @integer@ parses any whole number.
 integer :: (Integral a, Read a) => Parser a
 integer = do
