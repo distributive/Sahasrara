@@ -32,7 +32,7 @@ import Duckling.Resolve (Context (..), DucklingTime, Options (..))
 import Duckling.Time.Types (InstantValue (InstantValue), SingleTimeValue (SimpleValue), TimeValue (TimeValue))
 import Tablebot.Plugin
 import Tablebot.Plugin.Database
-import Tablebot.Plugin.Discord (getMessage, sendMessage, toTimestamp)
+import Tablebot.Plugin.Discord (getMessage, sendCustomReplyMessage, sendMessage, sendReplyMessage, toTimestamp)
 import Tablebot.Plugin.SmartCommand (PComm (parseComm), Quoted (Qu), RestOfInput (ROI), WithError (..))
 import Tablebot.Plugin.Utils (debugPrint)
 import Text.RawString.QQ (r)
@@ -124,7 +124,7 @@ reminderCron = do
             Left _ -> pure ()
             Right mess -> do
               let (Snowflake uid) = userId (messageAuthor mess)
-              sendMessage mess $
+              sendCustomReplyMessage mess (Snowflake mid) False $
                 pack $
                   "Reminder to <@" ++ show uid ++ ">! " ++ content
               delete (entityKey re)
