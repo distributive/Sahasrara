@@ -79,9 +79,9 @@ addQuote :: Command
 addQuote = Command "add" (parseComm addComm) []
   where
     addComm ::
-     WithError "Quote format should be \"quote\" - author!" (Quoted Text, Exactly "-", RestOfInput Text) ->
-     Message ->
-     DatabaseDiscord ()
+      WithError "Quote format should be \"quote\" - author!" (Quoted Text, Exactly "-", RestOfInput Text) ->
+      Message ->
+      DatabaseDiscord ()
     addComm (WErr (Qu qu, _, ROI author)) = addQ qu author
 
 editQuote :: Command
