@@ -84,9 +84,14 @@ makeBundleReadable (ParseErrorBundle errs state) =
    in (ParseErrorBundle errors state, getTitle $ NE.toList title)
   where
     getTitle :: [Maybe String] -> String
-    getTitle titles = case catMaybes titles of
-      (x : xs) -> if null xs then x else x ++ " (and " ++ show (length xs) ++ " more)"
-      [] -> "Parser Error"
+    -- Safety proof for application of `head`: we filter by `not . null` so each element is nonempty.
+    getTitle titles = case filter (not . null) $ catMaybes titles of
+      -- therefore, `x` is nonempty, so `lines x` is nonempty, meaning that `head (lines x)` is fine,
+      -- since `lines x` is nonempty for nonempty input.
+      (x : xs) ->
+        let title = head (lines x)
+         in if null xs then title else title ++ " (and " ++ show (length xs) ++ " more)"
+      [] -> "Parser Error!"
 
 -- | Transform our errors into more useful ones.
 -- This uses the Label hidden within each error to build an error message,

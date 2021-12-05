@@ -72,7 +72,7 @@ ducklingDateTime now rawString = do
 -- @!remind "reminder" <format>@, where format is a format that Duckling can parse.
 -- TODO: get timezone info and such ahead of time
 reminderParser ::
-  WithError "Reminder needs a reminder (in quotes) followed by the time to be reminded at!" (Quoted String, RestOfInput Text) ->
+  WithError "Incorrect reminder format!\nReminder needs a reminder (in quotes) followed by the time to be reminded at." (Quoted String, RestOfInput Text) ->
   Message ->
   DatabaseDiscord ()
 reminderParser (WErr (Qu content, ROI rawString)) m = do
