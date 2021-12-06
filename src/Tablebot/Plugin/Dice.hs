@@ -8,7 +8,25 @@
 --
 -- This plugin contains the neccessary parsers and stucture to get the AST for an
 -- expression that contains dice, as well as evaluate that expression.
-module Tablebot.Plugin.Dice (evalExpr, Expr, PrettyShow (..), supportedFunctionsList, defaultRoll) where
+module Tablebot.Plugin.Dice
+  ( evalExpr,
+    Expr,
+    PrettyShow (..),
+    supportedFunctions,
+    supportedFunctionsList,
+    defaultRoll,
+    Expr (..),
+    Term (..),
+    Func (..),
+    Negation (..),
+    Expo (..),
+    NumBase (..),
+    Base (..),
+    Die (..),
+    Dice (..),
+    DieOpRecur (..),
+  )
+where
 
 import Control.Monad (when)
 import Control.Monad.Exception (MonadException)
