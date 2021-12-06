@@ -18,12 +18,10 @@ where
 import Control.Applicative (liftA)
 import Control.Monad (void)
 import Control.Monad.IO.Class (liftIO)
-import Data.Maybe (fromMaybe)
 import Data.Text (Text, append, pack, unpack)
 import Data.Time.Clock.System (getSystemTime, systemToUTCTime)
 import Database.Persist.Sqlite (Filter, SelectOpt (LimitTo, OffsetBy), (==.))
 import Database.Persist.TH
-import Debug.Trace
 import Discord.Types
 import GHC.Int (Int64)
 import System.Random (randomRIO)
@@ -31,7 +29,6 @@ import Tablebot.Plugin
 import Tablebot.Plugin.Database
 import Tablebot.Plugin.Discord
   ( findGuild,
-    fromMention,
     getMessage,
     getMessageLink,
     getPrecedingMessage,
@@ -46,7 +43,6 @@ import Tablebot.Plugin.Exception (BotException (GenericException), catchBot, thr
 import Tablebot.Plugin.Permission (requirePermission)
 import Tablebot.Plugin.SmartCommand
 import Text.RawString.QQ (r)
-import Text.Read (readMaybe)
 
 -- Our Quote table in the database. This is fairly standard for Persistent,
 -- however you should note the name of the migration made.
@@ -382,22 +378,19 @@ quoteHelp =
     "quote"
     "store and retrieve quotes"
     [r|**Quotes**
-Allows storing and retrieving quotes
-Calling without arguments returns a random quote
+Allows storing and retrieving quotes.
+Calling without arguments returns a random quote. Calling with a number returns that quote number. Calling with a mention or name gives a random quote by that person.
 
-*Usage:* `quote`|]
+*Usage:* `quote` or `q`|]
     [randomQuoteHelp, showQuoteHelp, authorQuoteHelp, addQuoteHelp, thisQuoteHelp, editQuoteHelp, deleteQuoteHelp]
     None
-
-quoteShort :: Command
-quoteShort = Command "q" (commandParser quote) (subcommands quote)
 
 -- | @quotePlugin@ assembles the @quote@ command (consisting of @add@ and
 -- @show@) and the database migration into a plugin.
 quotePlugin :: Plugin
 quotePlugin =
   (plug "quote")
-    { commands = [quote, quoteShort],
+    { commands = [quote, commandAlias "q" quote],
       onReactionAdds = [quoteReactionAdd],
       migrations = [quoteMigration],
       helpPages = [quoteHelp]
