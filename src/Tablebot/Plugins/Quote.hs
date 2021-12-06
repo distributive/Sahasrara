@@ -360,7 +360,7 @@ Calling without arguments returns a random quote
 quotePlugin :: Plugin
 quotePlugin =
   (plug "quote")
-    { commands = [quote],
+    { commands = [quote, commandAlias "q" quote],
       onReactionAdds = [quoteReactionAdd],
       migrations = [quoteMigration],
       helpPages = [quoteHelp]
