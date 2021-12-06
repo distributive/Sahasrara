@@ -7,7 +7,7 @@ module Tablebot.Plugin.Database
 where
 
 import Data.Int (Int64)
-import Data.Map
+import Data.Map ( Map )
 import Data.Text (Text)
 import qualified Database.Persist.Sqlite as Sql
 import Tablebot.Plugin (EnvDatabaseDiscord, liftSql)

@@ -202,7 +202,7 @@ evalExpr e = do
       else (i, pack $ prettyShow e ++ " `[could not display rolls]`")
   where
     countFormatting :: String -> Int
-    countFormatting s = (`div` 4) $ foldr (\c cf -> cf + (fromEnum (c `elem` ['~', '_', '*']))) 0 s
+    countFormatting s = (`div` 4) $ foldr (\c cf -> cf + fromEnum (c `elem` ['~', '_', '*'])) 0 s
 
 -- | Utility function to display dice.
 --

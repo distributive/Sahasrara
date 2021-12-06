@@ -27,7 +27,7 @@ import Tablebot.Handler.Types
 import Tablebot.Plugin.Discord (sendEmbedMessage)
 import Tablebot.Plugin.Exception (BotException (ParserException), embedError)
 import Tablebot.Plugin.Parser (skipSpace1, space, word)
-import Tablebot.Plugin.Types hiding (commandParser, inlineCommandParser)
+import Tablebot.Plugin.Types ( Parser )
 import Text.Megaparsec
 
 -- | @parseNewMessage@ parses a new message, first by attempting to match the

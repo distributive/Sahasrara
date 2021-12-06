@@ -27,6 +27,6 @@ currentBlacklist = do
     allBlacklisted = []
 
 removeBlacklisted :: [Text] -> [CompiledPlugin] -> [CompiledPlugin]
-removeBlacklisted bl p = filter isNotBlacklisted p
+removeBlacklisted bl = filter isNotBlacklisted
   where
-    isNotBlacklisted p' = not (compiledName p' `elem` bl)
+    isNotBlacklisted p' = compiledName p' `notElem` bl

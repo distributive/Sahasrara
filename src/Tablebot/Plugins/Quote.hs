@@ -15,7 +15,6 @@ module Tablebot.Plugins.Quote
   )
 where
 
-import Control.Applicative (liftA)
 import Control.Monad (void)
 import Control.Monad.IO.Class (liftIO)
 import Data.Text (Text, append, pack, unpack)
@@ -166,7 +165,7 @@ randomQ = filteredRandomQuote [] "Couldn't find any quotes!"
 -- | @authorQuote@, which looks for a message of the form @!quote author u@,
 -- selects a random quote from the database attributed to u and responds with that quote.
 authorQ :: Text -> Message -> DatabaseDiscord ()
-authorQ t m = filteredRandomQuote [QuoteAuthor ==. t] "Couldn't find any quotes with that author!" m
+authorQ t = filteredRandomQuote [QuoteAuthor ==. t] "Couldn't find any quotes with that author!"
 
 -- authorQ t m = fromMaybe (filteredRandomQuote (getFilter t) errText m) (processUid <$> uid)
 --   where
@@ -195,7 +194,7 @@ filteredRandomQuote' quoteFilter errorMessage m = do
   if num == 0
     then throwBot (GenericException "quote exception" (unpack errorMessage))
     else do
-      rindex <- liftIO $ randomRIO (0, (num - 1))
+      rindex <- liftIO $ randomRIO (0, num - 1)
       key <- selectKeysList quoteFilter [OffsetBy rindex, LimitTo 1]
       qu <- get $ head key
       case qu of
@@ -209,7 +208,7 @@ addQ :: Text -> Text -> Message -> DatabaseDiscord ()
 addQ qu author m = do
   now <- liftIO $ systemToUTCTime <$> getSystemTime
   let new = Quote qu author (toMention $ messageAuthor m) (fromIntegral $ messageId m) (fromIntegral $ messageChannel m) now
-  added <- insert $ new
+  added <- insert new
   let res = pack $ show $ fromSqlKey added
   renderCustomQuoteMessage ("Quote added as #" `append` res) new (fromSqlKey added) m
 
@@ -230,7 +229,7 @@ thisQ m = do
 -- | @addMessageQuote@, adds a message as a quote to the database, checking that it passes the relevant tests
 addMessageQuote :: UserId -> Message -> Message -> DatabaseDiscord ()
 addMessageQuote submitter q' m = do
-  num <- count [QuoteMsgId ==. (fromIntegral $ messageId q')]
+  num <- count [QuoteMsgId ==. fromIntegral (messageId q')]
   if num == 0
     then
       if not $ userIsBot (messageAuthor q')
@@ -240,11 +239,11 @@ addMessageQuote submitter q' m = do
                 Quote
                   (messageText q')
                   (toMention $ messageAuthor q')
-                  (toMention' $ submitter)
+                  (toMention' submitter)
                   (fromIntegral $ messageId q')
                   (fromIntegral $ messageChannel q')
                   now
-          added <- insert $ new
+          added <- insert new
           let res = pack $ show $ fromSqlKey added
           renderCustomQuoteMessage ("Quote added as #" `append` res) new (fromSqlKey added) m
         else sendMessage m "Can't quote a bot"
@@ -260,10 +259,10 @@ editQ qId qu author m =
      in do
           oQu <- get k
           case oQu of
-            Just (Quote _ _ _ _ _ _) -> do
+            Just Quote {} -> do
               now <- liftIO $ systemToUTCTime <$> getSystemTime
               let new = Quote qu author (toMention $ messageAuthor m) (fromIntegral $ messageId m) (fromIntegral $ messageChannel m) now
-              replace k $ new
+              replace k new
               renderCustomQuoteMessage "Quote updated" new qId m
             Nothing -> sendMessage m "Couldn't update that quote!"
 
@@ -276,7 +275,7 @@ deleteQ qId m =
      in do
           qu <- get k
           case qu of
-            Just (Quote _ _ _ _ _ _) -> do
+            Just Quote {} -> do
               delete k
               sendMessage m "Quote deleted"
             Nothing -> sendMessage m "Couldn't delete that quote!"
@@ -299,9 +298,9 @@ renderCustomQuoteMessage t (Quote txt author submitter msgId cnlId dtm) qId m = 
       )
   where
     getLink :: Maybe GuildId -> Maybe Text
-    getLink = liftA (\x -> getMessageLink x (fromIntegral cnlId) (fromIntegral msgId))
+    getLink = fmap (\x -> getMessageLink x (fromIntegral cnlId) (fromIntegral msgId))
     maybeAddFooter :: Maybe Text -> Text
-    maybeAddFooter (Just l) = ("\n[source](" <> l <> ") - added by " <> submitter)
+    maybeAddFooter (Just l) = "\n[source](" <> l <> ") - added by " <> submitter
     maybeAddFooter Nothing = ""
 
 showQuoteHelp :: HelpPage
