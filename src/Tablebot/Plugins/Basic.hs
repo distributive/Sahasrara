@@ -43,9 +43,17 @@ basicCommands =
       "You can make a pull request for that!",
       Simple ("you know what to do", "You know what to do")
     ),
+    ( "issue",
+      "You can submit an issue for that!",
+      Simple ("you know what you want someone else to do", "You know what you want someone else to do")
+    ),
     ( "benji",
-      ":benji_sit:",
+      "<:benji_sit:686131468560367627>",
       Simple ("the almost mascot", "Though he may sit, when put to test, the gender cube proved it was best")
+    ),
+    ( "about",
+      "This bot was created by finnbar to replace a couple of other bots in Tabletop. It's written in Haskell, and you can find the github here: <https://github.com/WarwickTabletop/tablebot>. There are setup guides and a contributor's guide to help you get started.",
+      Simple ("you know what you want someone else to do", "You know what you want someone else to do")
     )
   ]
 
