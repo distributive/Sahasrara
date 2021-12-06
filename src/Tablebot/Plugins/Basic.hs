@@ -86,12 +86,14 @@ basicInlineCommands =
   ]
 
 baseInlineCommand :: BasicInlineCommand -> InlineCommand
-baseInlineCommand (t, rs) = InlineCommand (return p)
-  where
-    p :: Message -> DatabaseDiscord ()
-    p m = do
-      let msg = T.toLower $ messageText m
-      when (unpack msg =~ (".*" <> unpack (toLower t) <> ".*")) $ sendMessage m rs
+baseInlineCommand (t, rs) =
+  InlineCommand
+    ( return
+        ( \m -> do
+            let msg = T.toLower $ messageText m
+            when (unpack msg =~ (".*" <> unpack (toLower t) <> ".*")) $ sendMessage m rs
+        )
+    )
 
 -- | @basicPlugin@ assembles the call and response commands into a simple command list.
 basicPlugin :: Plugin
