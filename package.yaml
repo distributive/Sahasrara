@@ -54,6 +54,7 @@ dependencies:
 - th-printf
 - mtl
 - safe
+- regex-pcre
 
 library:
   source-dirs: src

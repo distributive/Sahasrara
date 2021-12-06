@@ -9,21 +9,25 @@
 -- This is an example plugin which responds to certain calls with specific responses.
 module Tablebot.Plugins.Basic (basicPlugin) where
 
-import Data.Text (toTitle)
-import Data.Text.Internal (Text)
-import Tablebot.Plugin (DatabaseDiscord)
-import Tablebot.Plugin.Discord (Message, sendMessage)
+import Control.Monad (when)
+import Data.Text as T (Text, toLower, toTitle, unpack)
+import Discord.Internal.Rest (Message (messageText))
+import Tablebot.Plugin.Discord (sendMessage)
 import Tablebot.Plugin.SmartCommand (parseComm)
 import Tablebot.Plugin.Types
   ( Command,
+    DatabaseDiscord,
     EnvCommand (Command),
-    EnvPlugin (commands),
+    EnvInlineCommand (InlineCommand),
+    EnvPlugin (commands, inlineCommands),
     HelpPage (HelpPage),
+    InlineCommand,
     Plugin,
     RequiredPermission (None),
     helpPages,
     plug,
   )
+import Text.Regex.PCRE ((=~))
 
 -- * Some types to help clarify what's going on
 
@@ -74,10 +78,26 @@ baseHelp :: BasicCommand -> HelpPage
 baseHelp (_, _, Advanced help) = help
 baseHelp (a, _, Simple (short, long)) = HelpPage a short ("**" <> toTitle a <> "**\n" <> long <> "\n\n*Usage:* `" <> a <> "`") [] None
 
+type BasicInlineCommand = (Text, Text)
+
+basicInlineCommands :: [BasicInlineCommand]
+basicInlineCommands =
+  [ ("thank you tablebot", "You're welcome!")
+  ]
+
+baseInlineCommand :: BasicInlineCommand -> InlineCommand
+baseInlineCommand (t, rs) = InlineCommand (return p)
+  where
+    p :: Message -> DatabaseDiscord ()
+    p m = do
+      let msg = T.toLower $ messageText m
+      when (unpack msg =~ (".*" <> unpack (toLower t) <> ".*")) $ sendMessage m rs
+
 -- | @basicPlugin@ assembles the call and response commands into a simple command list.
 basicPlugin :: Plugin
 basicPlugin =
   (plug "basic")
     { commands = map baseCommand basicCommands,
-      helpPages = map baseHelp basicCommands
+      helpPages = map baseHelp basicCommands,
+      inlineCommands = map baseInlineCommand basicInlineCommands
     }
