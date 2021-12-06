@@ -18,17 +18,31 @@ where
 import Control.Applicative (liftA)
 import Control.Monad (void)
 import Control.Monad.IO.Class (liftIO)
-import Data.Text (Text, append, pack)
+import Data.Maybe (fromMaybe)
+import Data.Text (Text, append, pack, unpack)
 import Data.Time.Clock.System (getSystemTime, systemToUTCTime)
 import Database.Persist.Sqlite (Filter, SelectOpt (LimitTo, OffsetBy), (==.))
 import Database.Persist.TH
+import Debug.Trace
 import Discord.Types
 import GHC.Int (Int64)
 import System.Random (randomRIO)
 import Tablebot.Plugin
 import Tablebot.Plugin.Database
-import Tablebot.Plugin.Discord (findGuild, getMessage, getMessageLink, getPrecedingMessage, getReplyMessage, sendEmbedMessage, sendMessage, toMention, toMention')
+import Tablebot.Plugin.Discord
+  ( findGuild,
+    fromMention,
+    getMessage,
+    getMessageLink,
+    getPrecedingMessage,
+    getReplyMessage,
+    sendEmbedMessage,
+    sendMessage,
+    toMention,
+    toMention',
+  )
 import Tablebot.Plugin.Embed
+import Tablebot.Plugin.Exception (BotException (GenericException), catchBot, throwBot)
 import Tablebot.Plugin.Permission (requirePermission)
 import Tablebot.Plugin.SmartCommand
 import Text.RawString.QQ (r)
@@ -150,27 +164,42 @@ showQ qId m = do
 randomQ :: Message -> DatabaseDiscord ()
 randomQ = filteredRandomQuote [] "Couldn't find any quotes!"
 
--- | @authorQuote@, which looks for a message of the form @!quote user u@,
+-- | @authorQuote@, which looks for a message of the form @!quote author u@,
 -- selects a random quote from the database attributed to u and responds with that quote.
--- This is currently mis-documented in the help pages as its not quite working (the author matching is way to strict)
 authorQ :: Text -> Message -> DatabaseDiscord ()
-authorQ t = filteredRandomQuote [QuoteAuthor ==. t] "Couldn't find any quotes with that author!"
+authorQ t m = fromMaybe (filteredRandomQuote (getFilter t) errText m) (processUid <$> uid)
+  where
+    errText = "Couldn't find any quotes with that author!"
+    uid = fromMention t
+    catchBot' id' (GenericException "quote exception" _) = filteredRandomQuote (getFilter $ "<@" <> (pack $ show id') <> ">") errText m
+    catchBot' _ e = throwBot e
+    processUid id' = catchBot (filteredRandomQuote' (getFilter $ toMention' id') errText m) (catchBot' id')
+    getFilter t' = [QuoteAuthor ==. t']
 
 -- | @filteredRandomQuote@ selects a random quote that meets a
--- given criteria, and returns that as the response
+-- given criteria, and returns that as the response, sending the user a message if the 
+-- quote cannot be found.
 filteredRandomQuote :: [Filter Quote] -> Text -> Message -> DatabaseDiscord ()
-filteredRandomQuote quoteFilter errorMessage m = do
+filteredRandomQuote quoteFilter errorMessage m = catchBot (filteredRandomQuote' quoteFilter errorMessage m) catchBot'
+  where
+    catchBot' (GenericException "quote exception" _) = sendMessage m errorMessage
+    catchBot' e = throwBot e
+
+-- | @filteredRandomQuote'@ selects a random quote that meets a
+-- given criteria, and returns that as the response, throwing an exception if something
+-- goes wrong.
+filteredRandomQuote' :: [Filter Quote] -> Text -> Message -> DatabaseDiscord ()
+filteredRandomQuote' quoteFilter errorMessage m = do
   num <- count quoteFilter
   if num == 0
-    then sendMessage m errorMessage
+    then throwBot (GenericException "quote exception" (unpack errorMessage))
     else do
       rindex <- liftIO $ randomRIO (0, (num - 1))
       key <- selectKeysList quoteFilter [OffsetBy rindex, LimitTo 1]
       qu <- get $ head key
       case qu of
         Just q -> renderQuoteMessage q (fromSqlKey $ head key) m
-        Nothing -> sendMessage m errorMessage
-      return ()
+        Nothing -> throwBot (GenericException "quote exception" (unpack errorMessage))
 
 -- | @addQuote@, which looks for a message of the form
 -- @!quote add "quoted text" - author@, and then stores said quote in the

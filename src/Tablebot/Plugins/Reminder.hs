@@ -87,23 +87,6 @@ reminderParser (WErr (Qu content, ROI rawString)) m = do
   where
     failText = "Date could not be parsed: `" <> rawString <> "`"
 
-getTimeFrom :: Text -> IO Int
-getTimeFrom rawString
-
--- | @thisReminder@, which takes the replied message or the
--- previous message and stores said message as a reminder in the database,
--- returning the ID used.
-thisReminder :: RestOfInput Text -> Message -> DatabaseDiscord ()
-thisReminder  m = do
-  q <- getReplyMessage m
-  case q of
-    (Just q') -> addMessageQuote (userId $ messageAuthor m) q' m
-    Nothing -> do
-      q2 <- getPrecedingMessage m
-      case q2 of
-        (Just q') -> addMessageQuote (userId $ messageAuthor m) q' m
-        Nothing -> sendMessage m "Unable to add quote"
-
 -- @addReminder@ takes a @time@ to remind at and the @content@ of a reminder
 -- and adds a reminder at that time. Note that this is all done in UTC, so
 -- currently ignores the user's timezone... (TODO fix)

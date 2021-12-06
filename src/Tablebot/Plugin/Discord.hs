@@ -19,8 +19,10 @@ module Tablebot.Plugin.Discord
     getPrecedingMessage,
     toMention,
     toMention',
+    fromMention,
     toMentionStr,
     toMentionStr',
+    fromMentionStr,
     toTimestamp,
     toTimestamp',
     toRelativeTime,
@@ -34,9 +36,10 @@ module Tablebot.Plugin.Discord
 where
 
 import Control.Monad.Exception
+import Data.Char (isDigit)
 import Data.Maybe (listToMaybe)
 import Data.String (IsString (fromString))
-import Data.Text (Text, pack)
+import Data.Text (Text, pack, unpack)
 import Data.Time.Clock (nominalDiffTimeToSeconds)
 import Data.Time.Clock.POSIX (utcTimeToPOSIXSeconds)
 import Discord (RestCallErrorCode, restCall)
@@ -164,12 +167,25 @@ toMention = pack . toMentionStr
 toMention' :: UserId -> Text
 toMention' = pack . toMentionStr'
 
+-- | @fromMention@ converts some text into what could be a userid (which isn't checked
+-- for correctness above getting rid of triangle brackets, '@', and the optional '!')
+fromMention :: Text -> Maybe UserId
+fromMention = fromMentionStr . unpack
+
 -- | @toMentionStr@ converts a user to its corresponding mention, returning a string to prevent packing and unpacking
 toMentionStr :: User -> String
 toMentionStr = toMentionStr' . userId
 
 toMentionStr' :: UserId -> String
 toMentionStr' u = "<@!" ++ show u ++ ">"
+
+fromMentionStr :: String -> Maybe UserId
+fromMentionStr user
+  | length user < 4 || head user /= '<' || last user /= '>' || (head . tail) user /= '@' || (head stripToNum /= '!' && (not . isDigit) (head stripToNum)) = Nothing
+  | all isDigit (tail stripToNum) = Just $ if head stripToNum == '!' then read (tail stripToNum) else read stripToNum
+  | otherwise = Nothing
+  where
+    stripToNum = (init . tail . tail) user
 
 data TimeFormat = Default | ShortTime | LongTime | ShortDate | LongDate | ShortDateTime | LongDateTime | Relative deriving (Show, Enum, Eq)
 
