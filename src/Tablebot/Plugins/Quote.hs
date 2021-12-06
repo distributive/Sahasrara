@@ -46,6 +46,7 @@ import Tablebot.Plugin.Exception (BotException (GenericException), catchBot, thr
 import Tablebot.Plugin.Permission (requirePermission)
 import Tablebot.Plugin.SmartCommand
 import Text.RawString.QQ (r)
+import Text.Read (readMaybe)
 
 -- Our Quote table in the database. This is fairly standard for Persistent,
 -- however you should note the name of the migration made.
@@ -86,10 +87,12 @@ quote =
     quoteComm ::
       WithError
         "Unknown quote functionality."
-        () ->
+        (Either () (Either Int64 (RestOfInput Text))) ->
       Message ->
       DatabaseDiscord ()
-    quoteComm (WErr ()) = randomQ
+    quoteComm (WErr (Left ())) = randomQ
+    quoteComm (WErr (Right (Left t))) = showQ t
+    quoteComm (WErr (Right (Right (ROI t)))) = authorQ t
 
 addQuote :: Command
 addQuote = Command "add" (parseComm addComm) []
@@ -168,6 +171,7 @@ randomQ = filteredRandomQuote [] "Couldn't find any quotes!"
 -- selects a random quote from the database attributed to u and responds with that quote.
 authorQ :: Text -> Message -> DatabaseDiscord ()
 authorQ t m = filteredRandomQuote [QuoteAuthor ==. t] "Couldn't find any quotes with that author!" m
+
 -- authorQ t m = fromMaybe (filteredRandomQuote (getFilter t) errText m) (processUid <$> uid)
 --   where
 --     errText = "Couldn't find any quotes with that author!"
@@ -178,7 +182,7 @@ authorQ t m = filteredRandomQuote [QuoteAuthor ==. t] "Couldn't find any quotes 
 --     getFilter t' = [QuoteAuthor ==. t']
 
 -- | @filteredRandomQuote@ selects a random quote that meets a
--- given criteria, and returns that as the response, sending the user a message if the 
+-- given criteria, and returns that as the response, sending the user a message if the
 -- quote cannot be found.
 filteredRandomQuote :: [Filter Quote] -> Text -> Message -> DatabaseDiscord ()
 filteredRandomQuote quoteFilter errorMessage m = catchBot (filteredRandomQuote' quoteFilter errorMessage m) catchBot'
