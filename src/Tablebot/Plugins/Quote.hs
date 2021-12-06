@@ -167,14 +167,15 @@ randomQ = filteredRandomQuote [] "Couldn't find any quotes!"
 -- | @authorQuote@, which looks for a message of the form @!quote author u@,
 -- selects a random quote from the database attributed to u and responds with that quote.
 authorQ :: Text -> Message -> DatabaseDiscord ()
-authorQ t m = fromMaybe (filteredRandomQuote (getFilter t) errText m) (processUid <$> uid)
-  where
-    errText = "Couldn't find any quotes with that author!"
-    uid = fromMention t
-    catchBot' id' (GenericException "quote exception" _) = filteredRandomQuote (getFilter $ "<@" <> (pack $ show id') <> ">") errText m
-    catchBot' _ e = throwBot e
-    processUid id' = catchBot (filteredRandomQuote' (getFilter $ toMention' id') errText m) (catchBot' id')
-    getFilter t' = [QuoteAuthor ==. t']
+authorQ t m = filteredRandomQuote [QuoteAuthor ==. t] "Couldn't find any quotes with that author!" m
+-- authorQ t m = fromMaybe (filteredRandomQuote (getFilter t) errText m) (processUid <$> uid)
+--   where
+--     errText = "Couldn't find any quotes with that author!"
+--     uid = fromMention t
+--     catchBot' id' (GenericException "quote exception" _) = filteredRandomQuote (getFilter $ "<@" <> (pack $ show id') <> ">") errText m
+--     catchBot' _ e = throwBot e
+--     processUid id' = catchBot (filteredRandomQuote' (getFilter $ toMention' id') errText m) (catchBot' id')
+--     getFilter t' = [QuoteAuthor ==. t']
 
 -- | @filteredRandomQuote@ selects a random quote that meets a
 -- given criteria, and returns that as the response, sending the user a message if the 
