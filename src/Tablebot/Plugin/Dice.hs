@@ -15,7 +15,7 @@ import Control.Monad.Exception (MonadException)
 import Data.Bifunctor (Bifunctor (first))
 import Data.Functor (($>), (<&>))
 import Data.List (genericDrop, genericReplicate, genericTake, intercalate, sortBy)
-import Data.List.NonEmpty as NE (NonEmpty ((:|)), head, tail, (<|))
+import Data.List.NonEmpty as NE (NonEmpty ((:|)), head, tail, (<|), fromList)
 import Data.Map as M (Map, findWithDefault, fromList, keys, map, member)
 import Data.Maybe (fromMaybe, isNothing)
 import Data.String (IsString (fromString))
@@ -24,26 +24,30 @@ import Data.Tuple (swap)
 import System.Random (randomRIO)
 import Tablebot.Plugin.Discord (Format (..), formatInput, formatText)
 import Tablebot.Plugin.Exception (BotException (EvaluationException), catchBot, throwBot)
-import Tablebot.Plugin.Parser (posInteger, skipSpace, skipSpace1, word)
+import Tablebot.Plugin.Parser (posInteger, skipSpace, skipSpace1, word, space)
 import Tablebot.Plugin.Random (chooseOne)
 import Tablebot.Plugin.SmartCommand (CanParse (..))
 import Tablebot.Plugin.Types (Parser)
-import Text.Megaparsec (MonadParsec (try), many, optional, (<?>), (<|>))
+import Text.Megaparsec (MonadParsec (try), many, optional, (<?>), (<|>), failure, choice)
+import Text.Megaparsec.Error ( ErrorItem(Tokens) )
 import Text.Megaparsec.Char (char, string)
+import Data.Set as S (fromList)
+import Debug.Trace
 
--- TODO: update the parsing stuff below so people can actually make sense of the stuff down below
-{- What is the parse tree from lowest precedence to highest?
+{-
+if there is a gap between terms, any number of spaces (including none) is valid, barring in die, dopr, and ords
 
-addition/subtraction [expr] {term [+-] term}
-multiplication/integer division [term] {func [*/] func}
-function application [func] {`func name` " "+ neg}
-negation [neg] {"-" exp}
-exponentiation [exp] {base "^" base}
-brackets, integer, dice [base] {"(" expr ")"} {[0123456789]+} {dieops}
---- the dice resolution barrier
-(keep/drop) (lowest/highest), reroll once, reroll [dieops] {[kd][lh] [0123456789]+} {"rro" (<|>|=|<=|>=) [0123456789]+} {"rr" (<|>|=|<=|>=) [0123456789]+}
-multiple dice [mdie] {[0123456789]+ bdie}
-base die [bdie] {"d" base} {"d{" [0123456789]+ ("," [0123456789]+)* "}"}
+expr - term ([+-] expr)?
+term - func ([*/] term)?
+func - {some string identifier}? " " nega
+nega - "-" expo | expo
+expo - base "^" expo | base
+base - dice | nbse
+nbse - "(" expr ")" | [0-9]+
+dice - base die dopr?
+die  - "d" "!"? (bse | "{" expr (", " expr)* "}")
+dopr - "!"? (("rr" | "ro") ords | ("k"|"d") (("l" | "h") nbse | "w" ords))
+ords - ("/=" | "<=" | ">=" | "<" | "=" | ">") nbase
 -}
 
 -- | The maximum depth that should be permitted. Used to limit number of dice and rerolls.
@@ -181,6 +185,7 @@ supportedFunctions =
       | n > factorialLimit = fact factorialLimit
       | otherwise = n * fact (n - 1)
 
+-- | The functions currently supported.
 supportedFunctionsList :: [String]
 supportedFunctionsList = M.keys supportedFunctions
 
@@ -215,18 +220,15 @@ evalExpr e = do
 -- underlined.
 dieShow :: (PrettyShow a, MonadException m) => Maybe (Integer, Integer) -> a -> [(Integer, Maybe Bool)] -> m String
 dieShow _ a [] = throwBot $ EvaluationException "tried to show empty set of results" [prettyShow a]
-dieShow lchc d ls = return $ prettyShow d ++ " [" ++ foldr1 (\n rst -> n ++ ", " ++ rst) adjustList ++ "]"
+dieShow lchc d ls = return $ prettyShow d ++ " [" ++ intercalate ", " adjustList ++ "]"
   where
-    -- countRemoved = foldr (fromEnum . isJust . snd) ls
-    -- countDropped = foldr () ls
-    -- countResults = foldr (\(i,mb) (remo,drp,crt) -> (remo + (fromEnum $ isJust mb),drp + (fromEnum $ fromMaybe False mb),crt+ fromEnum (isCrit i))) (0,0,0) ls
-    (toCrit, isCrit) =
+    toCrit =
       if isNothing lchc
-        then (show, const False)
-        else (toCrit', \i -> i == lc || i == hc)
+        then show
+        else toCrit'
     (lc, hc) = fromMaybe (0, 0) lchc
     toCrit' i
-      | isCrit i = formatInput Bold i
+      | i == lc || i == hc = formatInput Bold i
       | otherwise = show i
     toCrossedOut (i, Just False) = formatText Strikethrough $ toCrit i
     toCrossedOut (i, Just True) = formatText Strikethrough $ formatText Underline $ toCrit i
@@ -354,8 +356,8 @@ evalDieOp' rngCount (Just (DieOpRecur doo mdor)) die is = do
       return (Reroll once o (Value i'), rngCount'')
     processDOO rngCount' (DieOpOptionLazy doo') = return (doo', rngCount')
 
--- | Utility function that processes a `DieOpOption`, when given a range for dice,
--- and dice that have already been processed.
+-- | Utility function that processes a `DieOpOption`, when given a die, and dice that have
+-- already been processed.
 evalDieOp'' :: Integer -> DieOpOption -> Die -> [(NonEmpty Integer, Bool)] -> IO ([(NonEmpty Integer, Bool)], Integer)
 evalDieOp'' rngCount (DieOpOptionLazy doo) die is = evalDieOp'' rngCount doo die is
 evalDieOp'' rngCount (DieOpOptionKD kd lhw) _ is = evalDieOpHelpKD rngCount kd lhw is
@@ -425,7 +427,7 @@ instance IOEval Term where
     (f', f's, rngCount') <- evalShow rngCount f
     (t', t's, rngCount'') <- evalShow rngCount' t
     if t' == 0
-      then throwBot (EvaluationException "division by zero" [])
+      then throwBot (EvaluationException "division by zero" [prettyShow t])
       else return (div f' t', f's ++ " / " ++ t's, rngCount'')
 
 instance IOEval Func where
@@ -433,7 +435,7 @@ instance IOEval Func where
   evalShow' rngCount (Func "fact" neg) = do
     (neg', neg's, rngCount') <- evalShow rngCount neg
     if neg' > factorialLimit
-      then throwBot $ EvaluationException ("tried to evaluate a factorial with input number greater than the limit (" ++ formatInput Code factorialLimit ++ "): `" ++ formatInput Code neg' ++ "`") []
+      then throwBot $ EvaluationException ("tried to evaluate a factorial with input number greater than the limit (" ++ formatInput Code factorialLimit ++ "): `" ++ formatInput Code neg' ++ "`") [prettyShow neg]
       else do
         f <- getFunc "fact"
         return (f neg', "fact" ++ " " ++ neg's, rngCount')
@@ -443,10 +445,10 @@ instance IOEval Func where
     return (f neg', s ++ " " ++ neg's, rngCount')
 
 instance IOEval Negation where
+  evalShow' rngCount (NoNeg expo) = evalShow rngCount expo
   evalShow' rngCount (Neg expo) = do
     (expo', expo's, rngCount') <- evalShow rngCount expo
     return (negate expo', "-" ++ expo's, rngCount')
-  evalShow' rngCount (NoNeg expo) = evalShow rngCount expo
 
 instance IOEval Expo where
   evalShow' rngCount (NoExpo b) = evalShow rngCount b
@@ -524,30 +526,33 @@ instance PrettyShow Dice where
 
 --- Parsing expressions below this line
 
+binOpParseHelp :: (CanParse a) => Char -> (a -> a) -> Parser a
+binOpParseHelp c con = try (char c) *> skipSpace *> (con <$> pars)
+
 instance CanParse Expr where
   pars = do
     t <- pars
-    (try (skipSpace *> char '+') *> skipSpace *> (Add t <$> pars))
-      <|> (try (skipSpace *> char '-') *> skipSpace *> (Sub t <$> pars))
-      <|> (return . NoExpr) t
+    skipSpace
+    binOpParseHelp '+' (Add t) <|> binOpParseHelp '-' (Sub t) <|> (return . NoExpr) t
 
 instance CanParse Term where
   pars = do
     t <- pars
-    (try (skipSpace *> char '*') *> skipSpace *> (Multi t <$> pars))
-      <|> (try (skipSpace *> char '/') *> skipSpace *> (Div t <$> pars))
-      <|> (return . NoTerm) t
+    skipSpace
+    binOpParseHelp '*' (Multi t) <|> binOpParseHelp '/' (Div t) <|> (return . NoTerm) t
 
 instance CanParse Func where
   pars = do
-    funcName <- optional $ try ((pack <$> word) <* skipSpace1)
+    funcName <- optional $ try ((pack <$> word) <* space)
+    skipSpace
     t <- pars
     matchFuncName funcName t
     where
-      matchFuncName Nothing t = return $ Func "id" t
-      matchFuncName (Just s) t
-        | unpack s `member` supportedFunctions = return $ Func (unpack s) t
-        | otherwise = fail $ "could not find function with name `" ++ unpack s ++ "`"
+      matchFuncName Nothing = return . Func "id"
+      matchFuncName (Just "") = const $ failure Nothing (S.fromList (fmap (Tokens . NE.fromList) supportedFunctionsList))
+      matchFuncName (Just s)
+        | unpack s `member` supportedFunctions = return . Func (unpack s)
+        | otherwise = trace ("matchfunname") $ const $ failure (Just $ Tokens (NE.fromList $ unpack s)) (S.fromList (fmap (Tokens . NE.fromList) supportedFunctionsList))
 
 instance CanParse Negation where
   pars =
@@ -611,9 +616,11 @@ parseDice' = do
 
 -- | Parse a `/=`, `<=`, `>=`, `<`, `=`, `>` as an `AdvancedOrdering`.
 parseAdvancedOrdering :: Parser AdvancedOrdering
-parseAdvancedOrdering = (try (string "!=" <|> string ">=" <|> string "<=" <|> string "<" <|> string "=" <|> string ">") <?> "could not parse an ordering") >>= matchO
+parseAdvancedOrdering = (try test <?> "could not parse an ordering") >>= matchO
   where
     matchO s = M.findWithDefault (fail "could not parse an ordering") s (M.map return $ fst advancedOrderingMapping)
+    opts = fmap string (M.keys $ fst (advancedOrderingMapping @Text))
+    test = choice opts
 
 -- | Parse a `LowHighWhere`, which is an `h` followed by an integer.
 parseLowHigh :: Parser LowHighWhere
