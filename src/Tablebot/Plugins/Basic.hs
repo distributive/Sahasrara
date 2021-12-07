@@ -9,8 +9,8 @@
 -- This is an example plugin which responds to certain calls with specific responses.
 module Tablebot.Plugins.Basic (basicPlugin) where
 
-import Control.Monad (when)
-import Data.Text as T (Text, toLower, toTitle, unpack)
+import Data.Text as T (Text, toLower, toTitle)
+import Data.Void (Void)
 import Discord.Internal.Rest (Message (messageText))
 import Tablebot.Plugin.Discord (sendMessage)
 import Tablebot.Plugin.SmartCommand (parseComm)
@@ -27,7 +27,8 @@ import Tablebot.Plugin.Types
     helpPages,
     plug,
   )
-import Text.Regex.PCRE ((=~))
+import Text.Megaparsec (anySingle, parse, skipManyTill)
+import Text.Megaparsec.Char (string)
 
 -- * Some types to help clarify what's going on
 
@@ -91,7 +92,7 @@ baseInlineCommand (t, rs) =
     ( return
         ( \m -> do
             let msg = T.toLower $ messageText m
-            when (unpack msg =~ (".*" <> unpack (toLower t) <> ".*")) $ sendMessage m rs
+            either (const $ return ()) (const $ sendMessage m rs) (parse @Void (skipManyTill anySingle (string t)) "" msg)
         )
     )
 
