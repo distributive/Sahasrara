@@ -93,7 +93,7 @@ baseInlineCommand (t, rs) =
     ( return
         ( \m -> do
             let msg = T.toLower $ messageText m
-            fromMaybe (return ()) (sendMessage m rs <$ parseMaybe @Void (skipManyTill anySingle (string t)) msg)
+            fromMaybe (return ()) (sendMessage m rs <$ parseMaybe @Void (skipManyTill anySingle (string $ T.toLower t)) msg)
         )
     )
 
