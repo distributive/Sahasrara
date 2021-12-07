@@ -28,7 +28,7 @@ import Tablebot.Plugin.Types
     helpPages,
     plug,
   )
-import Text.Megaparsec (anySingle, parseMaybe, skipManyTill)
+import Text.Megaparsec (anySingle, parseMaybe, skipMany, skipManyTill)
 import Text.Megaparsec.Char (string)
 
 -- * Some types to help clarify what's going on
@@ -93,7 +93,7 @@ baseInlineCommand (t, rs) =
     ( return
         ( \m -> do
             let msg = T.toLower $ messageText m
-            fromMaybe (return ()) (sendMessage m rs <$ parseMaybe @Void (skipManyTill anySingle (string $ T.toLower t)) msg)
+            fromMaybe (return ()) (sendMessage m rs <$ parseMaybe @Void (skipManyTill anySingle (string $ T.toLower t) <* skipMany anySingle) msg)
         )
     )
 
