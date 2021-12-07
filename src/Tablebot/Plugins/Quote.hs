@@ -10,25 +10,25 @@
 --
 -- This is an example plugin which allows user to @!quote add@ their favourite
 -- quotes and then @!quote show n@ a particular quote.
-module Tablebot.Plugins.Quote
-  ( quotePlugin,
-  )
-where
+module Tablebot.Plugins.Quote (quotePlugin) where
 
 import Control.Applicative (liftA)
 import Control.Monad (void)
 import Control.Monad.IO.Class (liftIO)
+import Data.Aeson
 import Data.Text (Text, append, pack)
-import Data.Time.Clock.System (getSystemTime, systemToUTCTime)
-import Database.Persist.Sqlite (Filter, SelectOpt (LimitTo, OffsetBy), (==.))
+import Data.Time.Clock.System (SystemTime (systemSeconds), getSystemTime, systemToUTCTime)
+import Database.Persist.Sqlite (Filter, SelectOpt (LimitTo, OffsetBy), entityVal, (==.))
 import Database.Persist.TH
 import Discord.Types
+import GHC.Generics (Generic)
 import GHC.Int (Int64)
 import System.Random (randomRIO)
 import Tablebot.Plugin
 import Tablebot.Plugin.Database
 import Tablebot.Plugin.Discord (findGuild, getMessage, getMessageLink, getPrecedingMessage, getReplyMessage, sendEmbedMessage, sendMessage, toMention, toMention')
 import Tablebot.Plugin.Embed
+import Tablebot.Plugin.Exception (BotException (GenericException), throwBot)
 import Tablebot.Plugin.Permission (requirePermission)
 import Tablebot.Plugin.SmartCommand
 import Text.RawString.QQ (r)
@@ -67,7 +67,7 @@ quote =
   Command
     "quote"
     (parseComm quoteComm)
-    [addQuote, editQuote, thisQuote, authorQuote, showQuote, deleteQuote, randomQuote]
+    [addQuote, editQuote, thisQuote, authorQuote, showQuote, deleteQuote, randomQuote, exportQuotes, importQuotes]
   where
     quoteComm ::
       WithError
@@ -365,3 +365,36 @@ quotePlugin =
       migrations = [quoteMigration],
       helpPages = [quoteHelp]
     }
+
+deriving instance Generic Quote
+
+instance FromJSON Quote
+
+instance ToJSON Quote
+
+-- | Get all the quotes in the database.
+allQuotes :: DatabaseDiscord [Quote]
+allQuotes = fmap entityVal <$> selectList [] []
+
+-- | Export all the quotes in the database to either a default quotes file or to a given
+-- file name that is quoted in the command. Superuser only.
+exportQuotes :: Command
+exportQuotes = Command "export" (parseComm exportQ) []
+  where
+    defFileName = getSystemTime >>= \now -> return $ "quotes_" <> show (systemSeconds now) <> ".json"
+    exportQ :: Maybe (Quoted FilePath) -> Message -> DatabaseDiscord ()
+    exportQ qfp m = requirePermission Superuser m $ do
+      (Qu fp) <- liftIO $ maybe (Qu <$> defFileName) return qfp
+      aq <- allQuotes
+      _ <- liftIO $ encodeFile fp aq
+      sendMessage m ("Succesfully exported all " <> (pack . show . length) aq <> " quotes to `" <> pack fp <> "`")
+
+-- | Import all the quotes in a file into the database from a given file. Superuser only.
+importQuotes :: Command
+importQuotes = Command "import" (parseComm importQ) []
+  where
+    importQ :: Quoted FilePath -> Message -> DatabaseDiscord ()
+    importQ (Qu fp) m = requirePermission Superuser m $ do
+      mqs <- liftIO $ decodeFileStrict fp
+      qs <- maybe (throwBot $ GenericException "error getting file" "there was an error obtaining or decoding the quotes json") (insertMany @Quote) mqs
+      sendMessage m ("Succesfully imported " <> (pack . show . length) qs <> " quotes")
