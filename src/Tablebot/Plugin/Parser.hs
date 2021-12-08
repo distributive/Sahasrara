@@ -14,7 +14,7 @@ import Data.Char (isDigit, isLetter, isSpace)
 import Data.Functor (($>))
 import Tablebot.Plugin (Parser)
 import Text.Megaparsec
-import Text.Megaparsec.Char (char)
+import Text.Megaparsec.Char (char, alphaNumChar)
 
 space :: Parser ()
 space = satisfy isSpace $> ()
@@ -81,6 +81,11 @@ discordUser :: Parser String
 discordUser = do
   num <- between (chunk "<@") (single '>') (some digit)
   return $ "<@" ++ num ++ ">"
+
+-- | @netrunnerQuery@ gets an inline Netrunner prompt.
+-- This means that it matches @{{netrunner card}}@.
+netrunnerQuery :: Parser String
+netrunnerQuery = between (chunk "{{") (chunk "}}") $ some alphaNumChar
 
 -- | @sp@ parses an optional space character.
 sp :: Parser ()
