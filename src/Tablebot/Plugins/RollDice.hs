@@ -18,7 +18,7 @@ import Tablebot.Plugin
 import Tablebot.Plugin.Dice (Expr, defaultRoll, evalExpr, supportedFunctionsList)
 import Tablebot.Plugin.Discord (sendMessage, toMention)
 import Tablebot.Plugin.Parser (skipSpace1)
-import Tablebot.Plugin.SmartCommand (PComm (parseComm), Quoted (Qu), pars)
+import Tablebot.Plugin.SmartCommand (Quoted (Qu), pars)
 import Text.Megaparsec (MonadParsec (eof), (<|>))
 import Text.RawString.QQ (r)
 
@@ -40,9 +40,6 @@ rollDiceParser = do
 
 rollDice :: Command
 rollDice = Command "roll" rollDiceParser []
-
-rollDiceEquiv :: Command
-rollDiceEquiv = Command "r" (parseComm rollDice') []
 
 rollHelp :: HelpPage
 rollHelp =
@@ -74,4 +71,4 @@ To see a full list of uses and options, please go to <https://github.com/Warwick
 
 -- | @rollPlugin@ assembles the command into a plugin.
 rollPlugin :: Plugin
-rollPlugin = (plug "roll") {commands = [rollDice], helpPages = [rollHelp]}
+rollPlugin = (plug "roll") {commands = [rollDice, commandAlias "r" rollDice], helpPages = [rollHelp]}
