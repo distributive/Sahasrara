@@ -14,13 +14,13 @@ import Data.List (intercalate)
 import Data.Maybe (fromMaybe)
 import Data.Text (Text, pack)
 import Discord.Types (Message (messageAuthor))
+import Tablebot.Handler.Command (inlineCommandHelper)
 import Tablebot.Plugin
 import Tablebot.Plugin.Dice (Expr, defaultRoll, evalExpr, supportedFunctionsList)
 import Tablebot.Plugin.Discord (sendMessage, toMention)
-import Tablebot.Plugin.Parser (skipSpace, skipSpace1)
+import Tablebot.Plugin.Parser (skipSpace1)
 import Tablebot.Plugin.SmartCommand (Quoted (Qu), pars)
-import Text.Megaparsec (MonadParsec (eof, try), anySingle, many, skipManyTill, (<|>))
-import Text.Megaparsec.Char (string)
+import Text.Megaparsec (MonadParsec (eof), (<|>))
 import Text.RawString.QQ (r)
 
 rollDice' :: Maybe Expr -> Maybe (Quoted Text) -> Message -> DatabaseDiscord ()
@@ -43,12 +43,7 @@ rollDice :: Command
 rollDice = Command "roll" rollDiceParser []
 
 rollDiceInline :: InlineCommand
-rollDiceInline =
-  InlineCommand
-    ( do
-        getExprs <- many (try $ skipManyTill anySingle (string "[|" *> skipSpace *> (pars :: Parser Expr) <* skipSpace <* string "|]"))
-        return $ \m -> mapM_ (\e -> rollDice' (Just e) Nothing m) getExprs
-    )
+rollDiceInline = inlineCommandHelper "[|" "|]" pars (\e m -> rollDice' (Just e) Nothing m)
 
 rollHelp :: HelpPage
 rollHelp =
