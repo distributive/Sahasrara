@@ -13,13 +13,14 @@ import Control.Monad.Writer (MonadIO (liftIO))
 import Data.List (intercalate)
 import Data.Maybe (fromMaybe)
 import Data.Text (Text, pack)
+import Debug.Trace (trace)
 import Discord.Types (Message (messageAuthor))
 import Tablebot.Plugin
 import Tablebot.Plugin.Dice (Expr, defaultRoll, evalExpr, supportedFunctionsList)
 import Tablebot.Plugin.Discord (sendMessage, toMention)
-import Tablebot.Plugin.Parser (skipSpace1)
+import Tablebot.Plugin.Parser (skipSpace1, untilEnd, skipSpace)
 import Tablebot.Plugin.SmartCommand (Quoted (Qu), pars)
-import Text.Megaparsec (MonadParsec (eof), anySingle, many, skipManyTill, (<|>))
+import Text.Megaparsec (MonadParsec (eof, try), anySingle, many, skipManyTill, withRecovery, (<|>))
 import Text.Megaparsec.Char (string)
 import Text.RawString.QQ (r)
 
@@ -46,7 +47,7 @@ rollDiceInline :: InlineCommand
 rollDiceInline =
   InlineCommand
     ( do
-        getExprs <- many (skipManyTill anySingle (string "[|" *> (pars :: Parser Expr) <* string "|]"))
+        getExprs <- many (try $ skipManyTill anySingle (string "[|" *> skipSpace *> (pars :: Parser Expr) <* skipSpace <* string "|]"))
         return $ \m -> mapM_ (\e -> rollDice' (Just e) Nothing m) getExprs
     )
 
