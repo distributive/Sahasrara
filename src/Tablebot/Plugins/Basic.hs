@@ -10,9 +10,8 @@
 module Tablebot.Plugins.Basic (basicPlugin) where
 
 import Data.Maybe (fromMaybe)
-import Data.Text as T (Text, toLower, toTitle)
-import Data.Void (Void)
-import Discord.Internal.Rest (Message (messageText))
+import Data.Text as T (Text, toTitle)
+import Discord.Internal.Rest (Message)
 import Tablebot.Plugin.Discord (sendMessage)
 import Tablebot.Plugin.SmartCommand (parseComm)
 import Tablebot.Plugin.Types
@@ -28,8 +27,8 @@ import Tablebot.Plugin.Types
     helpPages,
     plug,
   )
-import Text.Megaparsec (anySingle, parseMaybe, skipMany, skipManyTill)
-import Text.Megaparsec.Char (string)
+import Text.Megaparsec (MonadParsec (try), anySingle, optional, skipMany, skipManyTill)
+import Text.Megaparsec.Char (string')
 
 -- * Some types to help clarify what's going on
 
@@ -90,11 +89,9 @@ basicInlineCommands =
 baseInlineCommand :: BasicInlineCommand -> InlineCommand
 baseInlineCommand (t, rs) =
   InlineCommand
-    ( return
-        ( \m -> do
-            let msg = T.toLower $ messageText m
-            fromMaybe (return ()) (sendMessage m rs <$ parseMaybe @Void (skipManyTill anySingle (string $ T.toLower t) <* skipMany anySingle) msg)
-        )
+    ( do
+        res <- optional $ try (skipManyTill anySingle (string' t) <* skipMany anySingle)
+        return $ fromMaybe (const $ return ()) ((`sendMessage` rs) <$ res)
     )
 
 -- | @basicPlugin@ assembles the call and response commands into a simple command list.
