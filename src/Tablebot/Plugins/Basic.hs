@@ -9,7 +9,6 @@
 -- This is an example plugin which responds to certain calls with specific responses.
 module Tablebot.Plugins.Basic (basicPlugin) where
 
-import Data.Maybe (fromMaybe)
 import Data.Text as T (Text, toTitle)
 import Discord.Internal.Rest (Message)
 import Tablebot.Plugin.Discord (sendMessage)
@@ -27,7 +26,7 @@ import Tablebot.Plugin.Types
     helpPages,
     plug,
   )
-import Text.Megaparsec (MonadParsec (try), anySingle, optional, skipMany, skipManyTill)
+import Text.Megaparsec (anySingle, skipManyTill)
 import Text.Megaparsec.Char (string')
 
 -- * Some types to help clarify what's going on
@@ -87,12 +86,7 @@ basicInlineCommands =
   ]
 
 baseInlineCommand :: BasicInlineCommand -> InlineCommand
-baseInlineCommand (t, rs) =
-  InlineCommand
-    ( do
-        res <- optional $ try (skipManyTill anySingle (string' t) <* skipMany anySingle)
-        return $ fromMaybe (const $ return ()) ((`sendMessage` rs) <$ res)
-    )
+baseInlineCommand (t, rs) = InlineCommand (skipManyTill anySingle (string' t) >> return (`sendMessage` rs))
 
 -- | @basicPlugin@ assembles the call and response commands into a simple command list.
 basicPlugin :: Plugin
