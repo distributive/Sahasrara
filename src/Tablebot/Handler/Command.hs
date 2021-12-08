@@ -13,7 +13,6 @@ module Tablebot.Handler.Command
   ( parseNewMessage,
     parseCommands,
     parseInlineCommands,
-    inlineCommandHelper,
   )
 where
 
@@ -27,10 +26,9 @@ import Tablebot.Handler.Plugins (changeAction)
 import Tablebot.Handler.Types
 import Tablebot.Plugin.Discord (sendEmbedMessage)
 import Tablebot.Plugin.Exception (BotException (ParserException), embedError)
-import Tablebot.Plugin.Parser (skipSpace, skipSpace1, space, word)
+import Tablebot.Plugin.Parser (skipSpace1, space, word)
 import Tablebot.Plugin.Types hiding (commandParser, inlineCommandParser)
 import Text.Megaparsec
-import Text.Megaparsec.Char (string)
 
 -- | @parseNewMessage@ parses a new message, first by attempting to match the
 -- bot's prefix to the start of the message, then (if that fails) by attempting
@@ -130,14 +128,3 @@ parseInlineCommands cs m = case parse (parser cs) "" (messageText m) of
   where
     parser :: [CompiledInlineCommand] -> Parser (Message -> CompiledDatabaseDiscord ())
     parser cs' = choice $ map (try . inlineCommandParser) cs'
-
--- | For helping to create inline commands. Takes the opening characters, closing
--- characters, a parser to get a value `e`, and an action that takes that `e` and a
--- message and produces a DatabaseDiscord effect.
-inlineCommandHelper :: Text -> Text -> Parser e -> (e -> Message -> DatabaseDiscord ()) -> InlineCommand
-inlineCommandHelper open close p action =
-  InlineCommand
-    ( do
-        getExprs <- many (try $ skipManyTill anySingle (string open *> skipSpace *> p <* skipSpace <* string close))
-        return $ \m -> mapM_ (`action` m) getExprs
-    )
