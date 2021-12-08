@@ -80,6 +80,7 @@ library:
   - TupleSections
   - ConstraintKinds 
   - ImportQualifiedPost
+  - TypeOperators
   ghc-options:
   - -Wall
 
