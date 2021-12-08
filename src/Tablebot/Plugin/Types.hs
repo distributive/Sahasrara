@@ -25,8 +25,7 @@ import Discord.Types
     MessageId,
     ReactionInfo,
   )
-import Text.Megaparsec (Parsec, anySingle, many, skipManyTill)
-import Text.Megaparsec.Char (string)
+import Text.Megaparsec (Parsec)
 
 -- * DatabaseDiscord
 
@@ -93,17 +92,6 @@ newtype EnvInlineCommand d = InlineCommand
   }
 
 type InlineCommand = EnvInlineCommand ()
-
--- | For helping to create inline commands. Takes the opening characters, closing 
--- characters, a parser to get a value `e`, and an action that takes that `e` and a
--- message and produces a DatabaseDiscord effect.
-inlineCommandHelper :: Text -> Text -> Parser e -> (e -> Message -> DatabaseDiscord ()) -> InlineCommand
-inlineCommandHelper open close p action =
-  InlineCommand
-    ( do
-        getExprs <- many (skipManyTill anySingle (string open *> p <* string close))
-        return $ \m -> mapM_ (`action` m) getExprs
-    )
 
 -- | How to handle any messages changing. Called on Discord's 'MessageUpdate',
 -- 'MessageDelete' and 'MessageDeleteBulk'. Useful for admin bots such as the
