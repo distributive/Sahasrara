@@ -8,7 +8,8 @@
 --
 -- This plugin contains the neccessary parsers and stucture to get the AST for an
 -- expression that contains dice, as well as evaluate that expression.
-module Tablebot.Plugin.Dice (evalExpr, Expr, PrettyShow (..), supportedFunctionsList, defaultRoll) where
+module Tablebot.Plugin.Dice where
+-- module Tablebot.Plugin.Dice (evalExpr, Expr, PrettyShow (..), supportedFunctionsList, defaultRoll) where
 
 import Control.Monad (when)
 import Control.Monad.Exception (MonadException)
@@ -186,6 +187,33 @@ supportedFunctions =
       | n == 0 = 1
       | n > factorialLimit = fact factorialLimit
       | otherwise = n * fact (n - 1)
+
+data FuncInfo = FuncInfo String (Maybe Integer) ([Integer] -> m Integer)
+
+checkValid :: Integer -> [Integer] -> Bool
+checkValid i lst = not 
+
+argumentError :: (MonadException m) => Integer -> [Integer] -> ([Integer] -> Integer) -> m Integer
+argumentError i lst f
+  | i < 0 || null (take i lst) || (length $ take (i + 1) lst) > i = 
+  where err = throwBot $ EvaluationException ("incorrect number of arguments to function. expected " <> show i <> ", got " <> show)
+
+funcInfoFromUnary :: String -> (Integer -> Integer) -> FuncInfo
+funcInfoFromUnary name f = FuncInfo name (Just 1) (\lst -> if not (checkValid 1 lst) then throwBot)
+
+
+-- newtype FuncTwo = FuncTwo (FuncStore n)
+
+-- data FuncStore n  where
+--   FuncStore :: (Count f ~ n) => String -> f -> FuncStore n
+
+-- instance (KnownNat n) => Show (FuncStore n) where
+--   show (FuncStore name _) = "FuncStore " <> show name 
+  
+-- type family Count f where
+--   Count Integer = 0
+--   Count (Integer -> f) = 1 + Count f
+--   Count _ = TypeError ('Text "Incorrect type to count")
 
 -- | The functions currently supported.
 supportedFunctionsList :: [String]
