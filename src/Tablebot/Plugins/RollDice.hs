@@ -19,7 +19,8 @@ import Tablebot.Plugin.Dice (Expr, defaultRoll, evalExpr, supportedFunctionsList
 import Tablebot.Plugin.Discord (sendMessage, toMention)
 import Tablebot.Plugin.Parser (skipSpace1)
 import Tablebot.Plugin.SmartCommand (Quoted (Qu), pars)
-import Text.Megaparsec (MonadParsec (eof), (<|>))
+import Text.Megaparsec (MonadParsec (eof), anySingle, many, skipManyTill, (<|>))
+import Text.Megaparsec.Char (string)
 import Text.RawString.QQ (r)
 
 rollDice' :: Maybe Expr -> Maybe (Quoted Text) -> Message -> DatabaseDiscord ()
@@ -40,6 +41,14 @@ rollDiceParser = do
 
 rollDice :: Command
 rollDice = Command "roll" rollDiceParser []
+
+rollDiceInline :: InlineCommand
+rollDiceInline =
+  InlineCommand
+    ( do
+        getExprs <- many (skipManyTill anySingle (string "[|" *> (pars :: Parser Expr) <* string "|]"))
+        return $ \m -> mapM_ (\e -> rollDice' (Just e) Nothing m) getExprs
+    )
 
 rollHelp :: HelpPage
 rollHelp =
@@ -71,4 +80,9 @@ To see a full list of uses and options, please go to <https://github.com/Warwick
 
 -- | @rollPlugin@ assembles the command into a plugin.
 rollPlugin :: Plugin
-rollPlugin = (plug "roll") {commands = [rollDice, commandAlias "r" rollDice], helpPages = [rollHelp]}
+rollPlugin =
+  (plug "roll")
+    { commands = [rollDice, commandAlias "r" rollDice],
+      helpPages = [rollHelp],
+      inlineCommands = [rollDiceInline]
+    }
