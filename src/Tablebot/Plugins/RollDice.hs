@@ -17,18 +17,29 @@ import Discord.Types (Message (messageAuthor))
 import Tablebot.Plugin
 import Tablebot.Plugin.Dice (Expr, defaultRoll, evalExpr, supportedFunctionsList)
 import Tablebot.Plugin.Discord (sendMessage, toMention)
-import Tablebot.Plugin.SmartCommand (PComm (parseComm))
+import Tablebot.Plugin.Parser (skipSpace1)
+import Tablebot.Plugin.SmartCommand (PComm (parseComm), Quoted (Qu), pars)
+import Text.Megaparsec (MonadParsec (eof), (<|>))
 import Text.RawString.QQ (r)
 
-rollDice' :: Maybe Expr -> Message -> DatabaseDiscord ()
-rollDice' e' m = do
+rollDice' :: Maybe Expr -> Maybe (Quoted Text) -> Message -> DatabaseDiscord ()
+rollDice' e' t m = do
   let e = fromMaybe defaultRoll e'
   (v, s) <- liftIO $ evalExpr e
-  let msg = toMention (messageAuthor m) <> " rolled " <> s <> ".\nOutput: " <> pack (show v)
+  let msg = toMention (messageAuthor m) <> " rolled" <> dsc <> s <> ".\nOutput: " <> pack (show v)
   sendMessage m msg
+  where
+    dsc = maybe " " (\(Qu t') -> " \"" <> t' <> "\": ") t
+
+rollDiceParser :: Parser (Message -> DatabaseDiscord ())
+rollDiceParser = do
+  e <- pars @(Maybe Expr)
+  maybe (return ()) (const (skipSpace1 <|> eof)) e
+  t <- pars @(Maybe (Quoted Text))
+  return $ rollDice' e t
 
 rollDice :: Command
-rollDice = Command "roll" (parseComm rollDice') []
+rollDice = Command "roll" rollDiceParser []
 
 rollDiceEquiv :: Command
 rollDiceEquiv = Command "r" (parseComm rollDice') []
@@ -63,4 +74,4 @@ To see a full list of uses and options, please go to <https://github.com/Warwick
 
 -- | @rollPlugin@ assembles the command into a plugin.
 rollPlugin :: Plugin
-rollPlugin = (plug "roll") {commands = [rollDice, rollDiceEquiv], helpPages = [rollHelp]}
+rollPlugin = (plug "roll") {commands = [rollDice], helpPages = [rollHelp]}

@@ -80,6 +80,7 @@ library:
   - TupleSections
   - ConstraintKinds 
   - ImportQualifiedPost
+  - RecordWildCards
   ghc-options:
   - -Wall
 

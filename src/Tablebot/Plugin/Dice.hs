@@ -15,24 +15,26 @@ import Control.Monad.Exception (MonadException)
 import Data.Bifunctor (Bifunctor (first))
 import Data.Functor (($>), (<&>))
 import Data.List (genericDrop, genericReplicate, genericTake, intercalate, sortBy)
-import Data.List.NonEmpty as NE (NonEmpty ((:|)), head, tail, (<|), fromList)
+import Data.List.NonEmpty as NE (NonEmpty ((:|)), fromList, head, tail, (<|))
 import Data.Map as M (Map, findWithDefault, fromList, keys, map, member)
 import Data.Maybe (fromMaybe, isNothing)
+import Data.Set as S (Set, fromList, map)
 import Data.String (IsString (fromString))
-import Data.Text (Text, pack, unpack)
+import Data.Text (Text, pack, singleton, unpack)
 import Data.Tuple (swap)
 import System.Random (randomRIO)
 import Tablebot.Plugin.Discord (Format (..), formatInput, formatText)
 import Tablebot.Plugin.Exception (BotException (EvaluationException), catchBot, throwBot)
-import Tablebot.Plugin.Parser (posInteger, skipSpace, skipSpace1, word, space)
+import Tablebot.Plugin.Parser (integer, skipSpace, space, word)
 import Tablebot.Plugin.Random (chooseOne)
 import Tablebot.Plugin.SmartCommand (CanParse (..))
 import Tablebot.Plugin.Types (Parser)
-import Text.Megaparsec (MonadParsec (try), many, optional, (<?>), (<|>), failure, choice)
-import Text.Megaparsec.Error ( ErrorItem(Tokens) )
+import Text.Megaparsec (MonadParsec (try), choice, failure, many, optional, (<?>), (<|>))
 import Text.Megaparsec.Char (char, string)
-import Data.Set as S (fromList)
-import Debug.Trace
+import Text.Megaparsec.Error (ErrorItem (Tokens))
+
+failure' :: Text -> Set Text -> Parser a
+failure' s ss = failure (Just $ Tokens $ NE.fromList $ unpack s) (S.map (Tokens . NE.fromList . unpack) ss)
 
 {-
 if there is a gap between terms, any number of spaces (including none) is valid, barring in die, dopr, and ords
@@ -207,7 +209,7 @@ evalExpr e = do
       else (i, pack $ prettyShow e ++ " `[could not display rolls]`")
   where
     countFormatting :: String -> Int
-    countFormatting s = (`div` 4) $ foldr (\c cf -> cf + (fromEnum (c `elem` ['~', '_', '*']))) 0 s
+    countFormatting s = (`div` 4) $ foldr (\c cf -> cf + fromEnum (c `elem` ['~', '_', '*'])) 0 s
 
 -- | Utility function to display dice.
 --
@@ -527,18 +529,16 @@ instance PrettyShow Dice where
 --- Parsing expressions below this line
 
 binOpParseHelp :: (CanParse a) => Char -> (a -> a) -> Parser a
-binOpParseHelp c con = try (char c) *> skipSpace *> (con <$> pars)
+binOpParseHelp c con = try (skipSpace *> char c) *> skipSpace *> (con <$> pars)
 
 instance CanParse Expr where
   pars = do
     t <- pars
-    skipSpace
     binOpParseHelp '+' (Add t) <|> binOpParseHelp '-' (Sub t) <|> (return . NoExpr) t
 
 instance CanParse Term where
   pars = do
     t <- pars
-    skipSpace
     binOpParseHelp '*' (Multi t) <|> binOpParseHelp '/' (Div t) <|> (return . NoTerm) t
 
 instance CanParse Func where
@@ -552,8 +552,9 @@ instance CanParse Func where
       matchFuncName (Just "") = const $ failure Nothing (S.fromList (fmap (Tokens . NE.fromList) supportedFunctionsList))
       matchFuncName (Just s)
         | unpack s `member` supportedFunctions = return . Func (unpack s)
-        | otherwise = trace ("matchfunname") $ const $ failure (Just $ Tokens (NE.fromList $ unpack s)) (S.fromList (fmap (Tokens . NE.fromList) supportedFunctionsList))
+        | otherwise = const $ failure' s (S.fromList $ pack <$> supportedFunctionsList)
 
+-- | otherwise = const $ failure (Just $ Tokens $ NE.fromList $ unpack s) (S.fromList (fmap (Tokens . NE.fromList) supportedFunctionsList))
 instance CanParse Negation where
   pars =
     try (char '-') *> skipSpace *> (Neg <$> pars)
@@ -562,13 +563,12 @@ instance CanParse Negation where
 instance CanParse Expo where
   pars = do
     t <- pars
-    (try (skipSpace *> char '^') *> skipSpace *> (Expo t <$> pars))
-      <|> (return . NoExpo) t
+    binOpParseHelp '^' (Expo t) <|> (return . NoExpo) t
 
 instance CanParse NumBase where
   pars =
     ( (try (skipSpace *> char '(') *> skipSpace *> (Paren . unnest <$> pars) <* skipSpace <* char ')')
-        <|> try (Value <$> posInteger)
+        <|> try (Value <$> integer)
     )
       <?> "could not parse numBase (parentheses, an integer)"
     where
@@ -616,20 +616,21 @@ parseDice' = do
 
 -- | Parse a `/=`, `<=`, `>=`, `<`, `=`, `>` as an `AdvancedOrdering`.
 parseAdvancedOrdering :: Parser AdvancedOrdering
-parseAdvancedOrdering = (try test <?> "could not parse an ordering") >>= matchO
+parseAdvancedOrdering = (try (choice opts) <?> "could not parse an ordering") >>= matchO
   where
-    matchO s = M.findWithDefault (fail "could not parse an ordering") s (M.map return $ fst advancedOrderingMapping)
-    opts = fmap string (M.keys $ fst (advancedOrderingMapping @Text))
-    test = choice opts
+    matchO :: Text -> Parser AdvancedOrdering
+    matchO s = M.findWithDefault (failure' s (S.fromList opts')) s (M.map return $ fst advancedOrderingMapping)
+    opts' = M.keys $ fst (advancedOrderingMapping @Text)
+    opts = fmap string opts'
 
 -- | Parse a `LowHighWhere`, which is an `h` followed by an integer.
 parseLowHigh :: Parser LowHighWhere
-parseLowHigh = (try (char 'h' <|> char 'l' <|> char 'w') <?> "could not parse high, low, where") >>= helper
+parseLowHigh = (try (choice @[] $ char <$> "lhw") <?> "could not parse high, low or where") >>= helper
   where
     helper 'h' = High <$> pars
     helper 'l' = Low <$> pars
     helper 'w' = parseAdvancedOrdering >>= \o -> pars <&> Where o
-    helper _ = fail "could not determine whether to keep/drop highest/lowest"
+    helper c = failure' (singleton c) (S.fromList ["h", "l", "w"])
 
 -- | Parse a bunch of die options.
 parseDieOpRecur :: Parser (Maybe DieOpRecur)
