@@ -17,7 +17,7 @@ import Tablebot.Plugin.Discord (sendMessage, sendEmbedMessage)
 import Tablebot.Plugin.Exception (BotException (NetrunnerException), throwBot)
 import Tablebot.Plugin.Netrunner
 import Tablebot.Plugin.Netrunner.NrApi (NrApi, getNrApi)
-import Tablebot.Plugin.Parser (netrunnerQuery, untilEnd)
+import Tablebot.Plugin.Parser (netrunnerQuery)
 import Tablebot.Plugin.SmartCommand (PComm (parseComm), Quoted (Qu), RestOfInput1 (ROI1) )
 import Tablebot.Handler.Command ()
 import Text.Megaparsec
