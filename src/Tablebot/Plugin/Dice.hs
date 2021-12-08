@@ -9,6 +9,7 @@
 -- This plugin contains the neccessary parsers and stucture to get the AST for an
 -- expression that contains dice, as well as evaluate that expression.
 module Tablebot.Plugin.Dice where
+
 -- module Tablebot.Plugin.Dice (evalExpr, Expr, PrettyShow (..), supportedFunctionsList, defaultRoll) where
 
 import Control.Monad (when)
@@ -173,14 +174,17 @@ data KeepDrop = Keep | Drop deriving (Show, Eq)
 -- Mappings for what functions are supported
 
 -- | Mapping from function names to the functions themselves.
-supportedFunctions :: Map String (Integer -> Integer)
-supportedFunctions =
-  M.fromList
-    [ ("abs", abs),
-      ("id", id),
-      ("fact", fact),
-      ("neg", negate)
-    ]
+supportedFunctions :: MonadException m => Map String (FuncInfo m)
+supportedFunctions = M.fromList $ fmap (\fi -> (funcInfoName fi, fi)) supportedFunctions'
+
+supportedFunctions' :: MonadException m => [FuncInfo m]
+supportedFunctions' =
+  uncurry constructFuncInfo
+    <$> [ ("abs", abs),
+          ("id", id),
+          ("fact", fact),
+          ("neg", negate)
+        ]
   where
     fact n
       | n < 0 = 0
@@ -188,41 +192,32 @@ supportedFunctions =
       | n > factorialLimit = fact factorialLimit
       | otherwise = n * fact (n - 1)
 
-data FuncInfo = FuncInfo String (Maybe Integer) ([Integer] -> m Integer)
+data FuncInfo m = FuncInfo {funcInfoName :: String, funcInfoFunc :: MonadException m => [Integer] -> m Integer}
 
-checkValid :: Integer -> [Integer] -> Bool
-checkValid i lst = not 
+constructFuncInfo :: (MonadException m, ApplyFunc f) => String -> f -> FuncInfo m
+constructFuncInfo s f = FuncInfo s (applyFunc f 0)
 
-argumentError :: (MonadException m) => Integer -> [Integer] -> ([Integer] -> Integer) -> m Integer
-argumentError i lst f
-  | i < 0 || null (take i lst) || (length $ take (i + 1) lst) > i = 
-  where err = throwBot $ EvaluationException ("incorrect number of arguments to function. expected " <> show i <> ", got " <> show)
+class ApplyFunc f where
+  applyFunc :: (MonadException m) => f -> Integer -> [Integer] -> m Integer
 
-funcInfoFromUnary :: String -> (Integer -> Integer) -> FuncInfo
-funcInfoFromUnary name f = FuncInfo name (Just 1) (\lst -> if not (checkValid 1 lst) then throwBot)
+instance {-# OVERLAPPING #-} ApplyFunc Integer where
+  applyFunc f _ [] = return f
+  applyFunc _ i _ = throwBot $ EvaluationException ("incorrect number of arguments to function. expected " <> show i <> ", got more than that") []
 
-
--- newtype FuncTwo = FuncTwo (FuncStore n)
-
--- data FuncStore n  where
---   FuncStore :: (Count f ~ n) => String -> f -> FuncStore n
-
--- instance (KnownNat n) => Show (FuncStore n) where
---   show (FuncStore name _) = "FuncStore " <> show name 
-  
--- type family Count f where
---   Count Integer = 0
---   Count (Integer -> f) = 1 + Count f
---   Count _ = TypeError ('Text "Incorrect type to count")
+instance {-# OVERLAPPING #-} (ApplyFunc f) => ApplyFunc (Integer -> f) where
+  applyFunc _ i [] = throwBot $ EvaluationException ("incorrect number of arguments to function. expected more than " <> show i) []
+  applyFunc f i (x : xs) = applyFunc (f x) (i + 1) xs
 
 -- | The functions currently supported.
 supportedFunctionsList :: [String]
-supportedFunctionsList = M.keys supportedFunctions
+supportedFunctionsList = M.keys (supportedFunctions @IO)
 
--- | Functions that looks up the given function name in the map, and will either throw an
--- error or return the function (wrapped inside the given monad)
-getFunc :: MonadException m => String -> m (Integer -> Integer)
-getFunc s = M.findWithDefault (throwBot $ EvaluationException ("could not find function " ++ formatText Code s) []) s (M.map return supportedFunctions)
+---- | Functions that looks up the given function name in the map, and will either throw an
+---- error or return the function (wrapped inside the given monad)
+getFunc :: MonadException m => String -> [Integer] -> m Integer
+getFunc s is = do
+  fi <- M.findWithDefault (throwBot $ EvaluationException ("could not find function " ++ formatText Code s) []) s (M.map (return . funcInfoFunc) supportedFunctions)
+  fi is
 
 --- Evaluating an expression. Uses IO because dice are random
 
@@ -467,12 +462,12 @@ instance IOEval Func where
     if neg' > factorialLimit
       then throwBot $ EvaluationException ("tried to evaluate a factorial with input number greater than the limit (" ++ formatInput Code factorialLimit ++ "): `" ++ formatInput Code neg' ++ "`") [prettyShow neg]
       else do
-        f <- getFunc "fact"
-        return (f neg', "fact" ++ " " ++ neg's, rngCount')
+        f <- getFunc "fact" [neg']
+        return (f, "fact" ++ " " ++ neg's, rngCount')
   evalShow' rngCount (Func s neg) = do
     (neg', neg's, rngCount') <- evalShow rngCount neg
-    f <- getFunc s
-    return (f neg', s ++ " " ++ neg's, rngCount')
+    f <- getFunc s [neg']
+    return (f, s ++ " " ++ neg's, rngCount')
 
 instance IOEval Negation where
   evalShow' rngCount (NoNeg expo) = evalShow rngCount expo
@@ -579,7 +574,7 @@ instance CanParse Func where
       matchFuncName Nothing = return . Func "id"
       matchFuncName (Just "") = const $ failure Nothing (S.fromList (fmap (Tokens . NE.fromList) supportedFunctionsList))
       matchFuncName (Just s)
-        | unpack s `member` supportedFunctions = return . Func (unpack s)
+        | unpack s `member` (supportedFunctions @IO) = return . Func (unpack s)
         | otherwise = const $ failure' s (S.fromList $ pack <$> supportedFunctionsList)
 
 -- | otherwise = const $ failure (Just $ Tokens $ NE.fromList $ unpack s) (S.fromList (fmap (Tokens . NE.fromList) supportedFunctionsList))

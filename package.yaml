@@ -82,6 +82,7 @@ library:
   - ImportQualifiedPost
   - RecordWildCards
   - TypeOperators
+  - RankNTypes
   ghc-options:
   - -Wall
 
