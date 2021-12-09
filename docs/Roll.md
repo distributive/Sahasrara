@@ -10,7 +10,7 @@ Below are listed the current full capabilities of the bot for rolling dice and e
 - Subtraction
 - Multiplication
 - Division
-- Single input function application (currently for `id`,`abs`, `negate`, and `fact` (factorial) up to some number determined by the bot owner, 50 by default)
+- Single input function application (currently for `id`,`abs`, `neg`, and `fact` (factorial) up to some number determined by the bot owner, 50 by default)
 - Negation using `-`
 - Exponentiation
 - Parentheses
