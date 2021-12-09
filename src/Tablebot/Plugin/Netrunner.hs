@@ -25,7 +25,7 @@ import Text.EditDistance
 
 -- | @queryCard@ fuzzy searches the given library of cards by title.
 queryCard :: NrApi -> String -> Maybe Card
-queryCard api query = Just $ minimumBy comparison $ cards api
+queryCard api query = Just $ minimumBy comparison $ reverse $ cards api
   where
     comparison :: Card -> Card -> Ordering
     comparison a b
