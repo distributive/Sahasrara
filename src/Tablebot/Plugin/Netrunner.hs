@@ -161,7 +161,10 @@ cardToReleaseData api card = fromMaybe "" helper
                       then unpack $ Pack.name p
                       else (unpack $ Cycle.name c) ++ " • " ++ (unpack $ Pack.name p)
       let position = show $ Card.position card
-      return $ pack $ faction ++ " • " ++ expansion ++ " " ++ position
+      let rotation = if Cycle.rotated c
+                     then " (rotated)"
+                     else ""
+      return $ pack $ faction ++ " • " ++ expansion ++ rotation ++ " " ++ position
 
 -- | @cardToLink@ takes a Netrunner card and generates an embed message
 -- representing it.
