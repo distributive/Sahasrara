@@ -18,8 +18,8 @@ import Data.Bifunctor (Bifunctor (first))
 import Data.Functor (($>), (<&>))
 import Data.List (genericDrop, genericReplicate, genericTake, intercalate, sortBy)
 import Data.List.NonEmpty as NE (NonEmpty ((:|)), fromList, head, tail, (<|))
-import Data.Map as M (Map, findWithDefault, fromList, keys, map, member)
-import Data.Maybe (fromMaybe, isNothing)
+import Data.Map as M (Map, findWithDefault, fromList, keys, map)
+import Data.Maybe (fromMaybe, isNothing, fromJust)
 import Data.Set as S (Set, fromList, map)
 import Data.String (IsString (fromString))
 import Data.Text (Text, pack, singleton, unpack)
@@ -27,7 +27,7 @@ import Data.Tuple (swap)
 import System.Random (randomRIO)
 import Tablebot.Plugin.Discord (Format (..), formatInput, formatText)
 import Tablebot.Plugin.Exception (BotException (EvaluationException), catchBot, throwBot)
-import Tablebot.Plugin.Parser (integer, skipSpace, space, word)
+import Tablebot.Plugin.Parser (integer, skipSpace)
 import Tablebot.Plugin.Random (chooseOne)
 import Tablebot.Plugin.SmartCommand (CanParse (..))
 import Tablebot.Plugin.Types (Parser)
@@ -65,7 +65,7 @@ checkRNGCount i =
 
 -- | The default expression to evaluate if no expression is given.
 defaultRoll :: Expr
-defaultRoll = NoExpr $ NoTerm $ Func "id" $ NoNeg $ NoExpo $ DiceBase $ Dice (NBase (Value 1)) (Die (Value 20)) Nothing
+defaultRoll = NoExpr $ NoTerm $ NoNeg $ NoExpo $ DiceBase $ Dice (NBase (Value 1)) (Die (Value 20)) Nothing
 
 -- | The limit to how big a factorial value is permitted. Notably, the factorial function doesn't operate above this limit.
 factorialLimit :: Integer
@@ -78,12 +78,8 @@ factorialLimit = 50
 data Expr = Add Term Expr | Sub Term Expr | NoExpr Term
   deriving (Show, Eq)
 
--- | The type representing multiplication, division, or a single function application.
-data Term = Multi Func Term | Div Func Term | NoTerm Func
-  deriving (Show, Eq)
-
--- | The type representing a single function application on a negated item.
-data Func = Func String Negation
+-- | The type representing multiplication, division, or a single negated term.
+data Term = Multi Negation Term | Div Negation Term | NoTerm Negation
   deriving (Show, Eq)
 
 -- | The type representing a possibly negated value.
@@ -94,16 +90,23 @@ data Negation = Neg Expo | NoNeg Expo
 data Expo = Expo Base Expo | NoExpo Base
   deriving (Show, Eq)
 
+-- TODO: apply hannah's suggestion of function inputs like in non-haskell languages
+-- means that expr can be used for functions.
+
+-- | The type representing a single function application on a negated item.
+data Func = Func String [Expr]
+  deriving (Show, Eq)
+
 -- | The type representing an integer value or an expression in brackets.
 data NumBase = Paren Expr | Value Integer
   deriving (Show, Eq)
 
 -- | The type representing a numeric base value value or a dice value.
-data Base = NBase NumBase | DiceBase Dice
+data Base = NBase NumBase | FuncBase Func | DiceBase Dice
   deriving (Show, Eq)
 
 fromIntegerToExpr :: Integer -> Expr
-fromIntegerToExpr = NoExpr . NoTerm . Func "id" . NoNeg . NoExpo . NBase . Value
+fromIntegerToExpr = NoExpr . NoTerm . NoNeg . NoExpo . NBase . Value
 
 -- Dice Operations after this point
 
@@ -179,34 +182,20 @@ supportedFunctions = M.fromList $ fmap (\fi -> (funcInfoName fi, fi)) supportedF
 
 supportedFunctions' :: MonadException m => [FuncInfo m]
 supportedFunctions' =
-  uncurry constructFuncInfo
-    <$> [ ("abs", abs),
-          ("id", id),
-          ("fact", fact),
-          ("neg", negate)
-        ]
+  constructFuncInfo' "fact" fact (Nothing, Just factorialLimit) :
+  ( uncurry constructFuncInfo
+      <$> ([ ("abs", abs),
+            ("id",  id),
+            ("neg", negate)
+          ] :: [(String, Integer-> Integer)])
+  )
   where
     fact n
       | n < 0 = 0
       | n == 0 = 1
       | n > factorialLimit = fact factorialLimit
       | otherwise = n * fact (n - 1)
-
-data FuncInfo m = FuncInfo {funcInfoName :: String, funcInfoFunc :: MonadException m => [Integer] -> m Integer}
-
-constructFuncInfo :: (MonadException m, ApplyFunc f) => String -> f -> FuncInfo m
-constructFuncInfo s f = FuncInfo s (applyFunc f 0)
-
-class ApplyFunc f where
-  applyFunc :: (MonadException m) => f -> Integer -> [Integer] -> m Integer
-
-instance {-# OVERLAPPING #-} ApplyFunc Integer where
-  applyFunc f _ [] = return f
-  applyFunc _ i _ = throwBot $ EvaluationException ("incorrect number of arguments to function. expected " <> show i <> ", got more than that") []
-
-instance {-# OVERLAPPING #-} (ApplyFunc f) => ApplyFunc (Integer -> f) where
-  applyFunc _ i [] = throwBot $ EvaluationException ("incorrect number of arguments to function. expected more than " <> show i) []
-  applyFunc f i (x : xs) = applyFunc (f x) (i + 1) xs
+-- | n > factorialLimit = throwBot $ EvaluationException ("tried to evaluate a factorial with input number greater than the limit (" ++ formatInput Code factorialLimit ++ "): `" ++ formatInput Code n ++ "`") []
 
 -- | The functions currently supported.
 supportedFunctionsList :: [String]
@@ -218,6 +207,38 @@ getFunc :: MonadException m => String -> [Integer] -> m Integer
 getFunc s is = do
   fi <- M.findWithDefault (throwBot $ EvaluationException ("could not find function " ++ formatText Code s) []) s (M.map (return . funcInfoFunc) supportedFunctions)
   fi is
+
+data FuncInfo m = FuncInfo {funcInfoName :: String, funcInfoFunc :: MonadException m => [Integer] -> m Integer}
+
+-- unaryFuncInfo :: (MonadException m) => String -> (Integer -> Integer) -> FuncInfo m
+-- unaryFuncInfo = constructFuncInfo
+
+constructFuncInfo :: (MonadException m, ApplyFunc m f) => String -> f -> FuncInfo m
+constructFuncInfo s f = constructFuncInfo' s f (Nothing, Nothing)
+
+constructFuncInfo' ::(MonadException m, ApplyFunc m f) => String -> f -> (Maybe Integer, Maybe Integer) -> FuncInfo m
+constructFuncInfo' s f bs = FuncInfo s (applyFunc f 0 bs)
+
+class ApplyFunc m f where
+  applyFunc :: (MonadException m) => f -> Integer-> (Maybe Integer, Maybe Integer) -> [Integer]  -> m Integer
+
+checkBounds :: (MonadException m) => Integer -> (Maybe Integer, Maybe Integer) -> m Integer
+checkBounds i (ml,mh)
+  | not (maybe True (i>) ml) = throwBot $ EvaluationException ("value too low for function. expected >" <> show (fromJust ml) <> ", got " <> show i) []
+  | not (maybe True (i<) mh) = throwBot $ EvaluationException ("value too high for function. expected <" <> show (fromJust mh) <> ", got " <> show i) []
+  | otherwise = return i
+
+-- instance {-# OVERLAPPING #-} MonadException m => ApplyFunc m (m Integer) where
+--   applyFunc f _ [] = f
+--   applyFunc _ i _ = throwBot $ EvaluationException ("incorrect number of arguments to function. expected " <> show i <> ", got more than that") []
+
+instance {-# OVERLAPPING #-} ApplyFunc m Integer where
+  applyFunc f _ bs []  = checkBounds f bs
+  applyFunc _ i _ _ = throwBot $ EvaluationException ("incorrect number of arguments to function. expected " <> show i <> ", got more than that") []
+
+instance {-# OVERLAPPABLE #-} (ApplyFunc m f) => ApplyFunc m (Integer -> f) where
+  applyFunc _ i _ []  = throwBot $ EvaluationException ("incorrect number of arguments to function. expected more than " <> show i) []
+  applyFunc f i bs (x : xs) = checkBounds x bs >>= \x' -> applyFunc (f x') (i + 1) bs xs
 
 --- Evaluating an expression. Uses IO because dice are random
 
@@ -260,6 +281,16 @@ dieShow lchc d ls = return $ prettyShow d ++ " [" ++ intercalate ", " adjustList
     toCrossedOut (i, _) = toCrit i
     adjustList = fmap toCrossedOut ls
 
+evalShowList :: (IOEval a, PrettyShow a) => Integer -> [a] -> IO ([Integer], String, Integer)
+evalShowList rngCount as = do
+  (is, ss, rngCount') <- foldr foldF (return ([], [], rngCount)) as
+  return (is, intercalate ", " ss, rngCount')
+  where
+    foldF a sumrngcount = do
+      (diceSoFar, ss, rngCountTotal) <- sumrngcount
+      (i, s, rngCountTemp) <- evalShow rngCountTotal a
+      return (i : diceSoFar, s : ss, rngCountTemp)
+
 -- | This type class gives a function which evaluates the value to an integer and a
 -- string.
 class IOEval a where
@@ -280,6 +311,7 @@ class IOEval a where
 instance IOEval Base where
   evalShow' rngCount (NBase nb) = evalShow rngCount nb
   evalShow' rngCount (DiceBase dice) = evalShow rngCount dice
+  evalShow' rngCount (FuncBase func) = evalShow rngCount func
 
 instance IOEval Die where
   evalShow' rngCount ld@(LazyDie d) = do
@@ -335,7 +367,7 @@ evalDieOp rngCount (Dice b ds dopo) = do
         then throwBot (EvaluationException ("tried to give a negative value to the number of dice: " ++ formatInput Code nbDice) [prettyShow b])
         else do
           (ds', rngCountCondense, crits) <- condenseDie rngCountB ds
-          (rolls, rngCountRolls) <- foldr foldF (return ([], rngCountCondense)) (genericReplicate nbDice ds')
+          (rolls, _, rngCountRolls) <- evalShowList rngCountCondense (genericReplicate nbDice ds')
           let vs = fmap (\i -> (i :| [], True)) rolls
           (rs, rngCountRs) <- evalDieOp' rngCountRolls dopo ds' vs
           return (sortBy sortByOption rs, crits, rngCountRs)
@@ -344,13 +376,14 @@ evalDieOp rngCount (Dice b ds dopo) = do
       (i, _, rngCount'') <- evalShow rngCount' dBase
       return (Die (Value i), rngCount'', Just (1, i))
     condenseDie rngCount' (CustomDie is) = do
-      (is', rngCount'') <- foldr foldF (return ([], rngCount')) is
+      -- (is', rngCount'') <- foldr foldF (return ([], rngCount')) is
+      (is', _, rngCount'') <- evalShowList rngCount' is
       return (CustomDie (fromIntegerToExpr <$> is'), rngCount'', Nothing)
     condenseDie rngCount' (LazyDie d) = return (d, rngCount', Nothing)
-    foldF die sumrngcount = do
-      (diceSoFar, rngCountTotal) <- sumrngcount
-      (i, _, rngCountTemp) <- evalShow rngCountTotal die
-      return (i : diceSoFar, rngCountTemp)
+    -- foldF die sumrngcount = do
+    --   (diceSoFar, rngCountTotal) <- sumrngcount
+    --   (i, _, rngCountTemp) <- evalShow rngCountTotal die
+    --   return (i : diceSoFar, rngCountTemp)
     sortByOption (e :| es, _) (f :| fs, _)
       | e == f = compare (length fs) (length es)
       | otherwise = compare e f
@@ -456,18 +489,19 @@ instance IOEval Term where
       else return (div f' t', f's ++ " / " ++ t's, rngCount'')
 
 instance IOEval Func where
-  evalShow' rngCount (Func "id" neg) = evalShow rngCount neg
-  evalShow' rngCount (Func "fact" neg) = do
-    (neg', neg's, rngCount') <- evalShow rngCount neg
-    if neg' > factorialLimit
-      then throwBot $ EvaluationException ("tried to evaluate a factorial with input number greater than the limit (" ++ formatInput Code factorialLimit ++ "): `" ++ formatInput Code neg' ++ "`") [prettyShow neg]
-      else do
-        f <- getFunc "fact" [neg']
-        return (f, "fact" ++ " " ++ neg's, rngCount')
-  evalShow' rngCount (Func s neg) = do
-    (neg', neg's, rngCount') <- evalShow rngCount neg
-    f <- getFunc s [neg']
-    return (f, s ++ " " ++ neg's, rngCount')
+  -- evalShow' rngCount (Func "id" neg) = evalShow rngCount neg
+  -- evalShow' rngCount (Func "fact" expr) = do
+  --   -- (neg', neg's, rngCount') <- evalShow rngCount neg
+  --   (exprs, s, rngCount') <- evalShowList rngCount expr
+  --   if neg' > factorialLimit
+  --     then throwBot $ EvaluationException ("tried to evaluate a factorial with input number greater than the limit (" ++ formatInput Code factorialLimit ++ "): `" ++ formatInput Code neg' ++ "`") [prettyShow neg]
+  --     else do
+  --       f <- getFunc "fact" exprs
+  --       return (f, "fact" ++ " " ++ neg's, rngCount')
+  evalShow' rngCount (Func s exprs) = do
+    (exprs', exprs's, rngCount') <- evalShowList rngCount exprs
+    f <- getFunc s exprs'
+    return (f, s ++ " (" ++ exprs's ++ ")", rngCount')
 
 instance IOEval Negation where
   evalShow' rngCount (NoNeg expo) = evalShow rngCount expo
@@ -510,8 +544,8 @@ instance PrettyShow Term where
   prettyShow (NoTerm f) = prettyShow f
 
 instance PrettyShow Func where
-  prettyShow (Func "id" n) = prettyShow n
-  prettyShow (Func s n) = s <> " " <> prettyShow n
+  -- prettyShow (Func "id" n) = prettyShow n
+  prettyShow (Func s n) = s <> "(" <> intercalate "," (prettyShow <$> n) <> ")"
 
 instance PrettyShow Negation where
   prettyShow (Neg expo) = "-" <> prettyShow expo
@@ -528,6 +562,7 @@ instance PrettyShow NumBase where
 instance PrettyShow Base where
   prettyShow (NBase nb) = prettyShow nb
   prettyShow (DiceBase dop) = prettyShow dop
+  prettyShow (FuncBase f) = prettyShow f
 
 instance PrettyShow Die where
   prettyShow (Die b) = "d" <> prettyShow b
@@ -566,16 +601,17 @@ instance CanParse Term where
 
 instance CanParse Func where
   pars = do
-    funcName <- optional $ try ((pack <$> word) <* space)
-    skipSpace
-    t <- pars
-    matchFuncName funcName t
-    where
-      matchFuncName Nothing = return . Func "id"
-      matchFuncName (Just "") = const $ failure Nothing (S.fromList (fmap (Tokens . NE.fromList) supportedFunctionsList))
-      matchFuncName (Just s)
-        | unpack s `member` (supportedFunctions @IO) = return . Func (unpack s)
-        | otherwise = const $ failure' s (S.fromList $ pack <$> supportedFunctionsList)
+    -- funcName <- pack <$> word
+    funcName <- try (choice (string . pack <$> supportedFunctionsList)) <?> "could not find function"
+    es <- string "(" *> skipSpace *> parseCommaSeparated <* skipSpace <* string ")"
+    return $ Func (unpack funcName) es
+    -- t <- pars
+    -- matchFuncName funcName t
+    -- where
+      -- matchFuncName "" = const $ failure Nothing (S.fromList (fmap (Tokens . NE.fromList) supportedFunctionsList))
+      -- matchFuncName s
+      --   | unpack s `member` (supportedFunctions @IO) = return . Func (unpack s)
+      --   | otherwise = const $ failure' s (S.fromList $ pack <$> supportedFunctionsList)
 
 -- | otherwise = const $ failure (Just $ Tokens $ NE.fromList $ unpack s) (S.fromList (fmap (Tokens . NE.fromList) supportedFunctionsList))
 instance CanParse Negation where
@@ -595,12 +631,12 @@ instance CanParse NumBase where
     )
       <?> "could not parse numBase (parentheses, an integer)"
     where
-      unnest (NoExpr (NoTerm (Func "id" (NoNeg (NoExpo (NBase (Paren e))))))) = e
+      unnest (NoExpr (NoTerm (NoNeg (NoExpo (NBase (Paren e)))))) = e
       unnest e = e
 
 instance CanParse Base where
   pars =
-    (try (DiceBase <$> pars) <|> try (NBase <$> pars))
+    (try (DiceBase <$> pars) <|> try (NBase <$> pars) <|> try (FuncBase <$> pars))
       <?> "could not match a base token (dice, parentheses, an integer)"
 
 instance CanParse Die where
@@ -610,12 +646,21 @@ instance CanParse Die where
     ( try (lazyFunc . Die <$> pars)
         <|> lazyFunc . CustomDie
           <$> ( try (char '{' *> skipSpace)
-                  *> (pars >>= (\i -> (i :) <$> many (try (skipSpace *> char ',' *> skipSpace) *> pars)))
+                  *> parseCommaSeparated1
                   <* skipSpace
                   <* char '}'
               )
       )
       <?> "recursed to die expression and could not find a die"
+-- *> (pars >>= (\i -> (i :) <$> many (try (skipSpace *> char ',' *> skipSpace) *> pars)))
+
+parseCommaSeparated :: CanParse a => Parser [a]
+parseCommaSeparated = do
+  f <- optional $ try pars
+  maybe (return []) (\first' -> (first' :) <$> many (try (skipSpace *> char ',' *> skipSpace) *> pars)) f
+parseCommaSeparated1 :: CanParse a => Parser [a]
+parseCommaSeparated1 = do
+  pars >>= (\first' -> (first' :) <$> many (try (skipSpace *> char ',' *> skipSpace) *> pars))
 
 instance CanParse Dice where
   pars = do
