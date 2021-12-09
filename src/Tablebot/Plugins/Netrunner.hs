@@ -18,11 +18,13 @@ import Tablebot.Plugin.Exception (BotException (NetrunnerException), throwBot)
 import Tablebot.Plugin.Netrunner
 import Tablebot.Plugin.Netrunner.NrApi (NrApi, getNrApi)
 import Tablebot.Plugin.Parser (netrunnerQuery)
-import Tablebot.Plugin.SmartCommand (PComm (parseComm), Quoted (Qu), RestOfInput1 (ROI1) )
+import Tablebot.Plugin.SmartCommand (PComm (parseComm), Quoted (Qu), RestOfInput1 (ROI1))
 import Tablebot.Handler.Command ()
 import Text.Megaparsec
 import Text.RawString.QQ (r)
 import Discord.Types
+
+import Debug.Trace
 
 -- | @netrunner@ is the user-facing command that searches for Netrunner cards.
 netrunner :: EnvCommand NrApi
@@ -35,14 +37,12 @@ netrunner = Command "netrunner" (parseComm nrComm) []
 
 -- | @netrunnerInline@ is the inline version of @netrunner@.
 netrunnerInline :: EnvInlineCommand NrApi
-netrunnerInline = InlineCommand nrInlineComm
+netrunnerInline = InlineCommand $ withRecovery (\pe -> trace (show pe) nrInlineComm) nrInlineComm
   where
     nrInlineComm :: Parser (Message -> EnvDatabaseDiscord NrApi ())
-    nrInlineComm =
-      ( do
-        queries <- many (try $ skipManyTill anySingle netrunnerQuery)
-        return $ \m -> mapM_ (\q -> nrFunc (pack q) m) queries
-      )
+    nrInlineComm = do
+      queries <- many (try $ skipManyTill anySingle netrunnerQuery)
+      return $ \m -> mapM_ (\q -> nrFunc (pack q) m) queries
 
 nrFunc :: Text -> Message -> EnvDatabaseDiscord NrApi ()
 nrFunc query m = do

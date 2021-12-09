@@ -82,10 +82,14 @@ discordUser = do
   num <- between (chunk "<@") (single '>') (some digit)
   return $ "<@" ++ num ++ ">"
 
--- | @netrunnerQuery@ gets an inline Netrunner prompt.
--- This means that it matches @{{netrunner card}}@.
+-- | @netrunnerQuery@ gets an inline Netrunner search query.
+-- This means that it matches @{{card title}}@.
 netrunnerQuery :: Parser String
 netrunnerQuery = between (chunk "{{") (chunk "}}") $ some alphaNumChar
+  -- _ <- chunk "{{"
+  -- card <- manyTill alphaNumChar $ chunk "}}"
+  -- _ <- chunk "}}"
+  -- return card
 
 -- | @sp@ parses an optional space character.
 sp :: Parser ()

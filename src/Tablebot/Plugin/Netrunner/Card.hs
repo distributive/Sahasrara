@@ -10,6 +10,7 @@ data Card = Card
     agenda_points :: !(Maybe Int),
     base_link :: !(Maybe Int),
     code :: !Text,
+    cost :: !(Maybe Int),
     deck_limit :: !Int,
     faction_code :: !Text,
     faction_cost :: !Int,
@@ -22,10 +23,12 @@ data Card = Card
     position :: !Int,
     quantity :: !Int,
     side_code :: !Text,
+    strength :: !(Maybe Int),
     stripped_text :: !(Maybe Text),
     stripped_title :: !Text,
     text :: !(Maybe Text),
     title :: !Text,
+    trash_cost :: !(Maybe Int),
     type_code :: !Text,
     uniqueness :: !Bool
   }
@@ -37,6 +40,8 @@ data Cards = Cards
     imageUrlTemplate :: !Text
   }
   deriving (Show, Generic)
+
+defaultCards :: Cards
 defaultCards = Cards { content = [], imageUrlTemplate = "" }
 
 instance FromJSON Card

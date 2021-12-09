@@ -1,4 +1,4 @@
-module Tablebot.Plugin.Netrunner.Cycle (Cycle (..), Cycles (..), defaultCycles, content) where
+module Tablebot.Plugin.Netrunner.Cycle (Cycle (..), Cycles (..), defaultCycles) where
 
 import Data.Aeson (FromJSON, Value (Object), (.:), parseJSON)
 import Data.Text (Text)
@@ -16,6 +16,8 @@ data Cycle = Cycle
 
 -- | @Cycles@ represents all cycles in the game's history.
 data Cycles = Cycles { content :: ![Cycle] } deriving (Show, Generic)
+
+defaultCycles :: Cycles
 defaultCycles = Cycles { content = [] }
 
 instance FromJSON Cycle

@@ -1,4 +1,4 @@
-module Tablebot.Plugin.Netrunner.Pack (Pack (..), Packs (..), defaultPacks, content) where
+module Tablebot.Plugin.Netrunner.Pack (Pack (..), Packs (..), defaultPacks) where
 
 import Data.Aeson (FromJSON, Value (Object), (.:), parseJSON)
 import Data.Text (Text)
@@ -8,15 +8,15 @@ import GHC.Generics (Generic)
 data Pack = Pack
   { code :: !Text,
     cycle_code :: !Text,
-    date_release :: !Text,
     name :: !Text,
-    position :: !Int,
-    size :: !Int
+    position :: !Int
   }
   deriving (Show, Generic)
 
 -- | @Packs@ represents all data packs in the game's history.
 data Packs = Packs { content :: ![Pack] } deriving (Show, Generic)
+
+defaultPacks :: Packs
 defaultPacks = Packs { content = [] }
 
 instance FromJSON Pack

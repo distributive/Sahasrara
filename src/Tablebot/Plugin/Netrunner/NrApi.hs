@@ -9,12 +9,14 @@ import Network.HTTP.Simple (httpLBS)
 
 import Tablebot.Plugin.Netrunner.Card as Card
 import Tablebot.Plugin.Netrunner.Cycle as Cycle
+import Tablebot.Plugin.Netrunner.Faction as Faction
 import Tablebot.Plugin.Netrunner.Pack as Pack
 
 -- | @NrApi@ represents all required Netrunner data collected.
 data NrApi = NrApi
   { cards :: [Card],
     cycles :: [Cycle],
+    factions :: [Faction],
     packs :: [Pack],
     imageTemplate :: Text
   }
@@ -31,12 +33,16 @@ getNrApi = do
   cycleReq <- parseRequest "https://netrunnerdb.com/api/2.0/public/cycles"
   cycleRes <- httpLBS cycleReq
   let cycleData = fromRight defaultCycles ((eitherDecode $ responseBody cycleRes) :: Either String Cycles)
+  factionReq <- parseRequest "https://netrunnerdb.com/api/2.0/public/factions"
+  factionRes <- httpLBS factionReq
+  let factionData = fromRight defaultFactions ((eitherDecode $ responseBody factionRes) :: Either String Factions)
   packReq <- parseRequest "https://netrunnerdb.com/api/2.0/public/packs"
   packRes <- httpLBS packReq
   let packData = fromRight defaultPacks ((eitherDecode $ responseBody packRes) :: Either String Packs)
   return $ NrApi
     { cards = Card.content cardData,
       cycles = Cycle.content cycleData,
+      factions = Faction.content factionData,
       packs = Pack.content packData,
       imageTemplate = Card.imageUrlTemplate cardData
     }
