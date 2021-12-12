@@ -123,7 +123,7 @@ inlineCommandHelper open close p action =
   InlineCommand
     ( do
         getExprs <- many (try $ skipManyTill anySingle (string open *> skipSpace *> p <* skipSpace <* string close))
-        return $ \m -> mapM_ (`action` m) (take maxInlineCommands   getExprs)
+        return $ \m -> mapM_ (`action` m) (take maxInlineCommands getExprs)
     )
   where
     maxInlineCommands = 3
