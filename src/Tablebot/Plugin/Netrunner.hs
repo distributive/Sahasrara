@@ -66,10 +66,18 @@ cardToTitle card =
       cardTitle = unpack $ fromMaybe "?" $ title card
   in pack $ unique ++ cardTitle
 
+-- | @cardToText@ takes a Netrunner card, collects its data and textbox into a
+-- single string.
+cardToText :: Card -> Text
+cardToText card =
+  let subtitle = cardToSubtitle card
+      body = unpack $ formatText $ fromMaybe "" $ text card
+  in pack $ subtitle ++ body
+
 -- | @cardToSubtitle@ generates the first line of a card's embed text listing
 -- its types, subtypes, and various other data points.
-cardToSubtitle :: NrApi -> Card -> Text
-cardToSubtitle api card = pack $
+cardToSubtitle :: Card -> String
+cardToSubtitle card =
   "**" ++
   type_code ++
   keywords ++
@@ -79,6 +87,7 @@ cardToSubtitle api card = pack $
   trash ++
   influence ++
   deckbuilding ++
+  link ++
   "**\n"
     where
       capitalise :: String -> String
@@ -125,6 +134,10 @@ cardToSubtitle api card = pack $
         Just "identity" -> " • " ++ ((fromMaybe "?") $ show <$> Card.minimum_deck_size card) ++ "/" ++ ((fromMaybe "?") $ show <$> Card.influence_limit card)
         Nothing -> ""
         _ -> ""
+      link :: String
+      link = case Card.base_link card of
+        Nothing -> ""
+        Just x -> " • Link: " ++ show x
 
 -- | @formatText@ takes a card's raw description and replaces the html
 -- formatting tags with Discord formatting.
@@ -206,9 +219,7 @@ cardToEmbed :: NrApi -> Card -> Embed
 cardToEmbed api card =
   let eTitle = cardToTitle card
       eURL = cardToLink card
-      sub = unpack $ cardToSubtitle api card
-      desc = unpack $ formatText $ fromMaybe "" $ text card
-      eText = pack $ sub ++ desc
+      eText = cardToText card
       eFoot = cardToReleaseData api card
       eImg = cardToImage api card
       eColour = cardToColour api card
