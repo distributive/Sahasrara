@@ -11,7 +11,7 @@ module Tablebot.Plugins.Netrunner (netrunnerPlugin) where
 
 import Control.Monad.IO.Class
 import Control.Monad.Trans.Reader (ask)
-import Data.Text (Text, pack, unpack)
+import Data.Text (Text, pack)
 import Discord.Types
 import Tablebot.Handler.Command ()
 import Tablebot.Plugin
@@ -81,7 +81,7 @@ nrCustom = Command "custom" customPars []
 findCard :: Text -> Message -> EnvDatabaseDiscord NrApi ()
 findCard query m = do
   api <- ask
-  let res = queryCard api $ unpack query
+  let res = queryCard api query
   case res of
     Nothing -> throwBot $ NetrunnerException "No such card found!"
     Just card -> sendEmbedMessage m "" $ cardToEmbed api card

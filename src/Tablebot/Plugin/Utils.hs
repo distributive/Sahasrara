@@ -10,6 +10,10 @@
 module Tablebot.Plugin.Utils where
 
 import Control.Monad (when)
+import Data.Text (Text)
+import Data.Text.Lazy (toStrict)
+import Data.Text.Lazy.Builder (toLazyText)
+import Data.Text.Lazy.Builder.Int (decimal)
 import System.Environment (lookupEnv)
 
 isDebug :: IO Bool
@@ -26,3 +30,6 @@ debugPrint :: Show a => a -> IO ()
 debugPrint a = do
   d <- isDebug
   when d $ print a
+
+intToText :: Integral a => a -> Text
+intToText = toStrict . toLazyText . decimal
