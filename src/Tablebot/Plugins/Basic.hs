@@ -52,7 +52,7 @@ basicCommands =
       Simple ("you know what you want someone else to do", "You know what you want someone else to do")
     ),
     ( "benji",
-      "<:benji_sit:686131468560367627>",
+      "<:benji_sit:920000993721196654>",
       Simple ("the almost mascot", "Though he may sit, when put to test, the gender cube proved it was best")
     ),
     ( "about",
