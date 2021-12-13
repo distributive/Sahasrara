@@ -1,3 +1,12 @@
+-- |
+-- Module      : Tablebot.Plugin.Netrunner.Pack
+-- Description : Handles the internal functionality of the Netrunner command.
+-- License     : MIT
+-- Maintainer  : tagarople@gmail.com
+-- Stability   : experimental
+-- Portability : POSIX
+--
+-- Handles the representation of Netrunner packs in Tablebot.
 module Tablebot.Plugin.Netrunner.Pack (Pack (..), Packs (..), defaultPacks) where
 
 import Data.Aeson (FromJSON, Value (Object), (.:), parseJSON)

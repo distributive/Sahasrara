@@ -1,3 +1,12 @@
+-- |
+-- Module      : Tablebot.Plugin.Netrunner.Faction
+-- Description : Handles the internal functionality of the Netrunner command.
+-- License     : MIT
+-- Maintainer  : tagarople@gmail.com
+-- Stability   : experimental
+-- Portability : POSIX
+--
+-- Handles the representation of Netrunner factions in Tablebot.
 module Tablebot.Plugin.Netrunner.Faction (Faction (..), Factions (..), defaultFactions) where
 
 import Data.Aeson (FromJSON, Value (Object), (.:), parseJSON)

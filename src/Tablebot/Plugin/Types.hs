@@ -14,6 +14,8 @@ module Tablebot.Plugin.Types where
 
 import Control.Monad.Trans.Class (lift)
 import Control.Monad.Trans.Reader (ReaderT)
+import Data.Char (toLower)
+import Data.Maybe (fromMaybe)
 import Data.Text (Text)
 import Data.Void (Void)
 import Database.Persist.Sqlite (Migration, SqlPersistM, SqlPersistT)
@@ -25,7 +27,9 @@ import Discord.Types
     MessageId,
     ReactionInfo,
   )
+import Safe.Exact (takeExactMay, dropExactMay)
 import Text.Megaparsec (Parsec)
+import Text.Read (readMaybe)
 
 -- * DatabaseDiscord
 
@@ -207,6 +211,38 @@ data DiscordColour
   | DiscordFuschia
   | DiscordRed
   | DiscordBlack
+
+-- | @hexToRGB@ attempts to convert a potential hex string into its decimal RGB
+-- components.
+hexToRGB :: String -> Maybe (Integer, Integer, Integer)
+hexToRGB hex = do
+  let h = map toLower hex
+  r <- takeExactMay 2 h >>= toDec
+  g <- dropExactMay 2 h >>= takeExactMay 2 >>= toDec
+  b <- dropExactMay 4 h >>= toDec
+  return (r,g,b)
+    where
+      toDec :: String -> Maybe Integer
+      toDec [s,u] = do
+        a <- charToDec s
+        b <- charToDec u
+        return $ a * 16 + b
+      toDec _ = Nothing
+      charToDec :: Char -> Maybe Integer
+      charToDec 'a' = Just 10
+      charToDec 'b' = Just 11
+      charToDec 'c' = Just 12
+      charToDec 'd' = Just 13
+      charToDec 'e' = Just 14
+      charToDec 'f' = Just 15
+      charToDec c = readMaybe [c]
+
+-- | @hexToDiscordColour@ converts a potential hex string into a DiscordColour,
+-- evaluating to Default if it fails.
+hexToDiscordColour :: String -> DiscordColour
+hexToDiscordColour hex =
+  let (r,g,b) = fromMaybe (0,0,0) $ hexToRGB hex
+  in RGB r g b
 
 -- | Automatic handling of command permissions
 -- @UserPermission@ models the current permissions of the user

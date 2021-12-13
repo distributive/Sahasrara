@@ -1,3 +1,12 @@
+-- |
+-- Module      : Tablebot.Plugin.Netrunner.NrApi
+-- Description : Handles the internal functionality of the Netrunner command.
+-- License     : MIT
+-- Maintainer  : tagarople@gmail.com
+-- Stability   : experimental
+-- Portability : POSIX
+--
+-- Handles the representation of all Netrunner data in Tablebot.
 module Tablebot.Plugin.Netrunner.NrApi (NrApi (..), getNrApi) where
 
 import Data.Aeson (FromJSON, Value (Object), eitherDecode, parseJSON)

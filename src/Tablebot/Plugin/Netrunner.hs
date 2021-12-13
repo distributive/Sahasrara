@@ -8,7 +8,7 @@
 -- Stability   : experimental
 -- Portability : POSIX
 --
--- ...
+-- The backend functionality of the Netrunner commands.
 module Tablebot.Plugin.Netrunner (cardToEmbed, queryCard) where
 
 import Data.Char (toLower, toUpper)
@@ -16,12 +16,14 @@ import Data.List (minimumBy)
 import Data.Maybe (fromMaybe)
 import Data.Text (Text, pack, unpack, replace)
 import Discord.Types
+import Tablebot.Plugin.Embed (addColour)
 import Tablebot.Plugin.Netrunner.NrApi (NrApi (..))
 import Tablebot.Plugin.Netrunner.Card as Card
 import Tablebot.Plugin.Netrunner.Cycle as Cycle
 import Tablebot.Plugin.Netrunner.Faction as Faction
 import Tablebot.Plugin.Netrunner.Pack as Pack
-import Text.EditDistance
+import Tablebot.Plugin.Types (DiscordColour (Default), hexToDiscordColour)
+import Text.EditDistance -- TODO - replace with Fuzzy plugin
 
 -- | @queryCard@ fuzzy searches the given library of cards by title.
 queryCard :: NrApi -> String -> Maybe Card
@@ -32,7 +34,9 @@ queryCard api query = Just $ minimumBy comparison $ reverse $ cards api
       | score a < score b = LT
       | score a > score b = GT
       | otherwise = EQ
-    score card = levenshteinDistance editCosts (map toLower query) $ map toLower $ unpack $ Card.title card
+    score card = case Card.title card of
+      Nothing -> maxBound
+      Just title -> levenshteinDistance editCosts (map toLower query) $ map toLower $ unpack title
     editCosts = EditCosts {
       deletionCosts = ConstantCost 10,
       insertionCosts = ConstantCost 2,
@@ -43,65 +47,76 @@ queryCard api query = Just $ minimumBy comparison $ reverse $ cards api
 -- | @cardToLink@ takes a Netrunner card and generates a link to its NetrunnerDB
 -- page.
 cardToLink :: Card -> Text
-cardToLink card = pack $ "https://netrunnerdb.com/en/card/" ++ (unpack $ Card.code card)
+cardToLink card = case Card.code card of
+  Nothing -> ""
+  Just code -> pack $ "https://netrunnerdb.com/en/card/" ++ unpack code
 
 -- | @cardToImage@ takes a Netrunner card and generates an embed image of the
 -- card.
-cardToImage :: NrApi -> Card -> CreateEmbedImage
-cardToImage api card = CreateEmbedImageUrl $ replace "{code}" (Card.code card) $ imageTemplate api
+cardToImage :: NrApi -> Card -> Maybe CreateEmbedImage
+cardToImage api card = do
+  code <- Card.code card
+  return $ CreateEmbedImageUrl $ replace "{code}" code $ imageTemplate api
 
 -- | @cardToSubtitle@ generates the first line of a card's embed text listing
 -- its types, subtypes, and various other data points.
 cardToSubtitle :: NrApi -> Card -> Text
 cardToSubtitle api card = pack $
   "**" ++
-  type_code card ++
-  keywords card ++
-  cost card ++
-  strength card ++
-  advancement card ++
-  points card ++
-  trash card ++
-  influence card ++
+  type_code ++
+  keywords ++
+  cost ++
+  strength ++
+  agendaStats ++
+  trash ++
+  influence ++
+  deckbuilding ++
   "**\n"
     where
       capitalise :: String -> String
       capitalise (x:xs) = toUpper x : xs
-      type_code :: Card -> String
-      type_code = capitalise . unpack . Card.type_code
-      keywords :: Card -> String
-      keywords card = case Card.keywords card of
+      type_code :: String
+      type_code = capitalise $ unpack $ (fromMaybe "?") $ Card.type_code card
+      keywords :: String
+      keywords = case Card.keywords card of
         Nothing -> ""
         Just t -> ": " ++ unpack t
-      cost :: Card -> String
-      cost card =
+      cost :: String
+      cost =
         let rezText = " • Rez: "
         in case (Card.cost card, Card.type_code card) of
         (Nothing, _) -> ""
-        (Just x, "asset") -> rezText ++ show x
-        (Just x, "ice") -> rezText ++ show x
-        (Just x, "upgrade") -> rezText ++ show x
+        (Just x, Just "asset") -> rezText ++ show x
+        (Just x, Just "ice") -> rezText ++ show x
+        (Just x, Just "upgrade") -> rezText ++ show x
         (Just x, _) -> " • Cost: " ++ show x
-      strength :: Card -> String
-      strength card = case Card.strength card of
+      strength :: String
+      strength = case Card.strength card of
         Nothing -> ""
         Just x -> " • Strength: " ++ show x
-      advancement :: Card -> String
-      advancement card = case Card.advancement_cost card of
-        Nothing -> ""
-        Just x -> " • Adv: " ++ show x
-      points :: Card -> String
-      points card = case Card.agenda_points card of
-        Nothing -> ""
-        Just x -> " • Score: " ++ show x
-      trash :: Card -> String
-      trash card = case Card.trash_cost card of
+      agendaStats :: String
+      agendaStats =
+        let adv = fromMaybe "?" $ show <$> Card.advancement_cost card
+            points = fromMaybe "?" $ show <$> Card.agenda_points card
+        in case Card.type_code card of
+          Just "agenda" -> " • " ++ adv ++ "/" ++ points
+          _ -> ""
+      trash :: String
+      trash = case Card.trash_cost card of
         Nothing -> ""
         Just x -> " • Trash: " ++ show x
-      influence :: Card -> String
-      influence card
-        | Card.faction_cost card == 0 && Card.type_code card `elem` ["agenda", "identity"] = ""
-        | otherwise = " • Influence: " ++ (show $ Card.faction_cost card)
+      influence :: String
+      influence = case Card.faction_cost card of
+        Nothing -> ""
+        Just x ->
+          if x == 0 && (fromMaybe "" $ Card.type_code card) `elem` ["agenda", "identity"]
+          then ""
+          else " • Influence: " ++ show x
+      deckbuilding :: String
+      deckbuilding = case Card.type_code card of
+        Just "identity" -> " • " ++ ((fromMaybe "?") $ show <$> Card.minimum_deck_size card) ++ "/" ++ ((fromMaybe "?") $ show <$> Card.influence_limit card)
+        Nothing -> ""
+        _ -> ""
 
 -- | @formatText@ takes a card's raw description and replaces the html
 -- formatting tags with Discord formatting.
@@ -124,17 +139,19 @@ formatText raw =
 
 -- | @cardToFaction@ takes a card and attempts to find its faction.
 cardToFaction :: NrApi -> Card -> Maybe Faction
-cardToFaction api card =
-  let fRes = filter (\f -> Faction.code f == Card.faction_code card) $ factions api
-  in case fRes of
+cardToFaction api card = do
+  faction <- Card.faction_code card
+  let fRes = filter (\f -> Faction.code f == faction) $ factions api
+  case fRes of
     [] -> Nothing
     (f:_) -> Just f
 
 -- | @cardToPack@ takes a card and attempts to find its data pack.
 cardToPack :: NrApi -> Card -> Maybe Pack
-cardToPack api card =
-  let pRes = filter (\p -> Pack.code p == Card.pack_code card) $ packs api
-  in case pRes of
+cardToPack api card = do
+  cardPack <- Card.pack_code card
+  let pRes = filter (\p -> Pack.code p == cardPack) $ packs api
+  case pRes of
     [] -> Nothing
     (p:_) -> Just p
 
@@ -157,25 +174,34 @@ cardToReleaseData api card = fromMaybe "" helper
       p <- cardToPack api card
       c <- packToCycle api p
       let faction = unpack $ Faction.name f
-      let expansion = if Pack.name p == Cycle.name c
-                      then unpack $ Pack.name p
-                      else (unpack $ Cycle.name c) ++ " • " ++ (unpack $ Pack.name p)
-      let position = show $ Card.position card
       let rotation = if Cycle.rotated c
                      then " (rotated)"
                      else ""
-      return $ pack $ faction ++ " • " ++ expansion ++ rotation ++ " " ++ position
+      let expansion = if Pack.name p == Cycle.name c
+                      then unpack $ Pack.name p
+                      else (unpack $ Cycle.name c) ++ rotation ++ " • " ++ (unpack $ Pack.name p)
+      let position = fromMaybe "" $ (\t -> " #" ++ show t) <$> Card.position card -- Haskell can't parse this if I do it as a case of statment
+      return $ pack $ faction ++ " • " ++ expansion ++ position
+
+-- | @cardToColour@ gets the factional colour of a card to use in its embed.
+cardToColour :: NrApi -> Card -> DiscordColour
+cardToColour api card = fromMaybe Default helper
+  where
+    helper :: Maybe DiscordColour
+    helper = do
+      f <- cardToFaction api card
+      return $ hexToDiscordColour $ unpack $ Faction.color f
 
 -- | @cardToLink@ takes a Netrunner card and generates an embed message
 -- representing it.
 cardToEmbed :: NrApi -> Card -> Embed
 cardToEmbed api card =
-  let eTitle = title card
+  let eTitle = fromMaybe "?" $ title card
       eURL = cardToLink card
       sub = unpack $ cardToSubtitle api card
       desc = unpack $ formatText $ fromMaybe "" $ text card
       eText = pack $ sub ++ desc
       eFoot = cardToReleaseData api card
       eImg = cardToImage api card
-  in createEmbed $ CreateEmbed "" "" Nothing eTitle eURL (Just eImg) eText [] Nothing eFoot Nothing
-    where
+      eColour = cardToColour api card
+  in addColour eColour $ createEmbed $ CreateEmbed "" "" Nothing eTitle eURL eImg eText [] Nothing eFoot Nothing

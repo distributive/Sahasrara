@@ -1,7 +1,6 @@
 -- |
--- Module      : Tablebot.Util.Error
+-- Module      : Tablebot.Plugin.Util
 -- Description : A place for functions that don't belong anywhere else.
--- Copyright   : (c) Anna Bruce 2021
 -- License     : MIT
 -- Maintainer  : tagarople@gmail.com
 -- Stability   : experimental

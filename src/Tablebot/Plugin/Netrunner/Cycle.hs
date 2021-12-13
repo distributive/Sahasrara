@@ -1,3 +1,12 @@
+-- |
+-- Module      : Tablebot.Plugin.Netrunner.Cycle
+-- Description : Handles the internal functionality of the Netrunner command.
+-- License     : MIT
+-- Maintainer  : tagarople@gmail.com
+-- Stability   : experimental
+-- Portability : POSIX
+--
+-- Handles the representation of Netrunner cycles in Tablebot.
 module Tablebot.Plugin.Netrunner.Cycle (Cycle (..), Cycles (..), defaultCycles) where
 
 import Data.Aeson (FromJSON, Value (Object), (.:), parseJSON)
