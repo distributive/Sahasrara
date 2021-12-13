@@ -19,7 +19,7 @@ import Tablebot.Plugin.Dice
 import Tablebot.Plugin.Discord (sendMessage, toMention)
 import Tablebot.Plugin.Parser (inlineCommandHelper)
 import Tablebot.Plugin.SmartCommand (PComm (parseComm), Quoted (Qu), pars)
-import Text.Megaparsec ( (<?>), choice, MonadParsec(try) )
+import Text.Megaparsec (MonadParsec (try), choice, (<?>))
 import Text.RawString.QQ (r)
 
 rollDice' :: Maybe ListValues -> Maybe (Quoted Text) -> Message -> DatabaseDiscord ()

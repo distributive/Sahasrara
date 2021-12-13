@@ -14,6 +14,7 @@ module Tablebot.Plugin.Dice where
 
 import Control.Monad (when)
 import Control.Monad.Exception (MonadException)
+import Data.Bifunctor (Bifunctor (first, second))
 import Data.Functor (($>), (<&>))
 import Data.List (genericDrop, genericReplicate, genericTake, intercalate, sortBy)
 import Data.List.NonEmpty as NE (NonEmpty ((:|)), fromList, head, tail, (<|))
@@ -33,7 +34,6 @@ import Tablebot.Plugin.Types (Parser)
 import Text.Megaparsec (MonadParsec (try), choice, failure, many, optional, (<?>), (<|>))
 import Text.Megaparsec.Char (char, string)
 import Text.Megaparsec.Error (ErrorItem (Tokens))
-import Data.Bifunctor ( Bifunctor(second, first) )
 
 failure' :: Text -> Set Text -> Parser a
 failure' s ss = failure (Just $ Tokens $ NE.fromList $ unpack s) (S.map (Tokens . NE.fromList . unpack) ss)
@@ -74,7 +74,7 @@ factorialLimit = 50
 -- TODO: full check over of bounds. make this thing AIR TIGHT.
 
 data ListValues = NoList Expr | MultipleValues NumBase Base | LVList [Expr]
-  deriving (Show,Eq)
+  deriving (Show, Eq)
 
 -- | The type of the top level expression. Represents one of addition, subtraction, or a
 -- single term.
@@ -185,7 +185,9 @@ supportedFunctions = M.fromList $ fmap (\fi -> (funcInfoName fi, fi)) supportedF
 
 supportedFunctions' :: MonadException m => [FuncInfo m]
 supportedFunctions' =
-  sumFI : maximumFI: minimumFI:
+  sumFI :
+  maximumFI :
+  minimumFI :
   constructFuncInfo' "mod" (mod @Integer) (Nothing, Nothing, (== 0)) :
   constructFuncInfo' "fact" fact (Nothing, Just factorialLimit, const False) : (uncurry constructFuncInfo <$> [("abs", abs @Integer), ("id", id), ("neg", negate)])
   where
@@ -229,7 +231,7 @@ data ArgTypes = ATInteger | ATIntegerList
 
 class ArgCount f where
   getArgs :: f -> Integer
-  getArgs = ( + (- 1)) . fromIntegral . length . getTypes
+  getArgs = (+ (-1)) . fromIntegral . length . getTypes
   getTypes :: f -> [ArgTypes]
 
 instance ArgCount Integer where
@@ -248,7 +250,7 @@ checkBounds :: (MonadException m) => Integer -> (Maybe Integer, Maybe Integer, I
 checkBounds i (ml, mh, bs)
   | not (maybe True (i >) ml) = throwBot $ EvaluationException ("value too low for function. expected >" <> show (fromJust ml) <> ", got " <> show i) []
   | not (maybe True (i <) mh) = throwBot $ EvaluationException ("value too high for function. expected <" <> show (fromJust mh) <> ", got " <> show i) []
-  | bs i = throwBot $ EvaluationException ("invalid value for function: `" <> show i++ "`") []
+  | bs i = throwBot $ EvaluationException ("invalid value for function: `" <> show i ++ "`") []
   | otherwise = return i
 
 -- instance {-# OVERLAPPING #-} MonadException m => ApplyFunc m (m Integer) where
@@ -287,21 +289,20 @@ instance {-# OVERLAPPABLE #-} (ApplyFunc m f) => ApplyFunc m ([Integer] -> f) wh
 --   where
 --     countFormatting :: String -> Int
 --     countFormatting s = (`div` 4) $ foldr (\c cf -> cf + fromEnum (c `elem` ['~', '_', '*'])) 0 s
-
 evalListValues :: ListValues -> IO ([Integer], [Text])
 evalListValues lv = do
   (is, ss, _) <- evalShowListValues 0 lv
   let ret = toOut is ss
-  return $ if countAllFormatting ret < 199
-    then unzip (second pack <$> ret)
-    else (fst <$> ret, [pack  $ prettyShow lv ++ " `[could not display rolls]`"])
+  return $
+    if countAllFormatting ret < 199
+      then unzip (second pack <$> ret)
+      else (fst <$> ret, [pack $ prettyShow lv ++ " `[could not display rolls]`"])
   where
     toOut (LIInteger i) ss' = zip [i] ss'
     toOut (LIList is') ss' = zip is' ss'
     countFormatting :: String -> Int
     countFormatting s = (`div` 4) $ foldr (\c cf -> cf + fromEnum (c `elem` ['~', '_', '*'])) 0 s
-    countAllFormatting lst = foldr (\(_,s) tot -> countFormatting s + tot) 0 lst
-
+    countAllFormatting lst = foldr (\(_, s) tot -> countFormatting s + tot) 0 lst
 
 -- | Utility function to display dice.
 --
@@ -330,13 +331,13 @@ dieShow lchc d ls = return $ prettyShow d ++ " [" ++ intercalate ", " adjustList
     adjustList = fmap toCrossedOut ls
 
 evalShowList :: (IOEval a, PrettyShow a) => Integer -> [a] -> IO ([Integer], String, Integer)
-evalShowList rngCount as = evalShowList' rngCount as >>= \(is,ss,rc) -> return (is , intercalate ", " ss,rc )
+evalShowList rngCount as = evalShowList' rngCount as >>= \(is, ss, rc) -> return (is, intercalate ", " ss, rc)
 
 evalShowList' :: (IOEval a, PrettyShow a) => Integer -> [a] -> IO ([Integer], [String], Integer)
 evalShowList' = evalShowList'' evalShow
 
 evalShowList'' :: (Integer -> a -> IO (i, s, Integer)) -> Integer -> [a] -> IO ([i], [s], Integer)
-evalShowList'' customEvalShow rngCount =  foldr foldF (return ([], [], rngCount))
+evalShowList'' customEvalShow rngCount = foldr foldF (return ([], [], rngCount))
   where
     foldF a sumrngcount = do
       (diceSoFar, ss, rngCountTotal) <- sumrngcount
@@ -344,7 +345,7 @@ evalShowList'' customEvalShow rngCount =  foldr foldF (return ([], [], rngCount)
       return (i : diceSoFar, s : ss, rngCountTemp)
 
 evalShowListValues :: Integer -> ListValues -> IO (ListInteger, [String], Integer)
-evalShowListValues rngCount (NoList expr) = evalShow rngCount expr >>= \(i,s,rc) -> return (LIInteger i, [s], rc)
+evalShowListValues rngCount (NoList expr) = evalShow rngCount expr >>= \(i, s, rc) -> return (LIInteger i, [s], rc)
 evalShowListValues rngCount (MultipleValues nb b) = do
   (nb', _, rngCount') <- evalShow rngCount nb
   (is, ss, rc) <- evalShowList' rngCount' (genericReplicate nb' b)
@@ -655,16 +656,22 @@ instance PrettyShow Dice where
 
 instance CanParse ListValues where
   pars = do
-    LVList <$> ( try (char '{' *> skipSpace)
-                  *> parseCommaSeparated1
-                  <* skipSpace
-                  <* char '}'
-              ) <|> try (do
-                      nb <- pars
-                      _ <- char '#'
-                      MultipleValues nb <$> pars
-                ) <|> NoList <$> pars
-                --  <?> "could not parse list values value"
+    LVList
+      <$> ( try (char '{' *> skipSpace)
+              *> parseCommaSeparated1
+              <* skipSpace
+              <* char '}'
+          )
+      <|> try
+        ( do
+            nb <- pars
+            _ <- char '#'
+            MultipleValues nb <$> pars
+        )
+      <|> NoList
+      <$> pars
+
+--  <?> "could not parse list values value"
 
 binOpParseHelp :: (CanParse a) => Char -> (a -> a) -> Parser a
 binOpParseHelp c con = try (skipSpace *> char c) *> skipSpace *> (con <$> pars)
@@ -691,16 +698,17 @@ instance CanParse Func where
       )
       <|> NoFunc <$> pars
     where
-      matchType (NoList _,ATInteger) = True
-      matchType (LVList _,ATIntegerList) = True
-      matchType (MultipleValues _ _,ATIntegerList) = True
+      matchType (NoList _, ATInteger) = True
+      matchType (LVList _, ATIntegerList) = True
+      matchType (MultipleValues _ _, ATIntegerList) = True
       matchType _ = False
       checkTypes es ft fname
         | length es > length ft = fail $ "too many values given to function " ++ fname
         | length ft > length es = fail $ "too few values given to function " ++ fname
         | length matched /= length es = fail $ "type mismatch in parameters to function " ++ fname ++ ", in parameter " ++ show (length matched)
         | otherwise = return es
-        where matched = takeWhile matchType (zip es ft)
+        where
+          matched = takeWhile matchType (zip es ft)
 
 -- t <- pars
 -- matchFuncName funcName t
@@ -724,28 +732,31 @@ instance CanParse Expo where
 instance CanParse NumBase where
   pars =
     (try (skipSpace *> char '(') *> skipSpace *> (Paren . unnest <$> pars) <* skipSpace <* char ')')
-        <|> try (Value <$> integer)
-      -- <?> "could not parse numBase (parentheses, an integer)"
+      <|> try (Value <$> integer)
     where
+      -- <?> "could not parse numBase (parentheses, an integer)"
+
       unnest (NoExpr (NoTerm (NoNeg (NoExpo (NoFunc (NBase (Paren e))))))) = e
       unnest e = e
 
 instance CanParse Base where
   pars = try (DiceBase <$> pars) <|> try (NBase <$> pars)
-      -- <?> "could not match a base token (dice, parentheses, an integer)"
+
+-- <?> "could not match a base token (dice, parentheses, an integer)"
 
 instance CanParse Die where
   pars = do
     _ <- char 'd'
     lazyFunc <- (try (char '!') $> LazyDie) <|> return id
     try (lazyFunc . Die <$> pars)
-        <|> lazyFunc . CustomDie
-          <$> ( try (char '{' *> skipSpace)
-                  *> parseCommaSeparated1
-                  <* skipSpace
-                  <* char '}'
-              )
-      -- <?> "recursed to die expression and could not find a die"
+      <|> lazyFunc . CustomDie
+        <$> ( try (char '{' *> skipSpace)
+                *> parseCommaSeparated1
+                <* skipSpace
+                <* char '}'
+            )
+
+-- <?> "recursed to die expression and could not find a die"
 
 -- * > (pars >>= (\i -> (i :) <$> many (try (skipSpace *> char ',' *> skipSpace) *> pars)))
 
