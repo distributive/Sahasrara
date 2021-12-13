@@ -34,6 +34,7 @@ import Tablebot.Plugin.Types (Parser)
 import Text.Megaparsec (MonadParsec (try), choice, failure, many, optional, (<?>), (<|>))
 import Text.Megaparsec.Char (char, string)
 import Text.Megaparsec.Error (ErrorItem (Tokens))
+import Data.Bifunctor
 
 failure' :: Text -> Set Text -> Parser a
 failure' s ss = failure (Just $ Tokens $ NE.fromList $ unpack s) (S.map (Tokens . NE.fromList . unpack) ss)
@@ -64,14 +65,17 @@ checkRNGCount i =
   when (i > maximumRNG) $ throwBot $ EvaluationException ("exceeded maximum rng count (" ++ show maximumRNG ++ ")") []
 
 -- | The default expression to evaluate if no expression is given.
-defaultRoll :: Expr
-defaultRoll = NoExpr $ NoTerm $ NoNeg $ NoExpo $ DiceBase $ Dice (NBase (Value 1)) (Die (Value 20)) Nothing
+defaultRoll :: ListValues
+defaultRoll = NoList $ NoExpr $ NoTerm $ NoNeg $ NoExpo $ NoFunc $ DiceBase $ Dice (NBase (Value 1)) (Die (Value 20)) Nothing
 
 -- | The limit to how big a factorial value is permitted. Notably, the factorial function doesn't operate above this limit.
 factorialLimit :: Integer
 factorialLimit = 50
 
 -- TODO: full check over of bounds. make this thing AIR TIGHT.
+
+data ListValues = NoList Expr | MultipleValues NumBase Base | LVList [Expr]
+  deriving (Show,Eq)
 
 -- | The type of the top level expression. Represents one of addition, subtraction, or a
 -- single term.
@@ -87,14 +91,14 @@ data Negation = Neg Expo | NoNeg Expo
   deriving (Show, Eq)
 
 -- | The type representing a value with exponentials.
-data Expo = Expo Base Expo | NoExpo Base
+data Expo = Expo Func Expo | NoExpo Func
   deriving (Show, Eq)
 
 -- TODO: apply hannah's suggestion of function inputs like in non-haskell languages
 -- means that expr can be used for functions.
 
--- | The type representing a single function application on a negated item.
-data Func = Func String [Expr]
+-- | The type representing a single function application, or a base item.
+data Func = Func String [ListValues] | NoFunc Base
   deriving (Show, Eq)
 
 -- | The type representing an integer value or an expression in brackets.
@@ -102,11 +106,11 @@ data NumBase = Paren Expr | Value Integer
   deriving (Show, Eq)
 
 -- | The type representing a numeric base value value or a dice value.
-data Base = NBase NumBase | FuncBase Func | DiceBase Dice
+data Base = NBase NumBase | DiceBase Dice
   deriving (Show, Eq)
 
 fromIntegerToExpr :: Integer -> Expr
-fromIntegerToExpr = NoExpr . NoTerm . NoNeg . NoExpo . NBase . Value
+fromIntegerToExpr = NoExpr . NoTerm . NoNeg . NoExpo . NoFunc . NBase . Value
 
 -- Dice Operations after this point
 
@@ -199,12 +203,12 @@ supportedFunctionsList = M.keys (supportedFunctions @IO)
 
 ---- | Functions that looks up the given function name in the map, and will either throw an
 ---- error or return the function (wrapped inside the given monad)
-getFunc :: MonadException m => String -> [Integer] -> m Integer
+getFunc :: MonadException m => String -> [ListInteger] -> m Integer
 getFunc s is = do
   fi <- M.findWithDefault (throwBot $ EvaluationException ("could not find function " ++ formatText Code s) []) s (M.map (return . funcInfoFunc) supportedFunctions)
   fi is
 
-data FuncInfo m = FuncInfo {funcInfoName :: String, funcInfoArgs :: Integer, funcInfoFunc :: MonadException m => [Integer] -> m Integer}
+data FuncInfo m = FuncInfo {funcInfoName :: String, funcInfoArgs :: Integer, funcInfoFunc :: MonadException m => [ListInteger] -> m Integer}
 
 constructFuncInfo :: (MonadException m, ApplyFunc m f) => String -> f -> FuncInfo m
 constructFuncInfo s f = constructFuncInfo' s f (Nothing, Nothing, const False)
@@ -214,9 +218,8 @@ constructFuncInfo' s f bs = FuncInfo s args (applyFunc f args bs)
   where
     args = getArgs f
 
-data ListInteger a where
-  LIList :: [a] -> ListInteger a
-  LIItem :: a -> ListInteger a
+data ListInteger = LIInteger Integer | LIList [Integer]
+  deriving (Show, Eq, Ord)
 
 class ArgCount f where
   getArgs :: f -> Integer
@@ -227,14 +230,17 @@ instance ArgCount Integer where
 instance ArgCount f => ArgCount (Integer -> f) where
   getArgs f = 1 + getArgs (f 1)
 
+instance ArgCount f => ArgCount ([Integer] -> f) where
+  getArgs f = 1 + getArgs (f [])
+
 class ArgCount f => ApplyFunc m f where
-  applyFunc :: (MonadException m) => f -> Integer -> (Maybe Integer, Maybe Integer, Integer -> Bool) -> [Integer] -> m Integer
+  applyFunc :: (MonadException m) => f -> Integer -> (Maybe Integer, Maybe Integer, Integer -> Bool) -> [ListInteger] -> m Integer
 
 checkBounds :: (MonadException m) => Integer -> (Maybe Integer, Maybe Integer, Integer -> Bool) -> m Integer
 checkBounds i (ml, mh, bs)
   | not (maybe True (i >) ml) = throwBot $ EvaluationException ("value too low for function. expected >" <> show (fromJust ml) <> ", got " <> show i) []
   | not (maybe True (i <) mh) = throwBot $ EvaluationException ("value too high for function. expected <" <> show (fromJust mh) <> ", got " <> show i) []
-  | bs i = throwBot $ EvaluationException ("invalid value function. got " <> show i) []
+  | bs i = throwBot $ EvaluationException ("invalid value for function: `" <> show i++ "`") []
   | otherwise = return i
 
 -- instance {-# OVERLAPPING #-} MonadException m => ApplyFunc m (m Integer) where
@@ -242,29 +248,52 @@ checkBounds i (ml, mh, bs)
 --   applyFunc _ i _ = throwBot $ EvaluationException ("incorrect number of arguments to function. expected " <> show i <> ", got more than that") []
 
 instance {-# OVERLAPPING #-} ApplyFunc m Integer where
-  applyFunc f _ bs [] = checkBounds f bs
+  applyFunc f _ _ [] = return f
   applyFunc _ args _ _ = throwBot $ EvaluationException ("incorrect number of arguments to function. expected " <> show args <> ", got more than that") []
 
 instance {-# OVERLAPPABLE #-} (ApplyFunc m f) => ApplyFunc m (Integer -> f) where
   applyFunc f args _ [] = throwBot $ EvaluationException ("incorrect number of arguments to function. got " <> show dif <> ", expected " <> show args) []
     where
       dif = args - getArgs f
-  applyFunc f args bs (x : xs) = checkBounds x bs >>= \x' -> applyFunc (f x') args bs xs
+  applyFunc f args bs ((LIInteger x) : xs) = checkBounds x bs >>= \x' -> applyFunc (f x') args bs xs
+  applyFunc _ _ _ ((LIList _) : _) = throwBot $ EvaluationException "incorrect type given to function. expected an integer, got a list" []
+
+instance {-# OVERLAPPABLE #-} (ApplyFunc m f) => ApplyFunc m ([Integer] -> f) where
+  applyFunc f args _ [] = throwBot $ EvaluationException ("incorrect number of arguments to function. got " <> show dif <> ", expected " <> show args) []
+    where
+      dif = args - getArgs f
+  applyFunc f args bs ((LIList x) : xs) = applyFunc (f x) args bs xs
+  applyFunc _ _ _ ((LIInteger _) : _) = throwBot $ EvaluationException "incorrect type given to function. expected a list, got an integer" []
 
 --- Evaluating an expression. Uses IO because dice are random
 
 -- | Given an expression, evaluate it, getting the pretty printed string and the value of
 -- the result
-evalExpr :: Expr -> IO (Integer, Text)
-evalExpr e = do
-  (i, s, _) <- evalShow 0 e
-  return $
-    if countFormatting s < 199
-      then (i, pack s)
-      else (i, pack $ prettyShow e ++ " `[could not display rolls]`")
+-- evalExpr :: Expr -> IO (Integer, Text)
+-- evalExpr e = do
+--   (i, s, _) <- evalShow 0 e
+--   return $
+--     if countFormatting s < 199
+--       then (i, pack s)
+--       else (i, pack $ prettyShow e ++ " `[could not display rolls]`")
+--   where
+--     countFormatting :: String -> Int
+--     countFormatting s = (`div` 4) $ foldr (\c cf -> cf + fromEnum (c `elem` ['~', '_', '*'])) 0 s
+
+evalListValues :: ListValues -> IO ([Integer], [Text])
+evalListValues lv = do
+  (is, ss, _) <- evalShowListValues 0 lv
+  let ret = toOut is ss
+  return $ if countAllFormatting ret < 199
+    then unzip (second pack <$> ret)
+    else (fst <$> ret, [pack  $ prettyShow lv ++ " `[could not display rolls]`"])
   where
+    toOut (LIInteger i) ss' = zip [i] ss'
+    toOut (LIList is') ss' = zip is' ss'
     countFormatting :: String -> Int
     countFormatting s = (`div` 4) $ foldr (\c cf -> cf + fromEnum (c `elem` ['~', '_', '*'])) 0 s
+    countAllFormatting lst = foldr (\(_,s) tot -> countFormatting s + tot) 0 lst
+
 
 -- | Utility function to display dice.
 --
@@ -293,14 +322,28 @@ dieShow lchc d ls = return $ prettyShow d ++ " [" ++ intercalate ", " adjustList
     adjustList = fmap toCrossedOut ls
 
 evalShowList :: (IOEval a, PrettyShow a) => Integer -> [a] -> IO ([Integer], String, Integer)
-evalShowList rngCount as = do
-  (is, ss, rngCount') <- foldr foldF (return ([], [], rngCount)) as
-  return (is, intercalate ", " ss, rngCount')
+evalShowList rngCount as = evalShowList' rngCount as >>= \(is,ss,rc) -> return (is , intercalate ", " ss,rc )
+
+evalShowList' :: (IOEval a, PrettyShow a) => Integer -> [a] -> IO ([Integer], [String], Integer)
+evalShowList' = evalShowList'' evalShow
+
+evalShowList'' :: (Integer -> a -> IO (i, s, Integer)) -> Integer -> [a] -> IO ([i], [s], Integer)
+evalShowList'' customEvalShow rngCount =  foldr foldF (return ([], [], rngCount))
   where
     foldF a sumrngcount = do
       (diceSoFar, ss, rngCountTotal) <- sumrngcount
-      (i, s, rngCountTemp) <- evalShow rngCountTotal a
+      (i, s, rngCountTemp) <- customEvalShow rngCountTotal a
       return (i : diceSoFar, s : ss, rngCountTemp)
+
+evalShowListValues :: Integer -> ListValues -> IO (ListInteger, [String], Integer)
+evalShowListValues rngCount (NoList expr) = evalShow rngCount expr >>= \(i,s,rc) -> return (LIInteger i, [s], rc)
+evalShowListValues rngCount (MultipleValues nb b) = do
+  (nb', _, rngCount') <- evalShow rngCount nb
+  (is, ss, rc) <- evalShowList' rngCount' (genericReplicate nb' b)
+  return (LIList is, ss, rc)
+evalShowListValues rngCount (LVList es) = do
+  (is, ss, rc) <- evalShowList' rngCount es
+  return (LIList is, ss, rc)
 
 -- | This type class gives a function which evaluates the value to an integer and a
 -- string.
@@ -322,7 +365,6 @@ class IOEval a where
 instance IOEval Base where
   evalShow' rngCount (NBase nb) = evalShow rngCount nb
   evalShow' rngCount (DiceBase dice) = evalShow rngCount dice
-  evalShow' rngCount (FuncBase func) = evalShow rngCount func
 
 instance IOEval Die where
   evalShow' rngCount ld@(LazyDie d) = do
@@ -510,9 +552,10 @@ instance IOEval Func where
   --       f <- getFunc "fact" exprs
   --       return (f, "fact" ++ " " ++ neg's, rngCount')
   evalShow' rngCount (Func s exprs) = do
-    (exprs', exprs's, rngCount') <- evalShowList rngCount exprs
+    (exprs', _, rngCount') <- evalShowList'' evalShowListValues rngCount exprs
     f <- getFunc s exprs'
-    return (f, s ++ " (" ++ exprs's ++ ")", rngCount')
+    return (f, s ++ " (" ++ intercalate ", " (prettyShow <$> exprs) ++ ")", rngCount')
+  evalShow' rngCount (NoFunc b) = evalShow rngCount b
 
 instance IOEval Negation where
   evalShow' rngCount (NoNeg expo) = evalShow rngCount expo
@@ -544,6 +587,11 @@ class PrettyShow a where
   -- | Print the given value prettily.
   prettyShow :: a -> String
 
+instance PrettyShow ListValues where
+  prettyShow (NoList e) = prettyShow e
+  prettyShow (MultipleValues nb b) = prettyShow nb <> "#" <> prettyShow b
+  prettyShow (LVList es) = "{" <> intercalate "," (prettyShow <$> es) <> "}"
+
 instance PrettyShow Expr where
   prettyShow (Add t e) = prettyShow t <> " + " <> prettyShow e
   prettyShow (Sub t e) = prettyShow t <> " - " <> prettyShow e
@@ -557,6 +605,7 @@ instance PrettyShow Term where
 instance PrettyShow Func where
   -- prettyShow (Func "id" n) = prettyShow n
   prettyShow (Func s n) = s <> "(" <> intercalate "," (prettyShow <$> n) <> ")"
+  prettyShow (NoFunc b) = prettyShow b
 
 instance PrettyShow Negation where
   prettyShow (Neg expo) = "-" <> prettyShow expo
@@ -573,7 +622,6 @@ instance PrettyShow NumBase where
 instance PrettyShow Base where
   prettyShow (NBase nb) = prettyShow nb
   prettyShow (DiceBase dop) = prettyShow dop
-  prettyShow (FuncBase f) = prettyShow f
 
 instance PrettyShow Die where
   prettyShow (Die b) = "d" <> prettyShow b
@@ -597,6 +645,18 @@ instance PrettyShow Dice where
 
 --- Parsing expressions below this line
 
+instance CanParse ListValues where
+  pars = do
+    LVList <$> ( try (char '{' *> skipSpace)
+                  *> parseCommaSeparated1
+                  <* skipSpace
+                  <* char '}'
+              ) <|> try (do
+                      nb <- pars
+                      _ <- char '#'
+                      MultipleValues nb <$> pars
+                ) <|> NoList <$> pars <?> "could not parse list values value"
+
 binOpParseHelp :: (CanParse a) => Char -> (a -> a) -> Parser a
 binOpParseHelp c con = try (skipSpace *> char c) *> skipSpace *> (con <$> pars)
 
@@ -613,9 +673,12 @@ instance CanParse Term where
 instance CanParse Func where
   pars = do
     -- funcName <- pack <$> word
-    funcName <- try (choice (string . pack <$> supportedFunctionsList)) <?> "could not find function"
-    es <- string "(" *> skipSpace *> parseCommaSeparated <* skipSpace <* string ")"
-    return $ Func (unpack funcName) es
+    ( do
+        funcName <- try (choice (string . pack <$> supportedFunctionsList)) <?> "could not find function"
+        es <- string "(" *> skipSpace *> parseCommaSeparated <* skipSpace <* string ")"
+        return $ Func (unpack funcName) es
+      )
+      <|> NoFunc <$> pars
 
 -- t <- pars
 -- matchFuncName funcName t
@@ -643,12 +706,12 @@ instance CanParse NumBase where
     )
       <?> "could not parse numBase (parentheses, an integer)"
     where
-      unnest (NoExpr (NoTerm (NoNeg (NoExpo (NBase (Paren e)))))) = e
+      unnest (NoExpr (NoTerm (NoNeg (NoExpo (NoFunc (NBase (Paren e))))))) = e
       unnest e = e
 
 instance CanParse Base where
   pars =
-    (try (DiceBase <$> pars) <|> try (NBase <$> pars) <|> try (FuncBase <$> pars))
+    (try (DiceBase <$> pars) <|> try (NBase <$> pars))
       <?> "could not match a base token (dice, parentheses, an integer)"
 
 instance CanParse Die where
