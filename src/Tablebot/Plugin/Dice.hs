@@ -19,7 +19,7 @@ import Data.Functor (($>), (<&>))
 import Data.List (genericDrop, genericReplicate, genericTake, intercalate, sortBy)
 import Data.List.NonEmpty as NE (NonEmpty ((:|)), fromList, head, tail, (<|))
 import Data.Map as M (Map, findWithDefault, fromList, keys, map)
-import Data.Maybe (fromMaybe, isNothing, fromJust)
+import Data.Maybe (fromJust, fromMaybe, isNothing)
 import Data.Set as S (Set, fromList, map)
 import Data.String (IsString (fromString))
 import Data.Text (Text, pack, singleton, unpack)
@@ -182,19 +182,15 @@ supportedFunctions = M.fromList $ fmap (\fi -> (funcInfoName fi, fi)) supportedF
 
 supportedFunctions' :: MonadException m => [FuncInfo m]
 supportedFunctions' =
-  constructFuncInfo' "fact" fact (Nothing, Just factorialLimit) :
-  ( uncurry constructFuncInfo
-      <$> ([ ("abs", abs),
-            ("id",  id),
-            ("neg", negate)
-          ] :: [(String, Integer-> Integer)])
-  )
+  constructFuncInfo' "mod" (mod @Integer) (Nothing, Nothing, (== 0)) :
+  constructFuncInfo' "fact" fact (Nothing, Just factorialLimit, const False) : (uncurry constructFuncInfo <$> [("abs", abs @Integer), ("id", id), ("neg", negate)])
   where
     fact n
       | n < 0 = 0
       | n == 0 = 1
       | n > factorialLimit = fact factorialLimit
       | otherwise = n * fact (n - 1)
+
 -- | n > factorialLimit = throwBot $ EvaluationException ("tried to evaluate a factorial with input number greater than the limit (" ++ formatInput Code factorialLimit ++ "): `" ++ formatInput Code n ++ "`") []
 
 -- | The functions currently supported.
@@ -208,24 +204,37 @@ getFunc s is = do
   fi <- M.findWithDefault (throwBot $ EvaluationException ("could not find function " ++ formatText Code s) []) s (M.map (return . funcInfoFunc) supportedFunctions)
   fi is
 
-data FuncInfo m = FuncInfo {funcInfoName :: String, funcInfoFunc :: MonadException m => [Integer] -> m Integer}
-
--- unaryFuncInfo :: (MonadException m) => String -> (Integer -> Integer) -> FuncInfo m
--- unaryFuncInfo = constructFuncInfo
+data FuncInfo m = FuncInfo {funcInfoName :: String, funcInfoArgs :: Integer, funcInfoFunc :: MonadException m => [Integer] -> m Integer}
 
 constructFuncInfo :: (MonadException m, ApplyFunc m f) => String -> f -> FuncInfo m
-constructFuncInfo s f = constructFuncInfo' s f (Nothing, Nothing)
+constructFuncInfo s f = constructFuncInfo' s f (Nothing, Nothing, const False)
 
-constructFuncInfo' ::(MonadException m, ApplyFunc m f) => String -> f -> (Maybe Integer, Maybe Integer) -> FuncInfo m
-constructFuncInfo' s f bs = FuncInfo s (applyFunc f 0 bs)
+constructFuncInfo' :: (MonadException m, ApplyFunc m f) => String -> f -> (Maybe Integer, Maybe Integer, Integer -> Bool) -> FuncInfo m
+constructFuncInfo' s f bs = FuncInfo s args (applyFunc f args bs)
+  where
+    args = getArgs f
 
-class ApplyFunc m f where
-  applyFunc :: (MonadException m) => f -> Integer-> (Maybe Integer, Maybe Integer) -> [Integer]  -> m Integer
+data ListInteger a where
+  LIList :: [a] -> ListInteger a
+  LIItem :: a -> ListInteger a
 
-checkBounds :: (MonadException m) => Integer -> (Maybe Integer, Maybe Integer) -> m Integer
-checkBounds i (ml,mh)
-  | not (maybe True (i>) ml) = throwBot $ EvaluationException ("value too low for function. expected >" <> show (fromJust ml) <> ", got " <> show i) []
-  | not (maybe True (i<) mh) = throwBot $ EvaluationException ("value too high for function. expected <" <> show (fromJust mh) <> ", got " <> show i) []
+class ArgCount f where
+  getArgs :: f -> Integer
+
+instance ArgCount Integer where
+  getArgs _ = 0
+
+instance ArgCount f => ArgCount (Integer -> f) where
+  getArgs f = 1 + getArgs (f 1)
+
+class ArgCount f => ApplyFunc m f where
+  applyFunc :: (MonadException m) => f -> Integer -> (Maybe Integer, Maybe Integer, Integer -> Bool) -> [Integer] -> m Integer
+
+checkBounds :: (MonadException m) => Integer -> (Maybe Integer, Maybe Integer, Integer -> Bool) -> m Integer
+checkBounds i (ml, mh, bs)
+  | not (maybe True (i >) ml) = throwBot $ EvaluationException ("value too low for function. expected >" <> show (fromJust ml) <> ", got " <> show i) []
+  | not (maybe True (i <) mh) = throwBot $ EvaluationException ("value too high for function. expected <" <> show (fromJust mh) <> ", got " <> show i) []
+  | bs i = throwBot $ EvaluationException ("invalid value function. got " <> show i) []
   | otherwise = return i
 
 -- instance {-# OVERLAPPING #-} MonadException m => ApplyFunc m (m Integer) where
@@ -233,12 +242,14 @@ checkBounds i (ml,mh)
 --   applyFunc _ i _ = throwBot $ EvaluationException ("incorrect number of arguments to function. expected " <> show i <> ", got more than that") []
 
 instance {-# OVERLAPPING #-} ApplyFunc m Integer where
-  applyFunc f _ bs []  = checkBounds f bs
-  applyFunc _ i _ _ = throwBot $ EvaluationException ("incorrect number of arguments to function. expected " <> show i <> ", got more than that") []
+  applyFunc f _ bs [] = checkBounds f bs
+  applyFunc _ args _ _ = throwBot $ EvaluationException ("incorrect number of arguments to function. expected " <> show args <> ", got more than that") []
 
 instance {-# OVERLAPPABLE #-} (ApplyFunc m f) => ApplyFunc m (Integer -> f) where
-  applyFunc _ i _ []  = throwBot $ EvaluationException ("incorrect number of arguments to function. expected more than " <> show i) []
-  applyFunc f i bs (x : xs) = checkBounds x bs >>= \x' -> applyFunc (f x') (i + 1) bs xs
+  applyFunc f args _ [] = throwBot $ EvaluationException ("incorrect number of arguments to function. got " <> show dif <> ", expected " <> show args) []
+    where
+      dif = args - getArgs f
+  applyFunc f args bs (x : xs) = checkBounds x bs >>= \x' -> applyFunc (f x') args bs xs
 
 --- Evaluating an expression. Uses IO because dice are random
 
@@ -605,13 +616,14 @@ instance CanParse Func where
     funcName <- try (choice (string . pack <$> supportedFunctionsList)) <?> "could not find function"
     es <- string "(" *> skipSpace *> parseCommaSeparated <* skipSpace <* string ")"
     return $ Func (unpack funcName) es
-    -- t <- pars
-    -- matchFuncName funcName t
-    -- where
-      -- matchFuncName "" = const $ failure Nothing (S.fromList (fmap (Tokens . NE.fromList) supportedFunctionsList))
-      -- matchFuncName s
-      --   | unpack s `member` (supportedFunctions @IO) = return . Func (unpack s)
-      --   | otherwise = const $ failure' s (S.fromList $ pack <$> supportedFunctionsList)
+
+-- t <- pars
+-- matchFuncName funcName t
+-- where
+-- matchFuncName "" = const $ failure Nothing (S.fromList (fmap (Tokens . NE.fromList) supportedFunctionsList))
+-- matchFuncName s
+--   | unpack s `member` (supportedFunctions @IO) = return . Func (unpack s)
+--   | otherwise = const $ failure' s (S.fromList $ pack <$> supportedFunctionsList)
 
 -- | otherwise = const $ failure (Just $ Tokens $ NE.fromList $ unpack s) (S.fromList (fmap (Tokens . NE.fromList) supportedFunctionsList))
 instance CanParse Negation where
@@ -652,12 +664,14 @@ instance CanParse Die where
               )
       )
       <?> "recursed to die expression and could not find a die"
--- *> (pars >>= (\i -> (i :) <$> many (try (skipSpace *> char ',' *> skipSpace) *> pars)))
+
+-- * > (pars >>= (\i -> (i :) <$> many (try (skipSpace *> char ',' *> skipSpace) *> pars)))
 
 parseCommaSeparated :: CanParse a => Parser [a]
 parseCommaSeparated = do
   f <- optional $ try pars
   maybe (return []) (\first' -> (first' :) <$> many (try (skipSpace *> char ',' *> skipSpace) *> pars)) f
+
 parseCommaSeparated1 :: CanParse a => Parser [a]
 parseCommaSeparated1 = do
   pars >>= (\first' -> (first' :) <$> many (try (skipSpace *> char ',' *> skipSpace) *> pars))
