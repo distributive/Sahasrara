@@ -12,18 +12,17 @@ module Tablebot.Plugins.Netrunner (netrunnerPlugin) where
 import Control.Monad.IO.Class
 import Control.Monad.Trans.Reader (ask)
 import Data.Text (Text, pack, unpack)
+import Discord.Types
+import Tablebot.Handler.Command ()
 import Tablebot.Plugin
-import Tablebot.Plugin.Discord (sendMessage, sendEmbedMessage)
+import Tablebot.Plugin.Discord (sendEmbedMessage, sendMessage)
 import Tablebot.Plugin.Exception (BotException (NetrunnerException), throwBot)
 import Tablebot.Plugin.Netrunner
 import Tablebot.Plugin.Netrunner.Custom (customCard)
 import Tablebot.Plugin.Netrunner.NrApi (NrApi, getNrApi)
-import Tablebot.Plugin.Parser (netrunnerQuery, netrunnerCustom)
+import Tablebot.Plugin.Parser (netrunnerCustom, netrunnerQuery)
 import Tablebot.Plugin.SmartCommand (PComm (parseComm), Quoted (Qu), RestOfInput1 (ROI1), WithError (WErr))
-import Tablebot.Handler.Command ()
 import Text.RawString.QQ (r)
-import Discord.Types
-
 
 -- | @netrunner@ is the user-facing command that searches for Netrunner cards.
 netrunner :: EnvCommand NrApi
@@ -32,14 +31,14 @@ netrunner =
     "netrunner"
     (parseComm nrComm)
     [nrFind, nrCustom]
-      where
-        nrComm ::
-          WithError
-            "Unknown Netrunner functionality"
-            () ->
-          Message ->
-          EnvDatabaseDiscord NrApi ()
-        nrComm _ m = sendMessage m "netrunner"
+  where
+    nrComm ::
+      WithError
+        "Unknown Netrunner functionality"
+        () ->
+      Message ->
+      EnvDatabaseDiscord NrApi ()
+    nrComm _ m = sendMessage m "netrunner"
 
 -- | @nrFind@ finds the card with title most closely matching its input.
 nrFind :: EnvCommand NrApi

@@ -14,8 +14,9 @@ module Tablebot.Plugin.Fuzzy
     closestPair,
     closestPairWithCosts,
     closestValue,
-    closestValueWithCosts
-  ) where
+    closestValueWithCosts,
+  )
+where
 
 import Data.Char (toLower)
 import Data.List (minimumBy)
@@ -33,22 +34,24 @@ data FuzzyCosts = FuzzyCosts
 -- | @convertCosts@ turns the custom FuzzyCosts into Text.EditDistance's
 -- EditCosts.
 convertCosts :: FuzzyCosts -> EditCosts
-convertCosts costs = EditCosts
-  { deletionCosts = ConstantCost $ deletion costs,
-    insertionCosts = ConstantCost $ insertion costs,
-    substitutionCosts = ConstantCost $ substitution costs,
-    transpositionCosts = ConstantCost $ transposition costs
-  }
+convertCosts costs =
+  EditCosts
+    { deletionCosts = ConstantCost $ deletion costs,
+      insertionCosts = ConstantCost $ insertion costs,
+      substitutionCosts = ConstantCost $ substitution costs,
+      transpositionCosts = ConstantCost $ transposition costs
+    }
 
 -- | @defaultFuzzyCosts@ mirrors the values of Text.EditDistance's
 -- defaultEditCosts.
 defaultFuzzyCosts :: FuzzyCosts
-defaultFuzzyCosts = FuzzyCosts
-  { deletion = 1,
-    insertion = 1,
-    substitution = 1,
-    transposition = 1
-  }
+defaultFuzzyCosts =
+  FuzzyCosts
+    { deletion = 1,
+      insertion = 1,
+      substitution = 1,
+      transposition = 1
+    }
 
 -- | @closestMatch@ takes a set of strings and a query and finds the string that
 -- most closely matches the query.
@@ -79,7 +82,7 @@ closestPairWithCosts editCosts pairs query = minimumBy comparison pairs
     score :: String -> Int
     score = levenshteinDistance (convertCosts editCosts) (map toLower query)
     comparison :: (String, a) -> (String, a) -> Ordering
-    comparison (a,_) (b,_)
+    comparison (a, _) (b, _)
       | score a < score b = LT
       | score a > score b = GT
       | otherwise = EQ

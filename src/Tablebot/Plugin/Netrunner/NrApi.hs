@@ -15,7 +15,6 @@ import Data.Text (Text)
 import GHC.Generics (Generic)
 import Network.HTTP.Conduit (Response (responseBody), parseRequest)
 import Network.HTTP.Simple (httpLBS)
-
 import Tablebot.Plugin.Netrunner.Card as Card
 import Tablebot.Plugin.Netrunner.Cycle as Cycle
 import Tablebot.Plugin.Netrunner.Faction as Faction
@@ -48,10 +47,11 @@ getNrApi = do
   packReq <- parseRequest "https://netrunnerdb.com/api/2.0/public/packs"
   packRes <- httpLBS packReq
   let packData = fromRight defaultPacks ((eitherDecode $ responseBody packRes) :: Either String Packs)
-  return $ NrApi
-    { cards = reverse $ Card.content cardData, -- Reversing the list of cards prioritises newer cards in the search
-      cycles = Cycle.content cycleData,
-      factions = Faction.content factionData,
-      packs = Pack.content packData,
-      imageTemplate = Card.imageUrlTemplate cardData
-    }
+  return $
+    NrApi
+      { cards = reverse $ Card.content cardData, -- Reversing the list of cards prioritises newer cards in the search
+        cycles = Cycle.content cycleData,
+        factions = Faction.content factionData,
+        packs = Pack.content packData,
+        imageTemplate = Card.imageUrlTemplate cardData
+      }

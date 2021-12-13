@@ -9,7 +9,7 @@
 -- Handles the representation of Netrunner packs in Tablebot.
 module Tablebot.Plugin.Netrunner.Pack (Pack (..), Packs (..), defaultPacks) where
 
-import Data.Aeson (FromJSON, Value (Object), (.:), parseJSON)
+import Data.Aeson (FromJSON, Value (Object), parseJSON, (.:))
 import Data.Text (Text)
 import GHC.Generics (Generic)
 
@@ -23,14 +23,15 @@ data Pack = Pack
   deriving (Show, Generic)
 
 -- | @Packs@ represents all data packs in the game's history.
-data Packs = Packs { content :: ![Pack] } deriving (Show, Generic)
+data Packs = Packs {content :: ![Pack]} deriving (Show, Generic)
 
 defaultPacks :: Packs
-defaultPacks = Packs { content = [] }
+defaultPacks = Packs {content = []}
 
 instance FromJSON Pack
+
 instance FromJSON Packs where
   parseJSON (Object v) = do
     content <- v .: "data"
-    return $ Packs { content = content }
+    return $ Packs {content = content}
   parseJSON _ = return defaultPacks

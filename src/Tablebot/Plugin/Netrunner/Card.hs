@@ -9,7 +9,7 @@
 -- Handles the representation of Netrunner cards in Tablebot.
 module Tablebot.Plugin.Netrunner.Card (Card (..), Cards (..), defaultCards) where
 
-import Data.Aeson (FromJSON, Value (Object), (.:), parseJSON)
+import Data.Aeson (FromJSON, Value (Object), parseJSON, (.:))
 import Data.Text (Text)
 import GHC.Generics (Generic)
 
@@ -51,12 +51,13 @@ data Cards = Cards
   deriving (Show, Generic)
 
 defaultCards :: Cards
-defaultCards = Cards { content = [], imageUrlTemplate = "" }
+defaultCards = Cards {content = [], imageUrlTemplate = ""}
 
 instance FromJSON Card
+
 instance FromJSON Cards where
   parseJSON (Object v) = do
     content <- v .: "data"
     imageUrlTemplate <- v .: "imageUrlTemplate"
-    return $ Cards { content = content, imageUrlTemplate = imageUrlTemplate }
+    return $ Cards {content = content, imageUrlTemplate = imageUrlTemplate}
   parseJSON _ = return defaultCards
