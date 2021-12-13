@@ -8,7 +8,7 @@ import Data.Map as M (findWithDefault)
 import Data.Maybe (fromMaybe, isNothing)
 import Data.String (IsString (fromString))
 import Data.Text (Text, intercalate, pack, unpack)
-import Data.Text qualified as T
+import qualified Data.Text as T
 import System.Random (randomRIO)
 import Tablebot.Plugin.Dice.DiceData
 import Tablebot.Plugin.Dice.DiceFunctions (FuncInfo (funcInfoFunc, funcInfoName), ListInteger (..))
