@@ -8,21 +8,16 @@
 --
 -- This plugin contains the neccessary parsers and stucture to get the AST for an
 -- expression that contains dice, as well as evaluate that expression.
-module Tablebot.Plugin.Dice (evalListValues, ListValues (..), defaultRoll, PrettyShow (prettyShow), supportedFunctionsList) where
+module Tablebot.Plugin.Dice (evalListValues, ListValues (..), defaultRoll, PrettyShow (prettyShow), supportedFunctionsList, Converter (promote)) where
 
 -- module Tablebot.Plugin.Dice (evalExpr, Expr, PrettyShow (..), supportedFunctionsList, defaultRoll) where
 
+-- module Tablebot.Plugin.Dice (evalExpr, Expr, PrettyShow (..), supportedFunctionsList, defaultRoll) where
 import Tablebot.Plugin.Dice.DiceData
-  ( Base (DiceBase, NBase),
-    Dice (Dice),
+  ( Converter (promote),
     Die (Die),
-    Expo (NoExpo),
-    Expr (NoExpr),
-    Func (NoFunc),
     ListValues (..),
-    Negation (NoNeg),
     NumBase (Value),
-    Term (NoTerm),
   )
 import Tablebot.Plugin.Dice.DiceEval (PrettyShow (prettyShow), evalListValues)
 import Tablebot.Plugin.Dice.DiceFunctions (supportedFunctionsList)
@@ -46,6 +41,6 @@ ords - ("/=" | "<=" | ">=" | "<" | "=" | ">") nbase
 
 -- | The default expression to evaluate if no expression is given.
 defaultRoll :: ListValues
-defaultRoll = NoList $ NoExpr $ NoTerm $ NoNeg $ NoExpo $ NoFunc $ DiceBase $ Dice (NBase (Value 1)) (Die (Value 20)) Nothing
+defaultRoll = promote (Die (Value 20))
 
 -- TODO: full check over of bounds. make this thing AIR TIGHT.

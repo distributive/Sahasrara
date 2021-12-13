@@ -16,6 +16,7 @@ import Data.Set as S (Set, map)
 import Data.String (IsString (fromString))
 import Data.Text (Text, unpack)
 import Data.Tuple (swap)
+import Tablebot.Plugin.Dice.DiceFunctions (FuncInfo)
 import Tablebot.Plugin.Types (Parser)
 import Text.Megaparsec (failure)
 import Text.Megaparsec.Error (ErrorItem (Tokens))
@@ -24,39 +25,36 @@ failure' :: Text -> Set Text -> Parser a
 failure' s ss = failure (Just $ Tokens $ NE.fromList $ unpack s) (S.map (Tokens . NE.fromList . unpack) ss)
 
 data ListValues = NoList Expr | MultipleValues NumBase Base | LVList [Expr]
-  deriving (Show, Eq)
+  deriving (Show)
 
 -- | The type of the top level expression. Represents one of addition, subtraction, or a
 -- single term.
 data Expr = Add Term Expr | Sub Term Expr | NoExpr Term
-  deriving (Show, Eq)
+  deriving (Show)
 
 -- | The type representing multiplication, division, or a single negated term.
 data Term = Multi Negation Term | Div Negation Term | NoTerm Negation
-  deriving (Show, Eq)
+  deriving (Show)
 
 -- | The type representing a possibly negated value.
 data Negation = Neg Expo | NoNeg Expo
-  deriving (Show, Eq)
+  deriving (Show)
 
 -- | The type representing a value with exponentials.
 data Expo = Expo Func Expo | NoExpo Func
-  deriving (Show, Eq)
-
--- TODO: apply hannah's suggestion of function inputs like in non-haskell languages
--- means that expr can be used for functions.
+  deriving (Show)
 
 -- | The type representing a single function application, or a base item.
-data Func = Func String [ListValues] | NoFunc Base
-  deriving (Show, Eq)
+data Func = Func (FuncInfo IO) [ListValues] | NoFunc Base
+  deriving (Show)
 
 -- | The type representing an integer value or an expression in brackets.
 data NumBase = Paren Expr | Value Integer
-  deriving (Show, Eq)
+  deriving (Show)
 
 -- | The type representing a numeric base value value or a dice value.
 data Base = NBase NumBase | DiceBase Dice
-  deriving (Show, Eq)
+  deriving (Show)
 
 fromIntegerToExpr :: Integer -> Expr
 fromIntegerToExpr = NoExpr . NoTerm . NoNeg . NoExpo . NoFunc . NBase . Value
@@ -67,16 +65,16 @@ fromIntegerToExpr = NoExpr . NoTerm . NoNeg . NoExpo . NoFunc . NBase . Value
 -- each time and sometimes are eval'd once and then that value is used
 
 -- | The type representing a simple N sided die or a custom die.
-data Die = Die NumBase | CustomDie [Expr] | LazyDie Die deriving (Show, Eq)
+data Die = Die NumBase | CustomDie [Expr] | LazyDie Die deriving (Show)
 
 -- | The type representing a number of dice equal to the `Base` value, and possibly some
 -- die options.
 data Dice = Dice Base Die (Maybe DieOpRecur)
-  deriving (Show, Eq)
+  deriving (Show)
 
 -- | The type representing one or more die options.
 data DieOpRecur = DieOpRecur DieOpOption (Maybe DieOpRecur)
-  deriving (Show, Eq)
+  deriving (Show)
 
 data AdvancedOrdering = Not AdvancedOrdering | OrderingId Ordering | And [AdvancedOrdering] | Or [AdvancedOrdering]
   deriving (Show, Eq, Ord)
@@ -106,10 +104,10 @@ data DieOpOption
   = Reroll {rerollOnce :: Bool, condition :: AdvancedOrdering, limit :: NumBase}
   | DieOpOptionKD KeepDrop LowHighWhere
   | DieOpOptionLazy DieOpOption
-  deriving (Show, Eq)
+  deriving (Show)
 
 -- | A type used to designate how the keep/drop option should work
-data LowHighWhere = Low NumBase | High NumBase | Where AdvancedOrdering NumBase deriving (Show, Eq)
+data LowHighWhere = Low NumBase | High NumBase | Where AdvancedOrdering NumBase deriving (Show)
 
 -- | Utility function to get the integer determining how many values to get given a
 -- `LowHighWhere`. If the given value is `Low` or `High`, then Just the NumBase contained
@@ -126,3 +124,39 @@ isLow _ = False
 
 -- | Utility value for whether to keep or drop values.
 data KeepDrop = Keep | Drop deriving (Show, Eq)
+
+class Converter a b where
+  promote :: a -> b
+
+instance (Converter a Expr) => Converter a ListValues where
+  promote = NoList . promote
+
+instance (Converter a Term) => Converter a Expr where
+  promote = NoExpr . promote
+
+instance (Converter a Negation) => Converter a Term where
+  promote = NoTerm . promote
+
+instance (Converter a Expo) => Converter a Negation where
+  promote = NoNeg . promote
+
+instance (Converter a Func) => Converter a Expo where
+  promote = NoExpo . promote
+
+instance (Converter a Base) => Converter a Func where
+  promote = NoFunc . promote
+
+instance Converter Integer Base where
+  promote = NBase . promote
+
+instance Converter NumBase Base where
+  promote = NBase
+
+instance Converter Integer NumBase where
+  promote = Value
+
+instance Converter Dice Base where
+  promote = DiceBase
+
+instance Converter Die Base where
+  promote d = promote $ Dice (promote (1 :: Integer)) d Nothing

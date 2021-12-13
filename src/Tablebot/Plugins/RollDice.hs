@@ -10,13 +10,13 @@
 module Tablebot.Plugins.RollDice (rollPlugin) where
 
 import Control.Monad.Writer (MonadIO (liftIO))
-import Data.List (intercalate)
 import Data.Maybe (fromMaybe)
-import Data.Text (Text, pack, replicate, unpack)
+import Data.Text (Text, intercalate, pack, replicate, unpack)
 import Discord.Types (Message (messageAuthor))
 import Tablebot.Plugin
 import Tablebot.Plugin.Dice
-import Tablebot.Plugin.Discord (sendMessage, toMention)
+import Tablebot.Plugin.Dice.DiceData
+import Tablebot.Plugin.Discord (Format (Code), formatInput, sendMessage, toMention)
 import Tablebot.Plugin.Parser (inlineCommandHelper)
 import Tablebot.Plugin.SmartCommand (PComm (parseComm), Quoted (Qu), pars)
 import Text.Megaparsec (MonadParsec (try), choice, (<?>))
@@ -25,26 +25,17 @@ import Text.RawString.QQ (r)
 rollDice' :: Maybe ListValues -> Maybe (Quoted Text) -> Message -> DatabaseDiscord ()
 rollDice' e' t m = do
   let e = fromMaybe defaultRoll e'
-  -- (v, s) <- liftIO $ evalExpr e
   (vs, ss) <- liftIO $ evalListValues e
-  -- let msg = toMention (messageAuthor m) <> " rolled" <> dsc <> s <> ".\nOutput: " <> pack (show v)
   sendMessage m (makeMsg vs ss e)
   where
     dsc = maybe ": " (\(Qu t') -> " \"" <> t' <> "\": ") t
     baseMsg = toMention (messageAuthor m) <> " rolled" <> dsc
-    makeLine (i, s) = unpack (pack ("`" ++ show i ++ "`") <> Data.Text.replicate (max 0 (6 - length (show i))) " " <> " ⟵ " <> s)
+    makeLine (i, s) = pack (formatInput Code $ show i) <> Data.Text.replicate (max 0 (6 - length (show i))) " " <> " ⟵ " <> s
     makeMsg [] _ _ = baseMsg <> "No output."
     makeMsg [v] [s] _ = baseMsg <> s <> ".\nOutput: " <> pack (show v)
-    makeMsg [v] _ e = baseMsg <> pack (prettyShow e) <> ".\nOutput: " <> pack (show v)
+    makeMsg [v] _ e = baseMsg <> formatInput Code (prettyShow e) <> ".\nOutput: " <> pack (show v)
     makeMsg vs [s] _ = baseMsg <> s <> ".\nOutput: " <> pack (show vs)
-    makeMsg vs ss _ = baseMsg <> "\n  " <> pack (intercalate "\n  " (makeLine <$> zip vs ss))
-
--- rollDiceParser :: Parser (Message -> DatabaseDiscord ())
--- rollDiceParser = do
---   e <- pars @(Maybe ListValues)
---   maybe (return ()) (const (skipSpace1 <|> eof)) e
---   t <- pars @(Maybe (Quoted Text))
---   return $ rollDice' e t
+    makeMsg vs ss e = baseMsg <> formatInput Code (prettyShow e) <> "\n  " <> intercalate "\n  " (makeLine <$> zip vs ss)
 
 rollDiceParser :: Parser (Message -> DatabaseDiscord ())
 rollDiceParser = choice (try <$> options)
@@ -75,10 +66,12 @@ rollHelpText :: Text
 rollHelpText =
   pack $
     [r|**Roll**
-Given an expression, evaluate the expression.
+Given an expression, evaluate the expression. Can roll inline using |]
+      ++ "`[|to roll|]`."
+      ++ [r|
 
 This supports addition, subtraction, multiplication, integer division, exponentiation, parentheses, dice of arbitrary size, dice with custom sides, rerolling dice once on a condition, rerolling dice indefinitely on a condition, keeping or dropping the highest or lowest dice, keeping or dropping dice based on a condition, and using functions like |]
-      ++ intercalate ", " (unpack <$> supportedFunctionsList)
+      ++ unpack (intercalate ", " supportedFunctionsList)
       ++ [r|.
 
 To see a full list of uses and options, please go to <https://github.com/WarwickTabletop/tablebot/blob/main/docs/Roll.md>.
@@ -90,11 +83,33 @@ To see a full list of uses and options, please go to <https://github.com/Warwick
   - `roll 5d10dl4` -> roll five d10s and drop the lowest four
 |]
 
+genchar :: Command
+genchar = Command "genchar" (snd $ head rpgSystems') (toCommand <$> rpgSystems')
+  where
+    doDiceRoll (nm, lv) = (nm, parseComm $ rollDice' (Just lv) (Just (Qu ("genchar for " <> nm))))
+    rpgSystems' = doDiceRoll <$> rpgSystems
+    toCommand (nm, ps) = Command nm ps []
+
+rpgSystems :: [(Text, ListValues)]
+rpgSystems =
+  [ ("dnd", MultipleValues (Value 6) (DiceBase (Dice (NBase (Value 6)) (Die (Value 6)) (Just (DieOpRecur (DieOpOptionKD Drop (Low (Value 1))) Nothing))))),
+    ("wfrp", MultipleValues (Value 8) (NBase (Paren (Add (promote (Value 20)) (promote (Die (Value 10)))))))
+  ]
+
+gencharHelp :: HelpPage
+gencharHelp =
+  HelpPage
+    "genchar"
+    "generate stat arrays for some systems"
+    ("**Genchar**\nCan be used to generate stat arrays for certain systems.\n\nCurrently supported systems: " <> intercalate ", " (fst <$> rpgSystems) <> ".\n\n*Usage:* `genchar`, `genchar dnd`")
+    []
+    None
+
 -- | @rollPlugin@ assembles the command into a plugin.
 rollPlugin :: Plugin
 rollPlugin =
   (plug "roll")
-    { commands = [rollDice, commandAlias "r" rollDice],
-      helpPages = [rollHelp],
+    { commands = [rollDice, commandAlias "r" rollDice, genchar],
+      helpPages = [rollHelp, gencharHelp],
       inlineCommands = [rollDiceInline]
     }

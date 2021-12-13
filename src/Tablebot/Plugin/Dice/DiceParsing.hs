@@ -56,10 +56,11 @@ instance CanParse Func where
   pars = do
     ( do
         funcName <- try (choice (string <$> supportedFunctionsList)) <?> "could not find function"
-        let ft = funcTypes ((supportedFunctions @IO) M.! funcName)
+        let fi = (supportedFunctions @IO) M.! funcName
+            ft = funcTypes fi
         es <- string "(" *> skipSpace *> parseCommaSeparated <* skipSpace <* string ")"
         es' <- checkTypes es ft (unpack funcName)
-        return $ Func (unpack funcName) es'
+        return $ Func fi es'
       )
       <|> NoFunc <$> pars
     where

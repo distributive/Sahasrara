@@ -1,7 +1,6 @@
 module Tablebot.Plugin.Dice.DiceFunctions
   ( supportedFunctionsList,
     supportedFunctions,
-    getFunc,
     FuncInfo (..),
     ListInteger (..),
     ArgTypes (..),
@@ -9,10 +8,9 @@ module Tablebot.Plugin.Dice.DiceFunctions
 where
 
 import Control.Monad.Exception (MonadException)
-import Data.Map as M (Map, findWithDefault, fromList, keys, map)
+import Data.Map as M (Map, fromList, keys)
 import Data.Maybe (fromJust)
 import Data.Text (Text, unpack)
-import Tablebot.Plugin.Discord (Format (..), formatText)
 import Tablebot.Plugin.Exception (BotException (EvaluationException), throwBot)
 
 -- | The limit to how big a factorial value is permitted. Notably, the factorial function doesn't operate above this limit.
@@ -42,20 +40,14 @@ supportedFunctions' =
     maximumFI = constructFuncInfo' "maximum" (maximum @[] @Integer) (Nothing, Nothing, const False)
     minimumFI = constructFuncInfo' "minimum" (minimum @[] @Integer) (Nothing, Nothing, const False)
 
--- | n > factorialLimit = throwBot $ EvaluationException ("tried to evaluate a factorial with input number greater than the limit (" ++ formatInput Code factorialLimit ++ "): `" ++ formatInput Code n ++ "`") []
-
 -- | The functions currently supported.
 supportedFunctionsList :: [Text]
 supportedFunctionsList = M.keys (supportedFunctions @IO)
 
----- | Functions that looks up the given function name in the map, and will either throw an
----- error or return the function (wrapped inside the given monad)
-getFunc :: MonadException m => Text -> [ListInteger] -> m Integer
-getFunc s is = do
-  fi <- M.findWithDefault (throwBot $ EvaluationException ("could not find function " ++ formatText Code (unpack s)) []) s (M.map (return . funcInfoFunc) supportedFunctions)
-  fi is
-
 data FuncInfo m = FuncInfo {funcInfoName :: Text, funcTypes :: [ArgTypes], funcInfoFunc :: MonadException m => [ListInteger] -> m Integer}
+
+instance Show (FuncInfo m) where
+  show (FuncInfo fin ft _) = "FuncInfo " <> unpack fin <> " " <> show ft
 
 constructFuncInfo :: (MonadException m, ApplyFunc m f) => Text -> f -> FuncInfo m
 constructFuncInfo s f = constructFuncInfo' s f (Nothing, Nothing, const False)
@@ -94,10 +86,6 @@ checkBounds i (ml, mh, bs)
   | not (maybe True (i <) mh) = throwBot $ EvaluationException ("value too high for function. expected <" <> show (fromJust mh) <> ", got " <> show i) []
   | bs i = throwBot $ EvaluationException ("invalid value for function: `" <> show i ++ "`") []
   | otherwise = return i
-
--- instance {-# OVERLAPPING #-} MonadException m => ApplyFunc m (m Integer) where
---   applyFunc f _ [] = f
---   applyFunc _ i _ = throwBot $ EvaluationException ("incorrect number of arguments to function. expected " <> show i <> ", got more than that") []
 
 instance {-# OVERLAPPING #-} ApplyFunc m Integer where
   applyFunc f _ _ [] = return f
