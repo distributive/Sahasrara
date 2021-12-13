@@ -17,9 +17,9 @@ import Discord.Types (Message (messageAuthor))
 import Tablebot.Plugin
 import Tablebot.Plugin.Dice
 import Tablebot.Plugin.Discord (sendMessage, toMention)
-import Tablebot.Plugin.Parser (inlineCommandHelper, skipSpace1)
-import Tablebot.Plugin.SmartCommand (Quoted (Qu), pars)
-import Text.Megaparsec (MonadParsec (eof), (<|>))
+import Tablebot.Plugin.Parser (inlineCommandHelper)
+import Tablebot.Plugin.SmartCommand (PComm (parseComm), Quoted (Qu), pars)
+import Text.Megaparsec ( (<?>), choice, MonadParsec(try) )
 import Text.RawString.QQ (r)
 
 rollDice' :: Maybe ListValues -> Maybe (Quoted Text) -> Message -> DatabaseDiscord ()
@@ -32,19 +32,29 @@ rollDice' e' t m = do
   where
     dsc = maybe ": " (\(Qu t') -> " \"" <> t' <> "\": ") t
     baseMsg = toMention (messageAuthor m) <> " rolled" <> dsc
-    makeLine (i,s) = unpack (pack ("`"++show i++"`") <> Data.Text.replicate (max 0 (6- length (show i)))  " " <> " ⟵ " <> s)
+    makeLine (i, s) = unpack (pack ("`" ++ show i ++ "`") <> Data.Text.replicate (max 0 (6 - length (show i))) " " <> " ⟵ " <> s)
     makeMsg [] _ _ = baseMsg <> "No output."
     makeMsg [v] [s] _ = baseMsg <> s <> ".\nOutput: " <> pack (show v)
-    makeMsg [v] _  e= baseMsg <> pack (prettyShow e) <> ".\nOutput: " <> pack (show v)
+    makeMsg [v] _ e = baseMsg <> pack (prettyShow e) <> ".\nOutput: " <> pack (show v)
     makeMsg vs [s] _ = baseMsg <> s <> ".\nOutput: " <> pack (show vs)
     makeMsg vs ss _ = baseMsg <> "\n  " <> pack (intercalate "\n  " (makeLine <$> zip vs ss))
 
+-- rollDiceParser :: Parser (Message -> DatabaseDiscord ())
+-- rollDiceParser = do
+--   e <- pars @(Maybe ListValues)
+--   maybe (return ()) (const (skipSpace1 <|> eof)) e
+--   t <- pars @(Maybe (Quoted Text))
+--   return $ rollDice' e t
+
 rollDiceParser :: Parser (Message -> DatabaseDiscord ())
-rollDiceParser = do
-  e <- pars @(Maybe ListValues)
-  maybe (return ()) (const (skipSpace1 <|> eof)) e
-  t <- pars @(Maybe (Quoted Text))
-  return $ rollDice' e t
+rollDiceParser = choice (try <$> options)
+  where
+    options =
+      [ parseComm (\lv -> rollDice' (Just lv) Nothing),
+        parseComm (rollDice' Nothing Nothing),
+        try (parseComm (\lv qt -> rollDice' (Just lv) (Just qt))) <?> "",
+        try (parseComm (rollDice' Nothing . Just)) <?> ""
+      ]
 
 rollDice :: Command
 rollDice = Command "roll" rollDiceParser []
@@ -68,7 +78,7 @@ rollHelpText =
 Given an expression, evaluate the expression.
 
 This supports addition, subtraction, multiplication, integer division, exponentiation, parentheses, dice of arbitrary size, dice with custom sides, rerolling dice once on a condition, rerolling dice indefinitely on a condition, keeping or dropping the highest or lowest dice, keeping or dropping dice based on a condition, and using functions like |]
-      ++ intercalate ", " supportedFunctionsList
+      ++ intercalate ", " (unpack <$> supportedFunctionsList)
       ++ [r|.
 
 To see a full list of uses and options, please go to <https://github.com/WarwickTabletop/tablebot/blob/main/docs/Roll.md>.

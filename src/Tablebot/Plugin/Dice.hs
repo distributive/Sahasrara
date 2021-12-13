@@ -14,11 +14,10 @@ module Tablebot.Plugin.Dice where
 
 import Control.Monad (when)
 import Control.Monad.Exception (MonadException)
-import Data.Bifunctor (Bifunctor (first))
 import Data.Functor (($>), (<&>))
 import Data.List (genericDrop, genericReplicate, genericTake, intercalate, sortBy)
 import Data.List.NonEmpty as NE (NonEmpty ((:|)), fromList, head, tail, (<|))
-import Data.Map as M (Map, findWithDefault, fromList, keys, map)
+import Data.Map as M (Map, findWithDefault, fromList, keys, map, (!))
 import Data.Maybe (fromJust, fromMaybe, isNothing)
 import Data.Set as S (Set, fromList, map)
 import Data.String (IsString (fromString))
@@ -34,7 +33,7 @@ import Tablebot.Plugin.Types (Parser)
 import Text.Megaparsec (MonadParsec (try), choice, failure, many, optional, (<?>), (<|>))
 import Text.Megaparsec.Char (char, string)
 import Text.Megaparsec.Error (ErrorItem (Tokens))
-import Data.Bifunctor
+import Data.Bifunctor ( Bifunctor(second, first) )
 
 failure' :: Text -> Set Text -> Parser a
 failure' s ss = failure (Just $ Tokens $ NE.fromList $ unpack s) (S.map (Tokens . NE.fromList . unpack) ss)
@@ -181,11 +180,12 @@ data KeepDrop = Keep | Drop deriving (Show, Eq)
 -- Mappings for what functions are supported
 
 -- | Mapping from function names to the functions themselves.
-supportedFunctions :: MonadException m => Map String (FuncInfo m)
+supportedFunctions :: MonadException m => Map Text (FuncInfo m)
 supportedFunctions = M.fromList $ fmap (\fi -> (funcInfoName fi, fi)) supportedFunctions'
 
 supportedFunctions' :: MonadException m => [FuncInfo m]
 supportedFunctions' =
+  sumFI : maximumFI: minimumFI:
   constructFuncInfo' "mod" (mod @Integer) (Nothing, Nothing, (== 0)) :
   constructFuncInfo' "fact" fact (Nothing, Just factorialLimit, const False) : (uncurry constructFuncInfo <$> [("abs", abs @Integer), ("id", id), ("neg", negate)])
   where
@@ -194,44 +194,52 @@ supportedFunctions' =
       | n == 0 = 1
       | n > factorialLimit = fact factorialLimit
       | otherwise = n * fact (n - 1)
+    sumFI = constructFuncInfo' "sum" (sum @[] @Integer) (Nothing, Nothing, const False)
+    maximumFI = constructFuncInfo' "maximum" (maximum @[] @Integer) (Nothing, Nothing, const False)
+    minimumFI = constructFuncInfo' "minimum" (minimum @[] @Integer) (Nothing, Nothing, const False)
 
 -- | n > factorialLimit = throwBot $ EvaluationException ("tried to evaluate a factorial with input number greater than the limit (" ++ formatInput Code factorialLimit ++ "): `" ++ formatInput Code n ++ "`") []
 
 -- | The functions currently supported.
-supportedFunctionsList :: [String]
+supportedFunctionsList :: [Text]
 supportedFunctionsList = M.keys (supportedFunctions @IO)
 
 ---- | Functions that looks up the given function name in the map, and will either throw an
 ---- error or return the function (wrapped inside the given monad)
-getFunc :: MonadException m => String -> [ListInteger] -> m Integer
+getFunc :: MonadException m => Text -> [ListInteger] -> m Integer
 getFunc s is = do
-  fi <- M.findWithDefault (throwBot $ EvaluationException ("could not find function " ++ formatText Code s) []) s (M.map (return . funcInfoFunc) supportedFunctions)
+  fi <- M.findWithDefault (throwBot $ EvaluationException ("could not find function " ++ formatText Code (unpack s)) []) s (M.map (return . funcInfoFunc) supportedFunctions)
   fi is
 
-data FuncInfo m = FuncInfo {funcInfoName :: String, funcInfoArgs :: Integer, funcInfoFunc :: MonadException m => [ListInteger] -> m Integer}
+data FuncInfo m = FuncInfo {funcInfoName :: Text, funcTypes :: [ArgTypes], funcInfoFunc :: MonadException m => [ListInteger] -> m Integer}
 
-constructFuncInfo :: (MonadException m, ApplyFunc m f) => String -> f -> FuncInfo m
+constructFuncInfo :: (MonadException m, ApplyFunc m f) => Text -> f -> FuncInfo m
 constructFuncInfo s f = constructFuncInfo' s f (Nothing, Nothing, const False)
 
-constructFuncInfo' :: (MonadException m, ApplyFunc m f) => String -> f -> (Maybe Integer, Maybe Integer, Integer -> Bool) -> FuncInfo m
-constructFuncInfo' s f bs = FuncInfo s args (applyFunc f args bs)
+constructFuncInfo' :: (MonadException m, ApplyFunc m f) => Text -> f -> (Maybe Integer, Maybe Integer, Integer -> Bool) -> FuncInfo m
+constructFuncInfo' s f bs = FuncInfo s types (applyFunc f (fromIntegral (length types)) bs)
   where
-    args = getArgs f
+    types = init $ getTypes f
 
 data ListInteger = LIInteger Integer | LIList [Integer]
   deriving (Show, Eq, Ord)
 
+data ArgTypes = ATInteger | ATIntegerList
+  deriving (Show, Eq)
+
 class ArgCount f where
   getArgs :: f -> Integer
+  getArgs = ( + (- 1)) . fromIntegral . length . getTypes
+  getTypes :: f -> [ArgTypes]
 
 instance ArgCount Integer where
-  getArgs _ = 0
+  getTypes _ = [ATInteger]
 
 instance ArgCount f => ArgCount (Integer -> f) where
-  getArgs f = 1 + getArgs (f 1)
+  getTypes f = ATInteger : getTypes (f 1)
 
 instance ArgCount f => ArgCount ([Integer] -> f) where
-  getArgs f = 1 + getArgs (f [])
+  getTypes f = ATIntegerList : getTypes (f [])
 
 class ArgCount f => ApplyFunc m f where
   applyFunc :: (MonadException m) => f -> Integer -> (Maybe Integer, Maybe Integer, Integer -> Bool) -> [ListInteger] -> m Integer
@@ -553,8 +561,8 @@ instance IOEval Func where
   --       return (f, "fact" ++ " " ++ neg's, rngCount')
   evalShow' rngCount (Func s exprs) = do
     (exprs', _, rngCount') <- evalShowList'' evalShowListValues rngCount exprs
-    f <- getFunc s exprs'
-    return (f, s ++ " (" ++ intercalate ", " (prettyShow <$> exprs) ++ ")", rngCount')
+    f <- getFunc (pack s) exprs'
+    return (f, s ++ "(" ++ intercalate ", " (prettyShow <$> exprs) ++ ")", rngCount')
   evalShow' rngCount (NoFunc b) = evalShow rngCount b
 
 instance IOEval Negation where
@@ -655,7 +663,8 @@ instance CanParse ListValues where
                       nb <- pars
                       _ <- char '#'
                       MultipleValues nb <$> pars
-                ) <|> NoList <$> pars <?> "could not parse list values value"
+                ) <|> NoList <$> pars
+                --  <?> "could not parse list values value"
 
 binOpParseHelp :: (CanParse a) => Char -> (a -> a) -> Parser a
 binOpParseHelp c con = try (skipSpace *> char c) *> skipSpace *> (con <$> pars)
@@ -674,11 +683,24 @@ instance CanParse Func where
   pars = do
     -- funcName <- pack <$> word
     ( do
-        funcName <- try (choice (string . pack <$> supportedFunctionsList)) <?> "could not find function"
+        funcName <- try (choice (string <$> supportedFunctionsList)) <?> "could not find function"
+        let ft = funcTypes ((supportedFunctions @IO) M.! funcName)
         es <- string "(" *> skipSpace *> parseCommaSeparated <* skipSpace <* string ")"
-        return $ Func (unpack funcName) es
+        es' <- checkTypes es ft (unpack funcName)
+        return $ Func (unpack funcName) es'
       )
       <|> NoFunc <$> pars
+    where
+      matchType (NoList _,ATInteger) = True
+      matchType (LVList _,ATIntegerList) = True
+      matchType (MultipleValues _ _,ATIntegerList) = True
+      matchType _ = False
+      checkTypes es ft fname
+        | length es > length ft = fail $ "too many values given to function " ++ fname
+        | length ft > length es = fail $ "too few values given to function " ++ fname
+        | length matched /= length es = fail $ "type mismatch in parameters to function " ++ fname ++ ", in parameter " ++ show (length matched)
+        | otherwise = return es
+        where matched = takeWhile matchType (zip es ft)
 
 -- t <- pars
 -- matchFuncName funcName t
@@ -701,32 +723,29 @@ instance CanParse Expo where
 
 instance CanParse NumBase where
   pars =
-    ( (try (skipSpace *> char '(') *> skipSpace *> (Paren . unnest <$> pars) <* skipSpace <* char ')')
+    (try (skipSpace *> char '(') *> skipSpace *> (Paren . unnest <$> pars) <* skipSpace <* char ')')
         <|> try (Value <$> integer)
-    )
-      <?> "could not parse numBase (parentheses, an integer)"
+      -- <?> "could not parse numBase (parentheses, an integer)"
     where
       unnest (NoExpr (NoTerm (NoNeg (NoExpo (NoFunc (NBase (Paren e))))))) = e
       unnest e = e
 
 instance CanParse Base where
-  pars =
-    (try (DiceBase <$> pars) <|> try (NBase <$> pars))
-      <?> "could not match a base token (dice, parentheses, an integer)"
+  pars = try (DiceBase <$> pars) <|> try (NBase <$> pars)
+      -- <?> "could not match a base token (dice, parentheses, an integer)"
 
 instance CanParse Die where
   pars = do
     _ <- char 'd'
     lazyFunc <- (try (char '!') $> LazyDie) <|> return id
-    ( try (lazyFunc . Die <$> pars)
+    try (lazyFunc . Die <$> pars)
         <|> lazyFunc . CustomDie
           <$> ( try (char '{' *> skipSpace)
                   *> parseCommaSeparated1
                   <* skipSpace
                   <* char '}'
               )
-      )
-      <?> "recursed to die expression and could not find a die"
+      -- <?> "recursed to die expression and could not find a die"
 
 -- * > (pars >>= (\i -> (i :) <$> many (try (skipSpace *> char ',' *> skipSpace) *> pars)))
 
