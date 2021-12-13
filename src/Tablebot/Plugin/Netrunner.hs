@@ -58,6 +58,14 @@ cardToImage api card = do
   code <- Card.code card
   return $ CreateEmbedImageUrl $ replace "{code}" code $ imageTemplate api
 
+-- | @cardToTitle@ takes a Netrunner card and attempts to get its title, adding
+-- a uniqueness icon if the card is unique.
+cardToTitle :: Card -> Text
+cardToTitle card =
+  let unique = if fromMaybe False (uniqueness card) then "◆ " else ""
+      cardTitle = unpack $ fromMaybe "?" $ title card
+  in pack $ unique ++ cardTitle
+
 -- | @cardToSubtitle@ generates the first line of a card's embed text listing
 -- its types, subtypes, and various other data points.
 cardToSubtitle :: NrApi -> Card -> Text
@@ -196,7 +204,7 @@ cardToColour api card = fromMaybe Default helper
 -- representing it.
 cardToEmbed :: NrApi -> Card -> Embed
 cardToEmbed api card =
-  let eTitle = fromMaybe "?" $ title card
+  let eTitle = cardToTitle card
       eURL = cardToLink card
       sub = unpack $ cardToSubtitle api card
       desc = unpack $ formatText $ fromMaybe "" $ text card

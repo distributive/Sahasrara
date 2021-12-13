@@ -14,7 +14,7 @@ import Data.Char (isDigit, isLetter, isSpace)
 import Data.Functor (($>))
 import Tablebot.Plugin (Parser)
 import Text.Megaparsec
-import Text.Megaparsec.Char (char, alphaNumChar)
+import Text.Megaparsec.Char (char)
 
 space :: Parser ()
 space = satisfy isSpace $> ()
@@ -84,11 +84,21 @@ discordUser = do
 
 -- | @netrunnerQuery@ gets an inline Netrunner search query.
 -- This means that it matches @{{card title}}@.
-netrunnerQuery :: Parser String
-netrunnerQuery = between (chunk "{{") (chunk "}}") $ some (alphaNumChar)
+netrunnerQuery :: Parser [String]
+netrunnerQuery = many $ try $ skipManyTill anySingle query
+  where
+    query :: Parser String
+    query = do
+      _ <- chunk "{{"
+      cs <- some $ anySingleBut '}'
+      _ <- chunk "}}"
+      return cs
 
+-- | @netrunnerCustom@ gets a set of key/value pairs of Netrunner card data for
+-- generating custom cards.
+-- It matches @key:value key:"val ue" key:value ...@
 netrunnerCustom :: Parser [(String, String)]
-netrunnerCustom = many (try $ skipManyTill anySingle pair)
+netrunnerCustom = many $ try $ skipManyTill anySingle pair
   where
     pair :: Parser (String, String)
     pair = do
