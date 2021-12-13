@@ -49,7 +49,7 @@ getNrApi = do
   packRes <- httpLBS packReq
   let packData = fromRight defaultPacks ((eitherDecode $ responseBody packRes) :: Either String Packs)
   return $ NrApi
-    { cards = Card.content cardData,
+    { cards = reverse $ Card.content cardData, -- Reversing the list of cards prioritises newer cards in the search
       cycles = Cycle.content cycleData,
       factions = Faction.content factionData,
       packs = Pack.content packData,

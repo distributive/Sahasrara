@@ -11,37 +11,30 @@
 -- The backend functionality of the Netrunner commands.
 module Tablebot.Plugin.Netrunner (cardToEmbed, queryCard) where
 
-import Data.Char (toLower, toUpper)
+import Data.Char (toUpper)
 import Data.List (minimumBy)
 import Data.Maybe (fromMaybe)
-import Data.Text (Text, pack, unpack, replace)
+import Data.Text (Text, pack, unpack, replace, toLower)
 import Discord.Types
 import Tablebot.Plugin.Embed (addColour)
+import Tablebot.Plugin.Fuzzy (FuzzyCosts (..), closestValueWithCosts)
 import Tablebot.Plugin.Netrunner.NrApi (NrApi (..))
 import Tablebot.Plugin.Netrunner.Card as Card
 import Tablebot.Plugin.Netrunner.Cycle as Cycle
 import Tablebot.Plugin.Netrunner.Faction as Faction
 import Tablebot.Plugin.Netrunner.Pack as Pack
 import Tablebot.Plugin.Types (DiscordColour (Default), hexToDiscordColour)
-import Text.EditDistance -- TODO - replace with Fuzzy plugin
 
 -- | @queryCard@ fuzzy searches the given library of cards by title.
 queryCard :: NrApi -> String -> Maybe Card
-queryCard api query = Just $ minimumBy comparison $ reverse $ cards api
+queryCard api = Just . closestValueWithCosts editCosts pairs
   where
-    comparison :: Card -> Card -> Ordering
-    comparison a b
-      | score a < score b = LT
-      | score a > score b = GT
-      | otherwise = EQ
-    score card = case Card.title card of
-      Nothing -> maxBound
-      Just title -> levenshteinDistance editCosts (map toLower query) $ map toLower $ unpack title
-    editCosts = EditCosts {
-      deletionCosts = ConstantCost 10,
-      insertionCosts = ConstantCost 2,
-      substitutionCosts = ConstantCost 10,
-      transpositionCosts = ConstantCost 1
+    pairs = zip (map (unpack . toLower . (fromMaybe "") . Card.title) $ cards api) $ cards api
+    editCosts = FuzzyCosts {
+      deletion = 10,
+      insertion = 2,
+      substitution = 10,
+      transposition = 1
     }
 
 -- | @cardToLink@ takes a Netrunner card and generates a link to its NetrunnerDB
@@ -140,7 +133,7 @@ cardToSubtitle card =
         Just x -> " • Link: " ++ show x
 
 -- | @formatText@ takes a card's raw description and replaces the html
--- formatting tags with Discord formatting.
+-- formatting tags with Discord formatting. TODO: unhardcode the emoji
 formatText :: Text -> Text
 formatText raw =
   replace "<strong>" "**" $
@@ -149,13 +142,17 @@ formatText raw =
   replace "</em>" "*" $
   replace "<trace>" "**" $
   replace "</trace>" "**" $
-  replace "[recurring-credit]" "⤼" $
-  replace "[subroutine]" "↳" $
-  replace "[credit]" "⬡" $
-  replace "[click]" "∅" $
-  replace "[trash]" "" $
-  replace "[link]" "" $
-  replace "[mu]" "μ" $
+  replace "[credit]" "<:credit:920005658873581568>" $
+  replace "[click]" "<:click:920005659142029332>" $
+  replace "[recurring-credit]" "<:recurring_credit:920005659045548032>" $
+  replace "[subroutine]" "<:subroutine:920005658865180674>" $
+  replace "[trash]" "<:trash:920005659280433152>" $
+  replace "[link]" "<:link:920005658638712833>" $
+  replace "[mu]" "<:mu:920005658651279401>" $
+  replace "[haas-bioroid]" "<:hb:920007442681704539>" $
+  replace "[jinteki]" "<:jinteki:920007443000459354>" $
+  replace "[nbn]" "<:nbn:920007442669133825>" $
+  replace "[weyland-consortium]" "<:weyland:920007443331842079>" $
   raw
 
 -- | @cardToFaction@ takes a card and attempts to find its faction.
