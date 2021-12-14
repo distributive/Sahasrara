@@ -17,7 +17,7 @@ import Data.Map as M (findWithDefault)
 import Data.Maybe (fromMaybe, isNothing)
 import Data.String (IsString (fromString))
 import Data.Text (Text, intercalate, pack, unpack)
-import Data.Text qualified as T
+import qualified Data.Text as T
 import System.Random (randomRIO)
 import Tablebot.Plugin.Dice.DiceData
 import Tablebot.Plugin.Dice.DiceFunctions (FuncInfoBase (..), ListInteger (..))
@@ -100,7 +100,7 @@ evalShowList'' customEvalShow rngCount = foldr foldF (return ([], rngCount))
       (i, s, rngCountTemp) <- customEvalShow rngCountTotal a
       return ((i, s) : diceSoFar, rngCountTemp)
 
--- | This type class evaluates an item and returns a 
+-- | This type class evaluates an item and returns a
 class IOEvalList a where
   evalShowL :: PrettyShow a => RNGCount -> a -> IO (ListInteger, Maybe Text, RNGCount)
   evalShowL rngCount a = catchBot (evalShowL' rngCount a) handleException
@@ -113,7 +113,7 @@ class IOEvalList a where
   evalShowL' :: PrettyShow a => RNGCount -> a -> IO (ListInteger, Maybe Text, RNGCount)
 
 instance {-# OVERLAPPABLE #-} IOEval a => IOEvalList a where
-  evalShowL' rngCount a = evalShow rngCount a >>= \(i,t,rc) -> return (LIInteger i, Just t, rc)
+  evalShowL' rngCount a = evalShow rngCount a >>= \(i, t, rc) -> return (LIInteger i, Just t, rc)
 
 instance IOEvalList ListValues where
   evalShowL' rngCount (NoList expr) = evalShowL rngCount expr
