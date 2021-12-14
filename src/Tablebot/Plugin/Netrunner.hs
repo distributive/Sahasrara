@@ -11,26 +11,24 @@
 -- The backend functionality of the Netrunner commands.
 module Tablebot.Plugin.Netrunner (cardToEmbed, cardToImgEmbed, cardToFlavourEmbed, queryCard) where
 
-import Data.Char (toUpper)
-import Data.List (minimumBy)
 import Data.Maybe (fromMaybe)
-import Data.Text (Text, pack, replace, toLower, toTitle, unpack)
+import Data.Text (Text, replace, toLower, toTitle, unpack)
 import Discord.Types
 import Tablebot.Plugin.Embed (addColour)
 import Tablebot.Plugin.Fuzzy (FuzzyCosts (..), closestValueWithCosts)
-import Tablebot.Plugin.Netrunner.Card as Card
-import Tablebot.Plugin.Netrunner.Cycle as Cycle
-import Tablebot.Plugin.Netrunner.Faction as Faction
+import Tablebot.Plugin.Netrunner.Card as Card (Card (..))
+import Tablebot.Plugin.Netrunner.Cycle as Cycle (Cycle (..))
+import Tablebot.Plugin.Netrunner.Faction as Faction (Faction (..))
 import Tablebot.Plugin.Netrunner.NrApi (NrApi (..))
-import Tablebot.Plugin.Netrunner.Pack as Pack
+import Tablebot.Plugin.Netrunner.Pack as Pack (Pack (..))
 import Tablebot.Plugin.Types (DiscordColour (Default), hexToDiscordColour)
 import Tablebot.Plugin.Utils (intToText)
 
 -- | @queryCard@ fuzzy searches the given library of cards by title.
 queryCard :: NrApi -> Text -> Card
-queryCard api = closestValueWithCosts editCosts pairs . unpack
+queryCard NrApi {cards = cards} = closestValueWithCosts editCosts pairs . unpack
   where
-    pairs = zip (map (unpack . toLower . (fromMaybe "") . Card.title) $ cards api) $ cards api
+    pairs = zip (map (unpack . toLower . fromMaybe "" . Card.title) cards) cards
     editCosts =
       FuzzyCosts
         { deletion = 10,
@@ -39,25 +37,28 @@ queryCard api = closestValueWithCosts editCosts pairs . unpack
           transposition = 1
         }
 
+-- | Utility function to prepend a given Text to Text within a Maybe, or return the empty
+-- Text.
+maybeEmptyPrepend :: Text -> Maybe Text -> Text
+maybeEmptyPrepend s = maybe "" (s <>)
+
 -- | @cardToLink@ takes a Netrunner card and generates a link to its NetrunnerDB
 -- page.
 cardToLink :: Card -> Text
-cardToLink card = case Card.code card of
-  Nothing -> ""
-  Just code -> "https://netrunnerdb.com/en/card/" <> code
+cardToLink card = maybeEmptyPrepend "https://netrunnerdb.com/en/card/" (Card.code card)
 
 -- | @cardToImage@ takes a Netrunner card and generates an embed image of the
 -- card.
 cardToImage :: NrApi -> Card -> Maybe CreateEmbedImage
 cardToImage api card = do
-  code <- Card.code card
-  return $ CreateEmbedImageUrl $ replace "{code}" code $ imageTemplate api
+  code' <- Card.code card
+  return $ CreateEmbedImageUrl $ replace "{code}" code' $ imageTemplate api
 
 -- | @cardToTitle@ takes a Netrunner card and attempts to get its title, adding
 -- a uniqueness icon if the card is unique.
 cardToTitle :: Card -> Text
 cardToTitle card =
-  let unique = if fromMaybe False (uniqueness card) then "◆ " else ""
+  let unique = if Just True == uniqueness card then "◆ " else ""
       cardTitle = fromMaybe "?" $ title card
    in unique <> cardTitle
 
@@ -72,12 +73,12 @@ cardToText card =
 -- | @cardToSubtitle@ generates the first line of a card's embed text listing
 -- its types, subtypes, and various other data points.
 cardToSubtitle :: Card -> Text
-cardToSubtitle card =
+cardToSubtitle Card {..} =
   "**"
-    <> type_code
-    <> keywords
-    <> cost
-    <> strength
+    <> type_code'
+    <> keywords'
+    <> cost'
+    <> strength'
     <> agendaStats
     <> trash
     <> influence
@@ -85,59 +86,43 @@ cardToSubtitle card =
     <> link
     <> "**\n"
   where
-    type_code :: Text
-    type_code = toTitle $ fromMaybe "?" $ Card.type_code card
-    keywords :: Text
-    keywords = case Card.keywords card of
-      Nothing -> ""
-      Just t -> ": " <> t
-    cost :: Text
-    cost =
+    maybeIntToText = maybe "?" intToText
+    maybeEmptyPrependI s mi = maybeEmptyPrepend s (intToText <$> mi)
+    type_code' = maybe "?" toTitle type_code
+    keywords' = maybeEmptyPrepend ": " keywords
+    cost' =
       let rezText = " • Rez: "
-       in case (Card.cost card, Card.type_code card) of
+       in case (cost, type_code) of
             (Nothing, _) -> ""
             (Just x, Just "asset") -> rezText <> intToText x
             (Just x, Just "ice") -> rezText <> intToText x
             (Just x, Just "upgrade") -> rezText <> intToText x
             (Just x, _) -> " • Cost: " <> intToText x
-    strength :: Text
-    strength = case Card.strength card of
-      Nothing -> ""
-      Just x -> " • Strength: " <> intToText x
-    agendaStats :: Text
+    strength' = maybeEmptyPrependI " • Strength: " strength
     agendaStats =
-      let adv = fromMaybe "?" $ intToText <$> Card.advancement_cost card
-          points = fromMaybe "?" $ intToText <$> Card.agenda_points card
-       in case Card.type_code card of
+      let adv = maybeIntToText advancement_cost
+          points = maybeIntToText agenda_points
+       in case type_code of
             Just "agenda" -> " • " <> adv <> "/" <> points
             _ -> ""
-    trash :: Text
-    trash = case Card.trash_cost card of
-      Nothing -> ""
-      Just x -> " • Trash: " <> intToText x
-    influence :: Text
-    influence = case Card.faction_cost card of
+    trash = maybeEmptyPrependI " • Trash: " trash_cost
+    influence = case faction_cost of
       Nothing -> ""
       Just x ->
-        if x == 0 && (fromMaybe "" $ Card.type_code card) `elem` ["agenda", "identity"]
+        if x == 0 && fromMaybe "" type_code `elem` ["agenda", "identity"]
           then ""
           else " • Influence: " <> intToText x
-    deckbuilding :: Text
-    deckbuilding = case Card.type_code card of
-      Just "identity" -> " • " <> ((fromMaybe "?") $ intToText <$> Card.minimum_deck_size card) <> "/" <> ((fromMaybe "?") $ intToText <$> Card.influence_limit card)
+    deckbuilding = case type_code of
+      Just "identity" -> " • " <> maybeIntToText minimum_deck_size <> "/" <> maybeIntToText influence_limit
       Nothing -> ""
       _ -> ""
-    link :: Text
-    link = case Card.base_link card of
-      Nothing -> ""
-      Just x -> " • Link: " <> intToText x
+    link = maybeEmptyPrependI " • Link: " base_link
 
 -- | @formatText@ takes a card's raw description and replaces the html
 -- formatting tags with Discord formatting. TODO: unhardcode the emoji
 formatText :: Text -> Text
-formatText raw = foldr (\(f, r) -> replace f r) raw pairs
+formatText raw = foldr (uncurry replace) raw pairs
   where
-    pairs :: [(Text, Text)]
     pairs =
       [ ("<strong>", "**"),
         ("</strong>", "**"),
@@ -203,23 +188,16 @@ cardToReleaseData api card = fromMaybe "" helper
             if Pack.name p == Cycle.name c
               then Pack.name p
               else Cycle.name c <> rotation <> " • " <> Pack.name p
-      let position = fromMaybe "" $ (\t -> " #" <> intToText t) <$> Card.position card
+      let position = maybe "" (\t -> " #" <> intToText t) (Card.position card)
       return $ faction <> " • " <> expansion <> position
 
 -- | @cardToColour@ gets the factional colour of a card to use in its embed.
 cardToColour :: NrApi -> Card -> DiscordColour
-cardToColour api card = fromMaybe Default helper
-  where
-    helper :: Maybe DiscordColour
-    helper = do
-      f <- cardToFaction api card
-      return $ hexToDiscordColour $ unpack $ Faction.color f
+cardToColour api card = maybe Default (hexToDiscordColour . unpack . Faction.color) (cardToFaction api card)
 
 -- | @cardToFlavour@ gets a cards flavour text (and makes it italic).
 cardToFlavour :: Card -> Text
-cardToFlavour card = case flavor card of
-  Nothing -> ""
-  Just f -> "*" <> f <> "*"
+cardToFlavour card = maybe "" (\f -> "*" <> f <> "*") (Card.flavor card)
 
 -- | @cardToLink@ takes a Netrunner card and generates an embed message
 -- representing it.

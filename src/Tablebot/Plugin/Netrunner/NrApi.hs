@@ -9,7 +9,7 @@
 -- Handles the representation of all Netrunner data in Tablebot.
 module Tablebot.Plugin.Netrunner.NrApi (NrApi (..), getNrApi) where
 
-import Data.Aeson (FromJSON, Value (Object), eitherDecode, parseJSON)
+import Data.Aeson (eitherDecode)
 import Data.Either (fromRight)
 import Data.Text (Text)
 import GHC.Generics (Generic)
