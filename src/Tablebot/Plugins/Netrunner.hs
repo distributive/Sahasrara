@@ -232,7 +232,8 @@ If you mispell a card parameter (e.g. "typ" instead of "type") it will attempt t
     None
 
 beginnerText :: Text
-beginnerText = [r|<:agenda:920005658722570300> **NETRUNNER** <:rez_cost:920005659255242832>
+beginnerText =
+  [r|<:agenda:920005658722570300> **NETRUNNER** <:rez_cost:920005659255242832>
 Netrunner is an asymmetric collectable card game about hackers hacking corporations. It's run as a *free* community endeavour by NISEI:
 <:subroutine:920005658865180674> <https://nisei.net/>
 
