@@ -127,3 +127,14 @@ inlineCommandHelper open close p action =
     )
   where
     maxInlineCommands = 3
+
+-- | Parse 0 or more comma separated values.
+parseCommaSeparated :: Parser a -> Parser [a]
+parseCommaSeparated p = do
+  f <- optional $ try p
+  maybe (return []) (\first' -> (first' :) <$> many (try (skipSpace *> char ',' *> skipSpace) *> p)) f
+
+-- | Parse 1 or more comma separated values.
+parseCommaSeparated1 :: Parser a -> Parser [a]
+parseCommaSeparated1 p = do
+  p >>= (\first' -> (first' :) <$> many (try (skipSpace *> char ',' *> skipSpace) *> p))

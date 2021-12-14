@@ -24,23 +24,23 @@ import Tablebot.Plugin.Dice.DiceFunctions (supportedFunctionsList)
 import Tablebot.Plugin.Dice.DiceParsing ()
 
 {-
-if there is a gap between terms, any number of spaces (including none) is valid, barring in die, dopr, and ords
+if there is a gap between terms, any number of spaces (including none) is valid, barring in lstv, func, dice, die, dopr, ords; spaces are added manually in those.
 
+lstv - expr | "{" spcs expr ("," spcs expr spcs)* spcs "}" | nbse "#" base
 expr - term ([+-] expr)?
-term - func ([*/] term)?
-func - {some string identifier}? " " nega
+term - nega ([*/] term)?
 nega - "-" expo | expo
-expo - base "^" expo | base
+expo - func "^" expo | func
+func - {some string identifier} "(" spcs (lstv (spcs "," spcs lstv)*)? spcs ")" | base
 base - dice | nbse
 nbse - "(" expr ")" | [0-9]+
 dice - base die dopr?
-die  - "d" "!"? (bse | "{" expr (", " expr)* "}")
+die  - "d" "!"? (bse | "{" spcs expr (spcs ", " spcs expr)* spcs "}")
 dopr - "!"? (("rr" | "ro") ords | ("k"|"d") (("l" | "h") nbse | "w" ords))
 ords - ("/=" | "<=" | ">=" | "<" | "=" | ">") nbase
+spcs - " "*
 -}
 
 -- | The default expression to evaluate if no expression is given.
 defaultRoll :: ListValues
 defaultRoll = promote (Die (Value 20))
-
--- TODO: full check over of bounds. make this thing AIR TIGHT.

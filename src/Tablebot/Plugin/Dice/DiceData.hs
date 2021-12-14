@@ -1,6 +1,6 @@
 -- |
 -- Module      : Tablebot.Plugin.DiceData
--- Description : Data structures for dice and other expressions, and how to parse them.
+-- Description : Data structures for dice and other expressions.
 -- License     : MIT
 -- Maintainer  : tagarople@gmail.com
 -- Stability   : experimental
@@ -55,9 +55,6 @@ data NumBase = Paren Expr | Value Integer
 -- | The type representing a numeric base value value or a dice value.
 data Base = NBase NumBase | DiceBase Dice
   deriving (Show)
-
-fromIntegerToExpr :: Integer -> Expr
-fromIntegerToExpr = NoExpr . NoTerm . NoNeg . NoExpo . NoFunc . NBase . Value
 
 -- Dice Operations after this point
 
@@ -125,7 +122,9 @@ isLow _ = False
 -- | Utility value for whether to keep or drop values.
 data KeepDrop = Keep | Drop deriving (Show, Eq)
 
+-- | Utility type class for quickly promoting values
 class Converter a b where
+  -- | Function that promotes an element of type `a` to an element of type `b`.
   promote :: a -> b
 
 instance (Converter a Expr) => Converter a ListValues where

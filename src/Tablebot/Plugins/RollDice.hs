@@ -22,6 +22,8 @@ import Tablebot.Plugin.SmartCommand (PComm (parseComm), Quoted (Qu), pars)
 import Text.Megaparsec (MonadParsec (try), choice, (<?>))
 import Text.RawString.QQ (r)
 
+-- | The basic execution function for rolling dice. Both the expression and message are
+-- optional. If the expression is not given, then the default roll is used.
 rollDice' :: Maybe ListValues -> Maybe (Quoted Text) -> Message -> DatabaseDiscord ()
 rollDice' e' t m = do
   let e = fromMaybe defaultRoll e'
@@ -37,6 +39,8 @@ rollDice' e' t m = do
     makeMsg vs [s] _ = baseMsg <> s <> ".\nOutput: " <> pack (show vs)
     makeMsg vs ss e = baseMsg <> formatInput Code (prettyShow e) <> "\n  " <> intercalate "\n  " (makeLine <$> zip vs ss)
 
+-- | Manually creating parser for this command, since SmartCommand doesn't work fully for
+-- multiple Maybe values
 rollDiceParser :: Parser (Message -> DatabaseDiscord ())
 rollDiceParser = choice (try <$> options)
   where
@@ -47,12 +51,15 @@ rollDiceParser = choice (try <$> options)
         try (parseComm (rollDice' Nothing . Just)) <?> ""
       ]
 
+-- | Basic command for rolling dice.
 rollDice :: Command
 rollDice = Command "roll" rollDiceParser []
 
+-- | Rolling dice inline.
 rollDiceInline :: InlineCommand
 rollDiceInline = inlineCommandHelper "[|" "|]" pars (\e m -> rollDice' (Just e) Nothing m)
 
+-- | Help page for rolling dice, with a link to the help page.
 rollHelp :: HelpPage
 rollHelp =
   HelpPage
@@ -62,6 +69,7 @@ rollHelp =
     []
     None
 
+-- | A large chunk of help text for the roll command.
 rollHelpText :: Text
 rollHelpText =
   pack $
@@ -83,6 +91,7 @@ To see a full list of uses and options, please go to <https://github.com/Warwick
   - `roll 5d10dl4` -> roll five d10s and drop the lowest four
 |]
 
+-- | Command for generating characters.
 genchar :: Command
 genchar = Command "genchar" (snd $ head rpgSystems') (toCommand <$> rpgSystems')
   where
@@ -90,12 +99,14 @@ genchar = Command "genchar" (snd $ head rpgSystems') (toCommand <$> rpgSystems')
     rpgSystems' = doDiceRoll <$> rpgSystems
     toCommand (nm, ps) = Command nm ps []
 
+-- | List of supported genchar systems and the dice used to roll for them
 rpgSystems :: [(Text, ListValues)]
 rpgSystems =
-  [ ("dnd", MultipleValues (Value 6) (DiceBase (Dice (NBase (Value 6)) (Die (Value 6)) (Just (DieOpRecur (DieOpOptionKD Drop (Low (Value 1))) Nothing))))),
+  [ ("dnd", MultipleValues (Value 6) (DiceBase (Dice (NBase (Value 4)) (Die (Value 6)) (Just (DieOpRecur (DieOpOptionKD Drop (Low (Value 1))) Nothing))))),
     ("wfrp", MultipleValues (Value 8) (NBase (Paren (Add (promote (Value 20)) (promote (Die (Value 10)))))))
   ]
 
+-- | Small help page for gen char.
 gencharHelp :: HelpPage
 gencharHelp =
   HelpPage

@@ -1,3 +1,12 @@
+-- |
+-- Module      : Tablebot.Plugin.DiceFunctions
+-- Description : Functions, data, and type classes to deal with functions.
+-- License     : MIT
+-- Maintainer  : tagarople@gmail.com
+-- Stability   : experimental
+-- Portability : POSIX
+--
+-- Type classes, data, and functions that deal with functions when evaluating dice.
 module Tablebot.Plugin.Dice.DiceFunctions
   ( supportedFunctionsList,
     supportedFunctions,

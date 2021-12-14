@@ -1,10 +1,20 @@
 {-# OPTIONS_GHC -Wno-orphans #-}
 
+-- |
+-- Module      : Tablebot.Plugin.DiceParsing
+-- Description : Parsers for parsing dice and other expressions.
+-- License     : MIT
+-- Maintainer  : tagarople@gmail.com
+-- Stability   : experimental
+-- Portability : POSIX
+--
+-- This plugin contains the tools for parsing Dice. -Wno-orphans is enabled so that
+-- parsing can occur here instead of in SmartCommand or DiceData.
 module Tablebot.Plugin.Dice.DiceParsing where
 
 import Data.Functor (($>), (<&>))
 import Data.Map as M (findWithDefault, keys, map, (!))
-import Data.Maybe (fromMaybe, isNothing)
+import Data.Maybe (fromMaybe)
 import Data.Set as S (fromList)
 import Data.Text (Text, singleton, unpack)
 import Tablebot.Plugin.Dice.DiceData
@@ -14,10 +24,10 @@ import Tablebot.Plugin.Dice.DiceFunctions
     supportedFunctions,
     supportedFunctionsList,
   )
-import Tablebot.Plugin.Parser (integer, skipSpace)
+import Tablebot.Plugin.Parser (integer, parseCommaSeparated, parseCommaSeparated1, skipSpace)
 import Tablebot.Plugin.SmartCommand (CanParse (..))
 import Tablebot.Plugin.Types (Parser)
-import Text.Megaparsec (MonadParsec (try), choice, many, optional, (<?>), (<|>))
+import Text.Megaparsec (MonadParsec (try), choice, optional, (<?>), (<|>))
 import Text.Megaparsec.Char (char, string)
 
 --- Parsing expressions below this line
@@ -26,7 +36,7 @@ instance CanParse ListValues where
   pars = do
     LVList
       <$> ( try (char '{' *> skipSpace)
-              *> parseCommaSeparated1
+              *> parseCommaSeparated1 pars
               <* skipSpace
               <* char '}'
           )
@@ -58,7 +68,7 @@ instance CanParse Func where
         funcName <- try (choice (string <$> supportedFunctionsList)) <?> "could not find function"
         let fi = (supportedFunctions @IO) M.! funcName
             ft = funcTypes fi
-        es <- string "(" *> skipSpace *> parseCommaSeparated <* skipSpace <* string ")"
+        es <- string "(" *> skipSpace *> parseCommaSeparated pars <* skipSpace <* string ")"
         es' <- checkTypes es ft (unpack funcName)
         return $ Func fi es'
       )
@@ -104,19 +114,10 @@ instance CanParse Die where
     try (lazyFunc . Die <$> pars)
       <|> lazyFunc . CustomDie
         <$> ( try (char '{' *> skipSpace)
-                *> parseCommaSeparated1
+                *> parseCommaSeparated1 pars
                 <* skipSpace
                 <* char '}'
             )
-
-parseCommaSeparated :: CanParse a => Parser [a]
-parseCommaSeparated = do
-  f <- optional $ try pars
-  maybe (return []) (\first' -> (first' :) <$> many (try (skipSpace *> char ',' *> skipSpace) *> pars)) f
-
-parseCommaSeparated1 :: CanParse a => Parser [a]
-parseCommaSeparated1 = do
-  pars >>= (\first' -> (first' :) <$> many (try (skipSpace *> char ',' *> skipSpace) *> pars))
 
 instance CanParse Dice where
   pars = do
@@ -156,15 +157,11 @@ parseLowHigh = (try (choice @[] $ char <$> "lhw") <?> "could not parse high, low
     helper 'w' = parseAdvancedOrdering >>= \o -> pars <&> Where o
     helper c = failure' (singleton c) (S.fromList ["h", "l", "w"])
 
--- | Parse a bunch of die options.
+-- | Parse a bunch of die options into, possibly, a DieOpRecur.
 parseDieOpRecur :: Parser (Maybe DieOpRecur)
 parseDieOpRecur = do
   dopo <- optional (try parseDieOpOption)
-  if isNothing dopo
-    then return Nothing
-    else do
-      dor <- parseDieOpRecur
-      return $ (DieOpRecur <$> dopo) <*> Just dor
+  maybe (return Nothing) (\dopo' -> Just . DieOpRecur dopo' <$> parseDieOpRecur) dopo
 
 -- | Parse a single die option.
 parseDieOpOption :: Parser DieOpOption
