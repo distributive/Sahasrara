@@ -79,7 +79,7 @@ Given an expression, evaluate the expression. Can roll inline using |]
       ++ [r|
 
 This supports addition, subtraction, multiplication, integer division, exponentiation, parentheses, dice of arbitrary size, dice with custom sides, rerolling dice once on a condition, rerolling dice indefinitely on a condition, keeping or dropping the highest or lowest dice, keeping or dropping dice based on a condition, and using functions like |]
-      ++ unpack (intercalate ", " supportedFunctionsList)
+      ++ unpack (intercalate ", " basicFunctionsList)
       ++ [r|.
 
 To see a full list of uses and options, please go to <https://github.com/WarwickTabletop/tablebot/blob/main/docs/Roll.md>.

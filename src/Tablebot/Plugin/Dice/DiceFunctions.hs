@@ -8,15 +8,17 @@
 --
 -- Type classes, data, and functions that deal with functions when evaluating dice.
 module Tablebot.Plugin.Dice.DiceFunctions
-  ( supportedFunctionsList,
-    supportedFunctions,
-    FuncInfo (..),
+  ( basicFunctionsList,
+    basicFunctions,
+    FuncInfoBase (..),
+    FuncInfo,
     ListInteger (..),
     ArgTypes (..),
   )
 where
 
 import Control.Monad.Exception (MonadException)
+import Data.List (genericDrop, genericTake, sort)
 import Data.Map as M (Map, fromList, keys)
 import Data.Maybe (fromJust)
 import Data.Text (Text, unpack)
@@ -28,43 +30,65 @@ factorialLimit = 50
 
 -- Mappings for what functions are supported
 
--- | Mapping from function names to the functions themselves.
-supportedFunctions :: MonadException m => Map Text (FuncInfo m)
-supportedFunctions = M.fromList $ fmap (\fi -> (funcInfoName fi, fi)) supportedFunctions'
+-- | Mapping from function names to the functions themselves for basic functions.
+basicFunctions :: MonadException m => Map Text (FuncInfo m)
+basicFunctions = M.fromList $ fmap (\fi -> (funcInfoName fi, fi)) basicFunctions'
 
-supportedFunctions' :: MonadException m => [FuncInfo m]
-supportedFunctions' =
+-- | The basic functions currently supported.
+basicFunctionsList :: [Text]
+basicFunctionsList = M.keys (basicFunctions @IO)
+
+-- | The base details of the basic functions.
+basicFunctions' :: MonadException m => [FuncInfo m]
+basicFunctions' =
   sumFI :
   maximumFI :
   minimumFI :
   constructFuncInfo' "mod" (mod @Integer) (Nothing, Nothing, (== 0)) :
-  constructFuncInfo' "fact" fact (Nothing, Just factorialLimit, const False) : (uncurry constructFuncInfo <$> [("abs", abs @Integer), ("id", id), ("neg", negate)])
+  constructFuncInfo' "fact" fact (Nothing, Just factorialLimit, const False) :
+  (uncurry constructFuncInfo <$> [("abs", abs @Integer), ("id", id), ("neg", negate)])
   where
     fact n
       | n < 0 = 0
       | n == 0 = 1
       | n > factorialLimit = fact factorialLimit
       | otherwise = n * fact (n - 1)
-    sumFI = constructFuncInfo' "sum" (sum @[] @Integer) (Nothing, Nothing, const False)
-    maximumFI = constructFuncInfo' "maximum" (maximum @[] @Integer) (Nothing, Nothing, const False)
-    minimumFI = constructFuncInfo' "minimum" (minimum @[] @Integer) (Nothing, Nothing, const False)
+    sumFI = constructFuncInfo "sum" (sum @[] @Integer)
+    maximumFI = constructFuncInfo "maximum" (maximum @[] @Integer)
+    minimumFI = constructFuncInfo "minimum" (minimum @[] @Integer)
 
--- | The functions currently supported.
-supportedFunctionsList :: [Text]
-supportedFunctionsList = M.keys (supportedFunctions @IO)
+-- | Mapping from function names to the functions themselves for list functions.
+listFunctions :: MonadException m => Map Text (FuncInfoBase m [Integer])
+listFunctions = M.fromList $ fmap (\fi -> (funcInfoName fi, fi)) listFunctions'
 
-data FuncInfo m = FuncInfo {funcInfoName :: Text, funcTypes :: [ArgTypes], funcInfoFunc :: MonadException m => [ListInteger] -> m Integer}
+-- | The list functions currently supported.
+listFunctionsList :: [Text]
+listFunctionsList = M.keys (listFunctions @IO)
 
-instance Show (FuncInfo m) where
-  show (FuncInfo fin ft _) = "FuncInfo " <> unpack fin <> " " <> show ft
+-- TODO: actually start integrating list functions
 
-constructFuncInfo :: (MonadException m, ApplyFunc m f) => Text -> f -> FuncInfo m
+-- | The base details of the list functions.
+listFunctions' :: MonadException m => [FuncInfoBase m [Integer]]
+listFunctions' =
+  constructFuncInfo "drop" (genericDrop @Integer @Integer) :
+  constructFuncInfo "take" (genericTake @Integer @Integer) :
+  (uncurry constructFuncInfo <$> [("sort", sort @Integer), ("reverse", reverse)])
+
+data FuncInfoBase m j = FuncInfo {funcInfoName :: Text, funcInfoParameters :: [ArgTypes], funcReturnType :: ArgTypes, funcInfoFunc :: MonadException m => [ListInteger] -> m j}
+
+type FuncInfo m = FuncInfoBase m Integer
+
+instance Show (FuncInfoBase m j) where
+  show (FuncInfo fin ft frt _) = "FuncInfo " <> unpack fin <> " " <> show ft <> " " <> show frt
+
+constructFuncInfo :: (MonadException m, ApplyFunc m f, Returns f ~ j) => Text -> f -> FuncInfoBase m j
 constructFuncInfo s f = constructFuncInfo' s f (Nothing, Nothing, const False)
 
-constructFuncInfo' :: (MonadException m, ApplyFunc m f) => Text -> f -> (Maybe Integer, Maybe Integer, Integer -> Bool) -> FuncInfo m
-constructFuncInfo' s f bs = FuncInfo s types (applyFunc f (fromIntegral (length types)) bs)
+constructFuncInfo' :: (MonadException m, ApplyFunc m f, Returns f ~ j) => Text -> f -> (Maybe Integer, Maybe Integer, Integer -> Bool) -> FuncInfoBase m j
+constructFuncInfo' s f bs = FuncInfo s params (last types) (applyFunc f (fromIntegral (length params)) bs)
   where
-    types = init $ getTypes f
+    types = getTypes f
+    params = init types
 
 data ListInteger = LIInteger Integer | LIList [Integer]
   deriving (Show, Eq, Ord)
@@ -80,6 +104,9 @@ class ArgCount f where
 instance ArgCount Integer where
   getTypes _ = [ATInteger]
 
+instance ArgCount [Integer] where
+  getTypes _ = [ATIntegerList]
+
 instance ArgCount f => ArgCount (Integer -> f) where
   getTypes f = ATInteger : getTypes (f 1)
 
@@ -87,7 +114,7 @@ instance ArgCount f => ArgCount ([Integer] -> f) where
   getTypes f = ATIntegerList : getTypes (f [])
 
 class ArgCount f => ApplyFunc m f where
-  applyFunc :: (MonadException m) => f -> Integer -> (Maybe Integer, Maybe Integer, Integer -> Bool) -> [ListInteger] -> m Integer
+  applyFunc :: (MonadException m, Returns f ~ j) => f -> Integer -> (Maybe Integer, Maybe Integer, Integer -> Bool) -> [ListInteger] -> m j
 
 checkBounds :: (MonadException m) => Integer -> (Maybe Integer, Maybe Integer, Integer -> Bool) -> m Integer
 checkBounds i (ml, mh, bs)
@@ -97,6 +124,10 @@ checkBounds i (ml, mh, bs)
   | otherwise = return i
 
 instance {-# OVERLAPPING #-} ApplyFunc m Integer where
+  applyFunc f _ _ [] = return f
+  applyFunc _ args _ _ = throwBot $ EvaluationException ("incorrect number of arguments to function. expected " <> show args <> ", got more than that") []
+
+instance {-# OVERLAPPING #-} ApplyFunc m [Integer] where
   applyFunc f _ _ [] = return f
   applyFunc _ args _ _ = throwBot $ EvaluationException ("incorrect number of arguments to function. expected " <> show args <> ", got more than that") []
 
@@ -113,3 +144,8 @@ instance {-# OVERLAPPABLE #-} (ApplyFunc m f) => ApplyFunc m ([Integer] -> f) wh
       dif = args - getArgs f
   applyFunc f args bs ((LIList x) : xs) = applyFunc (f x) args bs xs
   applyFunc _ _ _ ((LIInteger _) : _) = throwBot $ EvaluationException "incorrect type given to function. expected a list, got an integer" []
+
+type family Returns f where
+  Returns Integer = Integer
+  Returns [Integer] = [Integer]
+  Returns (i -> j) = Returns j

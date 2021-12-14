@@ -8,7 +8,7 @@
 --
 -- This plugin contains the neccessary parsers and stucture to get the AST for an
 -- expression that contains dice, as well as evaluate that expression.
-module Tablebot.Plugin.Dice (evalListValues, ListValues (..), defaultRoll, PrettyShow (prettyShow), supportedFunctionsList, Converter (promote)) where
+module Tablebot.Plugin.Dice (evalListValues, ListValues (..), defaultRoll, PrettyShow (prettyShow), basicFunctionsList, Converter (promote)) where
 
 -- module Tablebot.Plugin.Dice (evalExpr, Expr, PrettyShow (..), supportedFunctionsList, defaultRoll) where
 
@@ -20,7 +20,7 @@ import Tablebot.Plugin.Dice.DiceData
     NumBase (Value),
   )
 import Tablebot.Plugin.Dice.DiceEval (PrettyShow (prettyShow), evalListValues)
-import Tablebot.Plugin.Dice.DiceFunctions (supportedFunctionsList)
+import Tablebot.Plugin.Dice.DiceFunctions (basicFunctionsList)
 import Tablebot.Plugin.Dice.DiceParsing ()
 
 {-

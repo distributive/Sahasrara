@@ -20,9 +20,9 @@ import Data.Text (Text, singleton, unpack)
 import Tablebot.Plugin.Dice.DiceData
 import Tablebot.Plugin.Dice.DiceFunctions
   ( ArgTypes (..),
-    FuncInfo (..),
-    supportedFunctions,
-    supportedFunctionsList,
+    FuncInfoBase (..),
+    basicFunctions,
+    basicFunctionsList,
   )
 import Tablebot.Plugin.Parser (integer, parseCommaSeparated, parseCommaSeparated1, skipSpace)
 import Tablebot.Plugin.SmartCommand (CanParse (..))
@@ -65,9 +65,9 @@ instance CanParse Term where
 instance CanParse Func where
   pars = do
     ( do
-        funcName <- try (choice (string <$> supportedFunctionsList)) <?> "could not find function"
-        let fi = (supportedFunctions @IO) M.! funcName
-            ft = funcTypes fi
+        funcName <- try (choice (string <$> basicFunctionsList)) <?> "could not find function"
+        let fi = (basicFunctions @IO) M.! funcName
+            ft = funcInfoParameters fi
         es <- string "(" *> skipSpace *> parseCommaSeparated pars <* skipSpace <* string ")"
         es' <- checkTypes es ft (unpack funcName)
         return $ Func fi es'

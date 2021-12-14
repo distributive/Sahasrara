@@ -20,7 +20,7 @@ import Data.Text (Text, intercalate, pack, unpack)
 import qualified Data.Text as T
 import System.Random (randomRIO)
 import Tablebot.Plugin.Dice.DiceData
-import Tablebot.Plugin.Dice.DiceFunctions (FuncInfo (funcInfoFunc, funcInfoName), ListInteger (..))
+import Tablebot.Plugin.Dice.DiceFunctions (FuncInfoBase (..), ListInteger (..))
 import Tablebot.Plugin.Discord (Format (..), formatInput, formatText)
 import Tablebot.Plugin.Exception (BotException (EvaluationException), catchBot, throwBot)
 import Tablebot.Plugin.Random (chooseOne)
