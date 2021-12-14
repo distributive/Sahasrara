@@ -9,10 +9,8 @@
 -- Type classes, data, and functions that deal with functions when evaluating dice.
 module Tablebot.Plugin.Dice.DiceFunctions
   ( basicFunctionsList,
-    -- getBasicFunc,
     basicFunctions,
     listFunctionsList,
-    -- getListFunc,
     listFunctions,
     FuncInfoBase (..),
     FuncInfo,
@@ -69,8 +67,6 @@ listFunctions = M.fromList $ fmap (\fi -> (funcInfoName fi, fi)) listFunctions'
 listFunctionsList :: [Text]
 listFunctionsList = M.keys (listFunctions @IO)
 
--- TODO: actually start integrating list functions
-
 -- | The base details of the list functions.
 listFunctions' :: MonadException m => [FuncInfoBase m [Integer]]
 listFunctions' =
@@ -94,7 +90,7 @@ constructFuncInfo' s f bs = FuncInfo s params (last types) (applyFunc f (fromInt
     types = getTypes f
     params = init types
 
-data ListInteger = LIInteger Integer | LIList [Integer]
+data ListInteger = LIInteger Integer | LIList [(Integer, Text)]
   deriving (Show, Eq, Ord)
 
 data ArgTypes = ATInteger | ATIntegerList
@@ -140,16 +136,15 @@ instance {-# OVERLAPPABLE #-} (ApplyFunc m f) => ApplyFunc m (Integer -> f) wher
     where
       dif = args - getArgs f
   applyFunc f args bs ((LIInteger x) : xs) = checkBounds x bs >>= \x' -> applyFunc (f x') args bs xs
-  applyFunc _ _ _ ((LIList _) : _) = throwBot $ EvaluationException "incorrect type given to function. expected an integer, got a list" []
+  applyFunc _ _ _ (_ : _) = throwBot $ EvaluationException "incorrect type given to function. expected an integer, got a list" []
 
 instance {-# OVERLAPPABLE #-} (ApplyFunc m f) => ApplyFunc m ([Integer] -> f) where
   applyFunc f args _ [] = throwBot $ EvaluationException ("incorrect number of arguments to function. got " <> show dif <> ", expected " <> show args) []
     where
       dif = args - getArgs f
-  applyFunc f args bs ((LIList x) : xs) = applyFunc (f x) args bs xs
-  applyFunc _ _ _ ((LIInteger _) : _) = throwBot $ EvaluationException "incorrect type given to function. expected a list, got an integer" []
+  applyFunc f args bs ((LIList x) : xs) = applyFunc (f (fst <$> x)) args bs xs
+  applyFunc _ _ _ (_ : _) = throwBot $ EvaluationException "incorrect type given to function. expected a list, got an integer" []
 
 type family Returns f where
-  Returns Integer = Integer
-  Returns [Integer] = [Integer]
   Returns (i -> j) = Returns j
+  Returns j = j

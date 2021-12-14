@@ -12,11 +12,13 @@ module Tablebot.Plugins.RollDice (rollPlugin) where
 import Control.Monad.Writer (MonadIO (liftIO))
 import Data.Maybe (fromMaybe)
 import Data.Text (Text, intercalate, pack, replicate, unpack)
+import Data.Text qualified as T
 import Discord.Types (Message (messageAuthor))
 import Tablebot.Plugin
 import Tablebot.Plugin.Dice
 import Tablebot.Plugin.Dice.DiceData
-import Tablebot.Plugin.Discord (Format (Code), formatInput, sendMessage, toMention)
+import Tablebot.Plugin.Dice.DiceFunctions (ListInteger (LIInteger, LIList))
+import Tablebot.Plugin.Discord (Format (Code), formatText, sendMessage, toMention)
 import Tablebot.Plugin.Parser (inlineCommandHelper)
 import Tablebot.Plugin.SmartCommand (PComm (parseComm), Quoted (Qu), pars)
 import Text.Megaparsec (MonadParsec (try), choice, (<?>))
@@ -28,16 +30,22 @@ rollDice' :: Maybe ListValues -> Maybe (Quoted Text) -> Message -> DatabaseDisco
 rollDice' e' t m = do
   let e = fromMaybe defaultRoll e'
   (vs, ss) <- liftIO $ evalListValues e
-  sendMessage m (makeMsg vs ss e)
+  let msg = makeMsg vs ss
+  if countFormatting msg < 199
+    then sendMessage m msg
+    else sendMessage m (makeMsg (simplify vs) (prettyShow e <> " `[could not display rolls]`"))
   where
     dsc = maybe ": " (\(Qu t') -> " \"" <> t' <> "\": ") t
     baseMsg = toMention (messageAuthor m) <> " rolled" <> dsc
-    makeLine (i, s) = pack (formatInput Code $ show i) <> Data.Text.replicate (max 0 (6 - length (show i))) " " <> " ⟵ " <> s
-    makeMsg [] _ _ = baseMsg <> "No output."
-    makeMsg [v] [s] _ = baseMsg <> s <> ".\nOutput: " <> pack (show v)
-    makeMsg [v] _ e = baseMsg <> formatInput Code (prettyShow e) <> ".\nOutput: " <> pack (show v)
-    makeMsg vs [s] _ = baseMsg <> s <> ".\nOutput: " <> pack (show vs)
-    makeMsg vs ss e = baseMsg <> formatInput Code (prettyShow e) <> "\n  " <> intercalate "\n  " (makeLine <$> zip vs ss)
+    makeLine (i, s) = pack (formatText Code $ show i) <> Data.Text.replicate (max 0 (6 - length (show i))) " " <> " ⟵ " <> s
+    makeMsg (LIInteger v) s = baseMsg <> s <> ".\nOutput: " <> pack (show v)
+    makeMsg (LIList []) _ = baseMsg <> "No output."
+    makeMsg (LIList ls) ss
+      | all (T.null . snd) ls = baseMsg <> formatText Code ss <> "\nOutput: {" <> intercalate ", " (pack . show . fst <$> ls) <> "}"
+      | otherwise = baseMsg <> formatText Code ss <> "\n  " <> intercalate "\n  " (makeLine <$> ls)
+    simplify (LIList ls) = LIList $ fmap (\(i, _) -> (i, "...")) ls
+    simplify li = li
+    countFormatting s = (`div` 4) $ T.foldr (\c cf -> cf + (2 * fromEnum (c == '`')) + fromEnum (c `elem` ['~', '_', '*'])) 0 s
 
 -- | Manually creating parser for this command, since SmartCommand doesn't work fully for
 -- multiple Maybe values

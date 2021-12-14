@@ -58,9 +58,6 @@ data Base = NBase NumBase | DiceBase Dice
 
 -- Dice Operations after this point
 
--- TODO: create a lazy and a repeated eval die so that sometimes dice quantities are eval'd
--- each time and sometimes are eval'd once and then that value is used
-
 -- | The type representing a simple N sided die or a custom die.
 data Die = Die NumBase | CustomDie [Expr] | LazyDie Die deriving (Show)
 

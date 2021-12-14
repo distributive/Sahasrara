@@ -23,15 +23,12 @@ import Tablebot.Plugin.Dice.DiceFunctions
     FuncInfoBase (..),
     basicFunctions,
     listFunctions,
-    -- basicFunctionsList, getBasicFunc
   )
 import Tablebot.Plugin.Parser (integer, parseCommaSeparated, parseCommaSeparated1, skipSpace)
 import Tablebot.Plugin.SmartCommand (CanParse (..))
 import Tablebot.Plugin.Types (Parser)
 import Text.Megaparsec (MonadParsec (try), choice, optional, (<?>), (<|>))
 import Text.Megaparsec.Char (char, string)
-
---- Parsing expressions below this line
 
 instance CanParse ListValues where
   pars = do
@@ -64,30 +61,6 @@ instance CanParse Term where
 
 instance CanParse Func where
   pars = functionParser (basicFunctions @IO) Func NoFunc
-
--- do
--- ( do
---     fi <- try (choice (string <$> M.keys bf) >>= \t -> return (bf M.! t)) <?> "could not find function"
---     -- let fi = (basicFunctions @IO) M.! funcName
---     let  ft = funcInfoParameters fi
---     es <- string "(" *> skipSpace *> parseCommaSeparated pars <* skipSpace <* string ")"
---     es' <- checkTypes es ft (unpack $ funcInfoName fi)
---     return $ Func fi es'
---   )
---   <|> NoFunc <$> pars
--- where
---   bf = basicFunctions @IO
---   matchType (NoList _, ATInteger) = True
---   matchType (LVList _, ATIntegerList) = True
---   matchType (MultipleValues _ _, ATIntegerList) = True
---   matchType _ = False
---   checkTypes es ft fname
---     | length es > length ft = fail $ "too many values given to function " ++ fname
---     | length ft > length es = fail $ "too few values given to function " ++ fname
---     | length matched /= length es = fail $ "type mismatch in parameters to function " ++ fname ++ ", in parameter " ++ show (length matched)
---     | otherwise = return es
---     where
---       matched = takeWhile matchType (zip es ft)
 
 functionParser :: (CanParse a) => M.Map Text (FuncInfoBase m j) -> (FuncInfoBase m j -> [ListValues] -> e) -> (a -> e) -> Parser e
 functionParser m mainCons fallbackCons =
