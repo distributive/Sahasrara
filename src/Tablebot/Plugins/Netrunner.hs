@@ -182,28 +182,28 @@ findImgHelp =
     "searches the NetrunnerDB database for a card's image"
     [r|**Find Netrunner Card Images**
 Searches the NetrunnerDB database for the card closest matching a given query and shows an image of it
-Can be used inline by enclosing your query inside curly braces (max five queries per message)
+Can be used inline by enclosing your query inside curly braces with a `!` (max five queries per message)
 
 *Usage:*
   - `netrunner find card name`
-  - `{{card name}}`
-  - `{{card 1}} {{card 2}}`|]
+  - `{{!card name}}`
+  - `{{!card 1}} {{!card 2}}`|]
     []
     None
 
 findFlavourHelp :: HelpPage
 findFlavourHelp =
   HelpPage
-    "image"
-    "searches the NetrunnerDB database for a card's image"
+    "flavour"
+    "searches the NetrunnerDB database for a card's flavour text"
     [r|**Find Netrunner Card Flavour Text**
 Searches the NetrunnerDB database for the card closest matching a given query and shows its flavour text
-Can be used inline by enclosing your query inside curly braces (max five queries per message)
+Can be used inline by enclosing your query inside curly braces with a `|` (max five queries per message)
 
 *Usage:*
   - `netrunner find card name`
-  - `{{card name}}`
-  - `{{card 1}} {{card 2}}`|]
+  - `{{|card name}}`
+  - `{{|card 1}} {{|card 2}}`|]
     []
     None
 
