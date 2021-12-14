@@ -18,9 +18,10 @@ import Tablebot.Plugin
 import Tablebot.Plugin.Discord (sendEmbedMessage, sendMessage)
 import Tablebot.Plugin.Exception (BotException (NetrunnerException), throwBot)
 import Tablebot.Plugin.Netrunner
+import Tablebot.Plugin.Netrunner.Card (Card)
 import Tablebot.Plugin.Netrunner.Custom (customCard)
 import Tablebot.Plugin.Netrunner.NrApi (NrApi, getNrApi)
-import Tablebot.Plugin.Parser (netrunnerCustom, netrunnerQuery)
+import Tablebot.Plugin.Parser (NrQuery (..), netrunnerCustom, netrunnerQuery)
 import Tablebot.Plugin.SmartCommand (PComm (parseComm), Quoted (Qu), RestOfInput1 (ROI1), WithError (WErr))
 import Text.RawString.QQ (r)
 
@@ -30,7 +31,7 @@ netrunner =
   Command
     "netrunner"
     (parseComm nrComm)
-    [nrFind, nrCustom]
+    [nrFind, nrFindImg, nrFindFlavour, nrCustom]
   where
     nrComm ::
       WithError
@@ -48,8 +49,44 @@ nrFind = Command "find" (parseComm findComm) []
       WithError "No card title given!" (Either (Quoted Text) (RestOfInput1 Text)) ->
       Message ->
       EnvDatabaseDiscord NrApi ()
-    findComm (WErr (Left (Qu q))) = findCard q
-    findComm (WErr (Right (ROI1 q))) = findCard q
+    findComm (WErr (Left (Qu q))) = sendEmbed q
+    findComm (WErr (Right (ROI1 q))) = sendEmbed q
+    sendEmbed :: Text -> Message -> EnvDatabaseDiscord NrApi ()
+    sendEmbed query m = do
+      api <- ask
+      embedCard (queryCard api query) m
+
+-- | @nrFindImg@ finds the card with title most closely matching its input and
+-- posts a picture of it, if there is one.
+nrFindImg :: EnvCommand NrApi
+nrFindImg = Command "image" (parseComm findComm) []
+  where
+    findComm ::
+      WithError "No card title given!" (Either (Quoted Text) (RestOfInput1 Text)) ->
+      Message ->
+      EnvDatabaseDiscord NrApi ()
+    findComm (WErr (Left (Qu q))) = sendEmbed q
+    findComm (WErr (Right (ROI1 q))) = sendEmbed q
+    sendEmbed :: Text -> Message -> EnvDatabaseDiscord NrApi ()
+    sendEmbed query m = do
+      api <- ask
+      embedCardImg (queryCard api query) m
+
+-- | @nrFindFlavour@ finds the card with title most closely matching its input and
+-- posts a picture of it, if there is one.
+nrFindFlavour :: EnvCommand NrApi
+nrFindFlavour = Command "flavour" (parseComm findComm) []
+  where
+    findComm ::
+      WithError "No card title given!" (Either (Quoted Text) (RestOfInput1 Text)) ->
+      Message ->
+      EnvDatabaseDiscord NrApi ()
+    findComm (WErr (Left (Qu q))) = sendEmbed q
+    findComm (WErr (Right (ROI1 q))) = sendEmbed q
+    sendEmbed :: Text -> Message -> EnvDatabaseDiscord NrApi ()
+    sendEmbed query m = do
+      api <- ask
+      embedCardFlavour (queryCard api query) m
 
 -- | @nrFindInline@ is the inline version of @nrFind@.
 nrFindInline :: EnvInlineCommand NrApi
@@ -59,7 +96,14 @@ nrFindInline = InlineCommand nrInlineComm
     nrInlineComm = do
       queries <- netrunnerQuery
       let limitedQs = if length queries > 5 then take 5 queries else queries
-      return $ \m -> mapM_ (\q -> findCard (pack q) m) limitedQs
+      return $ \m -> mapM_ (\q -> sendEmbed q m) limitedQs
+    sendEmbed :: NrQuery -> Message -> EnvDatabaseDiscord NrApi ()
+    sendEmbed query m = do
+      api <- ask
+      case query of
+        NrQueryCard q -> embedCard (queryCard api $ pack q) m
+        NrQueryImg q -> embedCardImg (queryCard api $ pack q) m
+        NrQueryFlavour q -> embedCardFlavour (queryCard api $ pack q) m
 
 -- | @nrCustom@ is a command that lets users generate a card embed out of custom
 -- data, for the purpose of creating custom cards.
@@ -73,18 +117,29 @@ nrCustom = Command "custom" customPars []
     customFunc :: [(String, String)] -> Message -> EnvDatabaseDiscord NrApi ()
     customFunc pairs m = do
       api <- ask
-      let card = customCard api pairs
-      sendEmbedMessage m "" $ cardToEmbed api card
+      embedCard (customCard api pairs) m
 
--- | @findCard@ takes a query and outputs an embed representing the card whose
--- name best matches it.
-findCard :: Text -> Message -> EnvDatabaseDiscord NrApi ()
-findCard query m = do
+-- | @embedCard@ takes a card and embeds it in a message.
+embedCard :: Card -> Message -> EnvDatabaseDiscord NrApi ()
+embedCard card m = do
   api <- ask
-  let res = queryCard api query
-  case res of
-    Nothing -> throwBot $ NetrunnerException "No such card found!"
-    Just card -> sendEmbedMessage m "" $ cardToEmbed api card
+  sendEmbedMessage m "" $ cardToEmbed api card
+
+-- | @embedCardImg@ takes a card and embeds its image in a message, if able.
+embedCardImg :: Card -> Message -> EnvDatabaseDiscord NrApi ()
+embedCardImg card m = do
+  api <- ask
+  case cardToImgEmbed api card of
+    Nothing -> throwBot $ NetrunnerException "Could not get card art"
+    Just embed -> sendEmbedMessage m "" embed
+
+-- | @embedCardFlavour@ takes a card and embeds its image in a message, if able.
+embedCardFlavour :: Card -> Message -> EnvDatabaseDiscord NrApi ()
+embedCardFlavour card m = do
+  api <- ask
+  case cardToFlavourEmbed api card of
+    Nothing -> throwBot $ NetrunnerException "Card has no flavour text"
+    Just embed -> sendEmbedMessage m "" embed
 
 netrunnerHelp :: HelpPage
 netrunnerHelp =
@@ -101,7 +156,7 @@ Can be used inline by enclosing a card search query inside curly braces (max fiv
   - `netrunner`
   - `{{card name}}`
   - `{{card 1}} {{card 2}}`|]
-    [findHelp, customHelp]
+    [findHelp, findImgHelp, findFlavourHelp, customHelp]
     None
 
 findHelp :: HelpPage
@@ -111,6 +166,38 @@ findHelp =
     "searches the NetrunnerDB database for cards"
     [r|**Find Netrunner Cards**
 Searches the NetrunnerDB database for the card closest matching a given query
+Can be used inline by enclosing your query inside curly braces (max five queries per message)
+
+*Usage:*
+  - `netrunner find card name`
+  - `{{card name}}`
+  - `{{card 1}} {{card 2}}`|]
+    []
+    None
+
+findImgHelp :: HelpPage
+findImgHelp =
+  HelpPage
+    "image"
+    "searches the NetrunnerDB database for a card's image"
+    [r|**Find Netrunner Card Images**
+Searches the NetrunnerDB database for the card closest matching a given query and shows an image of it
+Can be used inline by enclosing your query inside curly braces (max five queries per message)
+
+*Usage:*
+  - `netrunner find card name`
+  - `{{card name}}`
+  - `{{card 1}} {{card 2}}`|]
+    []
+    None
+
+findFlavourHelp :: HelpPage
+findFlavourHelp =
+  HelpPage
+    "image"
+    "searches the NetrunnerDB database for a card's image"
+    [r|**Find Netrunner Card Flavour Text**
+Searches the NetrunnerDB database for the card closest matching a given query and shows its flavour text
 Can be used inline by enclosing your query inside curly braces (max five queries per message)
 
 *Usage:*

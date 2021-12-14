@@ -9,7 +9,7 @@
 -- Portability : POSIX
 --
 -- The backend functionality of the Netrunner commands.
-module Tablebot.Plugin.Netrunner (cardToEmbed, queryCard) where
+module Tablebot.Plugin.Netrunner (cardToEmbed, cardToImgEmbed, cardToFlavourEmbed, queryCard) where
 
 import Data.Char (toUpper)
 import Data.List (minimumBy)
@@ -27,8 +27,8 @@ import Tablebot.Plugin.Types (DiscordColour (Default), hexToDiscordColour)
 import Tablebot.Plugin.Utils (intToText)
 
 -- | @queryCard@ fuzzy searches the given library of cards by title.
-queryCard :: NrApi -> Text -> Maybe Card
-queryCard api = Just . closestValueWithCosts editCosts pairs . unpack
+queryCard :: NrApi -> Text -> Card
+queryCard api = closestValueWithCosts editCosts pairs . unpack
   where
     pairs = zip (map (unpack . toLower . (fromMaybe "") . Card.title) $ cards api) $ cards api
     editCosts =
@@ -215,6 +215,12 @@ cardToColour api card = fromMaybe Default helper
       f <- cardToFaction api card
       return $ hexToDiscordColour $ unpack $ Faction.color f
 
+-- | @cardToFlavour@ gets a cards flavour text (and makes it italic).
+cardToFlavour :: Card -> Text
+cardToFlavour card = case flavor card of
+  Nothing -> ""
+  Just f -> "*" <> f <> "*"
+
 -- | @cardToLink@ takes a Netrunner card and generates an embed message
 -- representing it.
 cardToEmbed :: NrApi -> Card -> Embed
@@ -226,3 +232,26 @@ cardToEmbed api card =
       eImg = cardToImage api card
       eColour = cardToColour api card
    in addColour eColour $ createEmbed $ CreateEmbed "" "" Nothing eTitle eURL eImg eText [] Nothing eFoot Nothing
+
+-- | @cardToImgEmbed@ takes a Netrunner card and attempts to embed a picture of
+-- it.
+cardToImgEmbed :: NrApi -> Card -> Maybe Embed
+cardToImgEmbed api card =
+  let eTitle = cardToTitle card
+      eURL = cardToLink card
+      eColour = cardToColour api card
+   in case cardToImage api card of
+        Nothing -> Nothing
+        eImg -> Just $ addColour eColour $ createEmbed $ CreateEmbed "" "" Nothing eTitle eURL Nothing "" [] eImg "" Nothing
+
+-- | @cardToFlavourEmbed@ takes a Netrunner card and attempts to embed its
+-- flavour text.
+cardToFlavourEmbed :: NrApi -> Card -> Maybe Embed
+cardToFlavourEmbed api card =
+  let eTitle = cardToTitle card
+      eURL = cardToLink card
+      eColour = cardToColour api card
+      eImg = cardToImage api card
+   in case cardToFlavour card of
+        "" -> Nothing
+        eFlavour -> Just $ addColour eColour $ createEmbed $ CreateEmbed "" "" Nothing eTitle eURL eImg eFlavour [] Nothing "" Nothing
