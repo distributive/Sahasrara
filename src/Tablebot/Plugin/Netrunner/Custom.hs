@@ -9,9 +9,8 @@
 -- The functionality of the custom card features of the Netrunner command.
 module Tablebot.Plugin.Netrunner.Custom (customCard) where
 
-import Data.Char (toLower)
-import Data.Map (Map, fromList, lookup)
-import Data.Maybe (catMaybes, fromMaybe)
+import Data.Map (fromList, lookup)
+import Data.Maybe (catMaybes)
 import Data.Text (Text, pack, unpack)
 import Tablebot.Plugin.Fuzzy (FuzzyCosts (..), closestMatch, closestPairWithCosts, closestValue)
 import Tablebot.Plugin.Netrunner.Card as Card
@@ -69,8 +68,8 @@ fuzzyType = closestMatch ["agenda", "asset", "event", "hardware", "ice", "identi
 -- | @fuzzyFaction@ maps a string to the closest card faction by name.
 fuzzyFaction :: NrApi -> String -> String
 fuzzyFaction api query =
-  let names = (unpack . Faction.name) <$> factions api
-      codes = (unpack . Faction.code) <$> factions api
+  let names = unpack . Faction.name <$> factions api
+      codes = unpack . Faction.code <$> factions api
    in closestValue (zip names codes) query
 
 -- | @customCard@ takes a set of parameters and does its best to turn that data
