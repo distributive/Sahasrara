@@ -26,9 +26,9 @@ import Tablebot.Plugin.Utils (intToText)
 
 -- | @queryCard@ fuzzy searches the given library of cards by title.
 queryCard :: NrApi -> Text -> Card
-queryCard api = closestValueWithCosts editCosts pairs . unpack
+queryCard NrApi {cards = cards} = closestValueWithCosts editCosts pairs . unpack
   where
-    pairs = zip (map (unpack . toLower . fromMaybe "" . Card.title) $ cards api) $ cards api
+    pairs = zip (map (unpack . toLower . fromMaybe "" . Card.title) cards) cards
     editCosts =
       FuzzyCosts
         { deletion = 10,
@@ -37,12 +37,15 @@ queryCard api = closestValueWithCosts editCosts pairs . unpack
           transposition = 1
         }
 
+-- | Utility function to prepend a given Text to Text within a Maybe, or return the empty
+-- Text.
+maybeEmptyPrepend :: Text -> Maybe Text -> Text
+maybeEmptyPrepend s = maybe "" (s <>)
+
 -- | @cardToLink@ takes a Netrunner card and generates a link to its NetrunnerDB
 -- page.
 cardToLink :: Card -> Text
-cardToLink card = case Card.code card of
-  Nothing -> ""
-  Just code' -> "https://netrunnerdb.com/en/card/" <> code'
+cardToLink card = maybeEmptyPrepend "https://netrunnerdb.com/en/card/" (Card.code card)
 
 -- | @cardToImage@ takes a Netrunner card and generates an embed image of the
 -- card.
@@ -84,8 +87,7 @@ cardToSubtitle Card {..} =
     <> "**\n"
   where
     maybeIntToText = maybe "?" intToText
-    maybeEmptyPrepend s = maybe "" (s <>)
-    maybeEmptyPrependI s mi = maybe "" (s <>) (intToText <$> mi)
+    maybeEmptyPrependI s mi = maybeEmptyPrepend s (intToText <$> mi)
     type_code' = maybe "?" toTitle type_code
     keywords' = maybeEmptyPrepend ": " keywords
     cost' =
@@ -121,7 +123,6 @@ cardToSubtitle Card {..} =
 formatText :: Text -> Text
 formatText raw = foldr (uncurry replace) raw pairs
   where
-    pairs :: [(Text, Text)]
     pairs =
       [ ("<strong>", "**"),
         ("</strong>", "**"),
@@ -192,18 +193,11 @@ cardToReleaseData api card = fromMaybe "" helper
 
 -- | @cardToColour@ gets the factional colour of a card to use in its embed.
 cardToColour :: NrApi -> Card -> DiscordColour
-cardToColour api card = fromMaybe Default helper
-  where
-    helper :: Maybe DiscordColour
-    helper = do
-      f <- cardToFaction api card
-      return $ hexToDiscordColour $ unpack $ Faction.color f
+cardToColour api card = maybe Default (hexToDiscordColour . unpack . Faction.color) (cardToFaction api card)
 
 -- | @cardToFlavour@ gets a cards flavour text (and makes it italic).
 cardToFlavour :: Card -> Text
-cardToFlavour card = case flavor card of
-  Nothing -> ""
-  Just f -> "*" <> f <> "*"
+cardToFlavour card = maybe "" (\f -> "*" <> f <> "*") (Card.flavor card)
 
 -- | @cardToLink@ takes a Netrunner card and generates an embed message
 -- representing it.
