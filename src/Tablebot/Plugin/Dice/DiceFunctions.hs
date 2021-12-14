@@ -9,7 +9,11 @@
 -- Type classes, data, and functions that deal with functions when evaluating dice.
 module Tablebot.Plugin.Dice.DiceFunctions
   ( basicFunctionsList,
+    -- getBasicFunc,
     basicFunctions,
+    listFunctionsList,
+    -- getListFunc,
+    listFunctions,
     FuncInfoBase (..),
     FuncInfo,
     ListInteger (..),

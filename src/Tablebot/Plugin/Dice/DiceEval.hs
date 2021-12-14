@@ -106,26 +106,14 @@ evalShowList'' customEvalShow rngCount = foldr foldF (return ([], [], rngCount))
       (i, s, rngCountTemp) <- customEvalShow rngCountTotal a
       return (i : diceSoFar, s : ss, rngCountTemp)
 
--- | Evaluate a ListValues item, returning the result (the type of which depends on the
--- input).
-evalShowListValues :: RNGCount -> ListValues -> IO (ListInteger, [Text], RNGCount)
-evalShowListValues rngCount (NoList expr) = evalShow rngCount expr >>= \(i, s, rc) -> return (LIInteger i, [s], rc)
-evalShowListValues rngCount (MultipleValues nb b) = do
-  (nb', _, rngCount') <- evalShow rngCount nb
-  (is, ss, rc) <- evalShowList' rngCount' (genericReplicate nb' b)
-  return (LIList is, ss, rc)
-evalShowListValues rngCount (LVList es) = do
-  (is, ss, rc) <- evalShowList' rngCount es
-  return (LIList is, ss, rc)
-
 -- | This type class gives a function which evaluates the value to an integer and a
 -- string.
-class IOEval a where
+class IOEvalBase a j s where
   -- | Evaluate the given item to an integer, a string representation of the value, and
   -- the number of RNG calls it took. If the `a` value is a dice value, the values of the
   -- dice should be displayed. The integer given initially is the current RNG count of the
   -- expression. This function adds the current location to the exception callstack.
-  evalShow :: PrettyShow a => RNGCount -> a -> IO (Integer, Text, RNGCount)
+  evalShow :: PrettyShow a => RNGCount -> a -> IO (j, s, RNGCount)
   evalShow rngCount a = catchBot (evalShow' rngCount a) handleException
     where
       handleException (EvaluationException msg' locs) = throwBot (EvaluationException msg' (addIfNotIn locs))
@@ -133,13 +121,43 @@ class IOEval a where
       pa = unpack $ prettyShow a
       addIfNotIn locs = if null locs || pa /= Prelude.head locs then pa : locs else locs
 
-  evalShow' :: RNGCount -> a -> IO (Integer, Text, RNGCount)
+  evalShow' :: RNGCount -> a -> IO (j, s, RNGCount)
 
-instance IOEval Base where
+type IOEval a = IOEvalBase a Integer Text
+
+evalShowI :: (IOEval a, PrettyShow a) => RNGCount -> a -> IO (Integer, Text, RNGCount)
+evalShowI = evalShow
+
+evalShowL :: (IOEvalBase a [Integer] [Text], PrettyShow a) => RNGCount -> a -> IO ([Integer], [Text], RNGCount)
+evalShowL = evalShow
+
+-- | Evaluate a ListValues item, returning the result (the type of which depends on the
+-- input).
+instance IOEvalBase ListValues ListInteger [Text] where
+  evalShow' rngCount (NoList expr) = evalShow rngCount expr >>= \(i, s, rc) -> return (LIInteger i, [s], rc)
+  evalShow' rngCount (MultipleValues nb b) = do
+    (nb', _, rngCount') <- evalShowI rngCount nb
+    (is, ss, rc) <- evalShowList' rngCount' (genericReplicate nb' b)
+    return (LIList is, ss, rc)
+  evalShow' rngCount (LVList es) = do
+    (is, ss, rc) <- evalShowList' rngCount es
+    return (LIList is, ss, rc)
+
+evalShowListValues :: RNGCount -> ListValues -> IO (ListInteger, [Text], RNGCount)
+evalShowListValues rngCount (NoList expr) = evalShow rngCount expr >>= \(i, s, rc) -> return (LIInteger i, [s], rc)
+evalShowListValues rngCount (MultipleValues nb b) = do
+  (nb', _, rngCount') <- evalShowI rngCount nb
+  (is, ss, rc) <- evalShowList' rngCount' (genericReplicate nb' b)
+  return (LIList is, ss, rc)
+evalShowListValues rngCount (LVList es) = do
+  (is, ss, rc) <- evalShowList' rngCount es
+  return (LIList is, ss, rc)
+
+instance IOEvalBase Base Integer Text where
   evalShow' rngCount (NBase nb) = evalShow rngCount nb
   evalShow' rngCount (DiceBase dice) = evalShow rngCount dice
 
-instance IOEval Die where
+instance IOEvalBase Die Integer Text where
   evalShow' rngCount ld@(LazyDie d) = do
     (i, _, rngCount') <- evalShow rngCount d
     ds <- dieShow Nothing ld [(i, Nothing)]
@@ -160,7 +178,7 @@ instance IOEval Die where
         checkRNGCount (incRNGCount rngCount')
         return (i, ds, incRNGCount rngCount')
 
-instance IOEval Dice where
+instance IOEvalBase Dice Integer Text where
   evalShow' rngCount dop = do
     (lst, mnmx, rngCount') <- evalDieOp rngCount dop
     let vs = fromEvalDieOpList lst
@@ -276,7 +294,7 @@ evalDieOpHelpKD rngCount kd (Where cmp i) is = foldr foldF (return ([], rngCount
       (i', _, rngCountTemp) <- evalShow rngCountTotal i
       return ((iis, b && isKeep (applyCompare cmp (NE.head iis) i')) : diceSoFar, rngCountTemp)
 evalDieOpHelpKD rngCount kd lh is = do
-  (i', _, rngCount') <- evalShow rngCount i
+  (i', _, rngCount') <- evalShowI rngCount i
   return (d <> setToDropped (getDrop i' sk) <> getKeep i' sk, rngCount')
   where
     (k, d) = separateKeptDropped is
@@ -294,12 +312,12 @@ binOpHelp rngCount a b opS op = do
   (b', b's, rngCount'') <- evalShow rngCount' b
   return (op a' b', a's <> " " <> opS <> " " <> b's, rngCount'')
 
-instance IOEval Expr where
+instance IOEvalBase Expr Integer Text where
   evalShow' rngCount (NoExpr t) = evalShow rngCount t
   evalShow' rngCount (Add t e) = binOpHelp rngCount t e "+" (+)
   evalShow' rngCount (Sub t e) = binOpHelp rngCount t e "-" (-)
 
-instance IOEval Term where
+instance IOEvalBase Term Integer Text where
   evalShow' rngCount (NoTerm f) = evalShow rngCount f
   evalShow' rngCount (Multi f t) = binOpHelp rngCount f t "*" (*)
   evalShow' rngCount (Div f t) = do
@@ -309,30 +327,30 @@ instance IOEval Term where
       then evaluationException "division by zero" [prettyShow t]
       else return (div f' t', f's <> " / " <> t's, rngCount'')
 
-instance IOEval Func where
+instance IOEvalBase Func Integer Text where
   evalShow' rngCount (Func s exprs) = do
     (exprs', _, rngCount') <- evalShowList'' evalShowListValues rngCount exprs
     f <- funcInfoFunc s exprs'
     return (f, funcInfoName s <> "(" <> intercalate ", " (prettyShow <$> exprs) <> ")", rngCount')
   evalShow' rngCount (NoFunc b) = evalShow rngCount b
 
-instance IOEval Negation where
+instance IOEvalBase Negation Integer Text where
   evalShow' rngCount (NoNeg expo) = evalShow rngCount expo
   evalShow' rngCount (Neg expo) = do
     (expo', expo's, rngCount') <- evalShow rngCount expo
     return (negate expo', "-" <> expo's, rngCount')
 
-instance IOEval Expo where
+instance IOEvalBase Expo Integer Text where
   evalShow' rngCount (NoExpo b) = evalShow rngCount b
   evalShow' rngCount (Expo b expo) = do
-    (expo', expo's, rngCount') <- evalShow rngCount expo
+    (expo', expo's, rngCount') <- evalShowI rngCount expo
     if expo' < 0
       then evaluationException ("the exponent is negative: " <> formatInput Code expo') [prettyShow expo]
       else do
         (b', b's, rngCount'') <- evalShow rngCount' b
         return (b' ^ expo', b's <> " ^ " <> expo's, rngCount'')
 
-instance IOEval NumBase where
+instance IOEvalBase NumBase Integer Text where
   evalShow' rngCount (Paren e) = do
     (r, s, rngCount') <- evalShow rngCount e
     return (r, "(" <> s <> ")", rngCount')
