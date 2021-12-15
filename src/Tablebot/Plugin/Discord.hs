@@ -13,6 +13,9 @@ module Tablebot.Plugin.Discord
     sendEmbedMessage,
     reactToMessage,
     findGuild,
+    findEmoji,
+    findGuildEmoji,
+    getGuildEmoji,
     getMessage,
     getMessageMember,
     getReplyMessage,
@@ -23,6 +26,8 @@ module Tablebot.Plugin.Discord
     toMentionStr',
     toTimestamp,
     toTimestamp',
+    formatEmoji,
+    formatFromEmojiName,
     toRelativeTime,
     getMessageLink,
     Message,
@@ -34,16 +39,20 @@ module Tablebot.Plugin.Discord
 where
 
 import Control.Monad.Exception
+import Control.Monad.IO.Class (liftIO)
+import Data.Foldable (msum)
+import Data.Map.Strict (keys)
 import Data.Maybe (listToMaybe)
 import Data.String (IsString (fromString))
 import Data.Text (Text, pack)
 import Data.Time.Clock (nominalDiffTimeToSeconds)
 import Data.Time.Clock.POSIX (utcTimeToPOSIXSeconds)
-import Discord (RestCallErrorCode, restCall)
+import Discord (RestCallErrorCode, readCache, restCall)
+import Discord.Internal.Gateway.Cache
 import qualified Discord.Requests as R
 import Discord.Types
 import Tablebot.Handler.Embed
-import Tablebot.Plugin (DatabaseDiscord, EnvDatabaseDiscord, liftDiscord)
+import Tablebot.Plugin (DatabaseDiscord, EnvDatabaseDiscord (..), liftDiscord)
 import Tablebot.Plugin.Exception (BotException (..))
 
 -- | @sendMessage@ sends the input message @t@ in the same channel as message
@@ -155,6 +164,51 @@ findGuild m = case messageGuild m of
     case fmap channelGuild channel of
       Right a -> pure $ Just a
       Left _ -> pure Nothing
+
+-- | Find an emoji from its name within a guild
+getGuildEmoji :: Text -> GuildId -> DatabaseDiscord (Maybe Emoji)
+getGuildEmoji ename gid = do
+  guildResp <- liftDiscord $ restCall $ R.GetGuild gid
+  case guildResp of
+    Left _ -> pure Nothing
+    Right guild ->
+      let emoji = filter ((ename ==) . emojiName) (guildEmojis guild)
+       in pure $ listToMaybe emoji
+
+-- | search through all known guilds for an emoji with that name
+findEmoji :: Text -> DatabaseDiscord (Maybe Emoji)
+findEmoji ename = fmap msum (liftDiscord readCache >>= cacheToEmoji)
+  where
+    cacheToEmoji :: Cache -> DatabaseDiscord [Maybe Emoji]
+    cacheToEmoji cache = mapM (getGuildEmoji ename) (keys $ _guilds cache)
+
+-- | Get an emoji by name, preferring a local emoji when possible
+-- This is quite aggressive at trying its best to find the emoji,
+-- and may result in a large number of api calls in the worst case
+findGuildEmoji :: Text -> Message -> DatabaseDiscord (Maybe Emoji)
+findGuildEmoji ename m = do
+  g <- findGuild m
+  case g of
+    Nothing -> findEmoji ename
+    Just guild -> do
+      a <- getGuildEmoji ename guild
+      case a of
+        Just e -> pure $ Just e
+        Nothing -> findEmoji ename
+
+-- | Render an Emoji
+formatEmoji :: Emoji -> Text
+formatEmoji (Emoji (Just eId) eName _ _ _) = "<:" <> eName <> ":" <> pack (show eId) <> ">"
+formatEmoji (Emoji _ eName _ _ _) = eName
+
+-- | Display an emoji as best as it can from its name
+formatFromEmojiName :: Text -> Message -> DatabaseDiscord Text
+formatFromEmojiName name m = do
+  em <- findGuildEmoji name m
+  pure $ maybeFormatEmoji em
+  where
+    maybeFormatEmoji Nothing = name
+    maybeFormatEmoji (Just e) = formatEmoji e
 
 -- | @toMention@ converts a user to its corresponding mention
 toMention :: User -> Text
