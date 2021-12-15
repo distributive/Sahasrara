@@ -76,7 +76,7 @@ quote =
   Command
     "quote"
     (parseComm quoteComm)
-    [addQuote, editQuote, thisQuote, authorQuote, showQuote, deleteQuote, randomQuote, exportQuotes, importQuotes]
+    [addQuote, editQuote, thisQuote, authorQuote, showQuote, deleteQuote, randomQuote, exportQuotes, importQuotes, clearQuotes]
   where
     quoteComm ::
       WithError
@@ -399,14 +399,14 @@ allQuotes = fmap entityVal <$> selectList [] []
 -- file name that is quoted in the command. Superuser only.
 exportQuotes :: Command
 exportQuotes = Command "export" (parseComm exportQ) []
-  where
-    defFileName = getSystemTime >>= \now -> return $ "quotes_" <> show (systemSeconds now) <> ".json"
-    exportQ :: Maybe (Quoted FilePath) -> Message -> DatabaseDiscord ()
-    exportQ qfp m = requirePermission Superuser m $ do
-      (Qu fp) <- liftIO $ maybe (Qu <$> defFileName) return qfp
-      aq <- allQuotes
-      _ <- liftIO $ encodeFile fp aq
-      sendMessage m ("Succesfully exported all " <> (pack . show . length) aq <> " quotes to `" <> pack fp <> "`")
+
+exportQ :: Maybe (Quoted FilePath) -> Message -> DatabaseDiscord ()
+exportQ qfp m = requirePermission Superuser m $ do
+  let defFileName = getSystemTime >>= \now -> return $ "quotes_" <> show (systemSeconds now) <> ".json"
+  (Qu fp) <- liftIO $ maybe (Qu <$> defFileName) return qfp
+  aq <- allQuotes
+  _ <- liftIO $ encodeFile fp aq
+  sendMessage m ("Succesfully exported all " <> (pack . show . length) aq <> " quotes to `" <> pack fp <> "`")
 
 -- | Import all the quotes in a file into the database from a given file. Superuser only.
 importQuotes :: Command
@@ -417,3 +417,14 @@ importQuotes = Command "import" (parseComm importQ) []
       mqs <- liftIO $ decodeFileStrict fp
       qs <- maybe (throwBot $ GenericException "error getting file" "there was an error obtaining or decoding the quotes json") (insertMany @Quote) mqs
       sendMessage m ("Succesfully imported " <> (pack . show . length) qs <> " quotes")
+
+-- | Clear all the quotes from the database. Superuser only.
+clearQuotes :: Command
+clearQuotes = Command "clear" (parseComm clearQ) []
+  where
+    clearQ :: Maybe (Quoted Text) -> Message -> DatabaseDiscord ()
+    clearQ (Just (Qu "clear the quotes")) m = do
+      exportQ Nothing m
+      i <- deleteWhereCount @Quote []
+      sendMessage m ("Cleared " <> pack (show i) <> " quotes from the database.")
+    clearQ _ m = sendMessage m "To _really do this_, call this command like so: `quote clear \"clear the quotes\"`"
