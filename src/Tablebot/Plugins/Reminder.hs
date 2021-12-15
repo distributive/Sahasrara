@@ -124,7 +124,7 @@ reminderCron = do
             Left _ -> pure ()
             Right mess -> do
               let (Snowflake uid) = userId (messageAuthor mess)
-              sendCustomReplyMessage mess (Snowflake mid) False $
+              sendCustomReplyMessage mess (Snowflake mid) True $
                 pack $
                   "Reminder to <@" ++ show uid ++ ">! " ++ content
               delete (entityKey re)
