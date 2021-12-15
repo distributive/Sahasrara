@@ -10,6 +10,7 @@
 -- without having to lift Discord operations constantly.
 module Tablebot.Plugin.Discord
   ( sendMessage,
+    sendChannelMessage,
     sendReplyMessage,
     sendCustomReplyMessage,
     sendEmbedMessage,
@@ -57,6 +58,19 @@ sendMessage ::
   EnvDatabaseDiscord s ()
 sendMessage m t = do
   res <- liftDiscord . restCall $ R.CreateMessage (messageChannel m) t
+  case res of
+    Left _ -> throw $ MessageSendException "Failed to send message."
+    Right _ -> return ()
+
+-- | @sendChannelMessage@ sends the input message @t@ into the provided channel
+-- @m@. This returns an @Either RestCallErrorCode Message@ to denote failure or
+-- return the 'Message' that was just sent.
+sendChannelMessage ::
+  ChannelId ->
+  Text ->
+  EnvDatabaseDiscord s ()
+sendChannelMessage c t = do
+  res <- liftDiscord . restCall $ R.CreateMessage c t
   case res of
     Left _ -> throw $ MessageSendException "Failed to send message."
     Right _ -> return ()
