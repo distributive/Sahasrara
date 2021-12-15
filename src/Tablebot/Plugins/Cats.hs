@@ -54,25 +54,8 @@ cat =
   where
     sendCat :: Message -> DatabaseDiscord ()
     sendCat m = do
-      credit <- formatFromEmojiName "credit"
-      click <- formatFromEmojiName "click"
-      recurringCredit <- formatFromEmojiName "recurring_credit"
-      subroutine <- formatFromEmojiName "subroutine"
-      trash <- formatFromEmojiName "trash_ability"
-      link <- formatFromEmojiName "link"
-      mu <- formatFromEmojiName "mu"
-      hb <- formatFromEmojiName "hb"
-      jinteki <- formatFromEmojiName "jinteki"
-      nbn <- formatFromEmojiName "nbn"
-      weyland <- formatFromEmojiName "weyland"
-      anarch <- formatFromEmojiName "anarch"
-      criminal <- formatFromEmojiName "criminal"
-      shaper <- formatFromEmojiName "shaper"
-      apex <- formatFromEmojiName "apex"
-      adam <- formatFromEmojiName "adam"
-      sunny <- formatFromEmojiName "sunny"
       r <- liftIO (getCatAPI <&> getCat)
-      sendMessage m (credit <> click <> recurringCredit <> subroutine <> trash <> link <> mu <> hb <> jinteki <> nbn <> weyland <> anarch <> criminal <> shaper <> apex <> adam <> sunny <> r)
+      sendMessage m r
 
 -- | @getCatAPI@ is a helper function that turns gets a JSON object that may
 -- contain a cat image. Uses https://docs.thecatapi.com/ for cats.
