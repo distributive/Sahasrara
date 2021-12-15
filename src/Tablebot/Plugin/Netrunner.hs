@@ -14,6 +14,7 @@ module Tablebot.Plugin.Netrunner (cardToEmbed, cardToImgEmbed, cardToFlavourEmbe
 import Data.Maybe (fromMaybe)
 import Data.Text (Text, replace, toLower, toTitle, unpack)
 import Discord.Types
+import Tablebot.Plugin
 import Tablebot.Plugin.Discord (formatFromEmojiName)
 import Tablebot.Plugin.Embed (addColour)
 import Tablebot.Plugin.Fuzzy (FuzzyCosts (..), closestValueWithCosts)
@@ -22,7 +23,7 @@ import Tablebot.Plugin.Netrunner.Cycle as Cycle (Cycle (..))
 import Tablebot.Plugin.Netrunner.Faction as Faction (Faction (..))
 import Tablebot.Plugin.Netrunner.NrApi (NrApi (..))
 import Tablebot.Plugin.Netrunner.Pack as Pack (Pack (..))
-import Tablebot.Plugin.Types (DiscordColour (Default), hexToDiscordColour)
+import Tablebot.Plugin.Types()
 import Tablebot.Plugin.Utils (intToText)
 
 -- | @queryCard@ fuzzy searches the given library of cards by title.
@@ -65,11 +66,11 @@ cardToTitle card =
 
 -- | @cardToText@ takes a Netrunner card, collects its data and textbox into a
 -- single string.
-cardToText :: Card -> Text
-cardToText card =
+cardToText :: Card -> EnvDatabaseDiscord NrApi Text
+cardToText card = do
   let subtitle = cardToSubtitle card
-      body = formatText $ fromMaybe "" $ text card
-   in subtitle <> body
+  body <- formatText (fromMaybe "" $ text card)
+  return $ subtitle <> body
 
 -- | @cardToSubtitle@ generates the first line of a card's embed text listing
 -- its types, subtypes, and various other data points.
@@ -120,29 +121,51 @@ cardToSubtitle Card {..} =
     link = maybeEmptyPrependI " • Link: " base_link
 
 -- | @formatText@ takes a card's raw description and replaces the html
--- formatting tags with Discord formatting. TODO: unhardcode the emoji
-formatText :: Text -> Text
-formatText raw = foldr (uncurry replace) raw pairs
-  where
-    pairs =
-      [ ("<strong>", "**"),
-        ("</strong>", "**"),
-        ("<em>", "*"),
-        ("</em>", "*"),
-        ("<trace>", "**"),
-        ("</trace>", "**"),
-        ("[credit]", "<:credit:920005658873581568>"),
-        ("[click]", "<:click:920005659142029332>"),
-        ("[recurring-credit]", "<:recurring_credit:920005659045548032>"),
-        ("[subroutine]", "<:subroutine:920005658865180674>"),
-        ("[trash]", "<:trash:920005659280433152>"),
-        ("[link]", "<:link:920005658638712833>"),
-        ("[mu]", "<:mu:920005658651279401>"),
-        ("[haas-bioroid]", "<:hb:920007442681704539>"),
-        ("[jinteki]", "<:jinteki:920007443000459354>"),
-        ("[nbn]", "<:nbn:920007442669133825>"),
-        ("[weyland-consortium]", "<:weyland:920007443331842079>")
-      ]
+-- formatting tags with Discord formatting.
+formatText :: Text -> EnvDatabaseDiscord NrApi Text
+formatText raw = do
+  credit <- formatFromEmojiName "credit"
+  click <- formatFromEmojiName "click"
+  recurringCredit <- formatFromEmojiName "recurring_credit"
+  subroutine <- formatFromEmojiName "subroutine"
+  trash <- formatFromEmojiName "trash_ability"
+  link <- formatFromEmojiName "link"
+  mu <- formatFromEmojiName "mu"
+  hb <- formatFromEmojiName "hb"
+  jinteki <- formatFromEmojiName "jinteki"
+  nbn <- formatFromEmojiName "nbn"
+  weyland <- formatFromEmojiName "weyland"
+  anarch <- formatFromEmojiName "anarch"
+  criminal <- formatFromEmojiName "criminal"
+  shaper <- formatFromEmojiName "shaper"
+  apex <- formatFromEmojiName "apex"
+  adam <- formatFromEmojiName "adam"
+  sunny <- formatFromEmojiName "sunny"
+  return $ foldr (uncurry replace) raw $
+    [ ("<strong>", "**"),
+      ("</strong>", "**"),
+      ("<em>", "*"),
+      ("</em>", "*"),
+      ("<trace>", "**"),
+      ("</trace>", "**"),
+      ("[credit]", credit),
+      ("[click]", click),
+      ("[recurring-credit]", recurringCredit),
+      ("[subroutine]", subroutine),
+      ("[trash]", trash),
+      ("[link]", link),
+      ("[mu]", mu),
+      ("[haas-bioroid]", hb),
+      ("[jinteki]", jinteki),
+      ("[nbn]", nbn),
+      ("[weyland-consortium]", weyland),
+      ("[anarch]", anarch),
+      ("[criminal]", criminal),
+      ("[shaper]", shaper),
+      ("[apex]", apex),
+      ("[adam]", adam),
+      ("[sunny-lebeau]", sunny)
+    ]
 
 -- | @cardToFaction@ takes a card and attempts to find its faction.
 cardToFaction :: NrApi -> Card -> Maybe Faction
@@ -202,15 +225,15 @@ cardToFlavour card = maybe "" (\f -> "*" <> f <> "*") (Card.flavor card)
 
 -- | @cardToLink@ takes a Netrunner card and generates an embed message
 -- representing it.
-cardToEmbed :: NrApi -> Card -> Embed
-cardToEmbed api card =
+cardToEmbed :: NrApi -> Card -> EnvDatabaseDiscord NrApi Embed
+cardToEmbed api card = do
   let eTitle = cardToTitle card
-      eURL = cardToLink card
-      eText = cardToText card
-      eFoot = cardToReleaseData api card
-      eImg = cardToImage api card
-      eColour = cardToColour api card
-   in addColour eColour $ createEmbed $ CreateEmbed "" "" Nothing eTitle eURL eImg eText [] Nothing eFoot Nothing
+  let eURL = cardToLink card
+  eText <- cardToText card
+  let eFoot = cardToReleaseData api card
+  let eImg = cardToImage api card
+  let eColour = cardToColour api card
+  return $ addColour eColour $ createEmbed $ CreateEmbed "" "" Nothing eTitle eURL eImg eText [] Nothing eFoot Nothing
 
 -- | @cardToImgEmbed@ takes a Netrunner card and attempts to embed a picture of
 -- it.

@@ -39,7 +39,7 @@ netrunner =
         () ->
       Message ->
       EnvDatabaseDiscord NrApi ()
-    nrComm _ m = beginnerText m >>= sendMessage m
+    nrComm _ m = sendMessage m =<< beginnerText
 
 -- | @nrFind@ finds the card with title most closely matching its input.
 nrFind :: EnvCommand NrApi
@@ -123,7 +123,7 @@ nrCustom = Command "custom" customPars []
 embedCard :: Card -> Message -> EnvDatabaseDiscord NrApi ()
 embedCard card m = do
   api <- ask
-  sendEmbedMessage m "" $ cardToEmbed api card
+  sendEmbedMessage m "" =<< cardToEmbed api card
 
 -- | @embedCardImg@ takes a card and embeds its image in a message, if able.
 embedCardImg :: Card -> Message -> EnvDatabaseDiscord NrApi ()
@@ -231,11 +231,11 @@ If you mispell a card parameter (e.g. "typ" instead of "type") it will attempt t
     []
     None
 
-beginnerText :: Message -> EnvDatabaseDiscord NrApi Text
-beginnerText m = do
-  subroutine <- formatFromEmojiName "subroutine" m
-  agenda <- formatFromEmojiName "agenda" m
-  rezCost <- formatFromEmojiName "rez_cost" m
+beginnerText :: EnvDatabaseDiscord NrApi Text
+beginnerText = do
+  subroutine <- formatFromEmojiName "subroutine"
+  agenda <- formatFromEmojiName "agenda"
+  rezCost <- formatFromEmojiName "rez_cost"
   return $ agenda <> " **NETRUNNER** " <> rezCost <> [r|
 Netrunner is an asymmetric collectable card game about hackers hacking corporations. It's run as a *free* community endeavour by NISEI:
 |] <> subroutine <> [r| <https://nisei.net/>

@@ -30,6 +30,7 @@ module Tablebot.Plugin.Discord
     toTimestamp',
     formatEmoji,
     formatFromEmojiName,
+    formatFromGuildEmojiName,
     toRelativeTime,
     getMessageLink,
     Message,
@@ -204,8 +205,17 @@ formatEmoji (Emoji (Just eId) eName _ _ _) = "<:" <> eName <> ":" <> pack (show 
 formatEmoji (Emoji _ eName _ _ _) = eName
 
 -- | Display an emoji as best as it can from its name
-formatFromEmojiName :: Text -> Message -> EnvDatabaseDiscord s Text
-formatFromEmojiName name m = do
+formatFromEmojiName :: Text -> EnvDatabaseDiscord s Text
+formatFromEmojiName name = do
+  emoji <- findEmoji name
+  return $ case emoji of
+    Just e -> formatEmoji e
+    Nothing -> name
+
+-- | Display an emoji as best as it can from its name, preferring a local emoji
+-- when possible
+formatFromGuildEmojiName :: Text -> Message -> EnvDatabaseDiscord s Text
+formatFromGuildEmojiName name m = do
   em <- findGuildEmoji name m
   pure $ maybeFormatEmoji em
   where
