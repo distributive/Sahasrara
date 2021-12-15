@@ -80,6 +80,7 @@ cardToSubtitle Card {..} =
     <> type_code'
     <> keywords'
     <> cost'
+    <> mu
     <> strength'
     <> agendaStats
     <> trash
@@ -100,6 +101,7 @@ cardToSubtitle Card {..} =
             (Just x, Just "ice") -> rezText <> intToText x
             (Just x, Just "upgrade") -> rezText <> intToText x
             (Just x, _) -> " • Cost: " <> intToText x
+    mu = maybeEmptyPrependI " • MU: " memory_cost
     strength' = maybeEmptyPrependI " • Strength: " strength
     agendaStats =
       let adv = maybeIntToText advancement_cost

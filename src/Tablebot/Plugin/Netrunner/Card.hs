@@ -27,6 +27,7 @@ data Card = Card
     illustrator :: !(Maybe Text),
     influence_limit :: !(Maybe Int),
     keywords :: !(Maybe Text),
+    memory_cost :: !(Maybe Int),
     minimum_deck_size :: !(Maybe Int),
     pack_code :: !(Maybe Text),
     position :: !(Maybe Int),

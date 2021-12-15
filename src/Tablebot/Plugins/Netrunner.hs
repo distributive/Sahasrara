@@ -31,7 +31,7 @@ netrunner =
   Command
     "netrunner"
     (parseComm nrComm)
-    [nrFind, nrFindImg, nrFindFlavour, nrCustom]
+    [nrFind, nrFindImg, commandAlias "img" nrFindImg, nrFindFlavour, nrCustom]
   where
     nrComm ::
       WithError
@@ -151,11 +151,14 @@ Find and displays Netrunner cards
 Calling without arguments posts some introductory info about the game
 
 Can be used inline by enclosing a card search query inside curly braces (max five queries per message)
+Add additional syntax to the start of the query to fetch only the card's image or flavour text
 
 *Usage:*
   - `netrunner`
-  - `{{card name}}`
-  - `{{card 1}} {{card 2}}`|]
+  - `{{card name}}        ` -> finds the card with title closest matching "card name"
+  - `{{card 1}} {{card 2}}` -> searches for cards matching "card 1" and "card 2"
+  - `{{!card image}}      ` -> fetches the image of the card matching "card image"
+  - `{{|card flavour}}    ` -> fetches the flavour text of the card matching "card flavour" |]
     [findHelp, findImgHelp, findFlavourHelp, customHelp]
     None
 
@@ -167,11 +170,14 @@ findHelp =
     [r|**Find Netrunner Cards**
 Searches the NetrunnerDB database for the card closest matching a given query
 Can be used inline by enclosing your query inside curly braces (max five queries per message)
+Add additional syntax to the start of the query to fetch only the card's image or flavour text
 
 *Usage:*
-  - `netrunner find card name`
-  - `{{card name}}`
-  - `{{card 1}} {{card 2}}`|]
+  - `netrunner find card name` -> finds the card with title closest matching "card name"
+  - `{{card name}}           ` -> the inline version of the above command
+  - `{{card 1}} {{card 2}}   ` -> searches for cards matching "card 1" and "card 2"
+  - `{{!card image}}         ` -> fetches the image of the card matching "card image"
+  - `{{|card flavour}}       ` -> fetches the flavour text of the card matching "card flavour" |]
     []
     None
 
@@ -185,9 +191,8 @@ Searches the NetrunnerDB database for the card closest matching a given query an
 Can be used inline by enclosing your query inside curly braces with a `!` (max five queries per message)
 
 *Usage:*
-  - `netrunner find card name`
-  - `{{!card name}}`
-  - `{{!card 1}} {{!card 2}}`|]
+  - `netrunner find card name` -> fetches the image of the card matching "card name"
+  - `{{!card name}}          ` -> the inline version of the above command|]
     []
     None
 
@@ -201,9 +206,8 @@ Searches the NetrunnerDB database for the card closest matching a given query an
 Can be used inline by enclosing your query inside curly braces with a `|` (max five queries per message)
 
 *Usage:*
-  - `netrunner find card name`
-  - `{{|card name}}`
-  - `{{|card 1}} {{|card 2}}`|]
+  - `netrunner find card name` -> fetches the flavour text of the card matching "card name"
+  - `{{|card name}}          ` -> the inline version of the above command|]
     []
     None
 
@@ -218,16 +222,16 @@ The order of card parameters does not matter
 If you mispell a card parameter (e.g. "typ" instead of "type") it will attempt to correct it
 
 *Usage:*
-- `netrunner custom type:agenda` -> creates an agenda
-- `netrunner custom title:"Custom Card" text:"Lorem ipsum."` -> creates a card called "Custom Card" with text "Lorem ipsum."
-- `netrunner custom faction:"nbn" -> creates a card with faction nbn
-- `netrunner custom keywords:"AP - Hardware - Megacorp" -> creates a card with subtypes
-- `netrunner custom advancement:5 points:3` -> creates a card with an advancement requirement of 5 worth 3 agenda points
-- `netrunner custom cost:3 trash:2` -> creates a card with play/rez cost 3 and a trash cost of 2
-- `netrunner custom strength:4 -> creates a card with strength 4
-- `netrunner custom minSize:40 maxInf:15 link:2 -> creates a card with minimum deck size 40, maximum influence 15, and 2 link
-- `netrunner custom flavour:"Raspberry" -> creates a card with flavour text "Raspberry"
-- `netrunner custom unique:true -> creates a unique card|]
+- `netrunner custom type:agenda                ` -> creates an agenda
+- `netrunner custom title:"Name" text:"Lorem." ` -> creates a card with a title and text
+- `netrunner custom faction:"nbn"              ` -> creates a card with a faction
+- `netrunner custom keywords:"AP - Hardware"   ` -> creates a card with subtypes
+- `netrunner custom advancement:5 points:3     ` -> creates a card with an advancement requirement and agenda points
+- `netrunner custom cost:3 trash:2             ` -> creates a card with play/rez cost and trash cost
+- `netrunner custom strength:4                 ` -> creates a card with strength
+- `netrunner custom minSize:40 maxInf:15 link:2` -> creates a card with a minimum deck size, maximum influence, and link
+- `netrunner custom flavour:"Raspberry & mint" ` -> creates a card with flavour text
+- `netrunner custom unique:true                ` -> creates a unique card|]
     []
     None
 

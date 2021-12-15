@@ -39,23 +39,27 @@ nrToBool _ = Nothing
 -- | @keys@ maps accepted card record keys to their parser functions.
 keys :: [(String, Maybe String -> Maybe NrData)]
 keys =
-  [ ("advancement", fmap $ NrInt . (read :: String -> Int)),
-    ("points", fmap $ NrInt . (read :: String -> Int)),
-    ("link", fmap $ NrInt . (read :: String -> Int)),
-    ("cost", fmap $ NrInt . (read :: String -> Int)),
+  [ ("advancement", fmap $ NrInt . readInt),
+    ("points", fmap $ NrInt . readInt),
+    ("link", fmap $ NrInt . readInt),
+    ("cost", fmap $ NrInt . readInt),
     ("faction", fmap $ NrText . pack),
-    ("influence", fmap $ NrInt . (read :: String -> Int)),
+    ("influence", fmap $ NrInt . readInt),
     ("flavour", fmap $ NrText . pack),
-    ("maxInf", fmap $ NrInt . (read :: String -> Int)),
+    ("maxInf", fmap $ NrInt . readInt),
     ("keywords", fmap $ NrText . pack),
-    ("minSize", fmap $ NrInt . (read :: String -> Int)),
-    ("strength", fmap $ NrInt . (read :: String -> Int)),
+    ("mu", fmap $ NrInt . readInt),
+    ("minSize", fmap $ NrInt . readInt),
+    ("strength", fmap $ NrInt . readInt),
     ("text", fmap $ NrText . pack),
     ("title", fmap $ NrText . pack),
-    ("trash", fmap $ NrInt . (read :: String -> Int)),
+    ("trash", fmap $ NrInt . readInt),
     ("type", fmap $ NrText . pack),
     ("unique", fmap $ NrBool . fuzzyBool)
   ]
+  where
+    readInt :: String -> Int
+    readInt = read
 
 -- | @fuzzyBool@ maps a string to true or false (whichever is closest).
 fuzzyBool :: String -> Bool
@@ -90,6 +94,7 @@ customCard api cardData =
           illustrator = Nothing,
           influence_limit = nrToInt =<< lookup "maxInf" params,
           keywords = nrToText =<< lookup "keywords" params,
+          memory_cost = nrToInt =<< lookup "mu" params,
           minimum_deck_size = nrToInt =<< lookup "minSize" params,
           pack_code = Nothing,
           position = Nothing,
