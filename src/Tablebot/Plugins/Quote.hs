@@ -423,7 +423,7 @@ clearQuotes :: Command
 clearQuotes = Command "clear" (parseComm clearQ) []
   where
     clearQ :: Maybe (Quoted Text) -> Message -> DatabaseDiscord ()
-    clearQ (Just (Qu "clear the quotes")) m = do
+    clearQ (Just (Qu "clear the quotes")) m = requirePermission Superuser m $ do
       exportQ Nothing m
       i <- deleteWhereCount @Quote []
       sendMessage m ("Cleared " <> pack (show i) <> " quotes from the database.")
