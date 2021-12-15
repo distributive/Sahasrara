@@ -11,13 +11,15 @@
 -- allow homogeneous storage throughout the rest of the implementation.
 module Tablebot.Handler.Types where
 
+import Control.Concurrent.MVar (MVar)
+import Control.Monad.Reader (ReaderT)
 import Data.Text (Text)
 import Database.Persist.Sqlite (Migration, SqlPersistT)
 import Discord
 import Discord.Types
 import Tablebot.Plugin.Types
 
-type CompiledDatabaseDiscord = SqlPersistT DiscordHandler
+type CompiledDatabaseDiscord = ReaderT (MVar TablebotCache) (SqlPersistT DiscordHandler)
 
 -- | @CompiledPlugin@ represents the internal format of the plugins.
 -- Its main job is to convert all the plugins into one type by collapsing

@@ -12,9 +12,11 @@
 -- database and Discord operations within your features.
 module Tablebot.Plugin.Types where
 
+import Control.Concurrent.MVar (MVar)
 import Control.Monad.Trans.Class (lift)
 import Control.Monad.Trans.Reader (ReaderT)
 import Data.Char (toLower)
+import Data.Map (Map)
 import Data.Maybe (fromMaybe)
 import Data.Text (Text)
 import Data.Void (Void)
@@ -22,6 +24,7 @@ import Database.Persist.Sqlite (Migration, SqlPersistM, SqlPersistT)
 import Discord (DiscordHandler)
 import Discord.Types
   ( ChannelId,
+    Emoji,
     Event (..),
     Message,
     MessageId,
@@ -40,7 +43,7 @@ import Text.Read (readMaybe)
 --
 -- "Tablebot.Plugin.Discord" provides some helper functions for
 -- running Discord operations without excessive use of @lift@.
-type EnvDatabaseDiscord d = ReaderT d (SqlPersistT DiscordHandler)
+type EnvDatabaseDiscord d = ReaderT d (ReaderT (MVar TablebotCache) (SqlPersistT DiscordHandler))
 
 type DatabaseDiscord = EnvDatabaseDiscord ()
 
@@ -48,16 +51,23 @@ type DatabaseDiscord = EnvDatabaseDiscord ()
 -- the just the database for startup actions.
 type Database d = SqlPersistM d
 
+newtype TablebotCache = TCache
+  { cacheKnownEmoji :: Map Text Emoji
+  }
+
 -- * Parser
 
 -- | A simple definition for parsers on Text.
 type Parser = Parsec Void Text
 
-liftSql :: SqlPersistT DiscordHandler a -> ReaderT d (SqlPersistT DiscordHandler) a
-liftSql = lift
+liftCache :: ReaderT (MVar TablebotCache) (SqlPersistT DiscordHandler) a -> ReaderT d (ReaderT (MVar TablebotCache) (SqlPersistT DiscordHandler)) a
+liftCache = lift
 
-liftDiscord :: DiscordHandler a -> ReaderT d (SqlPersistT DiscordHandler) a
-liftDiscord = lift . lift
+liftSql :: SqlPersistT DiscordHandler a -> ReaderT d (ReaderT (MVar TablebotCache) (SqlPersistT DiscordHandler)) a
+liftSql = lift . lift
+
+liftDiscord :: DiscordHandler a -> ReaderT d (ReaderT (MVar TablebotCache) (SqlPersistT DiscordHandler)) a
+liftDiscord = lift . lift . lift
 
 -- * Features
 
