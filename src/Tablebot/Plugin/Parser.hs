@@ -12,9 +12,11 @@ module Tablebot.Plugin.Parser where
 
 import Data.Char (isDigit, isLetter, isSpace)
 import Data.Functor (($>))
-import Tablebot.Plugin (Parser)
+import Data.Text (Text)
+import Discord.Internal.Rest (Message)
+import Tablebot.Plugin
 import Text.Megaparsec
-import Text.Megaparsec.Char (char)
+import Text.Megaparsec.Char (char, string)
 
 space :: Parser ()
 space = satisfy isSpace $> ()
@@ -140,3 +142,16 @@ double = do
       )
       <|> return ""
   return (read (minus : digits ++ decimal))
+
+-- | For helping to create inline commands. Takes the opening characters, closing
+-- characters, a parser to get a value `e`, and an action that takes that `e` and a
+-- message and produces a DatabaseDiscord effect.
+inlineCommandHelper :: Text -> Text -> Parser e -> (e -> Message -> EnvDatabaseDiscord d f) -> EnvInlineCommand d
+inlineCommandHelper open close p action =
+  InlineCommand
+    ( do
+        getExprs <- many (try $ skipManyTill anySingle (string open *> skipSpace *> p <* skipSpace <* string close))
+        return $ \m -> mapM_ (`action` m) (take maxInlineCommands getExprs)
+    )
+  where
+    maxInlineCommands = 3

@@ -9,21 +9,25 @@
 -- This is an example plugin which responds to certain calls with specific responses.
 module Tablebot.Plugins.Basic (basicPlugin) where
 
-import Data.Text (toTitle)
-import Data.Text.Internal (Text)
-import Tablebot.Plugin (DatabaseDiscord)
-import Tablebot.Plugin.Discord (Message, sendMessage)
+import Data.Text as T (Text, toTitle)
+import Discord.Internal.Rest (Message)
+import Tablebot.Plugin.Discord (sendMessage)
 import Tablebot.Plugin.SmartCommand (parseComm)
 import Tablebot.Plugin.Types
   ( Command,
+    DatabaseDiscord,
     EnvCommand (Command),
-    EnvPlugin (commands),
+    EnvInlineCommand (InlineCommand),
+    EnvPlugin (commands, inlineCommands),
     HelpPage (HelpPage),
+    InlineCommand,
     Plugin,
     RequiredPermission (None),
     helpPages,
     plug,
   )
+import Text.Megaparsec (anySingle, skipManyTill)
+import Text.Megaparsec.Char (string')
 
 -- * Some types to help clarify what's going on
 
@@ -43,9 +47,17 @@ basicCommands =
       "You can make a pull request for that!",
       Simple ("you know what to do", "You know what to do")
     ),
+    ( "issue",
+      "You can submit an issue for that!",
+      Simple ("you know what you want someone else to do", "You know what you want someone else to do")
+    ),
     ( "benji",
-      ":benji_sit:",
+      "<:benji_sit:920000993721196654>",
       Simple ("the almost mascot", "Though he may sit, when put to test, the gender cube proved it was best")
+    ),
+    ( "about",
+      "This bot was created by finnbar to replace a couple of other bots in Tabletop. It's written in Haskell, and you can find the github here: <https://github.com/WarwickTabletop/tablebot>. There are setup guides and a contributor's guide to help you get started.",
+      Simple ("some information about the bot", "Some information about the bot, including how you can get involved")
     )
   ]
 
@@ -66,10 +78,21 @@ baseHelp :: BasicCommand -> HelpPage
 baseHelp (_, _, Advanced help) = help
 baseHelp (a, _, Simple (short, long)) = HelpPage a short ("**" <> toTitle a <> "**\n" <> long <> "\n\n*Usage:* `" <> a <> "`") [] None
 
+type BasicInlineCommand = (Text, Text)
+
+basicInlineCommands :: [BasicInlineCommand]
+basicInlineCommands =
+  [ ("thank you tablebot", "You're welcome!")
+  ]
+
+baseInlineCommand :: BasicInlineCommand -> InlineCommand
+baseInlineCommand (t, rs) = InlineCommand (skipManyTill anySingle (string' t) >> return (`sendMessage` rs))
+
 -- | @basicPlugin@ assembles the call and response commands into a simple command list.
 basicPlugin :: Plugin
 basicPlugin =
   (plug "basic")
     { commands = map baseCommand basicCommands,
-      helpPages = map baseHelp basicCommands
+      helpPages = map baseHelp basicCommands,
+      inlineCommands = map baseInlineCommand basicInlineCommands
     }
