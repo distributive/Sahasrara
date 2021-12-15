@@ -28,7 +28,7 @@ rootBody =
   \ the running of the Warwick Tabletop Games and Role-Playing Society Discord server."
 
 helpHelpPage :: HelpPage
-helpHelpPage = HelpPage "help" "show information about commands" "**Help**\nShows information about bot commands\n\n*Usage:* `help <page>`" [] None
+helpHelpPage = HelpPage "help" [] "show information about commands" "**Help**\nShows information about bot commands\n\n*Usage:* `help <page>`" [] None
 
 generateHelp :: CombinedPlugin -> CombinedPlugin
 generateHelp p =
@@ -39,11 +39,11 @@ generateHelp p =
 handleHelp :: [HelpPage] -> Parser (Message -> CompiledDatabaseDiscord ())
 handleHelp hp = parseHelpPage root
   where
-    root = HelpPage "" "" rootBody hp None
+    root = HelpPage "" [] "" rootBody hp None
 
 parseHelpPage :: HelpPage -> Parser (Message -> CompiledDatabaseDiscord ())
 parseHelpPage hp = do
-  _ <- chunk (helpName hp)
+  _ <- choice (map chunk (helpName hp : helpAliases hp))
   skipSpace
   (try eof $> displayHelp hp) <|> choice (map parseHelpPage $ helpSubpages hp) <?> "Unknown Subcommand"
 
@@ -56,7 +56,7 @@ formatHelp :: UserPermission -> HelpPage -> Text
 formatHelp up hp = helpBody hp <> formatSubpages hp
   where
     formatSubpages :: HelpPage -> Text
-    formatSubpages (HelpPage _ _ _ [] _) = ""
+    formatSubpages (HelpPage _ _ _ _ [] _) = ""
     formatSubpages hp' = if T.null sp then "" else "\n\n*Subcommands*" <> sp
       where
         sp = T.concat (map formatSubpage (helpSubpages hp'))

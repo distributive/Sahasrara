@@ -37,6 +37,7 @@ flipHelp :: HelpPage
 flipHelp =
   HelpPage
     "flip"
+    []
     "flip a coin, or randomly pick from a given list"
     [r|**Flip**
 Randomly picks one element from its arguments or, if none are provided, picks from heads and tails.

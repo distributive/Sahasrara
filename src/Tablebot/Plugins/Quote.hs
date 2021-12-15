@@ -297,6 +297,7 @@ showQuoteHelp :: HelpPage
 showQuoteHelp =
   HelpPage
     "show"
+    []
     "show a quote by number"
     "**Show Quote**\nShows a quote by id\n\n*Usage:* `quote show <id>`"
     []
@@ -306,6 +307,7 @@ randomQuoteHelp :: HelpPage
 randomQuoteHelp =
   HelpPage
     "random"
+    []
     "show a random quote"
     "**Random Quote**\nDisplays a random quote\n\n*Usage:* `quote random`"
     []
@@ -315,6 +317,7 @@ authorQuoteHelp :: HelpPage
 authorQuoteHelp =
   HelpPage
     "user"
+    []
     "show a random quote by a user"
     "**Random User Quote**\nDisplays a random quote attributed to a particular user\n\n*Usage:* `quote user <author>`"
     []
@@ -324,6 +327,7 @@ thisQuoteHelp :: HelpPage
 thisQuoteHelp =
   HelpPage
     "this"
+    []
     "add another message as a quote"
     [r|**Quote This Message**
 Adds an existing message as a quote. If the command is a reply, it uses the replied to message, otherwise it uses the immediatly preceding message.
@@ -336,6 +340,7 @@ deleteQuoteHelp :: HelpPage
 deleteQuoteHelp =
   HelpPage
     "delete"
+    []
     "delete a quote by number"
     [r|**Delete Quote**
 Delete a quote by id
@@ -349,6 +354,7 @@ editQuoteHelp :: HelpPage
 editQuoteHelp =
   HelpPage
     "edit"
+    []
     "edit a quote by number"
     [r|**Edit Quote**
 Edit a quote by id
@@ -359,12 +365,13 @@ Requires moderation permission
     Any
 
 addQuoteHelp :: HelpPage
-addQuoteHelp = HelpPage "add" "add a new quote" "**Add Quote**\nAdds a quote\n\n*Usage:* `quote add \"quote\" - author`" [] None
+addQuoteHelp = HelpPage "add" [] "add a new quote" "**Add Quote**\nAdds a quote\n\n*Usage:* `quote add \"quote\" - author`" [] None
 
 quoteHelp :: HelpPage
 quoteHelp =
   HelpPage
     "quote"
+    ["q"]
     "store and retrieve quotes"
     [r|**Quotes**
 Allows storing and retrieving quotes.
