@@ -15,7 +15,7 @@ import Data.Text (Text, pack)
 import Discord.Types
 import Tablebot.Handler.Command ()
 import Tablebot.Plugin
-import Tablebot.Plugin.Discord (sendEmbedMessage, sendMessage, formatFromEmojiName)
+import Tablebot.Plugin.Discord (formatFromEmojiName, sendEmbedMessage, sendMessage)
 import Tablebot.Plugin.Exception (BotException (NetrunnerException), throwBot)
 import Tablebot.Plugin.Netrunner
 import Tablebot.Plugin.Netrunner.Card (Card)
@@ -236,12 +236,18 @@ beginnerText = do
   subroutine <- formatFromEmojiName "subroutine"
   agenda <- formatFromEmojiName "agenda"
   rezCost <- formatFromEmojiName "rez_cost"
-  return $ agenda <> " **NETRUNNER** " <> rezCost <> [r|
+  return $
+    agenda <> " **NETRUNNER** " <> rezCost
+      <> [r|
 Netrunner is an asymmetric collectable card game about hackers hacking corporations. It's run as a *free* community endeavour by NISEI:
-|] <> subroutine <> [r| <https://nisei.net/>
+|]
+      <> subroutine
+      <> [r| <https://nisei.net/>
 
 **Learn to play**
-|] <> subroutine <> [r| <https://nisei.net/players/learn-to-play/>
+|]
+      <> subroutine
+      <> [r| <https://nisei.net/players/learn-to-play/>
 
 **Get involved here**
 There is a sizeable Netrunner community here of new and old society members. If you want to get into the game feel free to ask in #netrunner for some advice or a beginner game and someone will be happy to help you!|]
@@ -253,7 +259,7 @@ netrunnerStartUp = StartUp $ liftIO getNrApi
 netrunnerPlugin :: EnvPlugin NrApi
 netrunnerPlugin =
   (envPlug "netrunner" netrunnerStartUp)
-  { commands = [netrunner, commandAlias "nr" netrunner],
-    inlineCommands = [nrFindInline],
-    helpPages = [netrunnerHelp]
-  }
+    { commands = [netrunner, commandAlias "nr" netrunner],
+      inlineCommands = [nrFindInline],
+      helpPages = [netrunnerHelp]
+    }

@@ -23,7 +23,7 @@ import Tablebot.Plugin.Netrunner.Cycle as Cycle (Cycle (..))
 import Tablebot.Plugin.Netrunner.Faction as Faction (Faction (..))
 import Tablebot.Plugin.Netrunner.NrApi (NrApi (..))
 import Tablebot.Plugin.Netrunner.Pack as Pack (Pack (..))
-import Tablebot.Plugin.Types()
+import Tablebot.Plugin.Types ()
 import Tablebot.Plugin.Utils (intToText)
 
 -- | @queryCard@ fuzzy searches the given library of cards by title.
@@ -141,31 +141,32 @@ formatText raw = do
   apex <- formatFromEmojiName "apex"
   adam <- formatFromEmojiName "adam"
   sunny <- formatFromEmojiName "sunny"
-  return $ foldr (uncurry replace) raw $
-    [ ("<strong>", "**"),
-      ("</strong>", "**"),
-      ("<em>", "*"),
-      ("</em>", "*"),
-      ("<trace>", "**"),
-      ("</trace>", "**"),
-      ("[credit]", credit),
-      ("[click]", click),
-      ("[recurring-credit]", recurringCredit),
-      ("[subroutine]", subroutine),
-      ("[trash]", trash),
-      ("[link]", link),
-      ("[mu]", mu),
-      ("[haas-bioroid]", hb),
-      ("[jinteki]", jinteki),
-      ("[nbn]", nbn),
-      ("[weyland-consortium]", weyland),
-      ("[anarch]", anarch),
-      ("[criminal]", criminal),
-      ("[shaper]", shaper),
-      ("[apex]", apex),
-      ("[adam]", adam),
-      ("[sunny-lebeau]", sunny)
-    ]
+  return $
+    foldr (uncurry replace) raw $
+      [ ("<strong>", "**"),
+        ("</strong>", "**"),
+        ("<em>", "*"),
+        ("</em>", "*"),
+        ("<trace>", "**"),
+        ("</trace>", "**"),
+        ("[credit]", credit),
+        ("[click]", click),
+        ("[recurring-credit]", recurringCredit),
+        ("[subroutine]", subroutine),
+        ("[trash]", trash),
+        ("[link]", link),
+        ("[mu]", mu),
+        ("[haas-bioroid]", hb),
+        ("[jinteki]", jinteki),
+        ("[nbn]", nbn),
+        ("[weyland-consortium]", weyland),
+        ("[anarch]", anarch),
+        ("[criminal]", criminal),
+        ("[shaper]", shaper),
+        ("[apex]", apex),
+        ("[adam]", adam),
+        ("[sunny-lebeau]", sunny)
+      ]
 
 -- | @cardToFaction@ takes a card and attempts to find its faction.
 cardToFaction :: NrApi -> Card -> Maybe Faction
