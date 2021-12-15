@@ -79,9 +79,11 @@ eventHandler pl prefix = \case
 -- so may need rewriting if you change the @DatabaseDiscord@ monad stack.
 runCron :: CompiledCronJob -> CompiledDatabaseDiscord ThreadId
 runCron (CCronJob delay fn) = do
-  db <- ask
-  discord <- lift ask
-  let unDB = runReaderT fn db
+  cache <- ask
+  db <- lift ask
+  discord <- (lift . lift) ask
+  let unCache = runReaderT fn cache
+  let unDB = runReaderT unCache db
   let unDiscord = runReaderT unDB discord
   liftIO $ forkIO (loopWithDelay delay unDiscord)
   where
