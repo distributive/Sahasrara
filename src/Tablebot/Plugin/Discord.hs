@@ -14,8 +14,6 @@ module Tablebot.Plugin.Discord
     reactToMessage,
     findGuild,
     findEmoji,
-    findGuildEmoji,
-    getGuildEmoji,
     getMessage,
     getMessageMember,
     getReplyMessage,
@@ -30,7 +28,6 @@ module Tablebot.Plugin.Discord
     toTimestamp',
     formatEmoji,
     formatFromEmojiName,
-    formatFromGuildEmojiName,
     toRelativeTime,
     getMessageLink,
     Message,
@@ -54,6 +51,7 @@ import Discord (RestCallErrorCode, readCache, restCall)
 import Discord.Internal.Gateway.Cache
 import qualified Discord.Requests as R
 import Discord.Types
+import Tablebot.Handler.Cache
 import Tablebot.Handler.Embed
 import Tablebot.Plugin (EnvDatabaseDiscord, liftDiscord)
 import Tablebot.Plugin.Exception (BotException (..))
@@ -168,15 +166,21 @@ findGuild m = case messageGuild m of
       Right a -> pure $ Just a
       Left _ -> pure Nothing
 
--- | Find an emoji from its name within a guild
+-- | Find an emoji from its name within a specific guild if it doesn't exist in the cache
+-- Not exported, used by findEmoji and findGuildEmoji
 getGuildEmoji :: Text -> GuildId -> EnvDatabaseDiscord s (Maybe Emoji)
 getGuildEmoji ename gid = do
-  guildResp <- liftDiscord $ restCall $ R.GetGuild gid
-  case guildResp of
-    Left _ -> pure Nothing
-    Right guild ->
-      let emoji = filter ((ename ==) . emojiName) (guildEmojis guild)
-       in pure $ listToMaybe emoji
+  cachedEmoji <- lookupEmojiCache ename
+  case cachedEmoji of
+    Just e -> pure $ Just e
+    Nothing -> do
+      guildResp <- liftDiscord $ restCall $ R.GetGuild gid
+      case guildResp of
+        Left _ -> pure Nothing
+        Right guild -> do
+          fillEmojiCache guild
+          let emoji = filter ((ename ==) . emojiName) (guildEmojis guild)
+          pure $ listToMaybe emoji
 
 -- | search through all known guilds for an emoji with that name
 findEmoji :: Text -> EnvDatabaseDiscord s (Maybe Emoji)
@@ -184,20 +188,6 @@ findEmoji ename = fmap msum (liftDiscord readCache >>= cacheToEmoji)
   where
     cacheToEmoji :: Cache -> EnvDatabaseDiscord s [Maybe Emoji]
     cacheToEmoji cache = mapM (getGuildEmoji ename) (keys $ _guilds cache)
-
--- | Get an emoji by name, preferring a local emoji when possible
--- This is quite aggressive at trying its best to find the emoji,
--- and may result in a large number of api calls in the worst case
-findGuildEmoji :: Text -> Message -> EnvDatabaseDiscord s (Maybe Emoji)
-findGuildEmoji ename m = do
-  g <- findGuild m
-  case g of
-    Nothing -> findEmoji ename
-    Just guild -> do
-      a <- getGuildEmoji ename guild
-      case a of
-        Just e -> pure $ Just e
-        Nothing -> findEmoji ename
 
 -- | Render an Emoji
 formatEmoji :: Emoji -> Text
@@ -208,39 +198,20 @@ formatEmoji (Emoji _ eName _ _ _) = eName
 formatFromEmojiName :: Text -> EnvDatabaseDiscord s Text
 formatFromEmojiName name = do
   emoji <- findEmoji name
-  return $ case emoji of
-    Just e -> formatEmoji e
-    Nothing -> name
-
--- | Display an emoji as best as it can from its name, preferring a local emoji
--- when possible
-formatFromGuildEmojiName :: Text -> Message -> EnvDatabaseDiscord s Text
-formatFromGuildEmojiName name m = do
-  em <- findGuildEmoji name m
-  pure $ maybeFormatEmoji em
-  where
-    maybeFormatEmoji Nothing = name
-    maybeFormatEmoji (Just e) = formatEmoji e
+  return $ maybe name formatEmoji emoji
 
 -- | @toMention@ converts a user to its corresponding mention
 toMention :: User -> Text
-toMention = pack . toMentionStr
+toMention = toMention' . userId
 
 -- | @toMention'@ converts a user ID to its corresponding mention
 toMention' :: UserId -> Text
-toMention' = pack . toMentionStr'
+toMention' u = "<@!" <> pack (show u) <> ">"
 
 -- | @fromMention@ converts some text into what could be a userid (which isn't checked
 -- for correctness above getting rid of triangle brackets, '@', and the optional '!')
 fromMention :: Text -> Maybe UserId
 fromMention = fromMentionStr . unpack
-
--- | @toMentionStr@ converts a user to its corresponding mention, returning a string to prevent packing and unpacking
-toMentionStr :: User -> String
-toMentionStr = toMentionStr' . userId
-
-toMentionStr' :: UserId -> String
-toMentionStr' u = "<@!" ++ show u ++ ">"
 
 fromMentionStr :: String -> Maybe UserId
 fromMentionStr user
