@@ -10,7 +10,7 @@ Below are listed the current full capabilities of the bot for rolling dice and e
 - Subtraction
 - Multiplication
 - Division
-- Single input function application (currently for `id`,`abs`, `negate`, and `fact` (factorial) up to some number determined by the bot owner, 50 by default)
+- Single input function application (currently for `id`,`abs`, `neg`, and `fact` (factorial) up to some number determined by the bot owner, 50 by default)
 - Negation using `-`
 - Exponentiation
 - Parentheses
@@ -29,7 +29,7 @@ When the bot returns the result, it also shows the results of the die rolls of t
 
 ### Manipulating Dice
 
-There are operators that can be performed on dice rolling, listed below. Wherever there is `X`, means an integer (or an expression within parentheses; if the integer is negative it is instead treated as 0). Wherever there is a `#`, means one of `/=`, `<=`, `>=`, `<`, `=`, `>`.
+There are operators that can be performed on dice rolling, listed below. Wherever there is `X`, it means an integer (or an expression within parentheses; if the integer is negative it is instead treated as 0). Wherever there is a `#`, it means one of `/=` (not equals), `<=`, `>=`, `<`, `=`, `>`. There can be multiple operators, and operators are applied left to right, so if all but one die is dropped in the first step, that die is the only die that operations will be performed on in later steps.
 
 - `khX` - keep highest X
 - `klX` - keep lowest X
@@ -44,7 +44,7 @@ These operations can be stuck on the end of a dice value; see below for examples
 
 - `2d20kh1` - keep the highest roll of rolling two twenty sided dice
 - `10d6ro<3` - roll ten six sided dice, rerolling any that are less than three once
-- `4d10dw=10` - roll four ten sided dice, dropping any that equal ten
+- `4d10dw=10rr<3` - roll four ten sided dice, dropping any that equal ten, then rerolling any left that are less than 3
 
 ### Evaluating Lazily
 

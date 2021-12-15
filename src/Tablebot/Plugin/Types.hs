@@ -83,6 +83,10 @@ data EnvCommand d = Command
 
 type Command = EnvCommand ()
 
+-- | Construct an aliased command that behaves the same as another command (for things like short forms)
+commandAlias :: Text -> EnvCommand d -> EnvCommand d
+commandAlias name' (Command _ cp sc) = Command name' cp sc
+
 -- | For when you get a 'MessageCreate', but instead of wanting to match on
 -- "!name args" (for prefix "!"), you want a more general match. Useful for
 -- commands that work with brackets or look for keywords.
