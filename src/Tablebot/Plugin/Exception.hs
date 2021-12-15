@@ -36,6 +36,8 @@ data BotException
   | IndexOutOfBoundsException Int (Int, Int)
   | RandomException String
   | EvaluationException String [String]
+  | IOException String
+  | NetrunnerException String
   deriving (Show, Eq)
 
 instance Exception BotException
@@ -123,3 +125,5 @@ errorInfo (EvaluationException msg' locs) = ErrorInfo "EvaluationException" $ ms
       if l > 6
         then connectVs fs ++ "\n...\n" ++ connectVs ls
         else connectVs (reverse locs)
+errorInfo (IOException msg') = ErrorInfo "IOException" msg'
+errorInfo (NetrunnerException msg') = ErrorInfo "NetrunnerException" msg'

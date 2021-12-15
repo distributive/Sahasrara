@@ -78,7 +78,6 @@ compilePlugin p = CPl (pluginName p) sa (helpPages p) (migrations p)
 
 -- * Helper converters
 
--- |
 compileParser :: s -> Parser (Message -> EnvDatabaseDiscord s a) -> Parser (Message -> CompiledDatabaseDiscord a)
 compileParser s = fmap (changeMessageAction s)
 
