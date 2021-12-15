@@ -22,8 +22,10 @@ module Tablebot.Plugin.Discord
     getPrecedingMessage,
     toMention,
     toMention',
+    fromMention,
     toMentionStr,
     toMentionStr',
+    fromMentionStr,
     toTimestamp,
     toTimestamp',
     formatEmoji,
@@ -38,13 +40,13 @@ module Tablebot.Plugin.Discord
   )
 where
 
-import Control.Monad.Exception
-import Control.Monad.IO.Class (liftIO)
+import Control.Monad.Exception (MonadException (throw))
+import Data.Char (isDigit)
 import Data.Foldable (msum)
 import Data.Map.Strict (keys)
 import Data.Maybe (listToMaybe)
 import Data.String (IsString (fromString))
-import Data.Text (Text, pack)
+import Data.Text (Text, pack, unpack)
 import Data.Time.Clock (nominalDiffTimeToSeconds)
 import Data.Time.Clock.POSIX (utcTimeToPOSIXSeconds)
 import Discord (RestCallErrorCode, readCache, restCall)
@@ -52,7 +54,7 @@ import Discord.Internal.Gateway.Cache
 import qualified Discord.Requests as R
 import Discord.Types
 import Tablebot.Handler.Embed
-import Tablebot.Plugin (DatabaseDiscord, EnvDatabaseDiscord (..), liftDiscord)
+import Tablebot.Plugin (DatabaseDiscord, EnvDatabaseDiscord, liftDiscord)
 import Tablebot.Plugin.Exception (BotException (..))
 
 -- | @sendMessage@ sends the input message @t@ in the same channel as message
@@ -218,12 +220,25 @@ toMention = pack . toMentionStr
 toMention' :: UserId -> Text
 toMention' = pack . toMentionStr'
 
+-- | @fromMention@ converts some text into what could be a userid (which isn't checked
+-- for correctness above getting rid of triangle brackets, '@', and the optional '!')
+fromMention :: Text -> Maybe UserId
+fromMention = fromMentionStr . unpack
+
 -- | @toMentionStr@ converts a user to its corresponding mention, returning a string to prevent packing and unpacking
 toMentionStr :: User -> String
 toMentionStr = toMentionStr' . userId
 
 toMentionStr' :: UserId -> String
 toMentionStr' u = "<@!" ++ show u ++ ">"
+
+fromMentionStr :: String -> Maybe UserId
+fromMentionStr user
+  | length user < 4 || head user /= '<' || last user /= '>' || (head . tail) user /= '@' || (head stripToNum /= '!' && (not . isDigit) (head stripToNum)) = Nothing
+  | all isDigit (tail stripToNum) = Just $ if head stripToNum == '!' then read (tail stripToNum) else read stripToNum
+  | otherwise = Nothing
+  where
+    stripToNum = (init . tail . tail) user
 
 data TimeFormat = Default | ShortTime | LongTime | ShortDate | LongDate | ShortDateTime | LongDateTime | Relative deriving (Show, Enum, Eq)
 
