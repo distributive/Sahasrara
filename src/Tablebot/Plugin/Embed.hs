@@ -20,7 +20,7 @@ import Tablebot.Plugin.Types (DiscordColour)
 -- its not bad (once you realise that it turns empty strings into Nothing for you...) but it can't do colours.
 -- To add a colour run createEmbed on it and then use one of these functions to manipulate it
 simpleEmbed :: Text -> Embed
-simpleEmbed t = createEmbed $ CreateEmbed "" "" Nothing "" "" Nothing t [] Nothing "" Nothing
+simpleEmbed t = createEmbed $ CreateEmbed "" "" Nothing "" "" Nothing t [] Nothing "" Nothing Nothing
 
 addTitle :: Embeddable e => Text -> e -> Embed
 addTitle t e =

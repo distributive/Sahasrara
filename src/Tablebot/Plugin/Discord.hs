@@ -232,7 +232,7 @@ findEmoji :: Text -> EnvDatabaseDiscord s (Maybe Emoji)
 findEmoji ename = fmap msum (liftDiscord readCache >>= cacheToEmoji)
   where
     cacheToEmoji :: Cache -> EnvDatabaseDiscord s [Maybe Emoji]
-    cacheToEmoji cache = mapM (getGuildEmoji ename) (keys $ _guilds cache)
+    cacheToEmoji cache = mapM (getGuildEmoji ename) (keys $ cacheGuilds cache)
 
 -- | Render an Emoji
 formatEmoji :: Emoji -> Text

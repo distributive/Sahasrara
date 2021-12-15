@@ -90,4 +90,4 @@ instance Embeddable CreateEmbed where
   asEmbed = createEmbed
 
 instance Embeddable Text where
-  asEmbed t = createEmbed $ CreateEmbed "" "" Nothing "" "" Nothing t [] Nothing "" Nothing
+  asEmbed t = createEmbed $ CreateEmbed "" "" Nothing "" "" Nothing t [] Nothing "" Nothing Nothing
