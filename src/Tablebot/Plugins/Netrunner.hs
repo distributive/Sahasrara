@@ -15,7 +15,7 @@ import Data.Text (Text, pack)
 import Discord.Types
 import Tablebot.Handler.Command ()
 import Tablebot.Plugin
-import Tablebot.Plugin.Discord (sendEmbedMessage, sendMessage)
+import Tablebot.Plugin.Discord (sendEmbedMessage, sendMessage, formatFromEmojiName)
 import Tablebot.Plugin.Exception (BotException (NetrunnerException), throwBot)
 import Tablebot.Plugin.Netrunner
 import Tablebot.Plugin.Netrunner.Card (Card)
@@ -39,7 +39,7 @@ netrunner =
         () ->
       Message ->
       EnvDatabaseDiscord NrApi ()
-    nrComm _ m = sendMessage m beginnerText
+    nrComm _ m = beginnerText m >>= sendMessage m
 
 -- | @nrFind@ finds the card with title most closely matching its input.
 nrFind :: EnvCommand NrApi
@@ -231,14 +231,17 @@ If you mispell a card parameter (e.g. "typ" instead of "type") it will attempt t
     []
     None
 
-beginnerText :: Text
-beginnerText =
-  [r|<:agenda:920005658722570300> **NETRUNNER** <:rez_cost:920005659255242832>
+beginnerText :: Message -> EnvDatabaseDiscord NrApi Text
+beginnerText m = do
+  subroutine <- formatFromEmojiName "subroutine" m
+  agenda <- formatFromEmojiName "agenda" m
+  rezCost <- formatFromEmojiName "rez_cost" m
+  return $ agenda <> " **NETRUNNER** " <> rezCost <> [r|
 Netrunner is an asymmetric collectable card game about hackers hacking corporations. It's run as a *free* community endeavour by NISEI:
-<:subroutine:920005658865180674> <https://nisei.net/>
+|] <> subroutine <> [r| <https://nisei.net/>
 
 **Learn to play**
-<:subroutine:920005658865180674> <https://nisei.net/players/learn-to-play/>
+|] <> subroutine <> [r| <https://nisei.net/players/learn-to-play/>
 
 **Get involved here**
 There is a sizeable Netrunner community here of new and old society members. If you want to get into the game feel free to ask in #netrunner for some advice or a beginner game and someone will be happy to help you!|]
@@ -248,4 +251,9 @@ netrunnerStartUp = StartUp $ liftIO getNrApi
 
 -- | @welcomePlugin@ assembles these commands into a plugin.
 netrunnerPlugin :: EnvPlugin NrApi
-netrunnerPlugin = (envPlug "netrunner" netrunnerStartUp) {commands = [netrunner], inlineCommands = [nrFindInline], helpPages = [netrunnerHelp]}
+netrunnerPlugin =
+  (envPlug "netrunner" netrunnerStartUp)
+  { commands = [netrunner, commandAlias "nr" netrunner],
+    inlineCommands = [nrFindInline],
+    helpPages = [netrunnerHelp]
+  }

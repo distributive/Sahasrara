@@ -14,6 +14,7 @@ module Tablebot.Plugin.Netrunner (cardToEmbed, cardToImgEmbed, cardToFlavourEmbe
 import Data.Maybe (fromMaybe)
 import Data.Text (Text, replace, toLower, toTitle, unpack)
 import Discord.Types
+import Tablebot.Plugin.Discord (formatFromEmojiName)
 import Tablebot.Plugin.Embed (addColour)
 import Tablebot.Plugin.Fuzzy (FuzzyCosts (..), closestValueWithCosts)
 import Tablebot.Plugin.Netrunner.Card as Card (Card (..))

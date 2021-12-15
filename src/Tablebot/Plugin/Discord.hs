@@ -54,7 +54,7 @@ import Discord.Internal.Gateway.Cache
 import qualified Discord.Requests as R
 import Discord.Types
 import Tablebot.Handler.Embed
-import Tablebot.Plugin (DatabaseDiscord, EnvDatabaseDiscord, liftDiscord)
+import Tablebot.Plugin (EnvDatabaseDiscord, liftDiscord)
 import Tablebot.Plugin.Exception (BotException (..))
 
 -- | @sendMessage@ sends the input message @t@ in the same channel as message
@@ -157,7 +157,7 @@ getMessageMember m = gMM (messageGuild m) m
       a <- liftDiscord $ restCall $ R.GetGuildMember g' (userId $ messageAuthor m')
       return $ maybeRight a
 
-findGuild :: Message -> DatabaseDiscord (Maybe GuildId)
+findGuild :: Message -> EnvDatabaseDiscord s (Maybe GuildId)
 findGuild m = case messageGuild m of
   Just a -> pure $ Just a
   Nothing -> do
@@ -168,7 +168,7 @@ findGuild m = case messageGuild m of
       Left _ -> pure Nothing
 
 -- | Find an emoji from its name within a guild
-getGuildEmoji :: Text -> GuildId -> DatabaseDiscord (Maybe Emoji)
+getGuildEmoji :: Text -> GuildId -> EnvDatabaseDiscord s (Maybe Emoji)
 getGuildEmoji ename gid = do
   guildResp <- liftDiscord $ restCall $ R.GetGuild gid
   case guildResp of
@@ -178,16 +178,16 @@ getGuildEmoji ename gid = do
        in pure $ listToMaybe emoji
 
 -- | search through all known guilds for an emoji with that name
-findEmoji :: Text -> DatabaseDiscord (Maybe Emoji)
+findEmoji :: Text -> EnvDatabaseDiscord s (Maybe Emoji)
 findEmoji ename = fmap msum (liftDiscord readCache >>= cacheToEmoji)
   where
-    cacheToEmoji :: Cache -> DatabaseDiscord [Maybe Emoji]
+    cacheToEmoji :: Cache -> EnvDatabaseDiscord s [Maybe Emoji]
     cacheToEmoji cache = mapM (getGuildEmoji ename) (keys $ _guilds cache)
 
 -- | Get an emoji by name, preferring a local emoji when possible
 -- This is quite aggressive at trying its best to find the emoji,
 -- and may result in a large number of api calls in the worst case
-findGuildEmoji :: Text -> Message -> DatabaseDiscord (Maybe Emoji)
+findGuildEmoji :: Text -> Message -> EnvDatabaseDiscord s (Maybe Emoji)
 findGuildEmoji ename m = do
   g <- findGuild m
   case g of
@@ -204,7 +204,7 @@ formatEmoji (Emoji (Just eId) eName _ _ _) = "<:" <> eName <> ":" <> pack (show 
 formatEmoji (Emoji _ eName _ _ _) = eName
 
 -- | Display an emoji as best as it can from its name
-formatFromEmojiName :: Text -> Message -> DatabaseDiscord Text
+formatFromEmojiName :: Text -> Message -> EnvDatabaseDiscord s Text
 formatFromEmojiName name m = do
   em <- findGuildEmoji name m
   pure $ maybeFormatEmoji em
