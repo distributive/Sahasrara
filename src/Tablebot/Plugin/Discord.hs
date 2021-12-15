@@ -207,7 +207,7 @@ formatFromEmojiName name m = do
   em <- findGuildEmoji name m
   pure $ maybeFormatEmoji em
   where
-    maybeFormatEmoji Nothing = name <> "?"
+    maybeFormatEmoji Nothing = name
     maybeFormatEmoji (Just e) = formatEmoji e
 
 -- | @toMention@ converts a user to its corresponding mention
