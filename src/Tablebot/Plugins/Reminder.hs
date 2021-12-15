@@ -32,7 +32,8 @@ import Duckling.Resolve (Context (..), DucklingTime, Options (..))
 import Duckling.Time.Types (InstantValue (InstantValue), SingleTimeValue (SimpleValue), TimeValue (TimeValue))
 import Tablebot.Plugin
 import Tablebot.Plugin.Database
-import Tablebot.Plugin.Discord (getMessage, sendMessage, toTimestamp)
+import Tablebot.Plugin.Discord (getMessage, sendChannelMessage, sendCustomReplyMessage, sendMessage, toTimestamp)
+import Tablebot.Plugin.Permission (requirePermission)
 import Tablebot.Plugin.SmartCommand (PComm (parseComm), Quoted (Qu), RestOfInput (ROI), WithError (..))
 import Tablebot.Plugin.Utils (debugPrint)
 import Text.RawString.QQ (r)
@@ -45,6 +46,7 @@ share
 Reminder
     reminderCid Word64
     reminderMid Word64
+    user Word64
     time UTCTime
     content String
     deriving Show
@@ -94,14 +96,28 @@ addReminder :: UTCTime -> String -> Message -> DatabaseDiscord ()
 addReminder time content m = do
   let (Snowflake cid) = messageChannel m
       (Snowflake mid) = messageId m
-  added <- insert $ Reminder cid mid time content
+      (Snowflake uid) = userId $ messageAuthor m
+  added <- insert $ Reminder cid mid uid time content
   let res = pack $ show $ fromSqlKey added
   sendMessage m ("Reminder " <> res <> " set for " <> toTimestamp time <> " with message `" <> pack content <> "`")
+
+-- @deleteReminder@ takes a reminder Id and deletes it from the list of awating reminders.
+deleteReminder :: WithError "Missing required argument" (Int) -> Message -> DatabaseDiscord ()
+deleteReminder (WErr rid) m = requirePermission Any m $ do
+  delete k
+  sendMessage m ("Reminder " <> pack (show rid) <> " deleted.")
+  where
+    k :: Key Reminder
+    k = toSqlKey $ fromIntegral rid
 
 -- | @reminderCommand@ is a command implementing the functionality in
 -- @reminderParser@ and @addReminder@.
 reminderCommand :: Command
-reminderCommand = Command "remind" (parseComm reminderParser) []
+reminderCommand = Command "remind" (parseComm reminderParser) [deleteReminderCommand]
+
+-- | @deleteReminderCommand@ is a subcommand that provides the deletion feature.
+deleteReminderCommand :: Command
+deleteReminderCommand = Command "delete" (parseComm deleteReminder) []
 
 -- | @reminderCron@ is a cron job that checks every minute to see if a reminder
 -- has passed, and if so sends a message using the stored information about the
@@ -117,14 +133,15 @@ reminderCron = do
         return re
   liftIO $ mapM_ (print . entityVal) entitydue
   forM_ entitydue $ \re ->
-    let (Reminder cid mid _time content) = entityVal re
+    let (Reminder cid mid uid _time content) = entityVal re
      in do
           res <- getMessage (Snowflake cid) (Snowflake mid)
           case res of
-            Left _ -> pure ()
+            Left _ -> do
+              sendChannelMessage (fromIntegral cid) (pack $ "Reminder to <@" ++ show uid ++ ">! " ++ content)
+              delete (entityKey re)
             Right mess -> do
-              let (Snowflake uid) = userId (messageAuthor mess)
-              sendMessage mess $
+              sendCustomReplyMessage mess (Snowflake mid) True $
                 pack $
                   "Reminder to <@" ++ show uid ++ ">! " ++ content
               delete (entityKey re)
@@ -140,8 +157,21 @@ Send a reminder to yourself or others. Pick a date and time, and the tablebot wi
 Uses duckling (<https://github.com/facebook/duckling>) to parse time and dates, and thus is quite flexible, if you want to use natural language for example.
 
 *Usage:* `remind "reminder" <at|in|on> <time or duration>`|]
-    []
+    [deleteReminderHelp]
     None
+
+deleteReminderHelp :: HelpPage
+deleteReminderHelp =
+  HelpPage
+    "delete"
+    "delete a reminder by number"
+    [r|**Delete Reminder**
+Delete a reminder by id
+Requires moderation permission
+
+*Usage:* `remind delete <id>`|]
+    []
+    Any
 
 -- | @reminderPlugin@ builds a plugin providing reminder asking functionality
 -- (@reminderCommand@), reminding functionality (via the cron job specified by

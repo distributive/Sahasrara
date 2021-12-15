@@ -10,6 +10,9 @@
 -- without having to lift Discord operations constantly.
 module Tablebot.Plugin.Discord
   ( sendMessage,
+    sendChannelMessage,
+    sendReplyMessage,
+    sendCustomReplyMessage,
     sendEmbedMessage,
     reactToMessage,
     findGuild,
@@ -66,6 +69,50 @@ sendMessage ::
   EnvDatabaseDiscord s ()
 sendMessage m t = do
   res <- liftDiscord . restCall $ R.CreateMessage (messageChannel m) t
+  case res of
+    Left _ -> throw $ MessageSendException "Failed to send message."
+    Right _ -> return ()
+
+-- | @sendChannelMessage@ sends the input message @t@ into the provided channel
+-- @m@. This returns an @Either RestCallErrorCode Message@ to denote failure or
+-- return the 'Message' that was just sent.
+sendChannelMessage ::
+  ChannelId ->
+  Text ->
+  EnvDatabaseDiscord s ()
+sendChannelMessage c t = do
+  res <- liftDiscord . restCall $ R.CreateMessage c t
+  case res of
+    Left _ -> throw $ MessageSendException "Failed to send message."
+    Right _ -> return ()
+
+-- | @sendReplyMessage@ sends the input message @t@ as a reply to the triggering message
+-- @m@. This returns an @Either RestCallErrorCode Message@ to denote failure or
+-- return the 'Message' that was just sent.
+sendReplyMessage ::
+  Message ->
+  Text ->
+  EnvDatabaseDiscord s ()
+sendReplyMessage m t = do
+  let ref = MessageReference (Just (messageId m)) Nothing Nothing False
+  res <- liftDiscord . restCall $ R.CreateMessageDetailed (messageChannel m) (R.MessageDetailedOpts t False Nothing Nothing Nothing (Just ref))
+  case res of
+    Left _ -> throw $ MessageSendException "Failed to send message."
+    Right _ -> return ()
+
+-- | @sendCustomReplyMessage@ sends the input message @t@ as a reply to a provided message id
+-- @m@. This returns an @Either RestCallErrorCode Message@ to denote failure or
+-- return the 'Message' that was just sent.
+-- @fail'@ indicates whether the message should still send if the provided message id is invalid
+sendCustomReplyMessage ::
+  Message ->
+  MessageId ->
+  Bool ->
+  Text ->
+  EnvDatabaseDiscord s ()
+sendCustomReplyMessage m mid fail' t = do
+  let ref = MessageReference (Just mid) Nothing Nothing fail'
+  res <- liftDiscord . restCall $ R.CreateMessageDetailed (messageChannel m) (R.MessageDetailedOpts t False Nothing Nothing Nothing (Just ref))
   case res of
     Left _ -> throw $ MessageSendException "Failed to send message."
     Right _ -> return ()
