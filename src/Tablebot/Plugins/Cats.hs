@@ -18,7 +18,7 @@ import GHC.Generics (Generic)
 import Network.HTTP.Conduit (Response (responseBody), parseRequest)
 import Network.HTTP.Simple (addRequestHeader, httpLBS)
 import System.Environment (lookupEnv)
-import Tablebot.Plugin.Discord (Message, formatFromEmojiName, sendMessage)
+import Tablebot.Plugin.Discord (Message, sendMessage)
 import Tablebot.Plugin.SmartCommand (parseComm)
 import Tablebot.Plugin.Types
   ( Command,

@@ -21,8 +21,6 @@ module Tablebot.Plugin.Discord
     toMention,
     toMention',
     fromMention,
-    toMentionStr,
-    toMentionStr',
     fromMentionStr,
     toTimestamp,
     toTimestamp',
