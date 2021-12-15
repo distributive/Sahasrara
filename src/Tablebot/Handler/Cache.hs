@@ -1,11 +1,9 @@
 module Tablebot.Handler.Cache where
 
 import Control.Concurrent.MVar (putMVar, readMVar, takeMVar)
-import Control.Monad.Cont (join, liftM2)
 import Control.Monad.IO.Class (liftIO)
 import Control.Monad.Trans.Reader (ask)
 import qualified Data.Map as M
-import Data.Maybe (isJust)
 import Data.Text (Text)
 import Discord.Types
 import Tablebot.Plugin.Types
@@ -14,7 +12,6 @@ lookupEmojiCache :: Text -> EnvDatabaseDiscord s (Maybe Emoji)
 lookupEmojiCache t = do
   mcache <- liftCache ask
   cache <- liftIO $ readMVar mcache
-  liftIO $ print $ M.lookup t $ cacheKnownEmoji cache
   pure $ M.lookup t $ cacheKnownEmoji cache
 
 insertEmojiCache :: Text -> Emoji -> EnvDatabaseDiscord s ()
