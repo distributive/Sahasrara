@@ -19,15 +19,15 @@ where
 import qualified Data.List.NonEmpty as NE
 import Data.Maybe (catMaybes)
 import Data.Set (singleton, toList)
-import Data.Text (Text, isPrefixOf)
+import Data.Text (Text)
 import Data.Void (Void)
 import Discord.Types (Message (messageText))
 import Tablebot.Handler.Plugins (changeAction)
 import Tablebot.Handler.Types
 import Tablebot.Plugin.Discord (sendEmbedMessage)
 import Tablebot.Plugin.Exception (BotException (ParserException), embedError)
-import Tablebot.Plugin.Parser (skipSpace1)
-import Tablebot.Plugin.Types hiding (commandParser, inlineCommandParser)
+import Tablebot.Plugin.Parser (skipSpace1, space, word)
+import Tablebot.Plugin.Types (Parser)
 import Text.Megaparsec
 
 -- | @parseNewMessage@ parses a new message, first by attempting to match the
@@ -35,9 +35,18 @@ import Text.Megaparsec
 -- to find inline commands.
 parseNewMessage :: PluginActions -> Text -> Message -> CompiledDatabaseDiscord ()
 parseNewMessage pl prefix m =
-  if prefix `isPrefixOf` messageText m
+  if isCommandCall $ messageText m
     then parseCommands (compiledCommands pl) m prefix
     else parseInlineCommands (compiledInlineCommands pl) m
+  where
+    -- We assume that if someone types .singleword, that is a command.
+    -- Otherwise we ignore it (e.g. "... so what" is not a command).
+    isCommandCall :: Text -> Bool
+    isCommandCall t = case parse checkCommand "" t of
+      Left _ -> False
+      Right _ -> True
+    checkCommand :: Parser ()
+    checkCommand = chunk prefix *> word *> (space <|> eof)
 
 -- | Given a list of 'Command' @cs@, the 'Message' that triggered the event
 -- @m@, and a command prefix @prefix@, construct a parser that parses commands.
@@ -59,7 +68,6 @@ parseCommands cs m prefix = case parse (parser cs) "" (messageText m) of
       do
         _ <- chunk prefix
         choice (map toErroringParser cs') <?> "No command with that name was found!"
-        <|> pure (\_ -> pure ())
     toErroringParser :: CompiledCommand -> Parser (Message -> CompiledDatabaseDiscord ())
     toErroringParser c = try (chunk $ commandName c) *> (skipSpace1 <|> eof) *> (try (choice $ map toErroringParser $ commandSubcommands c) <|> commandParser c)
 

@@ -16,7 +16,7 @@ module Tablebot.Handler.Event
   )
 where
 
-import Discord.Types
+import Discord.Types (ChannelId, Event, MessageId, ReactionInfo)
 import Tablebot.Handler.Types
 
 -- | This runs each 'MessageChange' feature in @cs@ with the information from a

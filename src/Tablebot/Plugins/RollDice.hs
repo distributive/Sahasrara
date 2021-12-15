@@ -30,9 +30,6 @@ rollDice' e' m = do
 rollDice :: Command
 rollDice = Command "roll" (parseComm rollDice') []
 
-rollDiceEquiv :: Command
-rollDiceEquiv = Command "r" (parseComm rollDice') []
-
 rollHelp :: HelpPage
 rollHelp =
   HelpPage
@@ -46,7 +43,7 @@ rollHelpText :: Text
 rollHelpText =
   pack $
     [r|**Roll**
-Given an expression, evaluate the expression.
+Given an expression, evaluate the expression. Can use `r` instead of `roll`.
 
 This supports addition, subtraction, multiplication, integer division, exponentiation, parentheses, dice of arbitrary size, dice with custom sides, rerolling dice once on a condition, rerolling dice indefinitely on a condition, keeping or dropping the highest or lowest dice, keeping or dropping dice based on a condition, and using functions like |]
       ++ intercalate ", " supportedFunctionsList
@@ -63,4 +60,4 @@ To see a full list of uses and options, please go to <https://github.com/Warwick
 
 -- | @rollPlugin@ assembles the command into a plugin.
 rollPlugin :: Plugin
-rollPlugin = (plug "roll") {commands = [rollDice, rollDiceEquiv], helpPages = [rollHelp]}
+rollPlugin = (plug "roll") {commands = [rollDice, commandAlias "r" rollDice], helpPages = [rollHelp]}
