@@ -98,10 +98,23 @@ addReminder time content m = do
   let res = pack $ show $ fromSqlKey added
   sendMessage m ("Reminder " <> res <> " set for " <> toTimestamp time <> " with message `" <> pack content <> "`")
 
+-- @deleteReminder@ takes a reminder Id and deletes it from the list of awating reminders.
+deleteReminder :: Int -> Message -> DatabaseDiscord ()
+deleteReminder rid m = do
+  delete k
+  sendMessage m ("Reminder " <> pack (show rid) <> " deleted.")
+  where
+    k :: Key Reminder
+    k = toSqlKey $ fromIntegral rid
+
 -- | @reminderCommand@ is a command implementing the functionality in
 -- @reminderParser@ and @addReminder@.
 reminderCommand :: Command
-reminderCommand = Command "remind" (parseComm reminderParser) []
+reminderCommand = Command "remind" (parseComm reminderParser) [deleteReminderCommand]
+
+-- | @deleteReminderCommand@ is a subcommand that provides the deletion feature.
+deleteReminderCommand :: Command
+deleteReminderCommand = Command "delete" (parseComm deleteReminder) []
 
 -- | @reminderCron@ is a cron job that checks every minute to see if a reminder
 -- has passed, and if so sends a message using the stored information about the
