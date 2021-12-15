@@ -182,7 +182,7 @@ findEmoji :: Text -> DatabaseDiscord (Maybe Emoji)
 findEmoji ename = fmap msum (liftDiscord readCache >>= cacheToEmoji)
   where
     cacheToEmoji :: Cache -> DatabaseDiscord [Maybe Emoji]
-    cacheToEmoji cache = mapM (getGuildEmoji ename) (keys $ _guilds cache)
+    cacheToEmoji cache = mapM (getGuildEmoji ename) (keys $ cacheGuilds cache)
 
 -- | Get an emoji by name, preferring a local emoji when possible
 -- This is quite aggressive at trying its best to find the emoji,
