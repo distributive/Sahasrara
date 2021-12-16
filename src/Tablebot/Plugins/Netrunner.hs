@@ -195,7 +195,7 @@ Can be used inline by enclosing your query inside curly braces with a `!` (max f
 
 *Usage:*
   - `netrunner image card name` -> fetches the image of the card matching "card name"
-  - `{{!card name}}          ` -> the inline version of the above command|]
+  - `{{!card name}}           ` -> the inline version of the above command|]
     []
     None
 
@@ -211,7 +211,7 @@ Can be used inline by enclosing your query inside curly braces with a `|` (max f
 
 *Usage:*
   - `netrunner flavour card name` -> fetches the flavour text of the card matching "card name"
-  - `{{|card name}}          ` -> the inline version of the above command|]
+  - `{{|card name}}             ` -> the inline version of the above command|]
     []
     None
 
