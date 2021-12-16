@@ -30,6 +30,7 @@ sayHelp :: HelpPage
 sayHelp =
   HelpPage
     "say"
+    []
     "make the bot speak"
     [r|**Say**
 Repeat the input.

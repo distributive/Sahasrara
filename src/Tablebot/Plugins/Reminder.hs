@@ -150,6 +150,7 @@ reminderHelp :: HelpPage
 reminderHelp =
   HelpPage
     "remind"
+    []
     "ask the bot to remind you to do things in the future"
     [r|**Reminders**
 Send a reminder to yourself or others. Pick a date and time, and the tablebot will poke you to remember at your preordained moment.
@@ -164,6 +165,7 @@ deleteReminderHelp :: HelpPage
 deleteReminderHelp =
   HelpPage
     "delete"
+    []
     "delete a reminder by number"
     [r|**Delete Reminder**
 Delete a reminder by id

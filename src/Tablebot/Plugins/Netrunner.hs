@@ -145,6 +145,7 @@ netrunnerHelp :: HelpPage
 netrunnerHelp =
   HelpPage
     "netrunner"
+    ["nr"]
     "finds and displays Netrunner cards"
     [r|**Netrunner**
 Find and displays Netrunner cards
@@ -166,6 +167,7 @@ findHelp :: HelpPage
 findHelp =
   HelpPage
     "find"
+    []
     "searches the NetrunnerDB database for cards"
     [r|**Find Netrunner Cards**
 Searches the NetrunnerDB database for the card closest matching a given query
@@ -185,6 +187,7 @@ findImgHelp :: HelpPage
 findImgHelp =
   HelpPage
     "image"
+    ["img"]
     "searches the NetrunnerDB database for a card's image"
     [r|**Find Netrunner Card Images**
 Searches the NetrunnerDB database for the card closest matching a given query and shows an image of it
@@ -200,6 +203,7 @@ findFlavourHelp :: HelpPage
 findFlavourHelp =
   HelpPage
     "flavour"
+    []
     "searches the NetrunnerDB database for a card's flavour text"
     [r|**Find Netrunner Card Flavour Text**
 Searches the NetrunnerDB database for the card closest matching a given query and shows its flavour text
@@ -215,6 +219,7 @@ customHelp :: HelpPage
 customHelp =
   HelpPage
     "custom"
+    []
     "generates custom Netrunner cards"
     [r|**Create Custom Netrunner Cards**
 Generates custom Netrunner cards and formats them like existing cards

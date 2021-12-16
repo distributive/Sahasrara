@@ -34,6 +34,7 @@ rollHelp :: HelpPage
 rollHelp =
   HelpPage
     "roll"
+    ["r"]
     "roll dice and do maths"
     rollHelpText
     []
