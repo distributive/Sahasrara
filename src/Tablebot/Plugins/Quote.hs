@@ -10,25 +10,34 @@
 --
 -- This is an example plugin which allows user to @!quote add@ their favourite
 -- quotes and then @!quote show n@ a particular quote.
-module Tablebot.Plugins.Quote
-  ( quotePlugin,
-  )
-where
+module Tablebot.Plugins.Quote (quotePlugin) where
 
-import Control.Applicative (liftA)
 import Control.Monad (void)
 import Control.Monad.IO.Class (liftIO)
-import Data.Text (Text, append, pack)
-import Data.Time.Clock.System (getSystemTime, systemToUTCTime)
-import Database.Persist.Sqlite (Filter, SelectOpt (LimitTo, OffsetBy), (==.))
+import Data.Aeson
+import Data.Text (Text, append, pack, unpack)
+import Data.Time.Clock.System (SystemTime (systemSeconds), getSystemTime, systemToUTCTime)
+import Database.Persist.Sqlite (Filter, SelectOpt (LimitTo, OffsetBy), entityVal, (==.))
 import Database.Persist.TH
 import Discord.Types
+import GHC.Generics (Generic)
 import GHC.Int (Int64)
 import System.Random (randomRIO)
 import Tablebot.Plugin
 import Tablebot.Plugin.Database
-import Tablebot.Plugin.Discord (findGuild, getMessage, getMessageLink, getPrecedingMessage, getReplyMessage, sendEmbedMessage, sendMessage, toMention, toMention')
+import Tablebot.Plugin.Discord
+  ( findGuild,
+    getMessage,
+    getMessageLink,
+    getPrecedingMessage,
+    getReplyMessage,
+    sendEmbedMessage,
+    sendMessage,
+    toMention,
+    toMention',
+  )
 import Tablebot.Plugin.Embed
+import Tablebot.Plugin.Exception (BotException (GenericException), catchBot, throwBot)
 import Tablebot.Plugin.Permission (requirePermission)
 import Tablebot.Plugin.SmartCommand
 import Text.RawString.QQ (r)
@@ -67,15 +76,17 @@ quote =
   Command
     "quote"
     (parseComm quoteComm)
-    [addQuote, editQuote, thisQuote, authorQuote, showQuote, deleteQuote, randomQuote]
+    [addQuote, editQuote, thisQuote, authorQuote, showQuote, deleteQuote, randomQuote, exportQuotes, importQuotes, clearQuotes]
   where
     quoteComm ::
       WithError
         "Unknown quote functionality."
-        () ->
+        (Either () (Either Int64 (RestOfInput Text))) ->
       Message ->
       DatabaseDiscord ()
-    quoteComm (WErr ()) = randomQ
+    quoteComm (WErr (Left ())) = randomQ
+    quoteComm (WErr (Right (Left t))) = showQ t
+    quoteComm (WErr (Right (Right (ROI t)))) = authorQ t
 
 addQuote :: Command
 addQuote = Command "add" (parseComm addComm) []
@@ -150,27 +161,35 @@ showQ qId m = do
 randomQ :: Message -> DatabaseDiscord ()
 randomQ = filteredRandomQuote [] "Couldn't find any quotes!"
 
--- | @authorQuote@, which looks for a message of the form @!quote user u@,
+-- | @authorQuote@, which looks for a message of the form @!quote author u@,
 -- selects a random quote from the database attributed to u and responds with that quote.
--- This is currently mis-documented in the help pages as its not quite working (the author matching is way to strict)
 authorQ :: Text -> Message -> DatabaseDiscord ()
 authorQ t = filteredRandomQuote [QuoteAuthor ==. t] "Couldn't find any quotes with that author!"
 
 -- | @filteredRandomQuote@ selects a random quote that meets a
--- given criteria, and returns that as the response
+-- given criteria, and returns that as the response, sending the user a message if the
+-- quote cannot be found.
 filteredRandomQuote :: [Filter Quote] -> Text -> Message -> DatabaseDiscord ()
-filteredRandomQuote quoteFilter errorMessage m = do
+filteredRandomQuote quoteFilter errorMessage m = catchBot (filteredRandomQuote' quoteFilter errorMessage m) catchBot'
+  where
+    catchBot' (GenericException "quote exception" _) = sendMessage m errorMessage
+    catchBot' e = throwBot e
+
+-- | @filteredRandomQuote'@ selects a random quote that meets a
+-- given criteria, and returns that as the response, throwing an exception if something
+-- goes wrong.
+filteredRandomQuote' :: [Filter Quote] -> Text -> Message -> DatabaseDiscord ()
+filteredRandomQuote' quoteFilter errorMessage m = do
   num <- count quoteFilter
   if num == 0
-    then sendMessage m errorMessage
+    then throwBot (GenericException "quote exception" (unpack errorMessage))
     else do
-      rindex <- liftIO $ randomRIO (0, (num - 1))
+      rindex <- liftIO $ randomRIO (0, num - 1)
       key <- selectKeysList quoteFilter [OffsetBy rindex, LimitTo 1]
       qu <- get $ head key
       case qu of
         Just q -> renderQuoteMessage q (fromSqlKey $ head key) m
-        Nothing -> sendMessage m errorMessage
-      return ()
+        Nothing -> throwBot (GenericException "quote exception" (unpack errorMessage))
 
 -- | @addQuote@, which looks for a message of the form
 -- @!quote add "quoted text" - author@, and then stores said quote in the
@@ -179,7 +198,7 @@ addQ :: Text -> Text -> Message -> DatabaseDiscord ()
 addQ qu author m = do
   now <- liftIO $ systemToUTCTime <$> getSystemTime
   let new = Quote qu author (toMention $ messageAuthor m) (fromIntegral $ messageId m) (fromIntegral $ messageChannel m) now
-  added <- insert $ new
+  added <- insert new
   let res = pack $ show $ fromSqlKey added
   renderCustomQuoteMessage ("Quote added as #" `append` res) new (fromSqlKey added) m
 
@@ -200,7 +219,7 @@ thisQ m = do
 -- | @addMessageQuote@, adds a message as a quote to the database, checking that it passes the relevant tests
 addMessageQuote :: UserId -> Message -> Message -> DatabaseDiscord ()
 addMessageQuote submitter q' m = do
-  num <- count [QuoteMsgId ==. (fromIntegral $ messageId q')]
+  num <- count [QuoteMsgId ==. fromIntegral (messageId q')]
   if num == 0
     then
       if not $ userIsBot (messageAuthor q')
@@ -210,11 +229,11 @@ addMessageQuote submitter q' m = do
                 Quote
                   (messageText q')
                   (toMention $ messageAuthor q')
-                  (toMention' $ submitter)
+                  (toMention' submitter)
                   (fromIntegral $ messageId q')
                   (fromIntegral $ messageChannel q')
                   now
-          added <- insert $ new
+          added <- insert new
           let res = pack $ show $ fromSqlKey added
           renderCustomQuoteMessage ("Quote added as #" `append` res) new (fromSqlKey added) m
         else sendMessage m "Can't quote a bot"
@@ -230,10 +249,10 @@ editQ qId qu author m =
      in do
           oQu <- get k
           case oQu of
-            Just (Quote _ _ _ _ _ _) -> do
+            Just Quote {} -> do
               now <- liftIO $ systemToUTCTime <$> getSystemTime
               let new = Quote qu author (toMention $ messageAuthor m) (fromIntegral $ messageId m) (fromIntegral $ messageChannel m) now
-              replace k $ new
+              replace k new
               renderCustomQuoteMessage "Quote updated" new qId m
             Nothing -> sendMessage m "Couldn't update that quote!"
 
@@ -246,7 +265,7 @@ deleteQ qId m =
      in do
           qu <- get k
           case qu of
-            Just (Quote _ _ _ _ _ _) -> do
+            Just Quote {} -> do
               delete k
               sendMessage m "Quote deleted"
             Nothing -> sendMessage m "Couldn't delete that quote!"
@@ -269,15 +288,16 @@ renderCustomQuoteMessage t (Quote txt author submitter msgId cnlId dtm) qId m = 
       )
   where
     getLink :: Maybe GuildId -> Maybe Text
-    getLink = liftA (\x -> getMessageLink x (fromIntegral cnlId) (fromIntegral msgId))
+    getLink = fmap (\x -> getMessageLink x (fromIntegral cnlId) (fromIntegral msgId))
     maybeAddFooter :: Maybe Text -> Text
-    maybeAddFooter (Just l) = ("\n[source](" <> l <> ") - added by " <> submitter)
+    maybeAddFooter (Just l) = "\n[source](" <> l <> ") - added by " <> submitter
     maybeAddFooter Nothing = ""
 
 showQuoteHelp :: HelpPage
 showQuoteHelp =
   HelpPage
     "show"
+    []
     "show a quote by number"
     "**Show Quote**\nShows a quote by id\n\n*Usage:* `quote show <id>`"
     []
@@ -287,6 +307,7 @@ randomQuoteHelp :: HelpPage
 randomQuoteHelp =
   HelpPage
     "random"
+    []
     "show a random quote"
     "**Random Quote**\nDisplays a random quote\n\n*Usage:* `quote random`"
     []
@@ -296,6 +317,7 @@ authorQuoteHelp :: HelpPage
 authorQuoteHelp =
   HelpPage
     "user"
+    []
     "show a random quote by a user"
     "**Random User Quote**\nDisplays a random quote attributed to a particular user\n\n*Usage:* `quote user <author>`"
     []
@@ -305,6 +327,7 @@ thisQuoteHelp :: HelpPage
 thisQuoteHelp =
   HelpPage
     "this"
+    []
     "add another message as a quote"
     [r|**Quote This Message**
 Adds an existing message as a quote. If the command is a reply, it uses the replied to message, otherwise it uses the immediatly preceding message.
@@ -317,6 +340,7 @@ deleteQuoteHelp :: HelpPage
 deleteQuoteHelp =
   HelpPage
     "delete"
+    []
     "delete a quote by number"
     [r|**Delete Quote**
 Delete a quote by id
@@ -330,6 +354,7 @@ editQuoteHelp :: HelpPage
 editQuoteHelp =
   HelpPage
     "edit"
+    []
     "edit a quote by number"
     [r|**Edit Quote**
 Edit a quote by id
@@ -340,18 +365,19 @@ Requires moderation permission
     Any
 
 addQuoteHelp :: HelpPage
-addQuoteHelp = HelpPage "add" "add a new quote" "**Add Quote**\nAdds a quote\n\n*Usage:* `quote add \"quote\" - author`" [] None
+addQuoteHelp = HelpPage "add" [] "add a new quote" "**Add Quote**\nAdds a quote\n\n*Usage:* `quote add \"quote\" - author`" [] None
 
 quoteHelp :: HelpPage
 quoteHelp =
   HelpPage
     "quote"
+    ["q"]
     "store and retrieve quotes"
     [r|**Quotes**
-Allows storing and retrieving quotes
-Calling without arguments returns a random quote
+Allows storing and retrieving quotes.
+Calling without arguments returns a random quote. Calling with a number returns that quote number. Calling with a mention or name gives a random quote by that person.
 
-*Usage:* `quote`|]
+*Usage:* `quote` or `q`|]
     [randomQuoteHelp, showQuoteHelp, authorQuoteHelp, addQuoteHelp, thisQuoteHelp, editQuoteHelp, deleteQuoteHelp]
     None
 
@@ -360,8 +386,52 @@ Calling without arguments returns a random quote
 quotePlugin :: Plugin
 quotePlugin =
   (plug "quote")
-    { commands = [quote],
+    { commands = [quote, commandAlias "q" quote],
       onReactionAdds = [quoteReactionAdd],
       migrations = [quoteMigration],
       helpPages = [quoteHelp]
     }
+
+deriving instance Generic Quote
+
+instance FromJSON Quote
+
+instance ToJSON Quote
+
+-- | Get all the quotes in the database.
+allQuotes :: DatabaseDiscord [Quote]
+allQuotes = fmap entityVal <$> selectList [] []
+
+-- | Export all the quotes in the database to either a default quotes file or to a given
+-- file name that is quoted in the command. Superuser only.
+exportQuotes :: Command
+exportQuotes = Command "export" (parseComm exportQ) []
+
+exportQ :: Maybe (Quoted FilePath) -> Message -> DatabaseDiscord ()
+exportQ qfp m = requirePermission Superuser m $ do
+  let defFileName = getSystemTime >>= \now -> return $ "quotes_" <> show (systemSeconds now) <> ".json"
+  (Qu fp) <- liftIO $ maybe (Qu <$> defFileName) return qfp
+  aq <- allQuotes
+  _ <- liftIO $ encodeFile fp aq
+  sendMessage m ("Succesfully exported all " <> (pack . show . length) aq <> " quotes to `" <> pack fp <> "`")
+
+-- | Import all the quotes in a file into the database from a given file. Superuser only.
+importQuotes :: Command
+importQuotes = Command "import" (parseComm importQ) []
+  where
+    importQ :: Quoted FilePath -> Message -> DatabaseDiscord ()
+    importQ (Qu fp) m = requirePermission Superuser m $ do
+      mqs <- liftIO $ decodeFileStrict fp
+      qs <- maybe (throwBot $ GenericException "error getting file" "there was an error obtaining or decoding the quotes json") (insertMany @Quote) mqs
+      sendMessage m ("Succesfully imported " <> (pack . show . length) qs <> " quotes")
+
+-- | Clear all the quotes from the database. Superuser only.
+clearQuotes :: Command
+clearQuotes = Command "clear" (parseComm clearQ) []
+  where
+    clearQ :: Maybe (Quoted Text) -> Message -> DatabaseDiscord ()
+    clearQ (Just (Qu "clear the quotes")) m = requirePermission Superuser m $ do
+      exportQ Nothing m
+      i <- deleteWhereCount @Quote []
+      sendMessage m ("Cleared " <> pack (show i) <> " quotes from the database.")
+    clearQ _ m = sendMessage m "To _really do this_, call this command like so: `quote clear \"clear the quotes\"`"

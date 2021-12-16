@@ -17,6 +17,7 @@ Here are some good practice tips for git and this project.
 * Before making a pull request, make sure your branch is up to date with main (and that it compiles and complies with `ormolu` - see below for details) so that it can be merged without hassle
 * Write comments! This project will be maintained by many people, and it can be difficult to work out what others' code does
 * To communicate with the maintainers, please join the [Tabletop Discord server](https://warwicktabletop.co.uk/discord) and give yourself the @computer_person role to join the developer channel
+* If you need help finding a function to do a particular task, you can search on [Hoogle](https://hoogle.haskell.org/). The two libraries that deal with parsing are `Text.Megaparsec` and `Control.Monad.Combinators`, and `Discord` is the package that deals with Discord itself. You can filter by package if that helps to find certain functions
 
 You can check out the [README](https://github.com/WarwickTabletop/tablebot#readme) for a brief overview on how to set up a local bot for testing. If you've never done something like this before, see the bottom of this document for a walkthrough.
 
@@ -37,17 +38,20 @@ You can see full documentation on the [Ormolu repo](https://github.com/tweag/orm
 You may also wish to set up Ormolu to run when you stage a file (get ready to commit it) - this can be done using `.gitattributes` and `.gitconfig` as follows.
 
 1. We need to define what runs on commit, which is done via a filter. Add the following to `~/.gitconfig`:
-```
-[filter "haskell-linting"]
-    clean = ormolu
-    smudge = cat
-```
-This globally defines a filter that you can call from individual git respositories.
+
+    ```gitconfig
+    [filter "haskell-linting"]
+        clean = ormolu
+        smudge = cat
+    ```
+
+    This globally defines a filter that you can call from individual git respositories.
 
 2. Now we need to tell this git repository that it should run this filter. Simply add the following to `.gitattributes`. Note that this has been added to `.gitignore` to avoid people who don't want this filter being forced to use it.
-```
-*.hs filter=haskell-linting
-```
+
+    ```gitattributes
+    *.hs filter=haskell-linting
+    ```
 
 That's it! (With thanks to Sam Coy for explaining this process)
 

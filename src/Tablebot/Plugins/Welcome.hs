@@ -45,6 +45,7 @@ favouriteHelp :: HelpPage
 favouriteHelp =
   HelpPage
     "favourite"
+    []
     "generate a category of things you might have a favourite of"
     [r|**Favourite**
 Generate a random category of thing to help inspire welcome messages.

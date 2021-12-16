@@ -10,19 +10,25 @@
 -- without having to lift Discord operations constantly.
 module Tablebot.Plugin.Discord
   ( sendMessage,
+    sendChannelMessage,
+    sendReplyMessage,
+    sendCustomReplyMessage,
     sendEmbedMessage,
     reactToMessage,
     findGuild,
+    findEmoji,
     getMessage,
     getMessageMember,
     getReplyMessage,
     getPrecedingMessage,
     toMention,
     toMention',
-    toMentionStr,
-    toMentionStr',
+    fromMention,
+    fromMentionStr,
     toTimestamp,
     toTimestamp',
+    formatEmoji,
+    formatFromEmojiName,
     toRelativeTime,
     getMessageLink,
     Message,
@@ -33,17 +39,22 @@ module Tablebot.Plugin.Discord
   )
 where
 
-import Control.Monad.Exception
+import Control.Monad.Exception (MonadException (throw))
+import Data.Char (isDigit)
+import Data.Foldable (msum)
+import Data.Map.Strict (keys)
 import Data.Maybe (listToMaybe)
 import Data.String (IsString (fromString))
-import Data.Text (Text, pack)
+import Data.Text (Text, pack, unpack)
 import Data.Time.Clock (nominalDiffTimeToSeconds)
 import Data.Time.Clock.POSIX (utcTimeToPOSIXSeconds)
-import Discord (RestCallErrorCode, restCall)
+import Discord (RestCallErrorCode, readCache, restCall)
+import Discord.Internal.Gateway.Cache
 import qualified Discord.Requests as R
 import Discord.Types
+import Tablebot.Handler.Cache
 import Tablebot.Handler.Embed
-import Tablebot.Plugin (DatabaseDiscord, EnvDatabaseDiscord, liftDiscord)
+import Tablebot.Plugin (EnvDatabaseDiscord, liftDiscord)
 import Tablebot.Plugin.Exception (BotException (..))
 
 -- | @sendMessage@ sends the input message @t@ in the same channel as message
@@ -55,6 +66,50 @@ sendMessage ::
   EnvDatabaseDiscord s ()
 sendMessage m t = do
   res <- liftDiscord . restCall $ R.CreateMessage (messageChannel m) t
+  case res of
+    Left _ -> throw $ MessageSendException "Failed to send message."
+    Right _ -> return ()
+
+-- | @sendChannelMessage@ sends the input message @t@ into the provided channel
+-- @m@. This returns an @Either RestCallErrorCode Message@ to denote failure or
+-- return the 'Message' that was just sent.
+sendChannelMessage ::
+  ChannelId ->
+  Text ->
+  EnvDatabaseDiscord s ()
+sendChannelMessage c t = do
+  res <- liftDiscord . restCall $ R.CreateMessage c t
+  case res of
+    Left _ -> throw $ MessageSendException "Failed to send message."
+    Right _ -> return ()
+
+-- | @sendReplyMessage@ sends the input message @t@ as a reply to the triggering message
+-- @m@. This returns an @Either RestCallErrorCode Message@ to denote failure or
+-- return the 'Message' that was just sent.
+sendReplyMessage ::
+  Message ->
+  Text ->
+  EnvDatabaseDiscord s ()
+sendReplyMessage m t = do
+  let ref = MessageReference (Just (messageId m)) Nothing Nothing False
+  res <- liftDiscord . restCall $ R.CreateMessageDetailed (messageChannel m) (R.MessageDetailedOpts t False Nothing Nothing Nothing (Just ref))
+  case res of
+    Left _ -> throw $ MessageSendException "Failed to send message."
+    Right _ -> return ()
+
+-- | @sendCustomReplyMessage@ sends the input message @t@ as a reply to a provided message id
+-- @m@. This returns an @Either RestCallErrorCode Message@ to denote failure or
+-- return the 'Message' that was just sent.
+-- @fail'@ indicates whether the message should still send if the provided message id is invalid
+sendCustomReplyMessage ::
+  Message ->
+  MessageId ->
+  Bool ->
+  Text ->
+  EnvDatabaseDiscord s ()
+sendCustomReplyMessage m mid fail' t = do
+  let ref = MessageReference (Just mid) Nothing Nothing fail'
+  res <- liftDiscord . restCall $ R.CreateMessageDetailed (messageChannel m) (R.MessageDetailedOpts t False Nothing Nothing Nothing (Just ref))
   case res of
     Left _ -> throw $ MessageSendException "Failed to send message."
     Right _ -> return ()
@@ -146,7 +201,7 @@ getMessageMember m = gMM (messageGuild m) m
       a <- liftDiscord $ restCall $ R.GetGuildMember g' (userId $ messageAuthor m')
       return $ maybeRight a
 
-findGuild :: Message -> DatabaseDiscord (Maybe GuildId)
+findGuild :: Message -> EnvDatabaseDiscord s (Maybe GuildId)
 findGuild m = case messageGuild m of
   Just a -> pure $ Just a
   Nothing -> do
@@ -156,20 +211,60 @@ findGuild m = case messageGuild m of
       Right a -> pure $ Just a
       Left _ -> pure Nothing
 
+-- | Find an emoji from its name within a specific guild if it doesn't exist in the cache
+-- Not exported, used by findEmoji and findGuildEmoji
+getGuildEmoji :: Text -> GuildId -> EnvDatabaseDiscord s (Maybe Emoji)
+getGuildEmoji ename gid = do
+  cachedEmoji <- lookupEmojiCache ename
+  case cachedEmoji of
+    Just e -> pure $ Just e
+    Nothing -> do
+      guildResp <- liftDiscord $ restCall $ R.GetGuild gid
+      case guildResp of
+        Left _ -> pure Nothing
+        Right guild -> do
+          fillEmojiCache guild
+          let emoji = filter ((ename ==) . emojiName) (guildEmojis guild)
+          pure $ listToMaybe emoji
+
+-- | search through all known guilds for an emoji with that name
+findEmoji :: Text -> EnvDatabaseDiscord s (Maybe Emoji)
+findEmoji ename = fmap msum (liftDiscord readCache >>= cacheToEmoji)
+  where
+    cacheToEmoji :: Cache -> EnvDatabaseDiscord s [Maybe Emoji]
+    cacheToEmoji cache = mapM (getGuildEmoji ename) (keys $ cacheGuilds cache)
+
+-- | Render an Emoji
+formatEmoji :: Emoji -> Text
+formatEmoji (Emoji (Just eId) eName _ _ _) = "<:" <> eName <> ":" <> pack (show eId) <> ">"
+formatEmoji (Emoji _ eName _ _ _) = eName
+
+-- | Display an emoji as best as it can from its name
+formatFromEmojiName :: Text -> EnvDatabaseDiscord s Text
+formatFromEmojiName name = do
+  emoji <- findEmoji name
+  return $ maybe name formatEmoji emoji
+
 -- | @toMention@ converts a user to its corresponding mention
 toMention :: User -> Text
-toMention = pack . toMentionStr
+toMention = toMention' . userId
 
 -- | @toMention'@ converts a user ID to its corresponding mention
 toMention' :: UserId -> Text
-toMention' = pack . toMentionStr'
+toMention' u = "<@!" <> pack (show u) <> ">"
 
--- | @toMentionStr@ converts a user to its corresponding mention, returning a string to prevent packing and unpacking
-toMentionStr :: User -> String
-toMentionStr = toMentionStr' . userId
+-- | @fromMention@ converts some text into what could be a userid (which isn't checked
+-- for correctness above getting rid of triangle brackets, '@', and the optional '!')
+fromMention :: Text -> Maybe UserId
+fromMention = fromMentionStr . unpack
 
-toMentionStr' :: UserId -> String
-toMentionStr' u = "<@!" ++ show u ++ ">"
+fromMentionStr :: String -> Maybe UserId
+fromMentionStr user
+  | length user < 4 || head user /= '<' || last user /= '>' || (head . tail) user /= '@' || (head stripToNum /= '!' && (not . isDigit) (head stripToNum)) = Nothing
+  | all isDigit (tail stripToNum) = Just $ if head stripToNum == '!' then read (tail stripToNum) else read stripToNum
+  | otherwise = Nothing
+  where
+    stripToNum = (init . tail . tail) user
 
 data TimeFormat = Default | ShortTime | LongTime | ShortDate | LongDate | ShortDateTime | LongDateTime | Relative deriving (Show, Enum, Eq)
 

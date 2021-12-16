@@ -54,6 +54,7 @@ dependencies:
 - th-printf
 - mtl
 - safe
+- edit-distance
 
 library:
   source-dirs: src
@@ -78,8 +79,9 @@ library:
   - TypeApplications
   - MultiWayIf
   - TupleSections
-  - ConstraintKinds 
+  - ConstraintKinds
   - ImportQualifiedPost
+  - RecordWildCards 
   ghc-options:
   - -Wall
 

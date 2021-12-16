@@ -12,20 +12,27 @@
 -- database and Discord operations within your features.
 module Tablebot.Plugin.Types where
 
+import Control.Concurrent.MVar (MVar)
 import Control.Monad.Trans.Class (lift)
 import Control.Monad.Trans.Reader (ReaderT)
+import Data.Char (toLower)
+import Data.Map (Map)
+import Data.Maybe (fromMaybe)
 import Data.Text (Text)
 import Data.Void (Void)
 import Database.Persist.Sqlite (Migration, SqlPersistM, SqlPersistT)
 import Discord (DiscordHandler)
 import Discord.Types
   ( ChannelId,
+    Emoji,
     Event (..),
     Message,
     MessageId,
     ReactionInfo,
   )
+import Safe.Exact (dropExactMay, takeExactMay)
 import Text.Megaparsec (Parsec)
+import Text.Read (readMaybe)
 
 -- * DatabaseDiscord
 
@@ -36,7 +43,7 @@ import Text.Megaparsec (Parsec)
 --
 -- "Tablebot.Plugin.Discord" provides some helper functions for
 -- running Discord operations without excessive use of @lift@.
-type EnvDatabaseDiscord d = ReaderT d (SqlPersistT DiscordHandler)
+type EnvDatabaseDiscord d = ReaderT d (ReaderT (MVar TablebotCache) (SqlPersistT DiscordHandler))
 
 type DatabaseDiscord = EnvDatabaseDiscord ()
 
@@ -44,16 +51,23 @@ type DatabaseDiscord = EnvDatabaseDiscord ()
 -- the just the database for startup actions.
 type Database d = SqlPersistM d
 
+newtype TablebotCache = TCache
+  { cacheKnownEmoji :: Map Text Emoji
+  }
+
 -- * Parser
 
 -- | A simple definition for parsers on Text.
 type Parser = Parsec Void Text
 
-liftSql :: SqlPersistT DiscordHandler a -> ReaderT d (SqlPersistT DiscordHandler) a
-liftSql = lift
+liftCache :: ReaderT (MVar TablebotCache) (SqlPersistT DiscordHandler) a -> ReaderT d (ReaderT (MVar TablebotCache) (SqlPersistT DiscordHandler)) a
+liftCache = lift
 
-liftDiscord :: DiscordHandler a -> ReaderT d (SqlPersistT DiscordHandler) a
-liftDiscord = lift . lift
+liftSql :: SqlPersistT DiscordHandler a -> ReaderT d (ReaderT (MVar TablebotCache) (SqlPersistT DiscordHandler)) a
+liftSql = lift . lift
+
+liftDiscord :: DiscordHandler a -> ReaderT d (ReaderT (MVar TablebotCache) (SqlPersistT DiscordHandler)) a
+liftDiscord = lift . lift . lift
 
 -- * Features
 
@@ -82,6 +96,10 @@ data EnvCommand d = Command
   }
 
 type Command = EnvCommand ()
+
+-- | Construct an aliased command that behaves the same as another command (for things like short forms)
+commandAlias :: Text -> EnvCommand d -> EnvCommand d
+commandAlias name' (Command _ cp sc) = Command name' cp sc
 
 -- | For when you get a 'MessageCreate', but instead of wanting to match on
 -- "!name args" (for prefix "!"), you want a more general match. Useful for
@@ -157,6 +175,8 @@ type CronJob = EnvCronJob ()
 data HelpPage = HelpPage
   { -- | The [sub]command name
     helpName :: Text,
+    -- | List of aliases for this command
+    helpAliases :: [Text],
     -- | The text to show when listed in a subpage list. Will be prefixed by its helpName
     helpShortText :: Text,
     -- | The text to show when specifically listed. Appears above the list of subpages
@@ -207,6 +227,38 @@ data DiscordColour
   | DiscordFuschia
   | DiscordRed
   | DiscordBlack
+
+-- | @hexToRGB@ attempts to convert a potential hex string into its decimal RGB
+-- components.
+hexToRGB :: String -> Maybe (Integer, Integer, Integer)
+hexToRGB hex = do
+  let h = map toLower hex
+  r <- takeExactMay 2 h >>= toDec
+  g <- dropExactMay 2 h >>= takeExactMay 2 >>= toDec
+  b <- dropExactMay 4 h >>= toDec
+  return (r, g, b)
+  where
+    toDec :: String -> Maybe Integer
+    toDec [s, u] = do
+      a <- charToDec s
+      b <- charToDec u
+      return $ a * 16 + b
+    toDec _ = Nothing
+    charToDec :: Char -> Maybe Integer
+    charToDec 'a' = Just 10
+    charToDec 'b' = Just 11
+    charToDec 'c' = Just 12
+    charToDec 'd' = Just 13
+    charToDec 'e' = Just 14
+    charToDec 'f' = Just 15
+    charToDec c = readMaybe [c]
+
+-- | @hexToDiscordColour@ converts a potential hex string into a DiscordColour,
+-- evaluating to Default if it fails.
+hexToDiscordColour :: String -> DiscordColour
+hexToDiscordColour hex =
+  let (r, g, b) = fromMaybe (0, 0, 0) $ hexToRGB hex
+   in RGB r g b
 
 -- | Automatic handling of command permissions
 -- @UserPermission@ models the current permissions of the user
