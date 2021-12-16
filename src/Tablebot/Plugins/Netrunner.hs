@@ -194,7 +194,7 @@ Searches the NetrunnerDB database for the card closest matching a given query an
 Can be used inline by enclosing your query inside curly braces with a `!` (max five queries per message)
 
 *Usage:*
-  - `netrunner find card name` -> fetches the image of the card matching "card name"
+  - `netrunner image card name` -> fetches the image of the card matching "card name"
   - `{{!card name}}          ` -> the inline version of the above command|]
     []
     None
@@ -210,7 +210,7 @@ Searches the NetrunnerDB database for the card closest matching a given query an
 Can be used inline by enclosing your query inside curly braces with a `|` (max five queries per message)
 
 *Usage:*
-  - `netrunner find card name` -> fetches the flavour text of the card matching "card name"
+  - `netrunner flavour card name` -> fetches the flavour text of the card matching "card name"
   - `{{|card name}}          ` -> the inline version of the above command|]
     []
     None
