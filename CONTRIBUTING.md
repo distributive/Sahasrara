@@ -97,7 +97,7 @@ If at any point something doesn't work, restart your computer first and try it a
     7. Open a file and marvel at the colours, and the fact you can hover over things and see values and stuff
 3. Discord and Environment variables
     1. Create a file in the top level of the project folder called `.env`, based on the template in `.env.example`
-    2. Follow the instructions in [Environment File Setup](#environment-file-setup) to fill in the `.env`. Make sure to get a `DISCORD_TOKEN` and a `SQLITE_FILENAME` (which can be named anything, but use something like `database.db`)
+    2. Follow the instructions in [Environment File Setup](https://github.com/WarwickTabletop/tablebot/tree/main/README.md#environment-file-setup) to fill in the `.env`. Make sure to get a `DISCORD_TOKEN` and a `SQLITE_FILENAME` (which can be named anything, but use something like `database.db`)
     3. To run the bot, type `stack run` into the terminal, and the bot will start to run
     4. Make sure to invite the bot to a server so you can test it out!
 

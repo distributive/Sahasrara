@@ -2,9 +2,9 @@
 
 [![CI](https://github.com/WarwickTabletop/tablebot/actions/workflows/main.yml/badge.svg)](https://github.com/WarwickTabletop/tablebot/actions/workflows/main.yml)
 
-An extendable Discord bot framework written on top of `discord-haskell`
+An extendable Discord bot framework written on top of [`discord-haskell`](https://github.com/aquarial/discord-haskell).
 
-If you're new to this project, or completely new to git, and haskell, you might be interested in looking at the [Setup from Scratch](#setup-from-scratch) section.
+If you're new to this project, or completely new to git, and Haskell, you might be interested in looking at the [Setup from Scratch](https://github.com/WarwickTabletop/tablebot/blob/main/CONTRIBUTING.md#setup-from-scratch) section in the [contributor's guide](https://github.com/WarwickTabletop/tablebot/blob/main/CONTRIBUTING.md). If you want tutorials on making your first plugin or how exceptions work, checkout the tutorials in the [tutorials](https://github.com/WarwickTabletop/tablebot/tree/main/tutorials) folder.
 
 ## Environment file setup
 
