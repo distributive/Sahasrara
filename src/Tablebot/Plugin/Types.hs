@@ -175,6 +175,8 @@ type CronJob = EnvCronJob ()
 data HelpPage = HelpPage
   { -- | The [sub]command name
     helpName :: Text,
+    -- | List of aliases for this command
+    helpAliases :: [Text],
     -- | The text to show when listed in a subpage list. Will be prefixed by its helpName
     helpShortText :: Text,
     -- | The text to show when specifically listed. Appears above the list of subpages

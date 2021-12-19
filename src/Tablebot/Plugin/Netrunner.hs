@@ -240,7 +240,7 @@ cardToEmbed api card = do
   let eFoot = cardToReleaseData api card
   let eImg = cardToImage api card
   let eColour = cardToColour api card
-  return $ addColour eColour $ createEmbed $ CreateEmbed "" "" Nothing eTitle eURL eImg eText [] Nothing eFoot Nothing
+  return $ addColour eColour $ createEmbed $ CreateEmbed "" "" Nothing eTitle eURL eImg eText [] Nothing eFoot Nothing Nothing
 
 -- | @cardToImgEmbed@ takes a Netrunner card and attempts to embed a picture of
 -- it.
@@ -251,7 +251,7 @@ cardToImgEmbed api card =
       eColour = cardToColour api card
    in case cardToImage api card of
         Nothing -> Nothing
-        eImg -> Just $ addColour eColour $ createEmbed $ CreateEmbed "" "" Nothing eTitle eURL Nothing "" [] eImg "" Nothing
+        eImg -> Just $ addColour eColour $ createEmbed $ CreateEmbed "" "" Nothing eTitle eURL Nothing "" [] eImg "" Nothing Nothing
 
 -- | @cardToFlavourEmbed@ takes a Netrunner card and attempts to embed its
 -- flavour text.
@@ -263,4 +263,4 @@ cardToFlavourEmbed api card =
       eImg = cardToImage api card
    in case cardToFlavour card of
         "" -> Nothing
-        eFlavour -> Just $ addColour eColour $ createEmbed $ CreateEmbed "" "" Nothing eTitle eURL eImg eFlavour [] Nothing "" Nothing
+        eFlavour -> Just $ addColour eColour $ createEmbed $ CreateEmbed "" "" Nothing eTitle eURL eImg eFlavour [] Nothing "" Nothing Nothing

@@ -145,6 +145,7 @@ netrunnerHelp :: HelpPage
 netrunnerHelp =
   HelpPage
     "netrunner"
+    ["nr"]
     "finds and displays Netrunner cards"
     [r|**Netrunner**
 Find and displays Netrunner cards
@@ -166,6 +167,7 @@ findHelp :: HelpPage
 findHelp =
   HelpPage
     "find"
+    []
     "searches the NetrunnerDB database for cards"
     [r|**Find Netrunner Cards**
 Searches the NetrunnerDB database for the card closest matching a given query
@@ -185,14 +187,15 @@ findImgHelp :: HelpPage
 findImgHelp =
   HelpPage
     "image"
+    ["img"]
     "searches the NetrunnerDB database for a card's image"
     [r|**Find Netrunner Card Images**
 Searches the NetrunnerDB database for the card closest matching a given query and shows an image of it
 Can be used inline by enclosing your query inside curly braces with a `!` (max five queries per message)
 
 *Usage:*
-  - `netrunner find card name` -> fetches the image of the card matching "card name"
-  - `{{!card name}}          ` -> the inline version of the above command|]
+  - `netrunner image card name` -> fetches the image of the card matching "card name"
+  - `{{!card name}}           ` -> the inline version of the above command|]
     []
     None
 
@@ -200,14 +203,15 @@ findFlavourHelp :: HelpPage
 findFlavourHelp =
   HelpPage
     "flavour"
+    []
     "searches the NetrunnerDB database for a card's flavour text"
     [r|**Find Netrunner Card Flavour Text**
 Searches the NetrunnerDB database for the card closest matching a given query and shows its flavour text
 Can be used inline by enclosing your query inside curly braces with a `|` (max five queries per message)
 
 *Usage:*
-  - `netrunner find card name` -> fetches the flavour text of the card matching "card name"
-  - `{{|card name}}          ` -> the inline version of the above command|]
+  - `netrunner flavour card name` -> fetches the flavour text of the card matching "card name"
+  - `{{|card name}}             ` -> the inline version of the above command|]
     []
     None
 
@@ -215,6 +219,7 @@ customHelp :: HelpPage
 customHelp =
   HelpPage
     "custom"
+    []
     "generates custom Netrunner cards"
     [r|**Create Custom Netrunner Cards**
 Generates custom Netrunner cards and formats them like existing cards
