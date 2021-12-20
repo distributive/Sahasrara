@@ -12,7 +12,7 @@
 module Tablebot.Plugin.Netrunner (cardToEmbed, cardToImgEmbed, cardToFlavourEmbed, queryCard) where
 
 import Data.Maybe (fromMaybe)
-import Data.Text (Text, replace, toLower, toTitle, unpack, isInfixOf)
+import Data.Text (Text, isInfixOf, replace, toLower, toTitle, unpack)
 import Discord.Types
 import Tablebot.Plugin
 import Tablebot.Plugin.Discord (formatFromEmojiName)
@@ -35,7 +35,6 @@ queryCard NrApi {cards = cards} txt = findCard (substringSearch pairs txt) txt p
     pairs = zip (map (toLower . fromMaybe "" . Card.title) cards) cards
     substringSearch thePairs searchTxt = filter (\(x, _) -> isInfixOf (toLower searchTxt) x) thePairs
 
-
 -- | @findCard finds a card from the given list of pairs that is some subset of a
 -- full list. If the sublist is empty, it will fuzzy search the full list. If the sublist
 -- has exactly 1 element, it'll return that element. If the sublist has multiple
@@ -45,12 +44,11 @@ findCard [] searchTxt fullPairs = fuzzyQueryCard fullPairs searchTxt
 findCard [(_, card)] _ _ = card
 findCard pairs searchTxt _ = fuzzyQueryCard pairs searchTxt
 
-
 -- | @queryCard@ fuzzy searches the given library of cards by title.
 fuzzyQueryCard :: [(Text, Card)] -> Text -> Card
 fuzzyQueryCard pairs = closestValueWithCosts editCosts unpackedPairs . unpack
   where
-    unpackedPairs  = fmap (\(x, y) -> (unpack x, y)) pairs
+    unpackedPairs = fmap (\(x, y) -> (unpack x, y)) pairs
     editCosts =
       FuzzyCosts
         { deletion = 10,
