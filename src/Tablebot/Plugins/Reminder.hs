@@ -34,7 +34,7 @@ import Tablebot.Utility
 import Tablebot.Utility.Database
 import Tablebot.Utility.Discord (getMessage, sendChannelMessage, sendCustomReplyMessage, sendMessage, toTimestamp)
 import Tablebot.Utility.Permission (requirePermission)
-import Tablebot.Utility.SmartCommand (PComm (parseComm), Quoted (Qu), RestOfInput (ROI), WithError (..))
+import Tablebot.Utility.SmartParser (PComm (parseComm), Quoted (Qu), RestOfInput (ROI), WithError (..))
 import Tablebot.Utility.Utils (debugPrint)
 import Text.RawString.QQ (r)
 

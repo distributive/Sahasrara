@@ -13,9 +13,9 @@ module Tablebot.Handler.Permission where
 import Control.Monad.IO.Class (liftIO)
 import Discord.Types (GuildMember, Message, RoleId, memberRoles)
 import System.Environment (lookupEnv)
-import Tablebot.Plugin.Discord (getMessageMember)
-import Tablebot.Plugin.Types
-import Tablebot.Plugin.Utils (isDebug)
+import Tablebot.Utility.Discord (getMessageMember)
+import Tablebot.Utility.Types
+import Tablebot.Utility.Utils (isDebug)
 import Text.Read (readMaybe)
 
 data KnownRoles = KnownRoles

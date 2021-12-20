@@ -24,10 +24,10 @@ import Data.Void (Void)
 import Discord.Types (Message (messageText))
 import Tablebot.Handler.Plugins (changeAction)
 import Tablebot.Handler.Types
-import Tablebot.Plugin.Discord (sendEmbedMessage)
-import Tablebot.Plugin.Exception (BotException (ParserException), embedError)
-import Tablebot.Plugin.Parser (skipSpace1, space, word)
-import Tablebot.Plugin.Types (Parser)
+import Tablebot.Utility.Discord (sendEmbedMessage)
+import Tablebot.Utility.Exception (BotException (ParserException), embedError)
+import Tablebot.Utility.Parser (skipSpace1, space, word)
+import Tablebot.Utility.Types (Parser)
 import Text.Megaparsec
 
 -- | @parseNewMessage@ parses a new message, first by attempting to match the

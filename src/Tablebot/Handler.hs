@@ -40,8 +40,8 @@ import Tablebot.Handler.Event
   )
 import Tablebot.Handler.Plugins (changeAction)
 import Tablebot.Handler.Types
-import Tablebot.Plugin.Discord (sendEmbedMessage)
-import Tablebot.Plugin.Exception
+import Tablebot.Utility.Discord (sendEmbedMessage)
+import Tablebot.Utility.Exception
 
 -- | Given a combined plugin @pl@ and a command prefix @prefix@, builds an
 -- event handler. This takes in each Discord 'Event' received (present in

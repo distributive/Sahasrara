@@ -9,20 +9,20 @@
 -- Portability : POSIX
 --
 -- The backend functionality of the Netrunner commands.
-module Tablebot.Plugin.Netrunner (cardToEmbed, cardToImgEmbed, cardToFlavourEmbed, queryCard) where
+module Tablebot.Plugins.Netrunner.Netrunner (cardToEmbed, cardToImgEmbed, cardToFlavourEmbed, queryCard) where
 
 import Data.Maybe (fromMaybe)
 import Data.Text (Text, replace, toLower, toTitle, unpack)
 import Discord.Types
+import Tablebot.Plugins.Netrunner.Card as Card (Card (..))
+import Tablebot.Plugins.Netrunner.Cycle as Cycle (Cycle (..))
+import Tablebot.Plugins.Netrunner.Faction as Faction (Faction (..))
+import Tablebot.Plugins.Netrunner.NrApi (NrApi (..))
+import Tablebot.Plugins.Netrunner.Pack as Pack (Pack (..))
 import Tablebot.Utility
 import Tablebot.Utility.Discord (formatFromEmojiName)
 import Tablebot.Utility.Embed (addColour)
 import Tablebot.Utility.Fuzzy (FuzzyCosts (..), closestValueWithCosts)
-import Tablebot.Utility.Netrunner.Card as Card (Card (..))
-import Tablebot.Utility.Netrunner.Cycle as Cycle (Cycle (..))
-import Tablebot.Utility.Netrunner.Faction as Faction (Faction (..))
-import Tablebot.Utility.Netrunner.NrApi (NrApi (..))
-import Tablebot.Utility.Netrunner.Pack as Pack (Pack (..))
 import Tablebot.Utility.Types ()
 import Tablebot.Utility.Utils (intToText)
 

@@ -6,7 +6,7 @@ import Control.Monad.Trans.Reader (ask)
 import qualified Data.Map as M
 import Data.Text (Text)
 import Discord.Types
-import Tablebot.Plugin.Types
+import Tablebot.Utility.Types
 
 lookupEmojiCache :: Text -> EnvDatabaseDiscord s (Maybe Emoji)
 lookupEmojiCache t = do

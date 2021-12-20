@@ -8,7 +8,7 @@
 -- Portability : POSIX
 --
 -- A plugin for error handling.
-module Tablebot.Plugin.Exception
+module Tablebot.Utility.Exception
   ( BotException (..),
     throwBot,
     catchBot,

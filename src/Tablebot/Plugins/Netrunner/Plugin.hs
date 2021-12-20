@@ -7,22 +7,22 @@
 -- Portability : POSIX
 --
 -- Commands for interfacing with NetrunnerDB.
-module Tablebot.Plugins.Plugin (netrunnerPlugin) where
+module Tablebot.Plugins.Netrunner.Plugin (netrunnerPlugin) where
 
 import Control.Monad.IO.Class
 import Control.Monad.Trans.Reader (ask)
 import Data.Text (Text, pack)
 import Discord.Types
 import Tablebot.Handler.Command ()
-import Tablebot.Plugins.Netrunner
 import Tablebot.Plugins.Netrunner.Card (Card)
 import Tablebot.Plugins.Netrunner.Custom (customCard)
+import Tablebot.Plugins.Netrunner.Netrunner
 import Tablebot.Plugins.Netrunner.NrApi (NrApi, getNrApi)
 import Tablebot.Utility
 import Tablebot.Utility.Discord (formatFromEmojiName, sendEmbedMessage, sendMessage)
 import Tablebot.Utility.Exception (BotException (NetrunnerException), throwBot)
 import Tablebot.Utility.Parser (NrQuery (..), netrunnerCustom, netrunnerQuery)
-import Tablebot.Utility.SmartCommand (PComm (parseComm), Quoted (Qu), RestOfInput1 (ROI1), WithError (WErr))
+import Tablebot.Utility.SmartParser (PComm (parseComm), Quoted (Qu), RestOfInput1 (ROI1), WithError (WErr))
 import Text.RawString.QQ (r)
 
 -- | @netrunner@ is the user-facing command that searches for Netrunner cards.

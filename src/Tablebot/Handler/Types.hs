@@ -17,7 +17,7 @@ import Data.Text (Text)
 import Database.Persist.Sqlite (Migration, SqlPersistT)
 import Discord
 import Discord.Types
-import Tablebot.Plugin.Types
+import Tablebot.Utility.Types
 
 type CompiledDatabaseDiscord = ReaderT (MVar TablebotCache) (SqlPersistT DiscordHandler)
 

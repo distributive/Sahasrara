@@ -8,7 +8,7 @@
 --
 -- This module contains helpful parsers for building plugins, along with a few
 -- reexports from "Text.Parsec" to avoid having to import it.
-module Tablebot.Plugin.Parser where
+module Tablebot.Utility.Parser where
 
 import Data.Char (isDigit, isLetter, isSpace)
 import Data.Functor (($>))

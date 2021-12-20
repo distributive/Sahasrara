@@ -13,7 +13,7 @@ import Control.Monad.Trans.Reader (runReaderT)
 import Discord.Types (Message)
 import Tablebot.Handler.Types hiding (helpPages, migrations)
 import qualified Tablebot.Handler.Types as HT
-import Tablebot.Plugin.Types
+import Tablebot.Utility.Types
 
 -- | Combines a list of plugins into a single plugin with the combined
 -- functionality. The bot actually runs a single plugin, which is just the

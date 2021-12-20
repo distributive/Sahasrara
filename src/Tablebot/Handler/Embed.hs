@@ -18,7 +18,7 @@ import Discord.Internal.Types
 import Network.HTTP.Client.MultipartFormData (partBS)
 import Network.HTTP.Req ((/:))
 import qualified Network.HTTP.Req as R
-import Tablebot.Plugin.Types
+import Tablebot.Utility.Types
 
 colourToInternal :: DiscordColour -> Integer
 colourToInternal (RGB r g b) = ((r * 256) + g) * 256 + b

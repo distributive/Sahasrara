@@ -39,7 +39,7 @@ import Tablebot.Utility.Discord
 import Tablebot.Utility.Embed
 import Tablebot.Utility.Exception (BotException (GenericException), catchBot, throwBot)
 import Tablebot.Utility.Permission (requirePermission)
-import Tablebot.Utility.SmartCommand
+import Tablebot.Utility.SmartParser
 import Text.RawString.QQ (r)
 
 -- Our Quote table in the database. This is fairly standard for Persistent,

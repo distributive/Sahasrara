@@ -19,7 +19,7 @@ import Network.HTTP.Conduit (Response (responseBody), parseRequest)
 import Network.HTTP.Simple (addRequestHeader, httpLBS)
 import System.Environment (lookupEnv)
 import Tablebot.Utility.Discord (Message, sendMessage)
-import Tablebot.Utility.SmartCommand (parseComm)
+import Tablebot.Utility.SmartParser (parseComm)
 import Tablebot.Utility.Types
   ( Command,
     DatabaseDiscord,
