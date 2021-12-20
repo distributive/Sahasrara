@@ -1,9 +1,8 @@
 -- |
 -- Module      : Tablebot.Internal.Permission
 -- Description : Some internal code for handling permissions
--- Copyright   : (c) Anna Bruce 2021
 -- License     : MIT
--- Maintainer  : finnjkeating@gmail.com
+-- Maintainer  : tagarople@gmail.com
 -- Stability   : experimental
 -- Portability : POSIX
 --
