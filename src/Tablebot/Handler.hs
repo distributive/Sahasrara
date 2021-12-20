@@ -29,17 +29,17 @@ import Control.Monad.Trans.Class (MonadTrans (lift))
 import Control.Monad.Trans.Reader (ReaderT (runReaderT), ask)
 import Data.Text (Text)
 import Discord.Types
-import Tablebot.Handler.Command
+import Tablebot.Internal.Command
   ( parseNewMessage,
   )
-import Tablebot.Handler.Event
+import Tablebot.Internal.Event
   ( parseMessageChange,
     parseOther,
     parseReactionAdd,
     parseReactionDel,
   )
-import Tablebot.Handler.Plugins (changeAction)
-import Tablebot.Handler.Types
+import Tablebot.Internal.Plugins (changeAction)
+import Tablebot.Internal.Types
 import Tablebot.Utility.Discord (sendEmbedMessage)
 import Tablebot.Utility.Exception
 

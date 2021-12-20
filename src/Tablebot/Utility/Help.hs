@@ -12,9 +12,9 @@ module Tablebot.Utility.Help where
 import Data.Functor (($>))
 import Data.Text (Text)
 import qualified Data.Text as T
-import Tablebot.Handler.Permission (getSenderPermission, userHasPermission)
-import Tablebot.Handler.Plugins (changeAction)
-import Tablebot.Handler.Types
+import Tablebot.Internal.Permission (getSenderPermission, userHasPermission)
+import Tablebot.Internal.Plugins (changeAction)
+import Tablebot.Internal.Types
 import Tablebot.Utility.Discord (Message, sendMessage)
 import Tablebot.Utility.Parser (skipSpace)
 import Tablebot.Utility.Permission (requirePermission)

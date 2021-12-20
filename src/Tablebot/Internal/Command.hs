@@ -22,8 +22,8 @@ import Data.Set (singleton, toList)
 import Data.Text (Text)
 import Data.Void (Void)
 import Discord.Types (Message (messageText))
-import Tablebot.Handler.Plugins (changeAction)
-import Tablebot.Handler.Types
+import Tablebot.Internal.Plugins (changeAction)
+import Tablebot.Internal.Types
 import Tablebot.Utility.Discord (sendEmbedMessage)
 import Tablebot.Utility.Exception (BotException (ParserException), embedError)
 import Tablebot.Utility.Parser (skipSpace1, space, word)

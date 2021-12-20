@@ -52,8 +52,8 @@ import Discord (RestCallErrorCode, readCache, restCall)
 import Discord.Internal.Gateway.Cache
 import qualified Discord.Requests as R
 import Discord.Types
-import Tablebot.Handler.Cache
-import Tablebot.Handler.Embed
+import Tablebot.Internal.Cache
+import Tablebot.Internal.Embed
 import Tablebot.Utility (EnvDatabaseDiscord, liftDiscord)
 import Tablebot.Utility.Exception (BotException (..))
 

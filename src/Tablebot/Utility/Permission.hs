@@ -10,7 +10,7 @@
 module Tablebot.Utility.Permission where
 
 import Discord.Internal.Rest (Message)
-import Tablebot.Handler.Permission
+import Tablebot.Internal.Permission
 import Tablebot.Utility.Discord (sendMessage)
 import Tablebot.Utility.Types
 

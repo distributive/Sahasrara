@@ -14,8 +14,8 @@ module Tablebot.Plugins
   )
 where
 
-import Tablebot.Handler.Plugins (compilePlugin)
-import Tablebot.Handler.Types (CompiledPlugin)
+import Tablebot.Internal.Plugins (compilePlugin)
+import Tablebot.Internal.Types (CompiledPlugin)
 import Tablebot.Plugins.Administration (administrationPlugin)
 import Tablebot.Plugins.Basic (basicPlugin)
 import Tablebot.Plugins.Cats (catPlugin)

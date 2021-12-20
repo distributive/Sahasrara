@@ -13,7 +13,7 @@ import Control.Monad.IO.Class
 import Control.Monad.Trans.Reader (ask)
 import Data.Text (Text, pack)
 import Discord.Types
-import Tablebot.Handler.Command ()
+import Tablebot.Internal.Command ()
 import Tablebot.Plugins.Netrunner.Card (Card)
 import Tablebot.Plugins.Netrunner.Custom (customCard)
 import Tablebot.Plugins.Netrunner.Netrunner

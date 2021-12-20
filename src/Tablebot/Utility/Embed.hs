@@ -11,7 +11,7 @@ module Tablebot.Utility.Embed where
 
 import Data.Text (Text)
 import Discord.Internal.Types
-import Tablebot.Handler.Embed (Embeddable, asEmbed, colourToInternal)
+import Tablebot.Internal.Embed (Embeddable, asEmbed, colourToInternal)
 import Tablebot.Utility.Types (DiscordColour)
 
 -- | Some helper functions to allow progressively building up an embed
