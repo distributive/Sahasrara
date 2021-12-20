@@ -1,5 +1,5 @@
 -- |
--- Module      : Tablebot.Plugin.Discord
+-- Module      : Tablebot.Utility.Discord
 -- Description : Discord helpers for building plugins.
 -- License     : MIT
 -- Maintainer  : tagarople@gmail.com

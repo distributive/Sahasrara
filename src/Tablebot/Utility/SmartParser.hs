@@ -2,7 +2,7 @@
 {-# LANGUAGE TypeApplications #-}
 
 -- |
--- Module      : Tablebot.Plugin.SmartCommand
+-- Module      : Tablebot.Utility.SmartParser
 -- Description : Automatic parser generation from function types.
 -- License     : MIT
 -- Maintainer  : tagarople@gmail.com

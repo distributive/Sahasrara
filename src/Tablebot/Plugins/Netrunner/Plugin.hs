@@ -1,5 +1,5 @@
 -- |
--- Module      : Tablebot.Plugins.Netrunner
+-- Module      : Tablebot.Plugins.Netrunner.Plugin
 -- Description : A plugin for finding Netrunner cards from Discord.
 -- License     : MIT
 -- Maintainer  : tagarople@gmail.com

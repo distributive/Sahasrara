@@ -1,5 +1,5 @@
 -- |
--- Module      : Tablebot.Handler.Command
+-- Module      : Tablebot.Internal.Command
 -- Description : The event handler for received messages.
 -- License     : MIT
 -- Maintainer  : tagarople@gmail.com
@@ -9,7 +9,7 @@
 -- This module deals with 'Command's and 'InlineCommand's, checking for the
 -- command prefix in the case of 'Command's and then trying each plugin-defined
 -- parser to see if it matches.
-module Tablebot.Handler.Command
+module Tablebot.Internal.Command
   ( parseNewMessage,
     parseCommands,
     parseInlineCommands,

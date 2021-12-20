@@ -1,5 +1,5 @@
 -- |
--- Module      : Tablebot.Handler.Event
+-- Module      : Tablebot.Internal.Event
 -- Description : The event handler for everything else.
 -- License     : MIT
 -- Maintainer  : tagarople@gmail.com
@@ -8,7 +8,7 @@
 --
 -- This module deals with other kinds of features - 'MessageChange',
 -- 'ReactionAdd', 'ReactionDel' and 'Other'.
-module Tablebot.Handler.Event
+module Tablebot.Internal.Event
   ( parseMessageChange,
     parseReactionAdd,
     parseReactionDel,
@@ -17,7 +17,7 @@ module Tablebot.Handler.Event
 where
 
 import Discord.Types (ChannelId, Event, MessageId, ReactionInfo)
-import Tablebot.Handler.Types
+import Tablebot.Internal.Types
 
 -- | This runs each 'MessageChange' feature in @cs@ with the information from a
 -- Discord 'MessageUpdate' or 'MessageDelete' event - whether it is an update

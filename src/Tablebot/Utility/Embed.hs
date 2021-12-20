@@ -1,9 +1,8 @@
 -- -- |
--- Module      : Tablebot.Plugin.Embed
+-- Module      : Tablebot.Utility.Embed
 -- Description : Embed manipulation helpers
--- Copyright   : (c) Anna Bruce 2021
 -- License     : MIT
--- Maintainer  : finnjkeating@gmail.com
+-- Maintainer  : tagarople@gmail.com
 -- Stability   : experimental
 -- Portability : POSIX
 --

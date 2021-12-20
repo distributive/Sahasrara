@@ -1,3 +1,12 @@
+-- |
+-- Module      : Tablebot.Utility.Database
+-- Description : Wrappers to database functionality to match our main monad.
+-- License     : MIT
+-- Maintainer  : tagarople@gmail.com
+-- Stability   : experimental
+-- Portability : POSIX
+--
+-- Wrappers to database functionality to match our main monad.
 module Tablebot.Utility.Database
   ( module Tablebot.Utility.Database,
     Sql.fromSqlKey,

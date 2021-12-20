@@ -1,5 +1,5 @@
 -- |
--- Module      : Tablebot.Plugin.Types
+-- Module      : Tablebot.Utility.Types
 -- Description : Types used throughout plugins.
 -- License     : MIT
 -- Maintainer  : tagarople@gmail.com

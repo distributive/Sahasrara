@@ -1,5 +1,5 @@
 -- -- |
--- Module      : Tablebot.Plugin.Help
+-- Module      : Tablebot.Utility.Help
 -- Description : Help text generation and storage
 -- License     : MIT
 -- Maintainer  : tagarople@gmail.com

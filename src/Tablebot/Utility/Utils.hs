@@ -1,5 +1,5 @@
 -- |
--- Module      : Tablebot.Plugin.Utils
+-- Module      : Tablebot.Utility.Utils
 -- Description : A place for functions that don't belong anywhere else.
 -- License     : MIT
 -- Maintainer  : tagarople@gmail.com

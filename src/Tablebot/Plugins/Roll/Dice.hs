@@ -1,5 +1,5 @@
 -- |
--- Module      : Tablebot.Plugin.Dice
+-- Module      : Tablebot.Plugins.Roll.Dice
 -- Description : Lex, parse, and evaluate dice and other expressions using this plugin.
 -- License     : MIT
 -- Maintainer  : tagarople@gmail.com

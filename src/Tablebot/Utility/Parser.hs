@@ -1,5 +1,5 @@
 -- |
--- Module      : Tablebot.Plugin.Parser
+-- Module      : Tablebot.Utility.Parser
 -- Description : Helpful parsers for building plugins.
 -- License     : MIT
 -- Maintainer  : tagarople@gmail.com

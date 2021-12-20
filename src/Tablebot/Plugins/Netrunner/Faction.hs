@@ -1,5 +1,5 @@
 -- |
--- Module      : Tablebot.Plugin.Netrunner.Faction
+-- Module      : Tablebot.Plugins.Netrunner.Faction
 -- Description : Handles the internal functionality of the Netrunner command.
 -- License     : MIT
 -- Maintainer  : tagarople@gmail.com

@@ -1,5 +1,5 @@
 -- |
--- Module      : Tablebot.Plugin.Netrunner.Card
+-- Module      : Tablebot.Plugins.Netrunner.Card
 -- Description : Handles the internal functionality of the Netrunner command.
 -- License     : MIT
 -- Maintainer  : tagarople@gmail.com

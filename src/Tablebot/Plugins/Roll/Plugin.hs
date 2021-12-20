@@ -1,5 +1,5 @@
 -- |
--- Module      : Tablebot.Plugins.RollDice
+-- Module      : Tablebot.Plugins.Roll.Plugin
 -- Description : A command that outputs the result of rolling dice.
 -- License     : MIT
 -- Maintainer  : tagarople@gmail.com

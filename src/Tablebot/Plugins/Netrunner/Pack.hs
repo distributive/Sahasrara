@@ -1,5 +1,5 @@
 -- |
--- Module      : Tablebot.Plugin.Netrunner.Pack
+-- Module      : Tablebot.Plugins.Netrunner.Pack
 -- Description : Handles the internal functionality of the Netrunner command.
 -- License     : MIT
 -- Maintainer  : tagarople@gmail.com

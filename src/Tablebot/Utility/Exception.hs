@@ -1,13 +1,12 @@
 -- |
--- Module      : Tablebot.Util.Error
--- Description : A plugin for error types.
--- Copyright   : (c) Amelie WD, Sam Coy 2021
+-- Module      : Tablebot.Utility.Exception
+-- Description : Helpers for error handling in plugins.
 -- License     : MIT
--- Maintainer  : tablebot@ameliewd.com
+-- Maintainer  : tagarople@gmail.com
 -- Stability   : experimental
 -- Portability : POSIX
 --
--- A plugin for error handling.
+-- Helpers for error handling in plugins.
 module Tablebot.Utility.Exception
   ( BotException (..),
     throwBot,

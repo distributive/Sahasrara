@@ -1,5 +1,5 @@
 -- |
--- Module      : Tablebot.Plugin.Fuzzy
+-- Module      : Tablebot.Utility.Fuzzy
 -- Description : A custom fuzzy search module.
 -- License     : MIT
 -- Maintainer  : tagarople@gmail.com

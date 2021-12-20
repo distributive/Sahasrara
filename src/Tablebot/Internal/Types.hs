@@ -1,5 +1,5 @@
 -- |
--- Module      : Tablebot.Handler.Types
+-- Module      : Tablebot.Internal.Types
 -- Description : Non-public types used throughout the rest of the implementation.
 -- License     : MIT
 -- Maintainer  : tagarople@gmail.com
@@ -9,7 +9,7 @@
 -- All of the important types used throughout the implementation that aren't exposed to plugins.
 -- Defines a @CompiledPlugin@, which represents a compiled and unified form of a plugin to
 -- allow homogeneous storage throughout the rest of the implementation.
-module Tablebot.Handler.Types where
+module Tablebot.Internal.Types where
 
 import Control.Concurrent.MVar (MVar)
 import Control.Monad.Reader (ReaderT)

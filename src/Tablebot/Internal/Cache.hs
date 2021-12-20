@@ -1,4 +1,14 @@
-module Tablebot.Handler.Cache where
+-- |
+-- Module      : Tablebot.Internal.Cache
+-- Description : A content cache for internal bot use.
+-- License     : MIT
+-- Maintainer  : tagarople@gmail.com
+-- Stability   : experimental
+-- Portability : POSIX
+--
+-- A cache for data needed by the bot to provide features without making multiple calls to discord apis.
+-- Not intended for use by plugins directly, if you need to do that create a separate cache in your setup phase.
+module Tablebot.Internal.Cache where
 
 import Control.Concurrent.MVar (putMVar, readMVar, takeMVar)
 import Control.Monad.IO.Class (liftIO)

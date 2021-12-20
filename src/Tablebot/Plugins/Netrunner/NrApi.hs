@@ -1,5 +1,5 @@
 -- |
--- Module      : Tablebot.Plugin.Netrunner.NrApi
+-- Module      : Tablebot.Plugins.Netrunner.NrApi
 -- Description : Handles the internal functionality of the Netrunner command.
 -- License     : MIT
 -- Maintainer  : tagarople@gmail.com

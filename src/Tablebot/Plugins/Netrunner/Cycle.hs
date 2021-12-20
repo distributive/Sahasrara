@@ -1,5 +1,5 @@
 -- |
--- Module      : Tablebot.Plugin.Netrunner.Cycle
+-- Module      : Tablebot.Plugins.Netrunner.Cycle
 -- Description : Handles the internal functionality of the Netrunner command.
 -- License     : MIT
 -- Maintainer  : tagarople@gmail.com

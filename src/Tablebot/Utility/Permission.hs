@@ -1,9 +1,8 @@
 -- |
--- Module      : Tablebot.Plugin.Permission
+-- Module      : Tablebot.Utility.Permission
 -- Description : A simple interface to allow plugins to handle permissions themselves
--- Copyright   : (c) Anna Bruce 2021
 -- License     : MIT
--- Maintainer  : finnjkeating@gmail.com
+-- Maintainer  : tagarople@gmail.com
 -- Stability   : experimental
 -- Portability : POSIX
 --

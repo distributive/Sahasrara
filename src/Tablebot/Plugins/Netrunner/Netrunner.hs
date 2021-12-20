@@ -1,7 +1,7 @@
 {-# LANGUAGE DuplicateRecordFields #-}
 
 -- |
--- Module      : Tablebot.Plugin.Netrunner
+-- Module      : Tablebot.Plugins.Netrunner.Netrunner
 -- Description : Handles the internal functionality of the Netrunner command.
 -- License     : MIT
 -- Maintainer  : tagarople@gmail.com
