@@ -8,7 +8,7 @@
 --
 -- This module deals with other kinds of features - 'MessageChange',
 -- 'ReactionAdd', 'ReactionDel' and 'Other'.
-module Tablebot.Internal.Event
+module Tablebot.Internal.Handler.Event
   ( parseMessageChange,
     parseReactionAdd,
     parseReactionDel,

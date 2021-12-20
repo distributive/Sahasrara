@@ -29,10 +29,10 @@ import Control.Monad.Trans.Class (MonadTrans (lift))
 import Control.Monad.Trans.Reader (ReaderT (runReaderT), ask)
 import Data.Text (Text)
 import Discord.Types
-import Tablebot.Internal.Command
+import Tablebot.Internal.Handler.Command
   ( parseNewMessage,
   )
-import Tablebot.Internal.Event
+import Tablebot.Internal.Handler.Event
   ( parseMessageChange,
     parseOther,
     parseReactionAdd,

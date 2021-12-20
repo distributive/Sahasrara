@@ -9,7 +9,7 @@
 -- This module deals with 'Command's and 'InlineCommand's, checking for the
 -- command prefix in the case of 'Command's and then trying each plugin-defined
 -- parser to see if it matches.
-module Tablebot.Internal.Command
+module Tablebot.Internal.Handler.Command
   ( parseNewMessage,
     parseCommands,
     parseInlineCommands,
