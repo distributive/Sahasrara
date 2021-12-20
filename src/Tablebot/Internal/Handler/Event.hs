@@ -1,5 +1,5 @@
 -- |
--- Module      : Tablebot.Internal.Event
+-- Module      : Tablebot.Internal.Handler.Event
 -- Description : The event handler for everything else.
 -- License     : MIT
 -- Maintainer  : tagarople@gmail.com

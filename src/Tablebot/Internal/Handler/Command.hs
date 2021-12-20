@@ -1,5 +1,5 @@
 -- |
--- Module      : Tablebot.Internal.Command
+-- Module      : Tablebot.Internal.Handler.Command
 -- Description : The event handler for received messages.
 -- License     : MIT
 -- Maintainer  : tagarople@gmail.com
