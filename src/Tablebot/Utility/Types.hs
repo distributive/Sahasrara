@@ -10,7 +10,7 @@
 -- which are made out of features. Also defines how to construct and combine
 -- plugins, and the @DatabaseDiscord@ monad transformer stack for allowing
 -- database and Discord operations within your features.
-module Tablebot.Plugin.Types where
+module Tablebot.Utility.Types where
 
 import Control.Concurrent.MVar (MVar)
 import Control.Monad.Trans.Class (lift)

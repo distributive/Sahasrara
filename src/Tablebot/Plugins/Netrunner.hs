@@ -14,7 +14,6 @@ import Control.Monad.Trans.Reader (ask)
 import Data.Text (Text, pack)
 import Discord.Types
 import Tablebot.Handler.Command ()
-import Tablebot.Plugin
 import Tablebot.Plugin.Discord (formatFromEmojiName, sendEmbedMessage, sendMessage)
 import Tablebot.Plugin.Exception (BotException (NetrunnerException), throwBot)
 import Tablebot.Plugin.Netrunner
@@ -23,6 +22,7 @@ import Tablebot.Plugin.Netrunner.Custom (customCard)
 import Tablebot.Plugin.Netrunner.NrApi (NrApi, getNrApi)
 import Tablebot.Plugin.Parser (NrQuery (..), netrunnerCustom, netrunnerQuery)
 import Tablebot.Plugin.SmartCommand (PComm (parseComm), Quoted (Qu), RestOfInput1 (ROI1), WithError (WErr))
+import Tablebot.Utility
 import Text.RawString.QQ (r)
 
 -- | @netrunner@ is the user-facing command that searches for Netrunner cards.

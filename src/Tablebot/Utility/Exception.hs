@@ -24,8 +24,8 @@ import Control.Monad.Exception (Exception, MonadException, catch, throw)
 import Data.List (intercalate)
 import Data.Text (pack)
 import Discord.Internal.Types
-import Tablebot.Plugin.Embed
-import Tablebot.Plugin.Types (DiscordColour (..))
+import Tablebot.Utility.Embed
+import Tablebot.Utility.Types (DiscordColour (..))
 
 -- | @BotException@ is the type for errors caught in TableBot.
 -- Declare new errors here, and define them at the bottom of the file.

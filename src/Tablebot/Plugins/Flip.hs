@@ -11,10 +11,10 @@ module Tablebot.Plugins.Flip (flipPlugin) where
 
 import Control.Monad.IO.Class (MonadIO (liftIO))
 import Data.Text (pack)
-import Tablebot.Plugin
 import Tablebot.Plugin.Discord (Message, sendMessage)
 import Tablebot.Plugin.Parser
 import Tablebot.Plugin.Random (chooseOneWithDefault)
+import Tablebot.Utility
 import Text.Megaparsec
 import Text.RawString.QQ
 import Prelude hiding (flip)

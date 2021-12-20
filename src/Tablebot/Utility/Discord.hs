@@ -8,7 +8,7 @@
 --
 -- This module contains helpful Discord functionality for building plugins
 -- without having to lift Discord operations constantly.
-module Tablebot.Plugin.Discord
+module Tablebot.Utility.Discord
   ( sendMessage,
     sendChannelMessage,
     sendReplyMessage,
@@ -54,8 +54,8 @@ import qualified Discord.Requests as R
 import Discord.Types
 import Tablebot.Handler.Cache
 import Tablebot.Handler.Embed
-import Tablebot.Plugin (EnvDatabaseDiscord, liftDiscord)
-import Tablebot.Plugin.Exception (BotException (..))
+import Tablebot.Utility (EnvDatabaseDiscord, liftDiscord)
+import Tablebot.Utility.Exception (BotException (..))
 
 -- | @sendMessage@ sends the input message @t@ in the same channel as message
 -- @m@. This returns an @Either RestCallErrorCode Message@ to denote failure or

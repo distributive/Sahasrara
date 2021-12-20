@@ -14,10 +14,10 @@ import Data.List (intercalate)
 import Data.Maybe (fromMaybe)
 import Data.Text (Text, pack)
 import Discord.Types (Message (messageAuthor))
-import Tablebot.Plugin
 import Tablebot.Plugin.Dice (Expr, defaultRoll, evalExpr, supportedFunctionsList)
 import Tablebot.Plugin.Discord (sendMessage, toMention)
 import Tablebot.Plugin.SmartCommand (PComm (parseComm))
+import Tablebot.Utility
 import Text.RawString.QQ (r)
 
 rollDice' :: Maybe Expr -> Message -> DatabaseDiscord ()

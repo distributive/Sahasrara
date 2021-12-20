@@ -23,7 +23,6 @@ import Discord.Types
 import GHC.Generics (Generic)
 import GHC.Int (Int64)
 import System.Random (randomRIO)
-import Tablebot.Plugin
 import Tablebot.Plugin.Database
 import Tablebot.Plugin.Discord
   ( findGuild,
@@ -40,6 +39,7 @@ import Tablebot.Plugin.Embed
 import Tablebot.Plugin.Exception (BotException (GenericException), catchBot, throwBot)
 import Tablebot.Plugin.Permission (requirePermission)
 import Tablebot.Plugin.SmartCommand
+import Tablebot.Utility
 import Text.RawString.QQ (r)
 
 -- Our Quote table in the database. This is fairly standard for Persistent,

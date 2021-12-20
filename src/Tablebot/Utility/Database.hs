@@ -1,5 +1,5 @@
-module Tablebot.Plugin.Database
-  ( module Tablebot.Plugin.Database,
+module Tablebot.Utility.Database
+  ( module Tablebot.Utility.Database,
     Sql.fromSqlKey,
     Sql.toSqlKey,
     liftSql,
@@ -10,7 +10,7 @@ import Data.Int (Int64)
 import Data.Map (Map)
 import Data.Text (Text)
 import qualified Database.Persist.Sqlite as Sql
-import Tablebot.Plugin (EnvDatabaseDiscord, liftSql)
+import Tablebot.Utility (EnvDatabaseDiscord, liftSql)
 
 insert :: (Sql.PersistEntity record, Sql.PersistEntityBackend record ~ Sql.SqlBackend) => record -> EnvDatabaseDiscord d (Sql.Key record)
 insert r = liftSql $ Sql.insert r

@@ -14,7 +14,7 @@ import Data.Char (isDigit, isLetter, isSpace)
 import Data.Functor (($>))
 import Data.Text (Text)
 import Discord.Internal.Rest (Message)
-import Tablebot.Plugin
+import Tablebot.Utility
 import Text.Megaparsec
 import Text.Megaparsec.Char (char, string)
 

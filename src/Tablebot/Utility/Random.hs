@@ -8,13 +8,13 @@
 -- Portability : POSIX
 --
 -- A collection of utility functions for generating randomness.
-module Tablebot.Plugin.Random (chooseOne, chooseOneWithDefault, chooseOneWeighted, chooseOneWeightedWithDefault) where
+module Tablebot.Utility.Random (chooseOne, chooseOneWithDefault, chooseOneWeighted, chooseOneWeightedWithDefault) where
 
 import Control.Monad.Exception (MonadException (throw))
 import Data.List (find)
 import Data.Maybe (fromJust)
 import System.Random (randomRIO)
-import Tablebot.Plugin.Exception (BotException (RandomException), catchBot)
+import Tablebot.Utility.Exception (BotException (RandomException), catchBot)
 
 -- | @chooseOne@ chooses a single random element from a given list with uniform
 -- distribution.

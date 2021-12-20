@@ -8,7 +8,7 @@
 --
 -- This plugin contains the neccessary parsers and stucture to get the AST for an
 -- expression that contains dice, as well as evaluate that expression.
-module Tablebot.Plugin.Dice (evalExpr, Expr, PrettyShow (..), supportedFunctionsList, defaultRoll) where
+module Tablebot.Utility.Dice (evalExpr, Expr, PrettyShow (..), supportedFunctionsList, defaultRoll) where
 
 import Control.Monad (when)
 import Control.Monad.Exception (MonadException)
@@ -22,12 +22,12 @@ import Data.String (IsString (fromString))
 import Data.Text (Text, pack, unpack)
 import Data.Tuple (swap)
 import System.Random (randomRIO)
-import Tablebot.Plugin.Discord (Format (..), formatInput, formatText)
-import Tablebot.Plugin.Exception (BotException (EvaluationException), catchBot, throwBot)
-import Tablebot.Plugin.Parser (posInteger, skipSpace, skipSpace1, word)
-import Tablebot.Plugin.Random (chooseOne)
-import Tablebot.Plugin.SmartCommand (CanParse (..))
-import Tablebot.Plugin.Types (Parser)
+import Tablebot.Utility.Discord (Format (..), formatInput, formatText)
+import Tablebot.Utility.Exception (BotException (EvaluationException), catchBot, throwBot)
+import Tablebot.Utility.Parser (posInteger, skipSpace, skipSpace1, word)
+import Tablebot.Utility.Random (chooseOne)
+import Tablebot.Utility.SmartParser (CanParse (..))
+import Tablebot.Utility.Types (Parser)
 import Text.Megaparsec (MonadParsec (try), many, optional, (<?>), (<|>))
 import Text.Megaparsec.Char (char, string)
 

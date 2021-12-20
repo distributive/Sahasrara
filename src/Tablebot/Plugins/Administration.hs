@@ -21,11 +21,11 @@ import Discord.Types
 import Language.Haskell.Printf (s)
 import Tablebot.Handler.Administration
 import Tablebot.Handler.Types (CompiledPlugin (compiledName))
-import Tablebot.Plugin
 import Tablebot.Plugin.Database
 import Tablebot.Plugin.Discord (sendMessage)
 import Tablebot.Plugin.Permission (requirePermission)
 import Tablebot.Plugin.SmartCommand
+import Tablebot.Utility
 import Text.RawString.QQ
 
 -- | @SS@ denotes the type returned by the command setup. Here its unused.

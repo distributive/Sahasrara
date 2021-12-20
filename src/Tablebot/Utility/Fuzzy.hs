@@ -7,7 +7,7 @@
 -- Portability : POSIX
 --
 -- Implements some functions for fuzzy matching strings.
-module Tablebot.Plugin.Fuzzy
+module Tablebot.Utility.Fuzzy
   ( FuzzyCosts (..),
     closestMatch,
     closestMatchWithCosts,

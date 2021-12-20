@@ -7,7 +7,7 @@
 -- Portability : POSIX
 --
 -- A place for functions to live that don't got nowhere else to live.
-module Tablebot.Plugin.Utils where
+module Tablebot.Utility.Utils where
 
 import Control.Monad (when)
 import Data.Text (Text)

@@ -12,15 +12,15 @@
 -- Generates a parser based on the shape of the command function.
 -- For example, if you have a command that takes in an Int as argument, we
 -- build a parser that reads in that Int and then runs the command.
-module Tablebot.Plugin.SmartCommand where
+module Tablebot.Utility.SmartParser where
 
 import Data.Proxy
 import Data.String (IsString (fromString))
 import Data.Text (Text, pack)
 import Discord.Types (Message)
 import GHC.TypeLits
-import Tablebot.Plugin.Parser
-import Tablebot.Plugin.Types (EnvDatabaseDiscord, Parser)
+import Tablebot.Utility.Parser
+import Tablebot.Utility.Types (EnvDatabaseDiscord, Parser)
 import Text.Megaparsec
 
 -- | @PComm@ defines function types that we can automatically turn into parsers

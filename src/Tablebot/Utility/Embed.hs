@@ -8,12 +8,12 @@
 -- Portability : POSIX
 --
 -- This module exposes some helpful functions for working with full Embeds
-module Tablebot.Plugin.Embed where
+module Tablebot.Utility.Embed where
 
 import Data.Text (Text)
 import Discord.Internal.Types
 import Tablebot.Handler.Embed (Embeddable, asEmbed, colourToInternal)
-import Tablebot.Plugin.Types (DiscordColour)
+import Tablebot.Utility.Types (DiscordColour)
 
 -- | Some helper functions to allow progressively building up an embed
 -- If you need something more complex, you can still use the createEmbed flow provided by discord-haskell,

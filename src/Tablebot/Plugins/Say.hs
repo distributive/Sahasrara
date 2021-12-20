@@ -11,9 +11,9 @@ module Tablebot.Plugins.Say (sayPlugin) where
 
 import Data.Text (pack)
 import Discord.Types (Message (messageAuthor), User (userId))
-import Tablebot.Plugin
 import Tablebot.Plugin.Discord (sendMessage)
 import Tablebot.Plugin.Parser (untilEnd)
+import Tablebot.Utility
 import Text.RawString.QQ (r)
 
 -- | @say@ outputs its input.
