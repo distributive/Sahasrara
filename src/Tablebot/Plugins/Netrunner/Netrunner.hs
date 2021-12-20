@@ -144,7 +144,9 @@ formatText raw = do
   adam <- formatFromEmojiName "adam"
   sunny <- formatFromEmojiName "sunny"
   return $
-    foldr (uncurry replace) raw $
+    foldr
+      (uncurry replace)
+      raw
       [ ("<strong>", "**"),
         ("</strong>", "**"),
         ("<em>", "*"),

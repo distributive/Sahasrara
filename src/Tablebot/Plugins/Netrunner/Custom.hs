@@ -79,7 +79,7 @@ fuzzyFaction api query =
 -- | @customCard@ takes a set of parameters and does its best to turn that data
 -- into a card.
 customCard :: NrApi -> [(String, String)] -> Card
-customCard api cardData =
+customCard _ cardData =
   let params = fromList $ catMaybes $ readParam <$> cardData
    in Card
         { advancement_cost = nrToInt =<< lookup "advancement" params,
