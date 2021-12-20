@@ -7,17 +7,17 @@
 -- Portability : POSIX
 --
 -- A command that outputs the result of rolling the input dice.
-module Tablebot.Plugins.RollDice (rollPlugin) where
+module Tablebot.Plugins.Plugin (rollPlugin) where
 
 import Control.Monad.Writer (MonadIO (liftIO))
 import Data.List (intercalate)
 import Data.Maybe (fromMaybe)
 import Data.Text (Text, pack)
 import Discord.Types (Message (messageAuthor))
-import Tablebot.Plugin.Dice (Expr, defaultRoll, evalExpr, supportedFunctionsList)
-import Tablebot.Plugin.Discord (sendMessage, toMention)
-import Tablebot.Plugin.SmartCommand (PComm (parseComm))
+import Tablebot.Plugins.Dice.Dice (Expr, defaultRoll, evalExpr, supportedFunctionsList)
 import Tablebot.Utility
+import Tablebot.Utility.Discord (sendMessage, toMention)
+import Tablebot.Utility.SmartCommand (PComm (parseComm))
 import Text.RawString.QQ (r)
 
 rollDice' :: Maybe Expr -> Message -> DatabaseDiscord ()

@@ -7,7 +7,7 @@
 -- Portability : POSIX
 --
 -- Handles the representation of all Netrunner data in Tablebot.
-module Tablebot.Plugin.Netrunner.NrApi (NrApi (..), getNrApi) where
+module Tablebot.Plugins.Netrunner.NrApi (NrApi (..), getNrApi) where
 
 import Data.Aeson (eitherDecode)
 import Data.Either (fromRight)
@@ -15,10 +15,10 @@ import Data.Text (Text)
 import GHC.Generics (Generic)
 import Network.HTTP.Conduit (Response (responseBody), parseRequest)
 import Network.HTTP.Simple (httpLBS)
-import Tablebot.Plugin.Netrunner.Card as Card
-import Tablebot.Plugin.Netrunner.Cycle as Cycle
-import Tablebot.Plugin.Netrunner.Faction as Faction
-import Tablebot.Plugin.Netrunner.Pack as Pack
+import Tablebot.Plugins.Netrunner.Card as Card
+import Tablebot.Plugins.Netrunner.Cycle as Cycle
+import Tablebot.Plugins.Netrunner.Faction as Faction
+import Tablebot.Plugins.Netrunner.Pack as Pack
 
 -- | @NrApi@ represents all required Netrunner data collected.
 data NrApi = NrApi

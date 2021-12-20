@@ -7,7 +7,7 @@
 -- Portability : POSIX
 --
 -- Handles the representation of Netrunner cards in Tablebot.
-module Tablebot.Plugin.Netrunner.Card (Card (..), Cards (..), defaultCards) where
+module Tablebot.Plugins.Netrunner.Card (Card (..), Cards (..), defaultCards) where
 
 import Data.Aeson (FromJSON, Value (Object), parseJSON, (.:))
 import Data.Text (Text)

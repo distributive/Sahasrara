@@ -7,7 +7,7 @@
 -- Portability : POSIX
 --
 -- Handles the representation of Netrunner factions in Tablebot.
-module Tablebot.Plugin.Netrunner.Faction (Faction (..), Factions (..), defaultFactions) where
+module Tablebot.Plugins.Netrunner.Faction (Faction (..), Factions (..), defaultFactions) where
 
 import Data.Aeson (FromJSON, Value (Object), parseJSON, (.:))
 import Data.Text (Text)
@@ -24,7 +24,7 @@ data Faction = Faction
   deriving (Show, Generic)
 
 -- | @Cycles@ represents all cycles in the game's history.
-data Factions = Factions {content :: ![Faction]} deriving (Show, Generic)
+newtype Factions = Factions {content :: [Faction]} deriving (Show, Generic)
 
 defaultFactions :: Factions
 defaultFactions = Factions {content = []}

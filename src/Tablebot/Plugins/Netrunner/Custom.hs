@@ -7,15 +7,15 @@
 -- Portability : POSIX
 --
 -- The functionality of the custom card features of the Netrunner command.
-module Tablebot.Plugin.Netrunner.Custom (customCard) where
+module Tablebot.Plugins.Netrunner.Custom (customCard) where
 
 import Data.Map (fromList, lookup)
 import Data.Maybe (catMaybes)
 import Data.Text (Text, pack, unpack)
-import Tablebot.Plugin.Fuzzy (FuzzyCosts (..), closestMatch, closestPairWithCosts, closestValue)
-import Tablebot.Plugin.Netrunner.Card as Card
-import Tablebot.Plugin.Netrunner.Faction as Faction
-import Tablebot.Plugin.Netrunner.NrApi (NrApi (..))
+import Tablebot.Plugins.Netrunner.Card as Card
+import Tablebot.Plugins.Netrunner.Faction as Faction
+import Tablebot.Plugins.Netrunner.NrApi (NrApi (..))
+import Tablebot.Utility.Fuzzy (FuzzyCosts (..), closestMatch, closestPairWithCosts, closestValue)
 import Prelude hiding (lookup)
 
 -- | @NrData@ allows us to parse parameters into a type of our choosing.

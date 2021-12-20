@@ -15,9 +15,9 @@ import Data.Functor ((<&>))
 import Data.Text (Text, pack)
 import Network.HTTP.Conduit (Response (responseBody), parseRequest)
 import Network.HTTP.Simple (httpLBS)
-import Tablebot.Plugin.Discord (Message, sendMessage)
-import Tablebot.Plugin.SmartCommand (parseComm)
-import Tablebot.Plugin.Types
+import Tablebot.Utility.Discord (Message, sendMessage)
+import Tablebot.Utility.SmartCommand (parseComm)
+import Tablebot.Utility.Types
   ( Command,
     DatabaseDiscord,
     EnvCommand (Command),

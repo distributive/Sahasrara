@@ -17,10 +17,10 @@ import Data.Text (pack)
 import Data.Yaml (decodeFileEither)
 import Data.Yaml.Internal (ParseException)
 import GHC.Generics (Generic)
-import Tablebot.Plugin.Discord (sendMessage)
-import Tablebot.Plugin.Random (chooseOne, chooseOneWeighted)
-import Tablebot.Plugin.SmartCommand (PComm (parseComm))
 import Tablebot.Utility
+import Tablebot.Utility.Discord (sendMessage)
+import Tablebot.Utility.Random (chooseOne, chooseOneWeighted)
+import Tablebot.Utility.SmartCommand (PComm (parseComm))
 import Text.Printf (printf)
 import Text.RawString.QQ (r)
 
