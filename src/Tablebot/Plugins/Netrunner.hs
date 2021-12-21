@@ -118,7 +118,7 @@ nrSearch = Command "search" searchPars []
           Nothing -> sendMessage m "No criteria provided!"
           Just [] -> sendMessage m "No cards found!"
           Just [res] -> embedCard res m
-          Just res -> embedCards res ("_[...more](" <> pairsToQuery pairs <> ")_") m
+          Just res -> embedCards res ("_[..." <> (pack $ show $ length res - 10) <> " more](" <> pairsToQuery pairs <> ")_") m
 
 -- | @nrCustom@ is a command that lets users generate a card embed out of custom
 -- data, for the purpose of creating custom cards.
@@ -140,7 +140,9 @@ embedCard card m = do
 
 -- | @embedCards@ takes a list of cards and embeds their names.
 embedCards :: [Card] -> Text -> Message -> EnvDatabaseDiscord NrApi ()
-embedCards cards err m = sendEmbedMessage m "" =<< cardsToEmbed cards err
+embedCards cards err m = do
+  api <- ask
+  sendEmbedMessage m "" =<< cardsToEmbed api cards err
 
 -- | @embedCardImg@ takes a card and embeds its image in a message, if able.
 embedCardImg :: Card -> Message -> EnvDatabaseDiscord NrApi ()

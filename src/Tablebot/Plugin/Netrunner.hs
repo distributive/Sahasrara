@@ -73,7 +73,7 @@ searchCards NrApi {cards = cards} pairs = Just $ nubBy cardEq $ foldr filterCard
     -- filterCards ("z", x) cs = fil text cs
     filterCards _ = id
     filterText :: (Card -> Maybe Text) -> Text -> ([Card] -> [Card])
-    filterText f x = filter (isInfixOf x . (fromMaybe "") . f)
+    filterText f x = filter ((isInfixOf $ toLower x) . toLower . (fromMaybe "") . f)
     filterInt :: (Card -> Maybe Int) -> Text -> ([Card] -> [Card])
     filterInt f x = case readMaybe $ unpack x of
       Nothing -> id
@@ -247,6 +247,22 @@ packToCycle api pack' =
         [] -> Nothing
         (c : _) -> Just c
 
+-- | @factionToEmoji@ takes a faction and attempts to find the appropriate emoji
+-- for it.
+factionToEmoji :: Faction -> EnvDatabaseDiscord NrApi Text
+factionToEmoji Faction {code = code} = case code of
+  "haas-bioroid" -> formatFromEmojiName "hb"
+  "jinteki" -> formatFromEmojiName "jinteki"
+  "nbn" -> formatFromEmojiName "nbn"
+  "weyland-consortium" -> formatFromEmojiName "weyland"
+  "anarch" -> formatFromEmojiName "anarch"
+  "criminal" -> formatFromEmojiName "criminal"
+  "shaper" -> formatFromEmojiName "shaper"
+  "adam" -> formatFromEmojiName "adam"
+  "apex" -> formatFromEmojiName "apex"
+  "sunny-lebeau" -> formatFromEmojiName "sunny"
+  _ -> formatFromEmojiName "nisei"
+
 -- | @cardToReleaseData@ checks if a card was released in a data pack or a big
 -- box, and simplifies this info in the case of the latter.
 cardToReleaseData :: NrApi -> Card -> Text
@@ -271,7 +287,7 @@ cardToReleaseData api card = fromMaybe "" helper
 
 -- | @cardToColour@ gets the factional colour of a card to use in its embed.
 cardToColour :: NrApi -> Card -> DiscordColour
-cardToColour api card = maybe Default (hexToDiscordColour . unpack . Faction.color) (cardToFaction api card)
+cardToColour api card = maybe Default (hexToDiscordColour . unpack . colour) (cardToFaction api card)
 
 -- | @cardToFlavour@ gets a cards flavour text (and makes it italic).
 cardToFlavour :: Card -> EnvDatabaseDiscord NrApi (Maybe Text)
@@ -293,15 +309,24 @@ cardToEmbed api card = do
   return $ addColour eColour $ createEmbed $ CreateEmbed "" "" Nothing eTitle eURL eImg eText [] Nothing eFoot Nothing Nothing
 
 -- | @cardsToEmbed@ takes a list of cards and embeds their names with links.
-cardsToEmbed :: [Card] -> Text -> EnvDatabaseDiscord NrApi Embed
-cardsToEmbed cards err = do
-  let cards' = "**" <> intercalate "\n" (map formatCard $ take 10 cards) <> "**"
+cardsToEmbed :: NrApi -> [Card] -> Text -> EnvDatabaseDiscord NrApi Embed
+cardsToEmbed api cards err = do
+  formatted <- mapM formatCard $ take 10 cards
+  let cards' = "**" <> intercalate "\n" formatted <> "**"
+      eTitle = "**" <> (pack $ show $ length cards) <> " results**"
       eText = if length cards > 10
         then cards' <> "\n" <> err
         else cards'
-  return $ createEmbed $ CreateEmbed "" "" Nothing "" "" Nothing eText [] Nothing "" Nothing Nothing
+  return $ createEmbed $ CreateEmbed "" "" Nothing eTitle "" Nothing eText [] Nothing "" Nothing Nothing
     where
-      formatCard card = "[" <> (fromMaybe "?" $ title card) <> "](" <> cardToLink card <> ")"
+      formatCard :: Card -> EnvDatabaseDiscord NrApi Text
+      formatCard card = do
+        let title' = fromMaybe "?" $ title card
+            link = cardToLink card
+        icon <- case cardToFaction api card of
+          Nothing -> return ""
+          Just faction -> factionToEmoji faction
+        return $ icon <> " [" <> title' <> "](" <> link <> ")"
 
 -- | @cardToImgEmbed@ takes a card and attempts to embed a picture of it.
 cardToImgEmbed :: NrApi -> Card -> Maybe Embed
