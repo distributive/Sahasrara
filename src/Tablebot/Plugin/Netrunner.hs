@@ -9,10 +9,11 @@
 -- Portability : POSIX
 --
 -- The backend functionality of the Netrunner commands.
-module Tablebot.Plugin.Netrunner (cardToEmbed, cardToImgEmbed, cardToFlavourEmbed, queryCard) where
+module Tablebot.Plugin.Netrunner (cardToEmbed, cardsToEmbed, cardToImgEmbed, cardToFlavourEmbed, searchCards, pairsToQuery, queryCard) where
 
 import Data.Maybe (fromMaybe)
-import Data.Text (Text, replace, toLower, toTitle, unpack)
+import Data.List (nubBy)
+import Data.Text (Text, replace, toLower, toTitle, intercalate, isInfixOf, unpack, pack)
 import Discord.Types
 import Tablebot.Plugin
 import Tablebot.Plugin.Discord (formatFromEmojiName)
@@ -25,6 +26,7 @@ import Tablebot.Plugin.Netrunner.NrApi (NrApi (..))
 import Tablebot.Plugin.Netrunner.Pack as Pack (Pack (..))
 import Tablebot.Plugin.Types ()
 import Tablebot.Plugin.Utils (intToText)
+import Text.Read (readMaybe)
 
 -- | @queryCard@ fuzzy searches the given library of cards by title.
 queryCard :: NrApi -> Text -> Card
@@ -39,8 +41,53 @@ queryCard NrApi {cards = cards} = closestValueWithCosts editCosts pairs . unpack
           transposition = 1
         }
 
--- | Utility function to prepend a given Text to Text within a Maybe, or return the empty
--- Text.
+-- | @searchCards@ looks for all cards that match a set of criteria.
+searchCards :: NrApi -> [(String, String)] -> Maybe [Card]
+searchCards _ [] = Nothing
+searchCards NrApi {cards = cards} pairs = Just $ nubBy cardEq $ foldr filterCards cards $ packSnds pairs
+  where
+    packSnds :: [(String, String)] -> [(String, Text)]
+    packSnds = map (\(a, b) -> (a, pack b))
+    cardEq :: Card -> Card -> Bool
+    cardEq a b = title a == title b
+    filterCards :: (String, Text) -> [Card] -> [Card]
+    filterCards ("x", x) = filterText stripped_text x
+    filterCards ("a", x) = filterText flavor x
+    filterCards ("e", x) = filterText pack_code x
+    -- filterCards ("c", x) = fil text
+    filterCards ("t", x) = filterText type_code x
+    filterCards ("f", x) = filterText faction_code x
+    filterCards ("s", x) = filterText keywords x
+    filterCards ("d", x) = filterText side_code x
+    filterCards ("i", x) = filterText illustrator x
+    filterCards ("o", x) = filterInt cost x
+    filterCards ("g", x) = filterInt advancement_cost x
+    filterCards ("m", x) = filterInt memory_cost x
+    filterCards ("n", x) = filterInt faction_cost x
+    filterCards ("p", x) = filterInt strength x
+    filterCards ("v", x) = filterInt agenda_points x
+    filterCards ("h", x) = filterInt trash_cost x
+    -- filterCards ("r", x) cs = fil text cs
+    -- filterCards ("u", x) cs = fil text cs
+    -- filterCards ("b", x) cs = fil text cs
+    -- filterCards ("z", x) cs = fil text cs
+    filterCards _ = id
+    filterText :: (Card -> Maybe Text) -> Text -> ([Card] -> [Card])
+    filterText f x = filter (isInfixOf x . (fromMaybe "") . f)
+    filterInt :: (Card -> Maybe Int) -> Text -> ([Card] -> [Card])
+    filterInt f x = case readMaybe $ unpack x of
+      Nothing -> id
+      Just x' -> filter (\c -> (fromMaybe False) $ (x'==) <$> f c)
+
+-- | @pairsToQuery@ takes a set of search query pairs ands turns it into a link
+-- to an equivalent search on NetrunnerDB.
+pairsToQuery :: [(String, String)] -> Text
+pairsToQuery pairs = "<https://netrunnerdb.com/find/?q=" <> replace " " "+" (intercalate "+" queries) <> ">"
+  where
+    queries = map (\(k,v) -> pack k <> ":\"" <> pack v <> "\"") pairs
+
+-- | Utility function to prepend a given Text to Text within a Maybe, or return
+-- the empty Text.
 maybeEmptyPrepend :: Text -> Maybe Text -> Text
 maybeEmptyPrepend s = maybe "" (s <>)
 
@@ -151,6 +198,10 @@ formatText raw = do
         ("</em>", "*"),
         ("<trace>", "**"),
         ("</trace>", "**"),
+        ("<errata>", "_**Errata:** "),
+        ("</errata>", "_"),
+        ("<champion>", "**"),
+        ("</champion>", "**"),
         ("[credit]", credit),
         ("[click]", click),
         ("[recurring-credit]", recurringCredit),
@@ -190,8 +241,8 @@ cardToPack api card = do
 
 -- | @packToCycle@ takes a pack and attempts to find its cycle.
 packToCycle :: NrApi -> Pack -> Maybe Cycle
-packToCycle api pack =
-  let cRes = filter (\c -> Cycle.code c == Pack.cycle_code pack) $ cycles api
+packToCycle api pack' =
+  let cRes = filter (\c -> Cycle.code c == Pack.cycle_code pack') $ cycles api
    in case cRes of
         [] -> Nothing
         (c : _) -> Just c
@@ -223,23 +274,36 @@ cardToColour :: NrApi -> Card -> DiscordColour
 cardToColour api card = maybe Default (hexToDiscordColour . unpack . Faction.color) (cardToFaction api card)
 
 -- | @cardToFlavour@ gets a cards flavour text (and makes it italic).
-cardToFlavour :: Card -> Text
-cardToFlavour card = maybe "" (\f -> "*" <> f <> "*") (Card.flavor card)
+cardToFlavour :: Card -> EnvDatabaseDiscord NrApi (Maybe Text)
+cardToFlavour Card {flavor = flavor} = case flavor of
+  Nothing -> return Nothing
+  Just f -> do
+    f' <- formatText f
+    return $ Just $ "*" <> f' <> "*"
 
--- | @cardToLink@ takes a Netrunner card and generates an embed message
--- representing it.
+-- | @cardToEmbed@ takes a card and generates an embed message representing it.
 cardToEmbed :: NrApi -> Card -> EnvDatabaseDiscord NrApi Embed
 cardToEmbed api card = do
   let eTitle = cardToTitle card
-  let eURL = cardToLink card
+      eURL = cardToLink card
+      eFoot = cardToReleaseData api card
+      eImg = cardToImage api card
+      eColour = cardToColour api card
   eText <- cardToText card
-  let eFoot = cardToReleaseData api card
-  let eImg = cardToImage api card
-  let eColour = cardToColour api card
   return $ addColour eColour $ createEmbed $ CreateEmbed "" "" Nothing eTitle eURL eImg eText [] Nothing eFoot Nothing Nothing
 
--- | @cardToImgEmbed@ takes a Netrunner card and attempts to embed a picture of
--- it.
+-- | @cardsToEmbed@ takes a list of cards and embeds their names with links.
+cardsToEmbed :: [Card] -> Text -> EnvDatabaseDiscord NrApi Embed
+cardsToEmbed cards err = do
+  let cards' = "**" <> intercalate "\n" (map formatCard $ take 10 cards) <> "**"
+      eText = if length cards > 10
+        then cards' <> "\n" <> err
+        else cards'
+  return $ createEmbed $ CreateEmbed "" "" Nothing "" "" Nothing eText [] Nothing "" Nothing Nothing
+    where
+      formatCard card = "[" <> (fromMaybe "?" $ title card) <> "](" <> cardToLink card <> ")"
+
+-- | @cardToImgEmbed@ takes a card and attempts to embed a picture of it.
 cardToImgEmbed :: NrApi -> Card -> Maybe Embed
 cardToImgEmbed api card =
   let eTitle = cardToTitle card
@@ -249,14 +313,15 @@ cardToImgEmbed api card =
         Nothing -> Nothing
         eImg -> Just $ addColour eColour $ createEmbed $ CreateEmbed "" "" Nothing eTitle eURL Nothing "" [] eImg "" Nothing Nothing
 
--- | @cardToFlavourEmbed@ takes a Netrunner card and attempts to embed its
--- flavour text.
-cardToFlavourEmbed :: NrApi -> Card -> Maybe Embed
-cardToFlavourEmbed api card =
+-- | @cardToFlavourEmbed@ takes a card and attempts to embed its flavour text.
+cardToFlavourEmbed :: NrApi -> Card -> EnvDatabaseDiscord NrApi (Maybe Embed)
+cardToFlavourEmbed api card = do
   let eTitle = cardToTitle card
       eURL = cardToLink card
       eColour = cardToColour api card
       eImg = cardToImage api card
-   in case cardToFlavour card of
-        "" -> Nothing
-        eFlavour -> Just $ addColour eColour $ createEmbed $ CreateEmbed "" "" Nothing eTitle eURL eImg eFlavour [] Nothing "" Nothing Nothing
+  flavor <- cardToFlavour card
+  return $ case flavor of
+    Nothing -> Nothing
+    Just "" -> Nothing
+    Just eFlavour -> Just $ addColour eColour $ createEmbed $ CreateEmbed "" "" Nothing eTitle eURL eImg eFlavour [] Nothing "" Nothing Nothing

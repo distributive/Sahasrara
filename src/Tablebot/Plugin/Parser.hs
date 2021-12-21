@@ -99,11 +99,11 @@ netrunnerQuery = many $ try $ skipManyTill anySingle query
       _ <- chunk "}}"
       return $ container q
 
--- | @netrunnerCustom@ gets a set of key/value pairs of Netrunner card data for
--- generating custom cards.
--- It matches @key:value key:"val ue" key:value ...@
-netrunnerCustom :: Parser [(String, String)]
-netrunnerCustom = many $ try $ skipManyTill anySingle pair
+-- | @keyValue@ gets a set of key/value pairs where keys are separated from
+-- values by colons. Invalid strings between and surrounding pairs are ignored.
+-- It matches @a:value b:"val ue" c:value ...@
+keyValue :: Parser [(String, String)]
+keyValue = many $ try $ skipManyTill anySingle pair
   where
     pair :: Parser (String, String)
     pair = do

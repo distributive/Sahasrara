@@ -21,7 +21,7 @@ import Tablebot.Plugin.Netrunner
 import Tablebot.Plugin.Netrunner.Card (Card)
 import Tablebot.Plugin.Netrunner.Custom (customCard)
 import Tablebot.Plugin.Netrunner.NrApi (NrApi, getNrApi)
-import Tablebot.Plugin.Parser (NrQuery (..), netrunnerCustom, netrunnerQuery)
+import Tablebot.Plugin.Parser (NrQuery (..), keyValue, netrunnerQuery)
 import Tablebot.Plugin.SmartCommand (PComm (parseComm), Quoted (Qu), RestOfInput1 (ROI1), WithError (WErr))
 import Text.RawString.QQ (r)
 
@@ -31,7 +31,7 @@ netrunner =
   Command
     "netrunner"
     (parseComm nrComm)
-    [nrFind, nrFindImg, commandAlias "img" nrFindImg, nrFindFlavour, nrCustom]
+    [nrFind, nrFindImg, commandAlias "img" nrFindImg, nrFindFlavour, nrSearch, nrCustom]
   where
     nrComm ::
       WithError
@@ -105,6 +105,21 @@ nrFindInline = InlineCommand nrInlineComm
         NrQueryImg q -> embedCardImg (queryCard api $ pack q) m
         NrQueryFlavour q -> embedCardFlavour (queryCard api $ pack q) m
 
+-- | @nrSearch@ searches the card database with specific queries.
+nrSearch :: EnvCommand NrApi
+nrSearch = Command "search" searchPars []
+  where
+    searchPars :: Parser (Message -> EnvDatabaseDiscord NrApi ())
+    searchPars = do
+      pairs <- keyValue
+      return $ \m -> do
+        api <- ask
+        case searchCards api pairs of
+          Nothing -> sendMessage m "No criteria provided!"
+          Just [] -> sendMessage m "No cards found!"
+          Just [res] -> embedCard res m
+          Just res -> embedCards res ("_[...more](" <> pairsToQuery pairs <> ")_") m
+
 -- | @nrCustom@ is a command that lets users generate a card embed out of custom
 -- data, for the purpose of creating custom cards.
 nrCustom :: EnvCommand NrApi
@@ -112,18 +127,20 @@ nrCustom = Command "custom" customPars []
   where
     customPars :: Parser (Message -> EnvDatabaseDiscord NrApi ())
     customPars = do
-      pairs <- netrunnerCustom
-      return $ customFunc pairs
-    customFunc :: [(String, String)] -> Message -> EnvDatabaseDiscord NrApi ()
-    customFunc pairs m = do
-      api <- ask
-      embedCard (customCard api pairs) m
+      pairs <- keyValue
+      return $ \m -> do
+        api <- ask
+        embedCard (customCard api pairs) m
 
 -- | @embedCard@ takes a card and embeds it in a message.
 embedCard :: Card -> Message -> EnvDatabaseDiscord NrApi ()
 embedCard card m = do
   api <- ask
   sendEmbedMessage m "" =<< cardToEmbed api card
+
+-- | @embedCards@ takes a list of cards and embeds their names.
+embedCards :: [Card] -> Text -> Message -> EnvDatabaseDiscord NrApi ()
+embedCards cards err m = sendEmbedMessage m "" =<< cardsToEmbed cards err
 
 -- | @embedCardImg@ takes a card and embeds its image in a message, if able.
 embedCardImg :: Card -> Message -> EnvDatabaseDiscord NrApi ()
@@ -137,9 +154,10 @@ embedCardImg card m = do
 embedCardFlavour :: Card -> Message -> EnvDatabaseDiscord NrApi ()
 embedCardFlavour card m = do
   api <- ask
-  case cardToFlavourEmbed api card of
+  embed <- cardToFlavourEmbed api card
+  case embed of
     Nothing -> throwBot $ NetrunnerException "Card has no flavour text"
-    Just embed -> sendEmbedMessage m "" embed
+    Just e -> sendEmbedMessage m "" e
 
 netrunnerHelp :: HelpPage
 netrunnerHelp =
