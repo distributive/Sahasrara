@@ -12,7 +12,10 @@
 module Tablebot.Plugin.Netrunner (cardToEmbed, cardToImgEmbed, cardToFlavourEmbed, queryCard) where
 
 import Data.Maybe (fromMaybe)
-import Data.Text (Text, replace, toLower, toTitle, unpack)
+import Data.Text (Text, isInfixOf, replace, toLower, toTitle, unpack)
+import qualified Data.Text (filter)
+import Data.Text.ICU.Char (Bool_ (Diacritic), property)
+import Data.Text.ICU.Normalize (NormalizationMode (NFD), normalize)
 import Discord.Types
 import Tablebot.Plugin
 import Tablebot.Plugin.Discord (formatFromEmojiName)
@@ -26,11 +29,29 @@ import Tablebot.Plugin.Netrunner.Pack as Pack (Pack (..))
 import Tablebot.Plugin.Types ()
 import Tablebot.Plugin.Utils (intToText)
 
--- | @queryCard@ fuzzy searches the given library of cards by title.
+-- | @queryCard@ searches the given library of cards by title, first checking if
+-- the search query is a substring of any cards, then performing a fuzzy search on
+-- the cards given, or all of the cards if no cards are found
 queryCard :: NrApi -> Text -> Card
-queryCard NrApi {cards = cards} = closestValueWithCosts editCosts pairs . unpack
+queryCard NrApi {cards = cards} txt = findCard (substringSearch pairs txt) txt pairs
   where
-    pairs = zip (map (unpack . toLower . fromMaybe "" . Card.title) cards) cards
+    pairs = zip (map (standardise . fromMaybe "" . Card.title) cards) cards
+    substringSearch pairs' searchTxt = filter (\(x, _) -> isInfixOf (standardise searchTxt) x) pairs'
+
+-- | @findCard@ finds a card from the given list of pairs that is some subset of a
+-- full list. If the sublist is empty, it will fuzzy search the full list. If the sublist
+-- has exactly 1 element, it'll return that element. If the sublist has multiple
+-- elements, it will fuzzy search the sublist
+findCard :: [(Text, Card)] -> Text -> [(Text, Card)] -> Card
+findCard [] searchTxt allCards = fuzzyQueryCard allCards searchTxt
+findCard [(_, card)] _ _ = card
+findCard cards searchTxt _ = fuzzyQueryCard cards searchTxt
+
+-- | @queryCard@ fuzzy searches the given library of cards by title.
+fuzzyQueryCard :: [(Text, Card)] -> Text -> Card
+fuzzyQueryCard pairs = closestValueWithCosts editCosts unpackedPairs . unpack
+  where
+    unpackedPairs = fmap (\(x, y) -> (unpack x, y)) pairs
     editCosts =
       FuzzyCosts
         { deletion = 10,
@@ -38,6 +59,12 @@ queryCard NrApi {cards = cards} = closestValueWithCosts editCosts pairs . unpack
           substitution = 10,
           transposition = 1
         }
+
+-- | @standardise@ takes text and converts it to lowercase and removes diacritics
+standardise :: Text -> Text
+standardise txt = Data.Text.filter (not . property Diacritic) normalizedText
+  where
+    normalizedText = normalize NFD (toLower txt)
 
 -- | Utility function to prepend a given Text to Text within a Maybe, or return the empty
 -- Text.
