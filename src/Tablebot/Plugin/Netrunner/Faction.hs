@@ -9,10 +9,9 @@
 -- Handles the representation of Netrunner factions in Tablebot.
 module Tablebot.Plugin.Netrunner.Faction (Faction (..), Factions (..), defaultFactions) where
 
-import Data.Aeson (FromJSON, Value (Object), parseJSON, (.:))
+import Data.Aeson (FromJSON, Value (Object), parseJSON, withObject, (.:))
 import Data.Text (Text)
 import GHC.Generics (Generic)
-import Tablebot.Plugin.Discord (formatFromEmojiName)
 
 -- | @Cycle@ represents a single cycle of packs in the NetrunnerDB API.
 data Faction = Faction
@@ -31,13 +30,12 @@ defaultFactions :: Factions
 defaultFactions = Factions {content = []}
 
 instance FromJSON Faction where
-  parseJSON (Object v) = do
-    code <- v .: "code"
-    colour <- v .: "color"
-    isMini <- v .: "is_mini"
-    name <- v .: "name"
-    sideCode <- v .: "side_code"
-    return $ Faction code colour isMini name sideCode
+  parseJSON = withObject "Faction" $ \o ->
+    Faction <$> o .: "code"
+            <*> o .: "color"
+            <*> o .: "is_mini"
+            <*> o .: "name"
+            <*> o .: "side_code"
 
 instance FromJSON Factions where
   parseJSON (Object v) = do

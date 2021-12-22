@@ -118,7 +118,7 @@ nrSearch = Command "search" searchPars []
           Nothing -> sendMessage m "No criteria provided!"
           Just [] -> sendMessage m "No cards found!"
           Just [res] -> embedCard res m
-          Just res -> embedCards res ("_[..." <> (pack $ show $ length res - 10) <> " more](" <> pairsToQuery pairs <> ")_") m
+          Just res -> embedCards res ("_[..." <> (pack $ show $ length res - 10) <> " more](" <> pairsToQuery api pairs <> ")_") m
 
 -- | @nrCustom@ is a command that lets users generate a card embed out of custom
 -- data, for the purpose of creating custom cards.

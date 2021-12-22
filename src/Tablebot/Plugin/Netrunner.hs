@@ -18,7 +18,7 @@ import Discord.Types
 import Tablebot.Plugin
 import Tablebot.Plugin.Discord (formatFromEmojiName)
 import Tablebot.Plugin.Embed (addColour)
-import Tablebot.Plugin.Fuzzy (FuzzyCosts (..), closestValueWithCosts)
+import Tablebot.Plugin.Search (FuzzyCosts (..), closestMatch, closestValueWithCosts, shortestSuperString)
 import Tablebot.Plugin.Netrunner.Card as Card (Card (..))
 import Tablebot.Plugin.Netrunner.Cycle as Cycle (Cycle (..))
 import Tablebot.Plugin.Netrunner.Faction as Faction (Faction (..))
@@ -97,11 +97,11 @@ searchCards NrApi {cards = cards} pairs = Just $ nubBy cardEq $ foldr filterCard
     filterInt :: Char -> (Card -> Maybe Int) -> Text -> ([Card] -> [Card])
     filterInt sep f x = case readMaybe $ unpack x of
       Nothing -> id
-      Just x' -> filter (\c -> (fromMaybe False) $ ((toEquality sep) x') <$> f c)
+      Just x' -> filter (\c -> (fromMaybe False) $ (sep `toEquality` x') <$> f c)
     toEquality :: Char -> (Int -> Int -> Bool)
     toEquality ':' = (==)
     toEquality '!' = (/=)
-    toEquality '>' = (<) -- These are right, see the @filterInt@ for their application
+    toEquality '>' = (<)
     toEquality '<' = (>)
     toEquality _ = \_ _ -> True
     filterBool :: Char -> (Card -> Maybe Bool) -> Text -> ([Card] -> [Card])
@@ -111,10 +111,15 @@ searchCards NrApi {cards = cards} pairs = Just $ nubBy cardEq $ foldr filterCard
 
 -- | @pairsToQuery@ takes a set of search query pairs ands turns it into a link
 -- to an equivalent search on NetrunnerDB.
-pairsToQuery :: [(String, Char, String)] -> Text
-pairsToQuery pairs = "<https://netrunnerdb.com/find/?q=" <> replace " " "+" (intercalate "+" queries) <> ">"
+pairsToQuery :: NrApi -> [(String, Char, String)] -> Text
+pairsToQuery api pairs = "<https://netrunnerdb.com/find/?q=" <> replace " " "+" (intercalate "+" queries) <> ">"
   where
-    queries = map (\(k, sep, v) -> pack k <> singleton sep <> "\"" <> pack v <> "\"") pairs
+    queries = map format pairs
+    format :: (String, Char, String) -> Text
+    format ("f", sep, v) = format' "f" (singleton sep) $ fromMaybe "" $ shortestSuperString (map Faction.code $ factions api) $ pack v
+    format (k, sep, v) = format' (pack k) (singleton sep) (pack v)
+    format' :: Text -> Text -> Text -> Text
+    format' k sep v = k <> sep <> "\"" <> v <> "\""
 
 -- | Utility function to prepend a given Text to Text within a Maybe, or return the empty
 -- Text.
