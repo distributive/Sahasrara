@@ -21,7 +21,7 @@ import Tablebot.Plugin.Netrunner
 import Tablebot.Plugin.Netrunner.Card (Card)
 import Tablebot.Plugin.Netrunner.Custom (customCard)
 import Tablebot.Plugin.Netrunner.NrApi (NrApi, getNrApi)
-import Tablebot.Plugin.Parser (NrQuery (..), keyValue, netrunnerQuery)
+import Tablebot.Plugin.Parser (NrQuery (..), keyValue, keyValueSepOn, netrunnerQuery)
 import Tablebot.Plugin.SmartCommand (PComm (parseComm), Quoted (Qu), RestOfInput1 (ROI1), WithError (WErr))
 import Text.RawString.QQ (r)
 
@@ -111,7 +111,7 @@ nrSearch = Command "search" searchPars []
   where
     searchPars :: Parser (Message -> EnvDatabaseDiscord NrApi ())
     searchPars = do
-      pairs <- keyValue
+      pairs <- keyValueSepOn [':', '<', '>', '!']
       return $ \m -> do
         api <- ask
         case searchCards api pairs of
@@ -180,7 +180,7 @@ Add additional syntax to the start of the query to fetch only the card's image o
   - `{{card 1}} {{card 2}}` -> searches for cards matching "card 1" and "card 2"
   - `{{!card image}}      ` -> fetches the image of the card matching "card image"
   - `{{|card flavour}}    ` -> fetches the flavour text of the card matching "card flavour" |]
-    [findHelp, findImgHelp, findFlavourHelp, customHelp]
+    [findHelp, findImgHelp, findFlavourHelp, searchHelp, customHelp]
     None
 
 findHelp :: HelpPage
@@ -232,6 +232,31 @@ Can be used inline by enclosing your query inside curly braces with a `|` (max f
 *Usage:*
   - `netrunner flavour card name` -> fetches the flavour text of the card matching "card name"
   - `{{|card name}}             ` -> the inline version of the above command|]
+    []
+    None
+
+searchHelp :: HelpPage
+searchHelp =
+  HelpPage
+    "search"
+    []
+    "gets a list of all Netrunner cards matching a search query"
+    [r|**Search**
+Gets a list of all Netrunner cards matching a search query, where the search query uses NetrunnerDB's syntax:
+<https://netrunnerdb.com/en/syntax>
+If the list is excessively long, it will display a link to an equivalent search on NetrunnerDB
+Searches are case insensitive
+
+The following fields are not implemented:
+> c - cycle
+> r - release date
+> b - ban list
+> z - rotation
+
+*Usage:*
+- `netrunner search x:advanced ` -> all cards containing the text "advanced"
+- `netrunner search o:1 f:nbn" ` -> all 1-cost cards in NBN
+- `netrunner search a:"and the"` -> all cards with "and the" in their flavour text|]
     []
     None
 

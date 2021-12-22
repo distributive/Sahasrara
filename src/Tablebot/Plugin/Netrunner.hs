@@ -13,7 +13,7 @@ module Tablebot.Plugin.Netrunner (cardToEmbed, cardsToEmbed, cardToImgEmbed, car
 
 import Data.Maybe (fromMaybe)
 import Data.List (nubBy)
-import Data.Text (Text, replace, toLower, toTitle, intercalate, isInfixOf, unpack, pack)
+import Data.Text (Text, replace, singleton, toLower, toTitle, intercalate, isInfixOf, unpack, pack)
 import Discord.Types
 import Tablebot.Plugin
 import Tablebot.Plugin.Discord (formatFromEmojiName)
@@ -42,49 +42,61 @@ queryCard NrApi {cards = cards} = closestValueWithCosts editCosts pairs . unpack
         }
 
 -- | @searchCards@ looks for all cards that match a set of criteria.
-searchCards :: NrApi -> [(String, String)] -> Maybe [Card]
+searchCards :: NrApi -> [(String, Char, String)] -> Maybe [Card]
 searchCards _ [] = Nothing
-searchCards NrApi {cards = cards} pairs = Just $ nubBy cardEq $ foldr filterCards cards $ packSnds pairs
+searchCards NrApi {cards = cards} pairs = Just $ nubBy cardEq $ foldr filterCards cards $ packValues pairs
   where
-    packSnds :: [(String, String)] -> [(String, Text)]
-    packSnds = map (\(a, b) -> (a, pack b))
+    packValues :: [(String, Char, String)] -> [(String, Char, Text)]
+    packValues = map (\(k, sep, v) -> (k, sep, pack v))
     cardEq :: Card -> Card -> Bool
     cardEq a b = title a == title b
-    filterCards :: (String, Text) -> [Card] -> [Card]
-    filterCards ("x", x) = filterText stripped_text x
-    filterCards ("a", x) = filterText flavor x
-    filterCards ("e", x) = filterText pack_code x
-    -- filterCards ("c", x) = fil text
-    filterCards ("t", x) = filterText type_code x
-    filterCards ("f", x) = filterText faction_code x
-    filterCards ("s", x) = filterText keywords x
-    filterCards ("d", x) = filterText side_code x
-    filterCards ("i", x) = filterText illustrator x
-    filterCards ("o", x) = filterInt cost x
-    filterCards ("g", x) = filterInt advancement_cost x
-    filterCards ("m", x) = filterInt memory_cost x
-    filterCards ("n", x) = filterInt faction_cost x
-    filterCards ("p", x) = filterInt strength x
-    filterCards ("v", x) = filterInt agenda_points x
-    filterCards ("h", x) = filterInt trash_cost x
-    -- filterCards ("r", x) cs = fil text cs
-    -- filterCards ("u", x) cs = fil text cs
-    -- filterCards ("b", x) cs = fil text cs
-    -- filterCards ("z", x) cs = fil text cs
+    filterCards :: (String, Char, Text) -> [Card] -> [Card]
+    filterCards ("x", sep, x) = filterText sep stripped_text x
+    filterCards ("a", sep, x) = filterText sep flavor x
+    filterCards ("e", sep, x) = filterText sep pack_code x
+    -- filterCards ("c", sep, x) =
+    filterCards ("t", sep, x) = filterText sep type_code x
+    filterCards ("f", sep, x) = filterText sep faction_code x
+    filterCards ("s", sep, x) = filterText sep keywords x
+    filterCards ("d", sep, x) = filterText sep side_code x
+    filterCards ("i", sep, x) = filterText sep illustrator x
+    filterCards ("o", sep, x) = filterInt sep cost x
+    filterCards ("g", sep, x) = filterInt sep advancement_cost x
+    filterCards ("m", sep, x) = filterInt sep memory_cost x
+    filterCards ("n", sep, x) = filterInt sep faction_cost x
+    filterCards ("p", sep, x) = filterInt sep strength x
+    filterCards ("v", sep, x) = filterInt sep agenda_points x
+    filterCards ("h", sep, x) = filterInt sep trash_cost x
+    -- filterCards ("r", sep, x) cs = fil text cs
+    filterCards ("u", sep, x) = filterBool sep uniqueness x
+    -- filterCards ("b", sep, x) cs = fil text cs
+    -- filterCards ("z", sep, x) cs = fil text cs
     filterCards _ = id
-    filterText :: (Card -> Maybe Text) -> Text -> ([Card] -> [Card])
-    filterText f x = filter ((isInfixOf $ toLower x) . toLower . (fromMaybe "") . f)
-    filterInt :: (Card -> Maybe Int) -> Text -> ([Card] -> [Card])
-    filterInt f x = case readMaybe $ unpack x of
+    filterText :: Char -> (Card -> Maybe Text) -> Text -> ([Card] -> [Card])
+    filterText ':' f x = filter ((isInfixOf $ toLower x) . toLower . (fromMaybe "") . f)
+    filterText '!' f x = filter (not . (isInfixOf $ toLower x) . toLower . (fromMaybe "") . f)
+    filterText _ _ _ = id
+    filterInt :: Char -> (Card -> Maybe Int) -> Text -> ([Card] -> [Card])
+    filterInt sep f x = case readMaybe $ unpack x of
       Nothing -> id
-      Just x' -> filter (\c -> (fromMaybe False) $ (x'==) <$> f c)
+      Just x' -> filter (\c -> (fromMaybe False) $ ((toEquality sep) x') <$> f c)
+    toEquality :: Char -> (Int -> Int -> Bool)
+    toEquality ':' = (==)
+    toEquality '!' = (/=)
+    toEquality '>' = (<) -- These are right, see the @filterInt@ for their application
+    toEquality '<' = (>)
+    toEquality _ = \_ _ -> True
+    filterBool :: Char -> (Card -> Maybe Bool) -> Text -> ([Card] -> [Card])
+    filterBool ':' f _ = filter (fromMaybe False . f)
+    filterBool '!' f _ = filter (fromMaybe True . f)
+    filterBool _ _ _ = id
 
 -- | @pairsToQuery@ takes a set of search query pairs ands turns it into a link
 -- to an equivalent search on NetrunnerDB.
-pairsToQuery :: [(String, String)] -> Text
+pairsToQuery :: [(String, Char, String)] -> Text
 pairsToQuery pairs = "<https://netrunnerdb.com/find/?q=" <> replace " " "+" (intercalate "+" queries) <> ">"
   where
-    queries = map (\(k,v) -> pack k <> ":\"" <> pack v <> "\"") pairs
+    queries = map (\(k, sep, v) -> pack k <> singleton sep <> "\"" <> pack v <> "\"") pairs
 
 -- | Utility function to prepend a given Text to Text within a Maybe, or return
 -- the empty Text.
@@ -175,11 +187,12 @@ formatText :: Text -> EnvDatabaseDiscord NrApi Text
 formatText raw = do
   credit <- formatFromEmojiName "credit"
   click <- formatFromEmojiName "click"
+  interrupt <- formatFromEmojiName "interrupt"
+  link <- formatFromEmojiName "link"
+  mu <- formatFromEmojiName "mu"
   recurringCredit <- formatFromEmojiName "recurring_credit"
   subroutine <- formatFromEmojiName "subroutine"
   trash <- formatFromEmojiName "trash_ability"
-  link <- formatFromEmojiName "link"
-  mu <- formatFromEmojiName "mu"
   hb <- formatFromEmojiName "hb"
   jinteki <- formatFromEmojiName "jinteki"
   nbn <- formatFromEmojiName "nbn"
@@ -202,13 +215,18 @@ formatText raw = do
         ("</errata>", "_"),
         ("<champion>", "**"),
         ("</champion>", "**"),
+        ("<ul>", "\n"),
+        ("</ul>", ""),
+        ("<li>", "• "),
+        ("</li>", "\n"),
         ("[credit]", credit),
         ("[click]", click),
+        ("[interrupt]", interrupt),
+        ("[link]", link),
+        ("[mu]", mu),
         ("[recurring-credit]", recurringCredit),
         ("[subroutine]", subroutine),
         ("[trash]", trash),
-        ("[link]", link),
-        ("[mu]", mu),
         ("[haas-bioroid]", hb),
         ("[jinteki]", jinteki),
         ("[nbn]", nbn),

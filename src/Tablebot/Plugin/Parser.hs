@@ -112,6 +112,18 @@ keyValue = many $ try $ skipManyTill anySingle pair
       content <- quoted <|> nonSpaceWord
       return (cat, content)
 
+-- | @keyValueSepOn@ is @keyValue@ except is allows a given list of key/value
+-- separators.
+keyValueSepOn :: [Char] -> Parser [(String, Char, String)]
+keyValueSepOn seps = many $ try $ skipManyTill anySingle pair
+  where
+    pair :: Parser (String, Char, String)
+    pair = do
+      cat <- word
+      sep <- satisfy (`elem` seps)
+      content <- quoted <|> nonSpaceWord
+      return (cat, sep, content)
+
 -- | @sp@ parses an optional space character.
 sp :: Parser ()
 sp = space <|> pure ()
