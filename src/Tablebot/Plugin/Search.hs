@@ -16,12 +16,13 @@ module Tablebot.Plugin.Search
     closestValue,
     closestValueWithCosts,
     shortestSuperString,
+    autocomplete,
   )
 where
 
 import Data.Char (toLower)
 import Data.List (minimumBy)
-import Data.Text (Text, length, isInfixOf)
+import Data.Text (Text, isInfixOf, length, take)
 import Text.EditDistance
 
 -- | @compareOn@ is a helper function for comparing types that aren't ord.
@@ -98,5 +99,12 @@ closestValueWithCosts editCosts pairs query = snd $ closestPairWithCosts editCos
 -- list it cannot be matched.
 shortestSuperString :: [Text] -> Text -> Maybe Text
 shortestSuperString ts query = case filter (query `isInfixOf`) ts of
+  [] -> Nothing
+  xs -> Just $ minimumBy (compareOn Data.Text.length) xs
+
+-- | @autocomplete@ is @shortestSuperString@ except the query must be a
+-- substring starting from the first character of the matched text.
+autocomplete :: [Text] -> Text -> Maybe Text
+autocomplete ts query = case filter ((== query) . Data.Text.take (Data.Text.length query)) ts of
   [] -> Nothing
   xs -> Just $ minimumBy (compareOn Data.Text.length) xs

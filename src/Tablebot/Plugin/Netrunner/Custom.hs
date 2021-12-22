@@ -12,10 +12,10 @@ module Tablebot.Plugin.Netrunner.Custom (customCard) where
 import Data.Map (fromList, lookup)
 import Data.Maybe (catMaybes)
 import Data.Text (Text, pack, unpack)
-import Tablebot.Plugin.Search (FuzzyCosts (..), closestMatch, closestPairWithCosts, closestValue)
 import Tablebot.Plugin.Netrunner.Card as Card
 import Tablebot.Plugin.Netrunner.Faction as Faction
 import Tablebot.Plugin.Netrunner.NrApi (NrApi (..))
+import Tablebot.Plugin.Search (FuzzyCosts (..), closestMatch, closestPairWithCosts, closestValue)
 import Prelude hiding (lookup)
 
 -- | @NrData@ allows us to parse parameters into a type of our choosing.

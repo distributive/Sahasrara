@@ -9,21 +9,32 @@
 -- Portability : POSIX
 --
 -- The backend functionality of the Netrunner commands.
-module Tablebot.Plugin.Netrunner (cardToEmbed, cardsToEmbed, cardToImgEmbed, cardToFlavourEmbed, searchCards, pairsToQuery, queryCard) where
+module Tablebot.Plugin.Netrunner
+  ( cardToEmbed,
+    cardsToEmbed,
+    cardToImgEmbed,
+    cardToFlavourEmbed,
+    queryCard,
+    searchCards,
+    fixSearch,
+    pairsToQuery,
+    pairsToNrdb,
+  )
+where
 
 import Data.List (nubBy)
-import Data.Maybe (fromMaybe)
+import Data.Maybe (catMaybes, fromMaybe)
 import Data.Text (Text, intercalate, isInfixOf, pack, replace, singleton, toTitle, unpack)
 import Discord.Types
 import Tablebot.Plugin
 import Tablebot.Plugin.Discord (formatFromEmojiName)
 import Tablebot.Plugin.Embed (addColour)
-import Tablebot.Plugin.Search (FuzzyCosts (..), closestMatch, closestValueWithCosts, shortestSuperString)
 import Tablebot.Plugin.Netrunner.Card as Card (Card (..))
 import Tablebot.Plugin.Netrunner.Cycle as Cycle (Cycle (..))
 import Tablebot.Plugin.Netrunner.Faction as Faction (Faction (..))
 import Tablebot.Plugin.Netrunner.NrApi (NrApi (..))
 import Tablebot.Plugin.Netrunner.Pack as Pack (Pack (..))
+import Tablebot.Plugin.Search (FuzzyCosts (..), autocomplete, closestMatch, closestValueWithCosts)
 import Tablebot.Plugin.Types ()
 import Tablebot.Plugin.Utils (intToText, standardise)
 import Text.Read (readMaybe)
@@ -109,17 +120,34 @@ searchCards NrApi {cards = cards} pairs = Just $ nubBy cardEq $ foldr filterCard
     filterBool '!' f _ = filter (fromMaybe True . f)
     filterBool _ _ _ = id
 
+-- | @fixSearch@ takes a set of key/value pairs and repairs damaged queries to
+-- make them valid queries for NetrunnerDB.
+fixSearch :: NrApi -> [(String, Char, String)] -> [(String, Char, String)]
+fixSearch NrApi {factions = factions} = catMaybes . map fix
+  where
+    fix ("f", sep, f) =
+      let fs = (map Faction.code factions)
+       in case autocomplete fs $ pack f of
+            Just f' -> Just $ ("f", sep, unpack f')
+            Nothing -> Just $ ("f", sep, closestMatch (map unpack fs) f)
+    fix p = Just p
+
 -- | @pairsToQuery@ takes a set of search query pairs ands turns it into a link
 -- to an equivalent search on NetrunnerDB.
-pairsToQuery :: NrApi -> [(String, Char, String)] -> Text
-pairsToQuery api pairs = "<https://netrunnerdb.com/find/?q=" <> replace " " "+" (intercalate "+" queries) <> ">"
+pairsToQuery :: [(String, Char, String)] -> Text
+pairsToQuery pairs = "<https://netrunnerdb.com/find/?q=" <> replace " " "+" (pairsToNrdb pairs) <> ">"
+
+-- | @pairsToNrdb@ takes a set of search query pairs and formats it into a valid
+-- plaintext search query for NetrunnerDB.
+pairsToNrdb :: [(String, Char, String)] -> Text
+pairsToNrdb pairs = intercalate " " queries
   where
     queries = map format pairs
-    format :: (String, Char, String) -> Text
-    format ("f", sep, v) = format' "f" (singleton sep) $ fromMaybe "" $ shortestSuperString (map Faction.code $ factions api) $ pack v
-    format (k, sep, v) = format' (pack k) (singleton sep) (pack v)
-    format' :: Text -> Text -> Text -> Text
-    format' k sep v = k <> sep <> "\"" <> v <> "\""
+    format (k, sep, v) =
+      pack k <> singleton sep
+        <> if " " `isInfixOf` (pack v)
+          then "\"" <> pack v <> "\""
+          else pack v
 
 -- | Utility function to prepend a given Text to Text within a Maybe, or return the empty
 -- Text.
@@ -350,15 +378,12 @@ cardToEmbed api card = do
   return $ addColour eColour $ createEmbed $ CreateEmbed "" "" Nothing eTitle eURL eImg eText [] Nothing eFoot Nothing Nothing
 
 -- | @cardsToEmbed@ takes a list of cards and embeds their names with links.
-cardsToEmbed :: NrApi -> [Card] -> Text -> EnvDatabaseDiscord NrApi Embed
-cardsToEmbed api cards err = do
+cardsToEmbed :: NrApi -> Text -> [Card] -> Text -> EnvDatabaseDiscord NrApi Embed
+cardsToEmbed api pre cards err = do
   formatted <- mapM formatCard $ take 10 cards
   let cards' = "**" <> intercalate "\n" formatted <> "**"
       eTitle = "**" <> (pack $ show $ length cards) <> " results**"
-      eText =
-        if length cards > 10
-          then cards' <> "\n" <> err
-          else cards'
+      eText = pre <> "\n" <> cards' <> if length cards > 10 then "\n" <> err else ""
   return $ createEmbed $ CreateEmbed "" "" Nothing eTitle "" Nothing eText [] Nothing "" Nothing Nothing
   where
     formatCard :: Card -> EnvDatabaseDiscord NrApi Text

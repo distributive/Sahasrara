@@ -32,10 +32,10 @@ defaultFactions = Factions {content = []}
 instance FromJSON Faction where
   parseJSON = withObject "Faction" $ \o ->
     Faction <$> o .: "code"
-            <*> o .: "color"
-            <*> o .: "is_mini"
-            <*> o .: "name"
-            <*> o .: "side_code"
+      <*> o .: "color"
+      <*> o .: "is_mini"
+      <*> o .: "name"
+      <*> o .: "side_code"
 
 instance FromJSON Factions where
   parseJSON (Object v) = do
