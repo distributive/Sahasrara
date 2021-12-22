@@ -128,11 +128,12 @@ formatText :: Text -> EnvDatabaseDiscord NrApi Text
 formatText raw = do
   credit <- formatFromEmojiName "credit"
   click <- formatFromEmojiName "click"
+  interrupt <- formatFromEmojiName "interrupt"
+  link <- formatFromEmojiName "link"
+  mu <- formatFromEmojiName "mu"
   recurringCredit <- formatFromEmojiName "recurring_credit"
   subroutine <- formatFromEmojiName "subroutine"
   trash <- formatFromEmojiName "trash_ability"
-  link <- formatFromEmojiName "link"
-  mu <- formatFromEmojiName "mu"
   hb <- formatFromEmojiName "hb"
   jinteki <- formatFromEmojiName "jinteki"
   nbn <- formatFromEmojiName "nbn"
@@ -151,13 +152,16 @@ formatText raw = do
         ("</em>", "*"),
         ("<trace>", "**"),
         ("</trace>", "**"),
+        ("<errata>", "_**Errata:** "),
+        ("</errata>", "_"),
         ("[credit]", credit),
         ("[click]", click),
+        ("[interrupt]", interrupt),
+        ("[link]", link),
+        ("[mu]", mu),
         ("[recurring-credit]", recurringCredit),
         ("[subroutine]", subroutine),
         ("[trash]", trash),
-        ("[link]", link),
-        ("[mu]", mu),
         ("[haas-bioroid]", hb),
         ("[jinteki]", jinteki),
         ("[nbn]", nbn),
