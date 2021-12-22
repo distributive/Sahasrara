@@ -55,6 +55,7 @@ dependencies:
 - mtl
 - safe
 - edit-distance
+- unliftio
 
 library:
   source-dirs: src
