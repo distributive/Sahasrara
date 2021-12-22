@@ -11,9 +11,9 @@
 -- The backend functionality of the Netrunner commands.
 module Tablebot.Plugin.Netrunner (cardToEmbed, cardsToEmbed, cardToImgEmbed, cardToFlavourEmbed, searchCards, pairsToQuery, queryCard) where
 
-import Data.Maybe (fromMaybe)
 import Data.List (nubBy)
-import Data.Text (Text, replace, singleton, toTitle, intercalate, isInfixOf, unpack, pack)
+import Data.Maybe (fromMaybe)
+import Data.Text (Text, intercalate, isInfixOf, pack, replace, singleton, toTitle, unpack)
 import Discord.Types
 import Tablebot.Plugin
 import Tablebot.Plugin.Discord (formatFromEmojiName)
@@ -350,19 +350,20 @@ cardsToEmbed api cards err = do
   formatted <- mapM formatCard $ take 10 cards
   let cards' = "**" <> intercalate "\n" formatted <> "**"
       eTitle = "**" <> (pack $ show $ length cards) <> " results**"
-      eText = if length cards > 10
-        then cards' <> "\n" <> err
-        else cards'
+      eText =
+        if length cards > 10
+          then cards' <> "\n" <> err
+          else cards'
   return $ createEmbed $ CreateEmbed "" "" Nothing eTitle "" Nothing eText [] Nothing "" Nothing Nothing
-    where
-      formatCard :: Card -> EnvDatabaseDiscord NrApi Text
-      formatCard card = do
-        let title' = fromMaybe "?" $ title card
-            link = cardToLink card
-        icon <- case cardToFaction api card of
-          Nothing -> return ""
-          Just faction -> factionToEmoji faction
-        return $ icon <> " [" <> title' <> "](" <> link <> ")"
+  where
+    formatCard :: Card -> EnvDatabaseDiscord NrApi Text
+    formatCard card = do
+      let title' = fromMaybe "?" $ title card
+          link = cardToLink card
+      icon <- case cardToFaction api card of
+        Nothing -> return ""
+        Just faction -> factionToEmoji faction
+      return $ icon <> " [" <> title' <> "](" <> link <> ")"
 
 -- | @cardToImgEmbed@ takes a card and attempts to embed a picture of it.
 cardToImgEmbed :: NrApi -> Card -> Maybe Embed

@@ -9,15 +9,15 @@
 -- A place for functions to live that don't got nowhere else to live.
 module Tablebot.Plugin.Utils where
 
-import Prelude hiding (filter)
 import Control.Monad (when)
-import Data.Text (Text, toLower, filter)
+import Data.Text (Text, filter, toLower)
 import Data.Text.ICU.Char (Bool_ (Diacritic), property)
 import Data.Text.ICU.Normalize (NormalizationMode (NFD), normalize)
 import Data.Text.Lazy (toStrict)
 import Data.Text.Lazy.Builder (toLazyText)
 import Data.Text.Lazy.Builder.Int (decimal)
 import System.Environment (lookupEnv)
+import Prelude hiding (filter)
 
 isDebug :: IO Bool
 isDebug = do

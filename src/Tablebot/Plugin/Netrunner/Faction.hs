@@ -11,8 +11,8 @@ module Tablebot.Plugin.Netrunner.Faction (Faction (..), Factions (..), defaultFa
 
 import Data.Aeson (FromJSON, Value (Object), parseJSON, (.:))
 import Data.Text (Text)
-import Tablebot.Plugin.Discord (formatFromEmojiName)
 import GHC.Generics (Generic)
+import Tablebot.Plugin.Discord (formatFromEmojiName)
 
 -- | @Cycle@ represents a single cycle of packs in the NetrunnerDB API.
 data Faction = Faction
