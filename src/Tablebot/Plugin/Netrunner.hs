@@ -13,7 +13,7 @@ module Tablebot.Plugin.Netrunner (cardToEmbed, cardsToEmbed, cardToImgEmbed, car
 
 import Data.Maybe (fromMaybe)
 import Data.List (nubBy)
-import Data.Text (Text, replace, singleton, toLower, toTitle, intercalate, isInfixOf, unpack, pack)
+import Data.Text (Text, replace, singleton, toTitle, intercalate, isInfixOf, unpack, pack)
 import Discord.Types
 import Tablebot.Plugin
 import Tablebot.Plugin.Discord (formatFromEmojiName)
@@ -25,14 +25,32 @@ import Tablebot.Plugin.Netrunner.Faction as Faction (Faction (..))
 import Tablebot.Plugin.Netrunner.NrApi (NrApi (..))
 import Tablebot.Plugin.Netrunner.Pack as Pack (Pack (..))
 import Tablebot.Plugin.Types ()
-import Tablebot.Plugin.Utils (intToText)
+import Tablebot.Plugin.Utils (intToText, standardise)
 import Text.Read (readMaybe)
 
--- | @queryCard@ fuzzy searches the given library of cards by title.
+-- | @queryCard@ searches the given library of cards by title, first checking if
+-- the search query is a substring of any cards, then performing a fuzzy search on
+-- the cards given, or all of the cards if no cards are found
 queryCard :: NrApi -> Text -> Card
-queryCard NrApi {cards = cards} = closestValueWithCosts editCosts pairs . unpack
+queryCard NrApi {cards = cards} txt = findCard (substringSearch pairs txt) txt pairs
   where
-    pairs = zip (map (unpack . toLower . fromMaybe "" . Card.title) cards) cards
+    pairs = zip (map (standardise . fromMaybe "" . Card.title) cards) cards
+    substringSearch pairs' searchTxt = filter (\(x, _) -> isInfixOf (standardise searchTxt) x) pairs'
+
+-- | @findCard@ finds a card from the given list of pairs that is some subset of a
+-- full list. If the sublist is empty, it will fuzzy search the full list. If the sublist
+-- has exactly 1 element, it'll return that element. If the sublist has multiple
+-- elements, it will fuzzy search the sublist
+findCard :: [(Text, Card)] -> Text -> [(Text, Card)] -> Card
+findCard [] searchTxt allCards = fuzzyQueryCard allCards searchTxt
+findCard [(_, card)] _ _ = card
+findCard cards searchTxt _ = fuzzyQueryCard cards searchTxt
+
+-- | @queryCard@ fuzzy searches the given library of cards by title.
+fuzzyQueryCard :: [(Text, Card)] -> Text -> Card
+fuzzyQueryCard pairs = closestValueWithCosts editCosts unpackedPairs . unpack
+  where
+    unpackedPairs = fmap (\(x, y) -> (unpack x, y)) pairs
     editCosts =
       FuzzyCosts
         { deletion = 10,
@@ -67,14 +85,14 @@ searchCards NrApi {cards = cards} pairs = Just $ nubBy cardEq $ foldr filterCard
     filterCards ("p", sep, x) = filterInt sep strength x
     filterCards ("v", sep, x) = filterInt sep agenda_points x
     filterCards ("h", sep, x) = filterInt sep trash_cost x
-    -- filterCards ("r", sep, x) cs = fil text cs
+    -- filterCards ("r", sep, x) cs =
     filterCards ("u", sep, x) = filterBool sep uniqueness x
-    -- filterCards ("b", sep, x) cs = fil text cs
-    -- filterCards ("z", sep, x) cs = fil text cs
+    -- filterCards ("b", sep, x) cs =
+    -- filterCards ("z", sep, x) cs =
     filterCards _ = id
     filterText :: Char -> (Card -> Maybe Text) -> Text -> ([Card] -> [Card])
-    filterText ':' f x = filter ((isInfixOf $ toLower x) . toLower . (fromMaybe "") . f)
-    filterText '!' f x = filter (not . (isInfixOf $ toLower x) . toLower . (fromMaybe "") . f)
+    filterText ':' f x = filter ((isInfixOf $ standardise x) . standardise . (fromMaybe "") . f)
+    filterText '!' f x = filter (not . (isInfixOf $ standardise x) . standardise . (fromMaybe "") . f)
     filterText _ _ _ = id
     filterInt :: Char -> (Card -> Maybe Int) -> Text -> ([Card] -> [Card])
     filterInt sep f x = case readMaybe $ unpack x of
@@ -98,8 +116,8 @@ pairsToQuery pairs = "<https://netrunnerdb.com/find/?q=" <> replace " " "+" (int
   where
     queries = map (\(k, sep, v) -> pack k <> singleton sep <> "\"" <> pack v <> "\"") pairs
 
--- | Utility function to prepend a given Text to Text within a Maybe, or return
--- the empty Text.
+-- | Utility function to prepend a given Text to Text within a Maybe, or return the empty
+-- Text.
 maybeEmptyPrepend :: Text -> Maybe Text -> Text
 maybeEmptyPrepend s = maybe "" (s <>)
 

@@ -9,8 +9,11 @@
 -- A place for functions to live that don't got nowhere else to live.
 module Tablebot.Plugin.Utils where
 
+import Prelude hiding (filter)
 import Control.Monad (when)
-import Data.Text (Text)
+import Data.Text (Text, toLower, filter)
+import Data.Text.ICU.Char (Bool_ (Diacritic), property)
+import Data.Text.ICU.Normalize (NormalizationMode (NFD), normalize)
 import Data.Text.Lazy (toStrict)
 import Data.Text.Lazy.Builder (toLazyText)
 import Data.Text.Lazy.Builder.Int (decimal)
@@ -33,3 +36,9 @@ debugPrint a = do
 
 intToText :: Integral a => a -> Text
 intToText = toStrict . toLazyText . decimal
+
+-- | @standardise@ takes converts text to lowercase and removes diacritics
+standardise :: Text -> Text
+standardise x = filter (not . property Diacritic) normalizedText
+  where
+    normalizedText = normalize NFD $ toLower x

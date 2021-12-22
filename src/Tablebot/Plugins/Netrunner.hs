@@ -241,17 +241,17 @@ searchHelp =
     "search"
     []
     "gets a list of all Netrunner cards matching a search query"
-    [r|**Search**
+    [r|**Search Netrunner Cards**
 Gets a list of all Netrunner cards matching a search query, where the search query uses NetrunnerDB's syntax:
 <https://netrunnerdb.com/en/syntax>
 If the list is excessively long, it will display a link to an equivalent search on NetrunnerDB
 Searches are case insensitive
 
 The following fields are not implemented:
-> c - cycle
-> r - release date
-> b - ban list
-> z - rotation
+> `c` - cycle
+> `r` - release date
+> `b` - ban list
+> `z` - rotation
 
 *Usage:*
 - `netrunner search x:advanced ` -> all cards containing the text "advanced"
