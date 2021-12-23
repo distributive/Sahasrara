@@ -18,9 +18,9 @@ import GHC.Generics (Generic)
 import Network.HTTP.Conduit (Response (responseBody), parseRequest)
 import Network.HTTP.Simple (addRequestHeader, httpLBS)
 import System.Environment (lookupEnv)
-import Tablebot.Plugin.Discord (Message, sendMessage)
-import Tablebot.Plugin.SmartCommand (parseComm)
-import Tablebot.Plugin.Types
+import Tablebot.Utility.Discord (Message, sendMessage)
+import Tablebot.Utility.SmartParser (parseComm)
+import Tablebot.Utility.Types
   ( Command,
     DatabaseDiscord,
     EnvCommand (Command),

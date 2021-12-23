@@ -11,9 +11,9 @@ module Tablebot.Plugins.Basic (basicPlugin) where
 
 import Data.Text as T (Text, toTitle)
 import Discord.Internal.Rest (Message)
-import Tablebot.Plugin.Discord (sendMessage)
-import Tablebot.Plugin.SmartCommand (parseComm)
-import Tablebot.Plugin.Types
+import Tablebot.Utility.Discord (sendMessage)
+import Tablebot.Utility.SmartParser (parseComm)
+import Tablebot.Utility.Types
   ( Command,
     DatabaseDiscord,
     EnvCommand (Command),

@@ -38,12 +38,12 @@ import Database.Persist.Sqlite
   )
 import Discord
 import Tablebot.Handler (eventHandler, killCron, runCron)
-import Tablebot.Handler.Administration (adminMigration, currentBlacklist, removeBlacklisted)
-import Tablebot.Handler.Plugins
-import Tablebot.Handler.Types
-import Tablebot.Plugin.Help
-import Tablebot.Plugin.Types (TablebotCache (..))
-import Tablebot.Plugin.Utils (debugPrint)
+import Tablebot.Internal.Administration (adminMigration, currentBlacklist, removeBlacklisted)
+import Tablebot.Internal.Plugins
+import Tablebot.Internal.Types
+import Tablebot.Utility.Help
+import Tablebot.Utility.Types (TablebotCache (..))
+import Tablebot.Utility.Utils (debugPrint)
 
 -- | runTablebot @dToken@ @prefix@ @dbpath@ @plugins@ runs the bot using the
 -- given Discord API token @dToken@ and SQLite connection string @dbpath@. Only

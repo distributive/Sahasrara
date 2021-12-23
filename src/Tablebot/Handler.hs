@@ -21,19 +21,19 @@ import Control.Monad.Exception
 import Control.Monad.IO.Class (MonadIO (liftIO))
 import Data.Text (Text)
 import Discord.Types
-import Tablebot.Handler.Command
+import Tablebot.Internal.Handler.Command
   ( parseNewMessage,
   )
-import Tablebot.Handler.Event
+import Tablebot.Internal.Handler.Event
   ( parseMessageChange,
     parseOther,
     parseReactionAdd,
     parseReactionDel,
   )
-import Tablebot.Handler.Plugins (changeAction)
-import Tablebot.Handler.Types
-import Tablebot.Plugin.Discord (sendEmbedMessage)
-import Tablebot.Plugin.Exception
+import Tablebot.Internal.Plugins (changeAction)
+import Tablebot.Internal.Types
+import Tablebot.Utility.Discord (sendEmbedMessage)
+import Tablebot.Utility.Exception
 import UnliftIO.Concurrent
   ( ThreadId,
     forkIO,
