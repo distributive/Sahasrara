@@ -61,7 +61,7 @@ quotedWithout excl = quotedWith '"' <|> quotedWith '\''
       between
         (single c <?> "Couldn't find opening quote.")
         (single c <?> "Couldn't find closing quote.")
-        (some $ satisfy (`notElem` excl))
+        (some $ satisfy (`notElem` c : excl))
         <?> "Couldn't get quote!"
 
 -- | @word@ parses a single word of letters only.
