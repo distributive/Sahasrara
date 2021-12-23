@@ -36,6 +36,7 @@ module Tablebot.Utility.Discord
     formatText,
     formatInput,
     TimeFormat,
+    extractFromSnowflake,
   )
 where
 
@@ -52,6 +53,7 @@ import Discord (RestCallErrorCode, readCache, restCall)
 import Discord.Internal.Gateway.Cache
 import qualified Discord.Requests as R
 import Discord.Types
+import GHC.Word (Word64)
 import Tablebot.Internal.Cache
 import Tablebot.Internal.Embed
 import Tablebot.Utility (EnvDatabaseDiscord, liftDiscord)
@@ -305,3 +307,6 @@ formatText Strikethrough s = "~~" <> s <> "~~"
 formatText Italics s = "*" <> s <> "*"
 formatText Code s = "`" <> s <> "`"
 formatText CodeBlock s = "```" <> s <> "```"
+
+extractFromSnowflake :: Snowflake -> Word64
+extractFromSnowflake (Snowflake w) = w

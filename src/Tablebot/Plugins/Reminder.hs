@@ -131,10 +131,10 @@ reminderCron = do
       from $ \re -> do
         where_ (re ^. ReminderTime <=. val now)
         return re
-  liftIO $ mapM_ (print . entityVal) entitydue
   forM_ entitydue $ \re ->
     let (Reminder cid mid uid _time content) = entityVal re
      in do
+          liftIO . print $ entityVal re
           res <- getMessage (Snowflake cid) (Snowflake mid)
           case res of
             Left _ -> do

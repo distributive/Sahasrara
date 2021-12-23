@@ -53,6 +53,17 @@ quoted = quotedWith '"' <|> quotedWith '\''
         (some $ anySingleBut c)
         <?> "Couldn't get quote!"
 
+quotedWithout :: [Char] -> Parser String
+quotedWithout excl = quotedWith '"' <|> quotedWith '\''
+  where
+    quotedWith :: Char -> Parser String
+    quotedWith c =
+      between
+        (single c <?> "Couldn't find opening quote.")
+        (single c <?> "Couldn't find closing quote.")
+        (some $ satisfy (`notElem` c : excl))
+        <?> "Couldn't get quote!"
+
 -- | @word@ parses a single word of letters only.
 word :: Parser String
 word = some letter
@@ -99,11 +110,11 @@ netrunnerQuery = many $ try $ skipManyTill anySingle query
       _ <- chunk "}}"
       return $ container q
 
--- | @netrunnerCustom@ gets a set of key/value pairs of Netrunner card data for
--- generating custom cards.
--- It matches @key:value key:"val ue" key:value ...@
-netrunnerCustom :: Parser [(String, String)]
-netrunnerCustom = many $ try $ skipManyTill anySingle pair
+-- | @keyValue@ gets a set of key/value pairs where keys are separated from
+-- values by colons. Invalid strings between and surrounding pairs are ignored.
+-- It matches @a:value b:"val ue" c:value ...@
+keyValue :: Parser [(String, String)]
+keyValue = many $ try $ skipManyTill anySingle pair
   where
     pair :: Parser (String, String)
     pair = do
@@ -111,6 +122,32 @@ netrunnerCustom = many $ try $ skipManyTill anySingle pair
       _ <- ":"
       content <- quoted <|> nonSpaceWord
       return (cat, content)
+
+-- | @keyValueSepOn@ is @keyValue@ except is allows a given list of key/value
+-- separators.
+keyValueSepOn :: [Char] -> Parser [(String, Char, String)]
+keyValueSepOn seps = many $ try $ skipManyTill anySingle pair
+  where
+    pair :: Parser (String, Char, String)
+    pair = do
+      cat <- word
+      sep <- satisfy (`elem` seps)
+      content <- quoted <|> nonSpaceWord
+      return (cat, sep, content)
+
+-- | @keyValuesSepOn@ is @keyValue@ except is allows a given list of key/value
+-- separators, and a list of `or` dividers.
+keyValuesSepOn :: [Char] -> [Char] -> Parser [(String, Char, [String])]
+keyValuesSepOn seps ors = many $ try $ skipManyTill anySingle pair
+  where
+    pair :: Parser (String, Char, [String])
+    pair = do
+      cat <- word
+      sep <- satisfy (`elem` seps)
+      content <- (quotedWithout ors <|> nonSpaceWord') `sepBy` satisfy (`elem` ors)
+      return (cat, sep, content)
+    nonSpaceWord' :: Parser String
+    nonSpaceWord' = some $ satisfy $ \c -> (not $ isSpace c) && (c `notElem` ors)
 
 -- | @sp@ parses an optional space character.
 sp :: Parser ()

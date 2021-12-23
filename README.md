@@ -2,9 +2,9 @@
 
 [![CI](https://github.com/WarwickTabletop/tablebot/actions/workflows/main.yml/badge.svg)](https://github.com/WarwickTabletop/tablebot/actions/workflows/main.yml)
 
-An extendable Discord bot framework written on top of `discord-haskell`
+An extendable Discord bot framework written on top of [`discord-haskell`](https://github.com/aquarial/discord-haskell).
 
-If you're new to this project, or completely new to git, and haskell, you might be interested in looking at the [Setup from Scratch](#setup-from-scratch) section.
+If you're new to this project, or completely new to git, and Haskell, you might be interested in looking at the [Setup from Scratch](CONTRIBUTING.md#setup-from-scratch) section in the [contributor's guide](CONTRIBUTING.md). If you want tutorials on making your first plugin or how exceptions work, checkout the tutorials in the [tutorials](tutorials) folder.
 
 ## Environment file setup
 
@@ -15,4 +15,4 @@ Create a `.env` file containing the following keys. Consult `.env.example` if yo
 * `SQLITE_FILENAME` (mandatory) - a name for your SQLite database, for example `database.db`.
 * `CATAPI_TOKEN` (optional) - the api token to get cat pictures. Go to [The Cat API](https://thecatapi.com/) to create an account and get a token so you can enjoy cats.
 
-If you have any difficulties setting it up, see the [contributor's guide](https://github.com/WarwickTabletop/tablebot/blob/main/CONTRIBUTING.md) for a walkthrough.
+If you have any difficulties setting it up, see the [contributor's guide](CONTRIBUTING.md) for a walkthrough.

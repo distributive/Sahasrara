@@ -16,17 +16,9 @@ module Tablebot.Handler
   )
 where
 
-import Control.Concurrent
-  ( ThreadId,
-    forkIO,
-    killThread,
-    threadDelay,
-  )
 import Control.Monad (unless)
 import Control.Monad.Exception
 import Control.Monad.IO.Class (MonadIO (liftIO))
-import Control.Monad.Trans.Class (MonadTrans (lift))
-import Control.Monad.Trans.Reader (ReaderT (runReaderT), ask)
 import Data.Text (Text)
 import Discord.Types
 import Tablebot.Internal.Handler.Command
@@ -42,6 +34,13 @@ import Tablebot.Internal.Plugins (changeAction)
 import Tablebot.Internal.Types
 import Tablebot.Utility.Discord (sendEmbedMessage)
 import Tablebot.Utility.Exception
+import UnliftIO.Concurrent
+  ( ThreadId,
+    forkIO,
+    killThread,
+    threadDelay,
+  )
+import UnliftIO.Exception (catchAny)
 
 -- | Given a combined plugin @pl@ and a command prefix @prefix@, builds an
 -- event handler. This takes in each Discord 'Event' received (present in
@@ -78,17 +77,13 @@ eventHandler pl prefix = \case
 -- @DatabaseDiscord@ monad transformer stack and then running a lifted @forkIO@
 -- so may need rewriting if you change the @DatabaseDiscord@ monad stack.
 runCron :: CompiledCronJob -> CompiledDatabaseDiscord ThreadId
-runCron (CCronJob delay fn) = do
-  cache <- ask
-  db <- lift ask
-  discord <- (lift . lift) ask
-  let unCache = runReaderT fn cache
-  let unDB = runReaderT unCache db
-  let unDiscord = runReaderT unDB discord
-  liftIO $ forkIO (loopWithDelay delay unDiscord)
+runCron (CCronJob delay fn) = forkIO withDelay
   where
-    loopWithDelay :: Int -> IO () -> IO ()
-    loopWithDelay del fn' = fn' >> threadDelay del >> loopWithDelay del fn'
+    withDelay :: CompiledDatabaseDiscord ()
+    withDelay = do
+      catchAny fn (liftIO . print)
+      liftIO $ threadDelay delay
+      withDelay
 
 -- | @killCron@ takes a list of @ThreadId@ and kills each thread.
 killCron :: [ThreadId] -> IO ()

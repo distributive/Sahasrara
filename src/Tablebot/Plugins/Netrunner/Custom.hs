@@ -15,7 +15,7 @@ import Data.Text (Text, pack, unpack)
 import Tablebot.Plugins.Netrunner.Card as Card
 import Tablebot.Plugins.Netrunner.Faction as Faction
 import Tablebot.Plugins.Netrunner.NrApi (NrApi (..))
-import Tablebot.Utility.Fuzzy (FuzzyCosts (..), closestMatch, closestPairWithCosts, closestValue)
+import Tablebot.Utility.Search (FuzzyCosts (..), closestMatch, closestPairWithCosts, closestValue)
 import Prelude hiding (lookup)
 
 -- | @NrData@ allows us to parse parameters into a type of our choosing.
