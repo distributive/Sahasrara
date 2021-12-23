@@ -19,13 +19,13 @@ import Database.Persist (Entity, Filter, entityVal, (==.))
 import Discord (stopDiscord)
 import Discord.Types
 import Language.Haskell.Printf (s)
-import Tablebot.Handler.Administration
-import Tablebot.Handler.Types (CompiledPlugin (compiledName))
-import Tablebot.Plugin
-import Tablebot.Plugin.Database
-import Tablebot.Plugin.Discord (sendMessage)
-import Tablebot.Plugin.Permission (requirePermission)
-import Tablebot.Plugin.SmartCommand
+import Tablebot.Internal.Administration
+import Tablebot.Internal.Types (CompiledPlugin (compiledName))
+import Tablebot.Utility
+import Tablebot.Utility.Database
+import Tablebot.Utility.Discord (sendMessage)
+import Tablebot.Utility.Permission (requirePermission)
+import Tablebot.Utility.SmartParser
 import Text.RawString.QQ
 
 -- | @SS@ denotes the type returned by the command setup. Here its unused.

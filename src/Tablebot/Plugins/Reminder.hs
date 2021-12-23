@@ -30,12 +30,12 @@ import Discord.Types
 import Duckling.Core (Dimension (Time), Entity (value), Lang (EN), Region (GB), ResolvedVal (RVal), Seal (Seal), currentReftime, makeLocale, parse)
 import Duckling.Resolve (Context (..), DucklingTime, Options (..))
 import Duckling.Time.Types (InstantValue (InstantValue), SingleTimeValue (SimpleValue), TimeValue (TimeValue))
-import Tablebot.Plugin
-import Tablebot.Plugin.Database
-import Tablebot.Plugin.Discord (getMessage, sendChannelMessage, sendCustomReplyMessage, sendMessage, toTimestamp)
-import Tablebot.Plugin.Permission (requirePermission)
-import Tablebot.Plugin.SmartCommand (PComm (parseComm), Quoted (Qu), RestOfInput (ROI), WithError (..))
-import Tablebot.Plugin.Utils (debugPrint)
+import Tablebot.Utility
+import Tablebot.Utility.Database
+import Tablebot.Utility.Discord (getMessage, sendChannelMessage, sendCustomReplyMessage, sendMessage, toTimestamp)
+import Tablebot.Utility.Permission (requirePermission)
+import Tablebot.Utility.SmartParser (PComm (parseComm), Quoted (Qu), RestOfInput (ROI), WithError (..))
+import Tablebot.Utility.Utils (debugPrint)
 import Text.RawString.QQ (r)
 
 -- Our Reminder table in the database. This is fairly standard for Persistent,
@@ -131,10 +131,10 @@ reminderCron = do
       from $ \re -> do
         where_ (re ^. ReminderTime <=. val now)
         return re
-  liftIO $ mapM_ (print . entityVal) entitydue
   forM_ entitydue $ \re ->
     let (Reminder cid mid uid _time content) = entityVal re
      in do
+          liftIO . print $ entityVal re
           res <- getMessage (Snowflake cid) (Snowflake mid)
           case res of
             Left _ -> do

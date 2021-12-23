@@ -10,9 +10,9 @@
 module Tablebot.Plugins.Ping (pingPlugin) where
 
 import Data.Text (Text)
-import Tablebot.Plugin
-import Tablebot.Plugin.Discord (Message, sendMessage)
-import Tablebot.Plugin.SmartCommand (parseComm)
+import Tablebot.Utility
+import Tablebot.Utility.Discord (Message, sendMessage)
+import Tablebot.Utility.SmartParser (parseComm)
 
 -- | @echo@ pulled out to help resolve parser overlapping instances errors.
 -- Sends the provided text, regardless of received message.
