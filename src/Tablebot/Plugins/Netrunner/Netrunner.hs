@@ -22,9 +22,10 @@ module Tablebot.Plugins.Netrunner.Netrunner
   )
 where
 
+import Data.Bifunctor (first)
 import Data.List (nubBy)
-import Data.Maybe (catMaybes, fromMaybe)
-import Data.Text (Text, intercalate, isInfixOf, pack, replace, singleton, toTitle, unpack)
+import Data.Maybe (fromMaybe, mapMaybe)
+import Data.Text (Text, intercalate, isInfixOf, pack, replace, singleton, toTitle, unpack, unwords)
 import Discord.Types
 import Tablebot.Plugins.Netrunner.Card as Card (Card (..))
 import Tablebot.Plugins.Netrunner.Cycle as Cycle (Cycle (..))
@@ -38,6 +39,7 @@ import Tablebot.Utility.Search (FuzzyCosts (..), autocomplete, closestMatch, clo
 import Tablebot.Utility.Types ()
 import Tablebot.Utility.Utils (intToText, standardise)
 import Text.Read (readMaybe)
+import Prelude hiding (unwords)
 
 -- | @queryCard@ searches the given library of cards by title, first checking if
 -- the search query is a substring of any cards, then performing a fuzzy search on
@@ -46,7 +48,7 @@ queryCard :: NrApi -> Text -> Card
 queryCard NrApi {cards = cards} txt = findCard (substringSearch pairs txt) txt pairs
   where
     pairs = zip (map (standardise . fromMaybe "" . Card.title) cards) cards
-    substringSearch pairs' searchTxt = filter (\(x, _) -> isInfixOf (standardise searchTxt) x) pairs'
+    substringSearch pairs' searchTxt = filter (isInfixOf (standardise searchTxt) . fst) pairs'
 
 -- | @findCard@ finds a card from the given list of pairs that is some subset of a
 -- full list. If the sublist is empty, it will fuzzy search the full list. If the sublist
@@ -61,7 +63,7 @@ findCard cards searchTxt _ = fuzzyQueryCard cards searchTxt
 fuzzyQueryCard :: [(Text, Card)] -> Text -> Card
 fuzzyQueryCard pairs = closestValueWithCosts editCosts unpackedPairs . unpack
   where
-    unpackedPairs = fmap (\(x, y) -> (unpack x, y)) pairs
+    unpackedPairs = fmap (first unpack) pairs
     editCosts =
       FuzzyCosts
         { deletion = 10,
@@ -105,15 +107,15 @@ searchCards NrApi {cards = cards} pairs = Just $ nubBy cardEq $ foldr filterCard
     filterText :: Char -> (Card -> Maybe Text) -> [Text] -> ([Card] -> [Card])
     filterText sep f xs =
       let check c x = isInfixOf (standardise x) $ standardise $ fromMaybe "" $ f c
-          fil c = or $ map (check c) xs
+          fil c = any (check c) xs
        in case sep of
             ':' -> filter fil
             '!' -> filter (not . fil)
             _ -> id
     filterInt :: Char -> (Card -> Maybe Int) -> [Text] -> ([Card] -> [Card])
-    filterInt sep f xs = case catMaybes $ map (readMaybe . unpack) xs of
+    filterInt sep f xs = case concat $ mapMaybe (readMaybe . unpack) xs of
       [] -> id
-      xs' -> filter (\c -> fromMaybe False $ (\y -> any (sep `toEquality` y) xs') <$> f c)
+      xs' -> filter (maybe False (\y -> any (sep `toEquality` y) xs') . f)
     toEquality :: Char -> (Int -> Int -> Bool)
     toEquality ':' = (==)
     toEquality '!' = (/=)
@@ -135,7 +137,7 @@ fixSearch NrApi {factions = factions} = map fix
     fixFaction f = case autocomplete fNames $ pack f of
       Just f' -> unpack f'
       Nothing -> closestMatch (map unpack fNames) f
-    fNames = (map Faction.code factions)
+    fNames = map Faction.code factions
 
 -- | @pairsToQuery@ takes a set of search query pairs ands turns it into a link
 -- to an equivalent search on NetrunnerDB.
@@ -145,7 +147,7 @@ pairsToQuery pairs = "<https://netrunnerdb.com/find/?q=" <> replace " " "+" (pai
 -- | @pairsToNrdb@ takes a set of search query pairs and formats it into a valid
 -- plaintext search query for NetrunnerDB.
 pairsToNrdb :: [(String, Char, [String])] -> Text
-pairsToNrdb pairs = intercalate " " queries
+pairsToNrdb pairs = unwords queries
   where
     queries = map format pairs
     format (k, sep, vs) =
@@ -391,7 +393,7 @@ cardsToEmbed :: NrApi -> Text -> [Card] -> Text -> EnvDatabaseDiscord NrApi Embe
 cardsToEmbed api pre cards err = do
   formatted <- mapM formatCard $ take 10 cards
   let cards' = "**" <> intercalate "\n" formatted <> "**"
-      eTitle = "**" <> (pack $ show $ length cards) <> " results**"
+      eTitle = "**" <> pack (show $ length cards) <> " results**"
       eText = pre <> "\n" <> cards' <> if length cards > 10 then "\n" <> err else ""
   return $ createEmbed $ CreateEmbed "" "" Nothing eTitle "" Nothing eText [] Nothing "" Nothing Nothing
   where
