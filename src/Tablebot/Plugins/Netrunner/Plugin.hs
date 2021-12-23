@@ -22,7 +22,7 @@ import Tablebot.Utility
 import Tablebot.Utility.Discord (formatFromEmojiName, sendEmbedMessage, sendMessage)
 import Tablebot.Utility.Exception (BotException (NetrunnerException), throwBot)
 import Tablebot.Utility.Parser (NrQuery (..), keyValue, keyValuesSepOn, netrunnerQuery)
-import Tablebot.Utility.SmartCommand (PComm (parseComm), Quoted (Qu), RestOfInput1 (ROI1), WithError (WErr))
+import Tablebot.Utility.SmartParser (PComm (parseComm), Quoted (Qu), RestOfInput1 (ROI1), WithError (WErr))
 import Text.RawString.QQ (r)
 
 -- | @netrunner@ is the user-facing command that searches for Netrunner cards.

@@ -34,9 +34,9 @@ import Tablebot.Plugins.Netrunner.Pack as Pack (Pack (..))
 import Tablebot.Utility
 import Tablebot.Utility.Discord (formatFromEmojiName)
 import Tablebot.Utility.Embed (addColour)
-import Tablebot.Utility.Fuzzy (FuzzyCosts (..), closestValueWithCosts)
+import Tablebot.Utility.Search (FuzzyCosts (..), autocomplete, closestMatch, closestValueWithCosts)
 import Tablebot.Utility.Types ()
-import Tablebot.Utility.Utils (intToText)
+import Tablebot.Utility.Utils (intToText, standardise)
 import Text.Read (readMaybe)
 
 -- | @queryCard@ searches the given library of cards by title, first checking if
