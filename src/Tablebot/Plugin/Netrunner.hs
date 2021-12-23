@@ -71,83 +71,90 @@ fuzzyQueryCard pairs = closestValueWithCosts editCosts unpackedPairs . unpack
         }
 
 -- | @searchCards@ looks for all cards that match a set of criteria.
-searchCards :: NrApi -> [(String, Char, String)] -> Maybe [Card]
+-- TODO: ensure in fixSearch that invalid queries are pruned before reaching this function
+searchCards :: NrApi -> [(String, Char, [String])] -> Maybe [Card]
 searchCards _ [] = Nothing
 searchCards NrApi {cards = cards} pairs = Just $ nubBy cardEq $ foldr filterCards cards $ packValues pairs
   where
-    packValues :: [(String, Char, String)] -> [(String, Char, Text)]
-    packValues = map (\(k, sep, v) -> (k, sep, pack v))
+    packValues :: [(String, Char, [String])] -> [(String, Char, [Text])]
+    packValues = map (\(k, sep, v) -> (k, sep, map pack v))
     cardEq :: Card -> Card -> Bool
     cardEq a b = title a == title b
-    filterCards :: (String, Char, Text) -> [Card] -> [Card]
-    filterCards ("x", sep, x) = filterText sep stripped_text x
-    filterCards ("a", sep, x) = filterText sep flavor x
-    filterCards ("e", sep, x) = filterText sep pack_code x
-    -- filterCards ("c", sep, x) =
-    filterCards ("t", sep, x) = filterText sep type_code x
-    filterCards ("f", sep, x) = filterText sep faction_code x
-    filterCards ("s", sep, x) = filterText sep keywords x
-    filterCards ("d", sep, x) = filterText sep side_code x
-    filterCards ("i", sep, x) = filterText sep illustrator x
-    filterCards ("o", sep, x) = filterInt sep cost x
-    filterCards ("g", sep, x) = filterInt sep advancement_cost x
-    filterCards ("m", sep, x) = filterInt sep memory_cost x
-    filterCards ("n", sep, x) = filterInt sep faction_cost x
-    filterCards ("p", sep, x) = filterInt sep strength x
-    filterCards ("v", sep, x) = filterInt sep agenda_points x
-    filterCards ("h", sep, x) = filterInt sep trash_cost x
-    -- filterCards ("r", sep, x) cs =
-    filterCards ("u", sep, x) = filterBool sep uniqueness x
-    -- filterCards ("b", sep, x) cs =
-    -- filterCards ("z", sep, x) cs =
+    filterCards :: (String, Char, [Text]) -> [Card] -> [Card]
+    filterCards ("x", sep, xs) = filterText sep stripped_text xs
+    filterCards ("a", sep, xs) = filterText sep flavor xs
+    filterCards ("e", sep, xs) = filterText sep pack_code xs
+    -- filterCards ("c", sep, xs) =
+    filterCards ("t", sep, xs) = filterText sep type_code xs
+    filterCards ("f", sep, xs) = filterText sep faction_code xs
+    filterCards ("s", sep, xs) = filterText sep keywords xs
+    filterCards ("d", sep, xs) = filterText sep side_code xs
+    filterCards ("i", sep, xs) = filterText sep illustrator xs
+    filterCards ("o", sep, xs) = filterInt sep cost xs
+    filterCards ("g", sep, xs) = filterInt sep advancement_cost xs
+    filterCards ("m", sep, xs) = filterInt sep memory_cost xs
+    filterCards ("n", sep, xs) = filterInt sep faction_cost xs
+    filterCards ("p", sep, xs) = filterInt sep strength xs
+    filterCards ("v", sep, xs) = filterInt sep agenda_points xs
+    filterCards ("h", sep, xs) = filterInt sep trash_cost xs
+    -- filterCards ("r", sep, xs) cs =
+    filterCards ("u", sep, xs) = filterBool sep uniqueness xs
+    -- filterCards ("b", sep, xs) cs =
+    -- filterCards ("z", sep, xs) cs =
     filterCards _ = id
-    filterText :: Char -> (Card -> Maybe Text) -> Text -> ([Card] -> [Card])
-    filterText ':' f x = filter ((isInfixOf $ standardise x) . standardise . (fromMaybe "") . f)
-    filterText '!' f x = filter (not . (isInfixOf $ standardise x) . standardise . (fromMaybe "") . f)
-    filterText _ _ _ = id
-    filterInt :: Char -> (Card -> Maybe Int) -> Text -> ([Card] -> [Card])
-    filterInt sep f x = case readMaybe $ unpack x of
-      Nothing -> id
-      Just x' -> filter (\c -> (fromMaybe False) $ (sep `toEquality` x') <$> f c)
+    filterText :: Char -> (Card -> Maybe Text) -> [Text] -> ([Card] -> [Card])
+    filterText sep f xs =
+      let check c x = isInfixOf (standardise x) $ standardise $ fromMaybe "" $ f c
+          fil c = or $ map (check c) xs
+       in case sep of
+            ':' -> filter fil
+            '!' -> filter (not . fil)
+            _ -> id
+    filterInt :: Char -> (Card -> Maybe Int) -> [Text] -> ([Card] -> [Card])
+    filterInt sep f xs = case catMaybes $ map (readMaybe . unpack) xs of
+      [] -> id
+      xs' -> filter (\c -> fromMaybe False $ (\y -> any (sep `toEquality` y) xs') <$> f c)
     toEquality :: Char -> (Int -> Int -> Bool)
     toEquality ':' = (==)
     toEquality '!' = (/=)
     toEquality '>' = (<)
     toEquality '<' = (>)
     toEquality _ = \_ _ -> True
-    filterBool :: Char -> (Card -> Maybe Bool) -> Text -> ([Card] -> [Card])
+    filterBool :: Char -> (Card -> Maybe Bool) -> a -> ([Card] -> [Card])
     filterBool ':' f _ = filter (fromMaybe False . f)
-    filterBool '!' f _ = filter (fromMaybe True . f)
+    filterBool '!' f _ = filter (maybe True not . f)
     filterBool _ _ _ = id
 
 -- | @fixSearch@ takes a set of key/value pairs and repairs damaged queries to
 -- make them valid queries for NetrunnerDB.
-fixSearch :: NrApi -> [(String, Char, String)] -> [(String, Char, String)]
-fixSearch NrApi {factions = factions} = catMaybes . map fix
+fixSearch :: NrApi -> [(String, Char, [String])] -> [(String, Char, [String])]
+fixSearch NrApi {factions = factions} = map fix
   where
-    fix ("f", sep, f) =
-      let fs = (map Faction.code factions)
-       in case autocomplete fs $ pack f of
-            Just f' -> Just $ ("f", sep, unpack f')
-            Nothing -> Just $ ("f", sep, closestMatch (map unpack fs) f)
-    fix p = Just p
+    fix ("f", sep, fs) = ("f", sep, map fixFaction fs)
+    fix p = p
+    fixFaction f = case autocomplete fNames $ pack f of
+      Just f' -> unpack f'
+      Nothing -> closestMatch (map unpack fNames) f
+    fNames = (map Faction.code factions)
 
 -- | @pairsToQuery@ takes a set of search query pairs ands turns it into a link
 -- to an equivalent search on NetrunnerDB.
-pairsToQuery :: [(String, Char, String)] -> Text
+pairsToQuery :: [(String, Char, [String])] -> Text
 pairsToQuery pairs = "<https://netrunnerdb.com/find/?q=" <> replace " " "+" (pairsToNrdb pairs) <> ">"
 
 -- | @pairsToNrdb@ takes a set of search query pairs and formats it into a valid
 -- plaintext search query for NetrunnerDB.
-pairsToNrdb :: [(String, Char, String)] -> Text
+pairsToNrdb :: [(String, Char, [String])] -> Text
 pairsToNrdb pairs = intercalate " " queries
   where
     queries = map format pairs
-    format (k, sep, v) =
-      pack k <> singleton sep
-        <> if " " `isInfixOf` (pack v)
-          then "\"" <> pack v <> "\""
-          else pack v
+    format (k, sep, vs) =
+      let v = intercalate "|" $ map (formatValue . pack) vs
+       in pack k <> singleton sep <> v
+    formatValue v =
+      if " " `isInfixOf` v
+        then "\"" <> v <> "\""
+        else v
 
 -- | Utility function to prepend a given Text to Text within a Maybe, or return the empty
 -- Text.

@@ -21,7 +21,7 @@ import Tablebot.Plugin.Netrunner
 import Tablebot.Plugin.Netrunner.Card (Card)
 import Tablebot.Plugin.Netrunner.Custom (customCard)
 import Tablebot.Plugin.Netrunner.NrApi (NrApi, getNrApi)
-import Tablebot.Plugin.Parser (NrQuery (..), keyValue, keyValueSepOn, netrunnerQuery)
+import Tablebot.Plugin.Parser (NrQuery (..), keyValue, keyValuesSepOn, netrunnerQuery)
 import Tablebot.Plugin.SmartCommand (PComm (parseComm), Quoted (Qu), RestOfInput1 (ROI1), WithError (WErr))
 import Text.RawString.QQ (r)
 
@@ -111,13 +111,13 @@ nrSearch = Command "search" searchPars []
   where
     searchPars :: Parser (Message -> EnvDatabaseDiscord NrApi ())
     searchPars = do
-      ps <- keyValueSepOn [':', '<', '>', '!']
+      ps <- keyValuesSepOn [':', '<', '>', '!'] ['|']
       return $ \m -> do
         api <- ask
         let pairs = fixSearch api ps
         case searchCards api pairs of
           Nothing -> sendMessage m "No criteria provided!"
-          Just [] -> sendMessage m "No cards found!"
+          Just [] -> sendMessage m $ "No cards found for `" <> pairsToNrdb pairs <> "`"
           Just [res] -> embedCard res m
           Just res ->
             embedCards
