@@ -7,7 +7,6 @@
 -- Portability : POSIX
 --
 -- The Faction and Factions types.
-
 module Tablebot.Plugins.Netrunner.Type.Faction where
 
 import Data.Aeson (FromJSON, parseJSON, withObject, (.:))

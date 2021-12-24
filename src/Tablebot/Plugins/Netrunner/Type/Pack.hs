@@ -7,7 +7,6 @@
 -- Portability : POSIX
 --
 -- The Pack and Packs types.
-
 module Tablebot.Plugins.Netrunner.Type.Pack where
 
 import Data.Aeson (FromJSON)

@@ -7,7 +7,6 @@
 -- Portability : POSIX
 --
 -- The Cycle and Cycles types.
-
 module Tablebot.Plugins.Netrunner.Type.Cycle where
 
 import Data.Aeson (FromJSON)

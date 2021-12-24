@@ -15,9 +15,9 @@ import Data.Text (Text, pack)
 import Discord.Types
 import Tablebot.Internal.Handler.Command ()
 import Tablebot.Plugins.Netrunner.Custom (customCard)
-import Tablebot.Plugins.Netrunner.Search
 import Tablebot.Plugins.Netrunner.Embed
 import Tablebot.Plugins.Netrunner.NrApi (getNrApi)
+import Tablebot.Plugins.Netrunner.Search
 import Tablebot.Plugins.Netrunner.Type.Card (Card)
 import Tablebot.Plugins.Netrunner.Type.NrApi (NrApi)
 import Tablebot.Utility

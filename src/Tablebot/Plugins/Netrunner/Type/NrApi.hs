@@ -7,7 +7,6 @@
 -- Portability : POSIX
 --
 -- The NrApi type.
-
 module Tablebot.Plugins.Netrunner.Type.NrApi where
 
 import Data.Text (Text)

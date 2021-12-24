@@ -7,7 +7,6 @@
 -- Portability : POSIX
 --
 -- The Card and Cards types.
-
 module Tablebot.Plugins.Netrunner.Type.Card where
 
 import Data.Aeson (FromJSON)
