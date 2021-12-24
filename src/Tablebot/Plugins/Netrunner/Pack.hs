@@ -7,31 +7,16 @@
 -- Portability : POSIX
 --
 -- Handles the representation of Netrunner packs in Tablebot.
-module Tablebot.Plugins.Netrunner.Pack (Pack (..), Packs (..), defaultPacks) where
+module Tablebot.Plugins.Netrunner.Pack (toCycle) where
 
-import Data.Aeson (FromJSON, Value (Object), parseJSON, (.:))
-import Data.Text (Text)
-import GHC.Generics (Generic)
+import Tablebot.Plugins.Netrunner.Type.Cycle (Cycle (code))
+import Tablebot.Plugins.Netrunner.Type.NrApi (NrApi (cycles))
+import Tablebot.Plugins.Netrunner.Type.Pack (Pack (cycle_code))
 
--- | @Pack@ represents a single data pack in the NetrunnerDB API.
-data Pack = Pack
-  { code :: !Text,
-    cycle_code :: !Text,
-    name :: !Text,
-    position :: !Int
-  }
-  deriving (Show, Generic)
-
--- | @Packs@ represents all data packs in the game's history.
-newtype Packs = Packs {content :: [Pack]} deriving (Show, Generic)
-
-defaultPacks :: Packs
-defaultPacks = Packs {content = []}
-
-instance FromJSON Pack
-
-instance FromJSON Packs where
-  parseJSON (Object v) = do
-    content <- v .: "data"
-    return $ Packs {content = content}
-  parseJSON _ = return defaultPacks
+-- | @toCycle@ takes a pack and attempts to find its cycle.
+toCycle :: NrApi -> Pack -> Maybe Cycle
+toCycle api pack' =
+  let cRes = filter (\c -> code c == cycle_code pack') $ cycles api
+   in case cRes of
+        [] -> Nothing
+        (c : _) -> Just c

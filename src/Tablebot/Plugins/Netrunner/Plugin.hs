@@ -14,10 +14,11 @@ import Control.Monad.Trans.Reader (ask)
 import Data.Text (Text, pack)
 import Discord.Types
 import Tablebot.Internal.Handler.Command ()
-import Tablebot.Plugins.Netrunner.Card (Card)
 import Tablebot.Plugins.Netrunner.Custom (customCard)
 import Tablebot.Plugins.Netrunner.Netrunner
-import Tablebot.Plugins.Netrunner.NrApi (NrApi, getNrApi)
+import Tablebot.Plugins.Netrunner.NrApi (getNrApi)
+import Tablebot.Plugins.Netrunner.Type.Card (Card)
+import Tablebot.Plugins.Netrunner.Type.NrApi (NrApi)
 import Tablebot.Utility
 import Tablebot.Utility.Discord (formatFromEmojiName, sendEmbedMessage, sendMessage)
 import Tablebot.Utility.Exception (BotException (NetrunnerException), throwBot)

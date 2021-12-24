@@ -12,9 +12,9 @@ module Tablebot.Plugins.Netrunner.Custom (customCard) where
 import Data.Map (fromList, lookup)
 import Data.Maybe (catMaybes)
 import Data.Text (Text, pack, unpack)
-import Tablebot.Plugins.Netrunner.Card as Card
-import Tablebot.Plugins.Netrunner.Faction as Faction
-import Tablebot.Plugins.Netrunner.NrApi (NrApi (..))
+import Tablebot.Plugins.Netrunner.Type.Card as Card
+import Tablebot.Plugins.Netrunner.Type.Faction as Faction
+import Tablebot.Plugins.Netrunner.Type.NrApi (NrApi (..))
 import Tablebot.Utility.Search (FuzzyCosts (..), closestMatch, closestPairWithCosts, closestValue)
 import Prelude hiding (lookup)
 

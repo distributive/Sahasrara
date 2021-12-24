@@ -7,58 +7,160 @@
 -- Portability : POSIX
 --
 -- Handles the representation of Netrunner cards in Tablebot.
-module Tablebot.Plugins.Netrunner.Card (Card (..), Cards (..), defaultCards) where
+module Tablebot.Plugins.Netrunner.Card
+  ( toTitle,
+    toText,
+    toLink,
+    toImage,
+    toSubtitle,
+    toFaction,
+    toPack,
+    toReleaseData,
+    toColour,
+    toFlavour,
+  )
+where
 
-import Data.Aeson (FromJSON, Value (Object), parseJSON, (.:))
-import Data.Text (Text)
-import GHC.Generics (Generic)
+import Data.Maybe (fromMaybe)
+import Data.Text (Text, replace, unpack)
+import Discord.Types
+import Tablebot.Plugins.Netrunner.Pack (toCycle)
+import Tablebot.Plugins.Netrunner.Type.Card (Card (..))
+import qualified Tablebot.Plugins.Netrunner.Type.Cycle as Cycle
+import Tablebot.Plugins.Netrunner.Type.Faction (Faction)
+import qualified Tablebot.Plugins.Netrunner.Type.Faction as Faction
+import Tablebot.Plugins.Netrunner.Type.NrApi (NrApi (..))
+import Tablebot.Plugins.Netrunner.Type.Pack (Pack)
+import qualified Tablebot.Plugins.Netrunner.Type.Pack as Pack
+import Tablebot.Plugins.Netrunner.Utils (formatNr)
+import Tablebot.Utility
+import Tablebot.Utility.Types ()
+import Tablebot.Utility.Utils (intToText, maybeEmptyPrepend)
 
--- | @Card@ represents a single card in the NetrunnerDB API.
-data Card = Card
-  { advancement_cost :: !(Maybe Int),
-    agenda_points :: !(Maybe Int),
-    base_link :: !(Maybe Int),
-    code :: !(Maybe Text),
-    cost :: !(Maybe Int),
-    deck_limit :: !(Maybe Int),
-    faction_code :: !(Maybe Text),
-    faction_cost :: !(Maybe Int),
-    flavor :: !(Maybe Text),
-    illustrator :: !(Maybe Text),
-    influence_limit :: !(Maybe Int),
-    keywords :: !(Maybe Text),
-    memory_cost :: !(Maybe Int),
-    minimum_deck_size :: !(Maybe Int),
-    pack_code :: !(Maybe Text),
-    position :: !(Maybe Int),
-    quantity :: !(Maybe Int),
-    side_code :: !(Maybe Text),
-    strength :: !(Maybe Int),
-    stripped_text :: !(Maybe Text),
-    stripped_title :: !(Maybe Text),
-    text :: !(Maybe Text),
-    title :: !(Maybe Text),
-    trash_cost :: !(Maybe Int),
-    type_code :: !(Maybe Text),
-    uniqueness :: !(Maybe Bool)
-  }
-  deriving (Show, Generic)
+-- | @toLink@ takes a card and generates a link to its NetrunnerDB page.
+toLink :: Card -> Text
+toLink card = maybeEmptyPrepend "https://netrunnerdb.com/en/card/" (code card)
 
--- | @Cards@ represents the full library of cards in Netrunner.
-data Cards = Cards
-  { content :: ![Card],
-    imageUrlTemplate :: !Text
-  }
-  deriving (Show, Generic)
+-- | @toImage@ takes a Netrunner card and loads an embed image of it.
+toImage :: NrApi -> Card -> Maybe CreateEmbedImage
+toImage api card = do
+  code' <- code card
+  return $ CreateEmbedImageUrl $ replace "{code}" code' $ imageTemplate api
 
-defaultCards :: Cards
-defaultCards = Cards {content = [], imageUrlTemplate = ""}
+-- | @toTitle@ takes a Netrunner card and attempts to get its title, adding
+-- a uniqueness icon if the card is unique.
+toTitle :: Card -> Text
+toTitle card =
+  let unique = if Just True == uniqueness card then "◆ " else ""
+      cardTitle = fromMaybe "?" $ title card
+   in unique <> cardTitle
 
-instance FromJSON Card
+-- | @toText@ takes a Netrunner card, collects its data and textbox into a
+-- single string.
+toText :: Card -> EnvDatabaseDiscord NrApi Text
+toText card = do
+  let subtitle = toSubtitle card
+  body <- formatNr (fromMaybe "" $ text card)
+  return $ subtitle <> body
 
-instance FromJSON Cards where
-  parseJSON (Object v) = do
-    content <- v .: "data"
-    imageUrlTemplate <- v .: "imageUrlTemplate"
-    return $ Cards {content = content, imageUrlTemplate = imageUrlTemplate}
-  parseJSON _ = return defaultCards
+-- | @toSubtitle@ generates the first line of a card's embed text listing
+-- its types, subtypes, and various other data points.
+toSubtitle :: Card -> Text
+toSubtitle Card {..} =
+  "**"
+    <> type_code'
+    <> keywords'
+    <> cost'
+    <> mu
+    <> strength'
+    <> agendaStats
+    <> trash
+    <> influence
+    <> deckbuilding
+    <> link
+    <> "**\n"
+  where
+    maybeIntToText = maybe "?" intToText
+    maybeEmptyPrependI s mi = maybeEmptyPrepend s (intToText <$> mi)
+    type_code' = fromMaybe "?" type_code -- TODO: maybe "?" toTitle type_code
+    keywords' = maybeEmptyPrepend ": " keywords
+    cost' =
+      let rezText = " • Rez: "
+       in case (cost, type_code) of
+            (Nothing, _) -> ""
+            (Just x, Just "asset") -> rezText <> intToText x
+            (Just x, Just "ice") -> rezText <> intToText x
+            (Just x, Just "upgrade") -> rezText <> intToText x
+            (Just x, _) -> " • Cost: " <> intToText x
+    mu = maybeEmptyPrependI " • MU: " memory_cost
+    strength' = maybeEmptyPrependI " • Strength: " strength
+    agendaStats =
+      let adv = maybeIntToText advancement_cost
+          points = maybeIntToText agenda_points
+       in case type_code of
+            Just "agenda" -> " • " <> adv <> "/" <> points
+            _ -> ""
+    trash = maybeEmptyPrependI " • Trash: " trash_cost
+    influence = case faction_cost of
+      Nothing -> ""
+      Just x ->
+        if x == 0 && fromMaybe "" type_code `elem` ["agenda", "identity"]
+          then ""
+          else " • Influence: " <> intToText x
+    deckbuilding = case type_code of
+      Just "identity" -> " • " <> maybeIntToText minimum_deck_size <> "/" <> maybeIntToText influence_limit
+      Nothing -> ""
+      _ -> ""
+    link = maybeEmptyPrependI " • Link: " base_link
+
+-- | @toFaction@ takes a card and attempts to find its faction.
+toFaction :: NrApi -> Card -> Maybe Faction
+toFaction api card = do
+  cardCode <- faction_code card
+  let fRes = filter ((== cardCode) . Faction.code) $ factions api
+  case fRes of
+    [] -> Nothing
+    (f : _) -> Just f
+
+-- | @toPack@ takes a card and attempts to find its data pack.
+toPack :: NrApi -> Card -> Maybe Pack
+toPack api card = do
+  cardPack <- pack_code card
+  let pRes = filter ((== cardPack) . Pack.code) $ packs api
+  case pRes of
+    [] -> Nothing
+    (p : _) -> Just p
+
+-- | @toReleaseData@ checks if a card was released in a data pack or a big
+-- box, and simplifies this info in the case of the latter.
+toReleaseData :: NrApi -> Card -> Text
+toReleaseData api card = fromMaybe "" helper
+  where
+    helper :: Maybe Text
+    helper = do
+      f <- toFaction api card
+      p <- toPack api card
+      c <- toCycle api p
+      let faction = Faction.name f
+      let rotation =
+            if Cycle.rotated c
+              then " (rotated)"
+              else ""
+      let expansion =
+            if Pack.name p == Cycle.name c
+              then Pack.name p
+              else Cycle.name c <> rotation <> " • " <> Pack.name p
+      let pos = maybe "" (\t -> " #" <> intToText t) (position card)
+      return $ faction <> " • " <> expansion <> pos
+
+-- | @toColour@ gets the factional colour of a card to use in its embed.
+toColour :: NrApi -> Card -> DiscordColour
+toColour api card = maybe Default (hexToDiscordColour . unpack . Faction.colour) (toFaction api card)
+
+-- | @toFlavour@ gets a cards flavour text (and makes it italic).
+toFlavour :: Card -> EnvDatabaseDiscord NrApi (Maybe Text)
+toFlavour Card {flavor = flavor} = case flavor of
+  Nothing -> return Nothing
+  Just f -> do
+    f' <- formatNr f
+    return $ Just $ "*" <> f' <> "*"

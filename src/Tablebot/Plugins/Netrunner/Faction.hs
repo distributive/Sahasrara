@@ -7,38 +7,26 @@
 -- Portability : POSIX
 --
 -- Handles the representation of Netrunner factions in Tablebot.
-module Tablebot.Plugins.Netrunner.Faction (Faction (..), Factions (..), defaultFactions) where
+module Tablebot.Plugins.Netrunner.Faction where
 
-import Data.Aeson (FromJSON, Value (Object), parseJSON, withObject, (.:))
-import Data.Text (Text)
-import GHC.Generics (Generic)
+import Data.Text
+import Tablebot.Plugins.Netrunner.Type.Faction (Faction (..))
+import Tablebot.Plugins.Netrunner.Type.NrApi (NrApi)
+import Tablebot.Utility
+import Tablebot.Utility.Discord (formatFromEmojiName)
+import Tablebot.Utility.Types ()
 
--- | @Cycle@ represents a single cycle of packs in the NetrunnerDB API.
-data Faction = Faction
-  { code :: !Text,
-    colour :: !Text,
-    isMini :: !Bool,
-    name :: !Text,
-    sideCode :: !Text
-  }
-  deriving (Show, Generic)
-
--- | @Cycles@ represents all cycles in the game's history.
-newtype Factions = Factions {content :: [Faction]} deriving (Show, Generic)
-
-defaultFactions :: Factions
-defaultFactions = Factions {content = []}
-
-instance FromJSON Faction where
-  parseJSON = withObject "Faction" $ \o ->
-    Faction <$> o .: "code"
-      <*> o .: "color"
-      <*> o .: "is_mini"
-      <*> o .: "name"
-      <*> o .: "side_code"
-
-instance FromJSON Factions where
-  parseJSON (Object v) = do
-    content <- v .: "data"
-    return $ Factions {content = content}
-  parseJSON _ = return defaultFactions
+-- | @toEmoji@ takes a faction and attempts to find its Discord emoji.
+toEmoji :: Faction -> EnvDatabaseDiscord NrApi Text
+toEmoji Faction {code = code} = case code of
+  "haas-bioroid" -> formatFromEmojiName "hb"
+  "jinteki" -> formatFromEmojiName "jinteki"
+  "nbn" -> formatFromEmojiName "nbn"
+  "weyland-consortium" -> formatFromEmojiName "weyland"
+  "anarch" -> formatFromEmojiName "anarch"
+  "criminal" -> formatFromEmojiName "criminal"
+  "shaper" -> formatFromEmojiName "shaper"
+  "adam" -> formatFromEmojiName "adam"
+  "apex" -> formatFromEmojiName "apex"
+  "sunny-lebeau" -> formatFromEmojiName "sunny"
+  _ -> formatFromEmojiName "nisei"
