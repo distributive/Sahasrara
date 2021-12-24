@@ -9,7 +9,7 @@
 -- Portability : POSIX
 --
 -- Functions for embedding Netrunner data.
-module Tablebot.Plugins.Netrunner.Search
+module Tablebot.Plugins.Netrunner.Query
   ( queryCard,
     searchCards,
     fixSearch,
