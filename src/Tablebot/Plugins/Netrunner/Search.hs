@@ -8,13 +8,9 @@
 -- Stability   : experimental
 -- Portability : POSIX
 --
--- The backend functionality of the Netrunner commands.
-module Tablebot.Plugins.Netrunner.Netrunner
-  ( cardToEmbed,
-    cardsToEmbed,
-    cardToImgEmbed,
-    cardToFlavourEmbed,
-    queryCard,
+-- Functions for embedding Netrunner data.
+module Tablebot.Plugins.Netrunner.Search
+  ( queryCard,
     searchCards,
     fixSearch,
     pairsToQuery,
@@ -26,14 +22,9 @@ import Data.Bifunctor (first)
 import Data.List (nubBy)
 import Data.Maybe (fromMaybe, mapMaybe)
 import Data.Text (Text, intercalate, isInfixOf, pack, replace, singleton, unpack, unwords)
-import Discord.Types
-import Tablebot.Plugins.Netrunner.Card
-import Tablebot.Plugins.Netrunner.Faction
 import Tablebot.Plugins.Netrunner.Type.Card as Card (Card (..))
 import Tablebot.Plugins.Netrunner.Type.Faction as Faction (Faction (..))
 import Tablebot.Plugins.Netrunner.Type.NrApi (NrApi (..))
-import Tablebot.Utility
-import Tablebot.Utility.Embed (addColour)
 import Tablebot.Utility.Search (FuzzyCosts (..), autocomplete, closestMatch, closestValueWithCosts)
 import Tablebot.Utility.Types ()
 import Tablebot.Utility.Utils (standardise)
@@ -156,55 +147,3 @@ pairsToNrdb pairs = unwords queries
       if " " `isInfixOf` v
         then "\"" <> v <> "\""
         else v
-
--- | @cardToEmbed@ takes a card and generates an embed message representing it.
-cardToEmbed :: NrApi -> Card -> EnvDatabaseDiscord NrApi Embed
-cardToEmbed api card = do
-  let eTitle = toTitle card
-      eURL = toLink card
-      eFoot = toReleaseData api card
-      eImg = toImage api card
-      eColour = toColour api card
-  eText <- toText card
-  return $ addColour eColour $ createEmbed $ CreateEmbed "" "" Nothing eTitle eURL eImg eText [] Nothing eFoot Nothing Nothing
-
--- | @cardsToEmbed@ takes a list of cards and embeds their names with links.
-cardsToEmbed :: NrApi -> Text -> [Card] -> Text -> EnvDatabaseDiscord NrApi Embed
-cardsToEmbed api pre cards err = do
-  formatted <- mapM formatCard $ take 10 cards
-  let cards' = "**" <> intercalate "\n" formatted <> "**"
-      eTitle = "**" <> pack (show $ length cards) <> " results**"
-      eText = pre <> "\n" <> cards' <> if length cards > 10 then "\n" <> err else ""
-  return $ createEmbed $ CreateEmbed "" "" Nothing eTitle "" Nothing eText [] Nothing "" Nothing Nothing
-  where
-    formatCard :: Card -> EnvDatabaseDiscord NrApi Text
-    formatCard card = do
-      let title' = fromMaybe "?" $ title card
-          link = toLink card
-      icon <- case toFaction api card of
-        Nothing -> return ""
-        Just faction -> toEmoji faction
-      return $ icon <> " [" <> title' <> "](" <> link <> ")"
-
--- | @cardToImgEmbed@ takes a card and attempts to embed a picture of it.
-cardToImgEmbed :: NrApi -> Card -> Maybe Embed
-cardToImgEmbed api card =
-  let eTitle = toTitle card
-      eURL = toLink card
-      eColour = toColour api card
-   in case toImage api card of
-        Nothing -> Nothing
-        eImg -> Just $ addColour eColour $ createEmbed $ CreateEmbed "" "" Nothing eTitle eURL Nothing "" [] eImg "" Nothing Nothing
-
--- | @cardToFlavourEmbed@ takes a card and attempts to embed its flavour text.
-cardToFlavourEmbed :: NrApi -> Card -> EnvDatabaseDiscord NrApi (Maybe Embed)
-cardToFlavourEmbed api card = do
-  let eTitle = toTitle card
-      eURL = toLink card
-      eColour = toColour api card
-      eImg = toImage api card
-  flavor <- toFlavour card
-  return $ case flavor of
-    Nothing -> Nothing
-    Just "" -> Nothing
-    Just eFlavour -> Just $ addColour eColour $ createEmbed $ CreateEmbed "" "" Nothing eTitle eURL eImg eFlavour [] Nothing "" Nothing Nothing
