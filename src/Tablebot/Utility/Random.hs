@@ -36,7 +36,7 @@ chooseOneWeighted weight xs
   | any ((< 0) . weight) xs = throw $ RandomException "Probability weightings cannot be negative."
   | all ((== 0) . weight) xs = throw $ RandomException "At least one weighting must be positive."
   | otherwise =
-      fst . fromJust . (\i -> find ((> i) . snd) (zip xs' $ scanl1 (+) $ weight <$> xs')) <$> randomRIO (0, totalWeight - 1)
+    fst . fromJust . (\i -> find ((> i) . snd) (zip xs' $ scanl1 (+) $ weight <$> xs')) <$> randomRIO (0, totalWeight - 1)
   where
     xs' = filter ((> 0) . weight) xs -- removes elements with a weight of zero
     totalWeight = sum $ weight <$> xs'
