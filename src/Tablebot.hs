@@ -20,12 +20,15 @@ import Control.Concurrent
   ( MVar,
     ThreadId,
     newEmptyMVar,
+    newMVar,
     putMVar,
     takeMVar,
   )
 import Control.Monad.IO.Class (MonadIO (liftIO))
 import Control.Monad.Logger (NoLoggingT (runNoLoggingT))
+import Control.Monad.Reader (runReaderT)
 import Control.Monad.Trans.Resource (runResourceT)
+import qualified Data.Map as M
 import Data.Text (Text, pack)
 import qualified Data.Text.IO as TIO (putStrLn)
 import Database.Persist.Sqlite
@@ -35,11 +38,12 @@ import Database.Persist.Sqlite
   )
 import Discord
 import Tablebot.Handler (eventHandler, killCron, runCron)
-import Tablebot.Handler.Administration (adminMigration, currentBlacklist, removeBlacklisted)
-import Tablebot.Handler.Plugins
-import Tablebot.Handler.Types
-import Tablebot.Plugin.Help
-import Tablebot.Plugin.Utils (debugPrint)
+import Tablebot.Internal.Administration (adminMigration, currentBlacklist, removeBlacklisted)
+import Tablebot.Internal.Plugins
+import Tablebot.Internal.Types
+import Tablebot.Utility.Help
+import Tablebot.Utility.Types (TablebotCache (..))
+import Tablebot.Utility.Utils (debugPrint)
 
 -- | runTablebot @dToken@ @prefix@ @dbpath@ @plugins@ runs the bot using the
 -- given Discord API token @dToken@ and SQLite connection string @dbpath@. Only
@@ -73,15 +77,16 @@ runTablebot dToken prefix dbpath plugins =
     mapM_ (\migration -> runSqlPool (runMigration migration) pool) $ combinedMigrations plugin
     -- Create a var to kill any ongoing tasks.
     mvar <- newEmptyMVar :: IO (MVar [ThreadId])
+    cacheMVar <- newMVar (TCache M.empty) :: IO (MVar TablebotCache)
     userFacingError <-
       runDiscord $
         def
           { discordToken = dToken,
             discordOnEvent =
-              flip runSqlPool pool . eventHandler actions prefix,
+              flip runSqlPool pool . flip runReaderT cacheMVar . eventHandler actions prefix,
             discordOnStart = do
               -- Build list of cron jobs, saving them to the mvar.
-              runSqlPool (mapM runCron (compiledCronJobs actions) >>= liftIO . putMVar mvar) pool
+              runSqlPool (runReaderT (mapM runCron (compiledCronJobs actions) >>= liftIO . putMVar mvar) cacheMVar) pool
               liftIO $ putStrLn "Tablebot lives!",
             -- Kill every cron job in the mvar.
             discordOnEnd = takeMVar mvar >>= killCron

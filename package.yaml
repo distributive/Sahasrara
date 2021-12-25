@@ -24,6 +24,7 @@ dependencies:
 - discord-haskell
 - emoji
 - text
+- text-icu
 - transformers
 - load-env
 - megaparsec
@@ -54,6 +55,8 @@ dependencies:
 - th-printf
 - mtl
 - safe
+- edit-distance
+- unliftio
 
 library:
   source-dirs: src
@@ -78,7 +81,7 @@ library:
   - TypeApplications
   - MultiWayIf
   - TupleSections
-  - ConstraintKinds 
+  - ConstraintKinds
   - ImportQualifiedPost
   - RecordWildCards
   - TypeOperators

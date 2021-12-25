@@ -11,10 +11,10 @@ module Tablebot.Plugins.Flip (flipPlugin) where
 
 import Control.Monad.IO.Class (MonadIO (liftIO))
 import Data.Text (pack)
-import Tablebot.Plugin
-import Tablebot.Plugin.Discord (Message, sendMessage)
-import Tablebot.Plugin.Parser
-import Tablebot.Plugin.Random (chooseOneWithDefault)
+import Tablebot.Utility
+import Tablebot.Utility.Discord (Message, sendMessage)
+import Tablebot.Utility.Parser
+import Tablebot.Utility.Random (chooseOneWithDefault)
 import Text.Megaparsec
 import Text.RawString.QQ
 import Prelude hiding (flip)
@@ -37,6 +37,7 @@ flipHelp :: HelpPage
 flipHelp =
   HelpPage
     "flip"
+    []
     "flip a coin, or randomly pick from a given list"
     [r|**Flip**
 Randomly picks one element from its arguments or, if none are provided, picks from heads and tails.

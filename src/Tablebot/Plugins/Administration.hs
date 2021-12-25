@@ -19,13 +19,13 @@ import Database.Persist (Entity, Filter, entityVal, (==.))
 import Discord (stopDiscord)
 import Discord.Types
 import Language.Haskell.Printf (s)
-import Tablebot.Handler.Administration
-import Tablebot.Handler.Types (CompiledPlugin (compiledName))
-import Tablebot.Plugin
-import Tablebot.Plugin.Database
-import Tablebot.Plugin.Discord (sendMessage)
-import Tablebot.Plugin.Permission (requirePermission)
-import Tablebot.Plugin.SmartCommand
+import Tablebot.Internal.Administration
+import Tablebot.Internal.Types (CompiledPlugin (compiledName))
+import Tablebot.Utility
+import Tablebot.Utility.Database
+import Tablebot.Utility.Discord (sendMessage)
+import Tablebot.Utility.Permission (requirePermission)
+import Tablebot.Utility.SmartParser
 import Text.RawString.QQ
 
 -- | @SS@ denotes the type returned by the command setup. Here its unused.
@@ -132,6 +132,7 @@ reloadHelp :: HelpPage
 reloadHelp =
   HelpPage
     "reload"
+    []
     "reload the bot"
     [r|**Restart**
 Restart the bot
@@ -144,6 +145,7 @@ blacklistAddHelp :: HelpPage
 blacklistAddHelp =
   HelpPage
     "add"
+    []
     "Disable a plugin"
     "**Blacklist Add**\n\
     \Disable a plugin. This does **not** check that the entered plugin is currently avaliable. \
@@ -156,6 +158,7 @@ blacklistRemoveHelp :: HelpPage
 blacklistRemoveHelp =
   HelpPage
     "remove"
+    []
     "Enable a plugin"
     [r|**Blacklist Remove**
 Re-enable a plugin.
@@ -169,6 +172,7 @@ blacklistListHelp :: HelpPage
 blacklistListHelp =
   HelpPage
     "list"
+    []
     "List disabled plugins"
     [r|**Blacklist List**
 List the current plugins in the blacklist.
@@ -182,6 +186,7 @@ blacklistHelp :: HelpPage
 blacklistHelp =
   HelpPage
     "blacklist"
+    []
     "Enable and disable plugins"
     [r|**Blacklist**
 Enable and disable plugins|]
