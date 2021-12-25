@@ -14,11 +14,6 @@ import Data.Maybe (fromMaybe)
 import Data.Text (Text, intercalate, pack, replicate, unpack)
 import qualified Data.Text as T
 import Discord.Types (Message (messageAuthor))
--- import Tablebot.Plugin
--- import Tablebot.Plugin.Dice
-
--- import Tablebot.Plugins.Roll.Dice (Expr, defaultRoll, evalExpr)
-
 import Tablebot.Plugins.Roll.Dice
 import Tablebot.Plugins.Roll.Dice.DiceData
 import Tablebot.Plugins.Roll.Dice.DiceFunctions (ListInteger (LIInteger, LIList))

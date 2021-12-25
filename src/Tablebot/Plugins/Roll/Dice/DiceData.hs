@@ -10,19 +10,10 @@
 module Tablebot.Plugins.Roll.Dice.DiceData where
 
 import Data.Bifunctor (Bifunctor (first))
-import Data.List.NonEmpty as NE (fromList)
 import Data.Map as M (Map, fromList)
-import Data.Set as S (Set, map)
 import Data.String (IsString (fromString))
-import Data.Text (Text, unpack)
 import Data.Tuple (swap)
 import Tablebot.Plugins.Roll.Dice.DiceFunctions (FuncInfo, FuncInfoBase)
-import Tablebot.Utility.Types (Parser)
-import Text.Megaparsec (failure)
-import Text.Megaparsec.Error (ErrorItem (Tokens))
-
-failure' :: Text -> Set Text -> Parser a
-failure' s ss = failure (Just $ Tokens $ NE.fromList $ unpack s) (S.map (Tokens . NE.fromList . unpack) ss)
 
 data ListValues = NoList Expr | MultipleValues NumBase Base | LVList [Expr] | LVFunc (FuncInfoBase IO [Integer]) [ListValues]
   deriving (Show)

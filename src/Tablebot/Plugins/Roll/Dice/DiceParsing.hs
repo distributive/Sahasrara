@@ -10,12 +10,13 @@
 --
 -- This plugin contains the tools for parsing Dice. -Wno-orphans is enabled so that
 -- parsing can occur here instead of in SmartCommand or DiceData.
-module Tablebot.Plugins.Roll.Dice.DiceParsing where
+module Tablebot.Plugins.Roll.Dice.DiceParsing () where
 
 import Data.Functor (($>), (<&>))
+import Data.List.NonEmpty as NE (fromList)
 import Data.Map as M (Map, findWithDefault, keys, map, (!))
 import Data.Maybe (fromMaybe)
-import Data.Set as S (fromList)
+import Data.Set as S (Set, fromList, map)
 import Data.Text (Text, singleton, unpack)
 import Tablebot.Plugins.Roll.Dice.DiceData
 import Tablebot.Plugins.Roll.Dice.DiceFunctions
@@ -27,8 +28,13 @@ import Tablebot.Plugins.Roll.Dice.DiceFunctions
 import Tablebot.Utility.Parser (integer, parseCommaSeparated, parseCommaSeparated1, skipSpace)
 import Tablebot.Utility.SmartParser (CanParse (..))
 import Tablebot.Utility.Types (Parser)
-import Text.Megaparsec (MonadParsec (try), choice, optional, (<?>), (<|>))
+import Text.Megaparsec (MonadParsec (try), choice, failure, optional, (<?>), (<|>))
 import Text.Megaparsec.Char (char, string)
+import Text.Megaparsec.Error (ErrorItem (Tokens))
+
+-- | An easier way to handle failure in parsers.
+failure' :: Text -> Set Text -> Parser a
+failure' s ss = failure (Just $ Tokens $ NE.fromList $ unpack s) (S.map (Tokens . NE.fromList . unpack) ss)
 
 instance CanParse ListValues where
   pars = do
