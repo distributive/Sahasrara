@@ -32,6 +32,7 @@ newtype RNGCount = RNGCount {getRNGCount :: Integer} deriving (Eq, Ord)
 maximumRNG :: RNGCount
 maximumRNG = RNGCount 150
 
+-- | Increment the rngcount by 1.
 incRNGCount :: RNGCount -> RNGCount
 incRNGCount (RNGCount i) = RNGCount (i + 1)
 
