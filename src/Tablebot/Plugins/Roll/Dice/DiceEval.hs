@@ -1,5 +1,5 @@
 -- |
--- Module      : Tablebot.Plugin.DiceEval
+-- Module      : Tablebot.Plugins.Roll.Dice.DiceEval
 -- Description : How to evaluate dice and expressions
 -- License     : MIT
 -- Maintainer  : tagarople@gmail.com

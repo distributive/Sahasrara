@@ -1,7 +1,7 @@
 {-# OPTIONS_GHC -Wno-orphans #-}
 
 -- |
--- Module      : Tablebot.Plugin.DiceParsing
+-- Module      : Tablebot.Plugins.Roll.Dice.DiceParsing
 -- Description : Parsers for parsing dice and other expressions.
 -- License     : MIT
 -- Maintainer  : tagarople@gmail.com

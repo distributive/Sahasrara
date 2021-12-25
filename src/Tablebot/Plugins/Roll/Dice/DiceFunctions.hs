@@ -1,5 +1,5 @@
 -- |
--- Module      : Tablebot.Plugin.DiceFunctions
+-- Module      : Tablebot.Plugins.Roll.Dice.DiceFunctions
 -- Description : Functions, data, and type classes to deal with functions.
 -- License     : MIT
 -- Maintainer  : tagarople@gmail.com

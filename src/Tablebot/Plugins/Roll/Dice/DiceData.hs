@@ -1,5 +1,5 @@
 -- |
--- Module      : Tablebot.Plugin.DiceData
+-- Module      : Tablebot.Plugins.Roll.Dice.DiceData
 -- Description : Data structures for dice and other expressions.
 -- License     : MIT
 -- Maintainer  : tagarople@gmail.com
