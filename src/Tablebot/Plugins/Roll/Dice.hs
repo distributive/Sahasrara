@@ -10,9 +10,6 @@
 -- expression that contains dice, as well as evaluate that expression.
 module Tablebot.Plugins.Roll.Dice (evalListValues, ListValues (..), defaultRoll, PrettyShow (prettyShow), basicFunctionsList, Converter (promote)) where
 
--- module Tablebot.Plugin.Dice (evalExpr, Expr, PrettyShow (..), supportedFunctionsList, defaultRoll) where
-
--- module Tablebot.Plugin.Dice (evalExpr, Expr, PrettyShow (..), supportedFunctionsList, defaultRoll) where
 import Tablebot.Plugins.Roll.Dice.DiceData
   ( Converter (promote),
     Die (Die),
