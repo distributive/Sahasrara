@@ -258,7 +258,6 @@ Searches are case insensitive
 
 The following fields are not implemented:
 > `r` - release date
-> `b` - ban list
 > `z` - rotation
 
 *Usage:*

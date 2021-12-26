@@ -19,22 +19,19 @@ module Tablebot.Plugins.Netrunner.Command.Search
   )
 where
 
-import Data.Bifunctor (first)
 import Data.List (nubBy)
 import Data.Maybe (fromMaybe, mapMaybe)
-import Data.Text (Text, intercalate, isInfixOf, pack, replace, singleton, toLower, unpack, unwords)
+import Data.Text (Text, intercalate, isInfixOf, pack, replace, toLower, unpack, unwords)
 import Tablebot.Plugins.Netrunner.Type.BanList (BanList)
-import Tablebot.Plugins.Netrunner.Type.Card as Card (Card (..))
-import Tablebot.Plugins.Netrunner.Type.Cycle (Cycle)
-import qualified Tablebot.Plugins.Netrunner.Type.Cycle as Cycle (Cycle (..))
-import Tablebot.Plugins.Netrunner.Type.Faction (Faction)
-import qualified Tablebot.Plugins.Netrunner.Type.Faction as Faction (Faction (..))
+import qualified Tablebot.Plugins.Netrunner.Type.BanList as BanList
+import Tablebot.Plugins.Netrunner.Type.Card as Card
+import qualified Tablebot.Plugins.Netrunner.Type.Cycle as Cycle
+import qualified Tablebot.Plugins.Netrunner.Type.Faction as Faction
 import Tablebot.Plugins.Netrunner.Type.NrApi (NrApi (..))
-import Tablebot.Plugins.Netrunner.Type.Type (Type)
-import qualified Tablebot.Plugins.Netrunner.Type.Type as Type (Type (..))
+import qualified Tablebot.Plugins.Netrunner.Type.Type as Type
+import Tablebot.Plugins.Netrunner.Utility.BanList (activeBanList, isBanned, latestBanList)
 import Tablebot.Plugins.Netrunner.Utility.Card (toCycle)
-import Tablebot.Utility
-import Tablebot.Utility.Search (FuzzyCosts (..), autocomplete, closestMatch, closestValueWithCosts)
+import Tablebot.Utility.Search (autocomplete, closestMatch, closestPair)
 import Tablebot.Utility.Types ()
 import Tablebot.Utility.Utils (standardise)
 import Text.Read (readMaybe)
@@ -44,8 +41,8 @@ import Prelude hiding (unwords)
 data Query
   = QText Text QueryComp (Card -> Maybe Text) [Text]
   | QInt Text QueryComp (Card -> Maybe Int) [Text]
-  | QBool Text QueryComp (Card -> Maybe Bool) [Text]
-  | QBan Text QueryComp (Card -> [Text]) [Text]
+  | QBool Text QueryComp (Card -> Maybe Bool) [Text] -- TODO: make this a single Text?
+  | QBan Text QueryComp (Text, BanList)
 
 -- | @QueryComp@ represents the types of comparison queries might take
 data QueryComp = QEQ | QNE | QGT | QLT
@@ -61,6 +58,7 @@ searchCards api pairs = Just $ nubBy cardEq $ foldr filterCards (cards api) pair
     filterCards (QText _ sep f xs) = filterText sep f xs
     filterCards (QInt _ sep f xs) = filterInt sep f xs
     filterCards (QBool _ sep f xs) = filterBool sep f xs
+    filterCards (QBan _ sep x) = filterBan sep x
     filterText :: QueryComp -> (Card -> Maybe Text) -> [Text] -> ([Card] -> [Card])
     filterText sep f xs =
       let check c x = isInfixOf (standardise x) $ standardise $ fromMaybe "" $ f c
@@ -86,8 +84,8 @@ searchCards api pairs = Just $ nubBy cardEq $ foldr filterCards (cards api) pair
     filterBool QEQ f _ = filter (fromMaybe False . f)
     filterBool QNE f _ = filter (maybe True not . f)
     filterBool _ _ _ = id
-    filterBan :: QueryComp -> (Card -> [Text]) -> a -> ([Card] -> [Card])
-    filterBan _ f xs = id -- TODO
+    filterBan :: QueryComp -> (Text, BanList) -> ([Card] -> [Card])
+    filterBan _ (_, b) = filter (not . (isBanned b))
 
 -- | @fixSearch@ takes a list of key/value pairs, formats them, and
 -- repairs damaged queries to ensure they are valid for NetrunnerDB.
@@ -126,7 +124,8 @@ fixSearch api = mapMaybe fix
     format ("h", sep, v) = Just $ QInt "h" sep trashCost v
     -- format ("r", sep, v) =
     format ("u", sep, v) = Just $ QBool "u" sep uniqueness v
-    format ("b", sep, v) = Just $ QBan "b" sep (\c -> mapMaybe code $ filter ((code c ==) . code) $ cards api) v
+    format ("b", _, []) = Nothing
+    format ("b", sep, v) = Just $ QBan "b" sep $ fixBan $ head v
     -- format ("z", sep, v) =
     format _ = Nothing
     fixFaction f = case autocomplete fNames f of
@@ -135,6 +134,13 @@ fixSearch api = mapMaybe fix
     fixType t = case autocomplete tNames t of
       Just t' -> t'
       Nothing -> pack $ closestMatch (map unpack tNames) $ unpack t
+    fixBan :: Text -> (Text, BanList)
+    fixBan b =
+      let bls = banLists api
+          active = ("active", activeBanList api)
+          latest = ("latest", latestBanList api)
+          blsPairs = active : latest : (zip (map (unpack . BanList.name) bls) bls)
+       in (\(x, y) -> (pack x, y)) $ closestPair blsPairs $ unpack b
     fNames = map Faction.code $ factions api
     tNames = map (toLower . Type.name) $ filter (not . Type.is_subtype) $ types api
     checkComp :: Query -> Maybe Query
@@ -147,7 +153,9 @@ fixSearch api = mapMaybe fix
     checkComp (QBool _ QGT _ _) = Nothing
     checkComp (QBool _ QLT _ _) = Nothing
     checkComp (QBool k sep f s) = Just $ QBool k sep f s
-    checkComp (QBan k _ f s) = Just $ QBan k QEQ f s -- NRDB allows QNE but it's functionally the same as QEQ
+    -- NRDB allows QNE but it's functionally the same as QEQ
+    -- Also note that for type reasons the length of QBans' arguments are fixed in format
+    checkComp (QBan k _ s) = Just $ QBan k QEQ s
 
 -- | @pairsToQuery@ takes a set of search query pairs ands turns it into a link
 -- to an equivalent search on NetrunnerDB.
@@ -165,6 +173,7 @@ pairsToNrdb pairs = unwords queries
     format (QText k sep _ vs) = format' k sep vs
     format (QInt k sep _ vs) = format' k sep vs
     format (QBool k sep _ vs) = format' k sep vs
+    format (QBan k sep v) = format' k sep [fst v]
     format' :: Text -> QueryComp -> [Text] -> Text
     format' k sep vs =
       let v = intercalate "|" $ map formatValue vs

@@ -42,8 +42,8 @@ instance FromJSON BanList where
 data CardBan = CardBan
   { globalPenalty :: !(Maybe Int),
     universalInfluence :: !(Maybe Int),
-    isRestricted :: !(Maybe Bool),
-    isBanned :: !(Maybe Bool)
+    restricted :: !(Maybe Bool),
+    banned :: !(Maybe Bool)
   }
   deriving (Show, Generic)
 
@@ -51,8 +51,13 @@ instance FromJSON CardBan where
   parseJSON = withObject "CardBan" $ \o -> do
     globalPenalty <- o .:? "global_penalty"
     universalInfluence <- o .:? "universal_faction_cost"
-    isRestricted <- o .:? "is_restricted"
-    isBanned <- do
+    restricted <- do
+      (restriction :: Maybe Int) <- o .:? "is_restricted"
+      return $ case restriction of
+        Just 0 -> Just False
+        Just _ -> Just True
+        Nothing -> Nothing
+    banned <- do
       (limit :: Maybe Int) <- o .:? "deck_limit"
       return $ case limit of
         Just 0 -> Just True

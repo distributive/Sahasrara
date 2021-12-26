@@ -26,7 +26,6 @@ data NrApi = NrApi
     factions :: [Faction],
     cycles :: [Cycle],
     packs :: [Pack],
-    banLists :: [BanList],
-    currentBanList :: BanList
+    banLists :: [BanList]
   }
   deriving (Show, Generic)

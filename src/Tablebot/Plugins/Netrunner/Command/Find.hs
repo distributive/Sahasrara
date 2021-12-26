@@ -12,25 +12,12 @@
 module Tablebot.Plugins.Netrunner.Command.Find (queryCard) where
 
 import Data.Bifunctor (first)
-import Data.List (nubBy)
-import Data.Maybe (fromMaybe, mapMaybe)
-import Data.Text (Text, intercalate, isInfixOf, pack, replace, singleton, toLower, unpack, unwords)
-import Tablebot.Plugins.Netrunner.Type.BanList (BanList)
+import Data.Maybe (fromMaybe)
+import Data.Text (Text, isInfixOf, unpack)
 import Tablebot.Plugins.Netrunner.Type.Card as Card (Card (..))
-import Tablebot.Plugins.Netrunner.Type.Cycle (Cycle)
-import qualified Tablebot.Plugins.Netrunner.Type.Cycle as Cycle (Cycle (..))
-import Tablebot.Plugins.Netrunner.Type.Faction (Faction)
-import qualified Tablebot.Plugins.Netrunner.Type.Faction as Faction (Faction (..))
 import Tablebot.Plugins.Netrunner.Type.NrApi (NrApi (..))
-import Tablebot.Plugins.Netrunner.Type.Type (Type)
-import qualified Tablebot.Plugins.Netrunner.Type.Type as Type (Type (..))
-import Tablebot.Plugins.Netrunner.Utility.Card (toCycle)
-import Tablebot.Utility
-import Tablebot.Utility.Search (FuzzyCosts (..), autocomplete, closestMatch, closestValueWithCosts)
-import Tablebot.Utility.Types ()
+import Tablebot.Utility.Search (FuzzyCosts (..), closestValueWithCosts)
 import Tablebot.Utility.Utils (standardise)
-import Text.Read (readMaybe)
-import Prelude hiding (unwords)
 
 -- | @queryCard@ searches the given library of cards by title, first checking if
 -- the search query is a substring of any cards, then performing a fuzzy search on

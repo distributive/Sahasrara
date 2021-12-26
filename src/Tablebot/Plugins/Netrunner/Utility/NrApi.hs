@@ -10,12 +10,12 @@
 module Tablebot.Plugins.Netrunner.Utility.NrApi (getNrApi) where
 
 import Data.Aeson (FromJSON, Value (Object), eitherDecode, parseJSON, (.:))
-import Data.Either (fromRight)
+import Data.Either (fromLeft, fromRight)
 import Data.Text (Text)
 import GHC.Generics (Generic)
 import Network.HTTP.Conduit (Response (responseBody), parseRequest)
 import Network.HTTP.Simple (httpLBS)
-import Tablebot.Plugins.Netrunner.Type.BanList (BanList (active), defaultBanList)
+import Tablebot.Plugins.Netrunner.Type.BanList (BanList)
 import Tablebot.Plugins.Netrunner.Type.Card (Card)
 import Tablebot.Plugins.Netrunner.Type.Cycle (Cycle)
 import Tablebot.Plugins.Netrunner.Type.Faction (Faction)
@@ -53,9 +53,7 @@ getNrApi = do
   banRes <- httpLBS banReq
   let banData = fromRight defaultBanLists ((eitherDecode $ responseBody banRes) :: Either String BanLists)
       banLists = banContent banData
-      currentBanList = case filter active banLists of
-        [] -> defaultBanList
-        xs -> last xs -- Last to ensure it's the most recent active version if there's somehow multiple
+  putStrLn $ fromLeft "" ((eitherDecode $ responseBody banRes) :: Either String BanLists)
   return NrApi {..}
 
 -- | @Cards@ represents the full library of cards in Netrunner.
