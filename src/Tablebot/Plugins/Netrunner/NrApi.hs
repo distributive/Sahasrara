@@ -20,6 +20,7 @@ import Tablebot.Plugins.Netrunner.Type.Cycle (Cycle)
 import Tablebot.Plugins.Netrunner.Type.Faction (Faction)
 import Tablebot.Plugins.Netrunner.Type.NrApi (NrApi (..))
 import Tablebot.Plugins.Netrunner.Type.Pack (Pack)
+import Tablebot.Plugins.Netrunner.Type.Type (Type)
 
 -- | @getNrApi@ is a function that attempts to get the JSON objects containing
 -- all required Netrunner data (cards, cycles, and packs) as provided by
@@ -38,12 +39,16 @@ getNrApi = do
   packReq <- parseRequest "https://netrunnerdb.com/api/2.0/public/packs"
   packRes <- httpLBS packReq
   let packData = fromRight defaultPacks ((eitherDecode $ responseBody packRes) :: Either String Packs)
+  typeReq <- parseRequest "https://netrunnerdb.com/api/2.0/public/types"
+  typeRes <- httpLBS typeReq
+  let typeData = fromRight defaultTypes ((eitherDecode $ responseBody typeRes) :: Either String Types)
   return $
     NrApi
       { cards = reverse $ cardContent cardData, -- Reversing the list of cards prioritises newer cards in the search
         cycles = cycleContent cycleData,
         factions = factionContent factionData,
         packs = packContent packData,
+        types = typeContent typeData,
         imageTemplate = imageUrlTemplate cardData
       }
 
@@ -99,3 +104,15 @@ instance FromJSON Packs where
 
 defaultPacks :: Packs
 defaultPacks = Packs {packContent = []}
+
+-- | @Types@ represents all card types in the game.
+data Types = Types {typeContent :: [Type]} deriving (Show, Generic)
+
+instance FromJSON Types where
+  parseJSON (Object v) = do
+    content <- v .: "data"
+    return $ Types {typeContent = content}
+  parseJSON _ = return defaultTypes
+
+defaultTypes :: Types
+defaultTypes = Types {typeContent = []}

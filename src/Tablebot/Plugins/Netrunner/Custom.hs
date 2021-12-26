@@ -82,31 +82,31 @@ customCard :: NrApi -> [(String, String)] -> Card
 customCard _ cardData =
   let params = fromList $ catMaybes $ readParam <$> cardData
    in Card
-        { advancement_cost = nrToInt =<< lookup "advancement" params,
-          agenda_points = nrToInt =<< lookup "points" params,
-          base_link = nrToInt =<< lookup "link" params,
+        { advancementCost = nrToInt =<< lookup "advancement" params,
+          agendaPoints = nrToInt =<< lookup "points" params,
+          baseLink = nrToInt =<< lookup "link" params,
           Card.code = Nothing,
           cost = nrToInt =<< lookup "cost" params,
-          deck_limit = Nothing,
-          faction_code = nrToText =<< lookup "faction" params,
-          faction_cost = nrToInt =<< lookup "influence" params,
-          flavor = nrToText =<< lookup "flavour" params,
+          deckLimit = Nothing,
+          factionCode = nrToText =<< lookup "faction" params,
+          factionCost = nrToInt =<< lookup "influence" params,
+          flavour = nrToText =<< lookup "flavour" params,
           illustrator = Nothing,
-          influence_limit = nrToInt =<< lookup "maxInf" params,
+          influenceLimit = nrToInt =<< lookup "maxInf" params,
           keywords = nrToText =<< lookup "keywords" params,
-          memory_cost = nrToInt =<< lookup "mu" params,
-          minimum_deck_size = nrToInt =<< lookup "minSize" params,
-          pack_code = Nothing,
+          memoryCost = nrToInt =<< lookup "mu" params,
+          minimumDeckSize = nrToInt =<< lookup "minSize" params,
+          packCode = Nothing,
           position = Nothing,
           quantity = Nothing,
-          Card.side_code = Nothing,
+          Card.sideCode = Nothing,
           strength = nrToInt =<< lookup "strength" params,
-          stripped_text = nrToText =<< lookup "text" params, -- TODO - strip this
-          stripped_title = nrToText =<< lookup "title" params, -- TODO - ditto
+          strippedText = nrToText =<< lookup "text" params, -- TODO - strip this
+          strippedTitle = nrToText =<< lookup "title" params, -- TODO - ditto
           text = nrToText =<< lookup "text" params,
           title = nrToText =<< lookup "title" params,
-          trash_cost = nrToInt =<< lookup "trash" params,
-          type_code = nrToText =<< lookup "type" params,
+          trashCost = nrToInt =<< lookup "trash" params,
+          typeCode = nrToText =<< lookup "type" params,
           uniqueness = nrToBool =<< lookup "unique" params
         }
   where

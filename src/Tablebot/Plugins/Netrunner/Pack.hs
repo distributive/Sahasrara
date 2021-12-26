@@ -11,12 +11,12 @@ module Tablebot.Plugins.Netrunner.Pack (toCycle) where
 
 import Tablebot.Plugins.Netrunner.Type.Cycle (Cycle (code))
 import Tablebot.Plugins.Netrunner.Type.NrApi (NrApi (cycles))
-import Tablebot.Plugins.Netrunner.Type.Pack (Pack (cycle_code))
+import Tablebot.Plugins.Netrunner.Type.Pack (Pack (cycleCode))
 
 -- | @toCycle@ takes a pack and attempts to find its cycle.
 toCycle :: NrApi -> Pack -> Maybe Cycle
 toCycle api pack' =
-  let cRes = filter (\c -> code c == cycle_code pack') $ cycles api
+  let cRes = filter (\c -> code c == cycleCode pack') $ cycles api
    in case cRes of
         [] -> Nothing
         (c : _) -> Just c

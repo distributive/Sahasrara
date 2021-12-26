@@ -15,6 +15,7 @@ module Tablebot.Plugins.Netrunner.Card
     toSubtitle,
     toFaction,
     toPack,
+    toCycle,
     toReleaseData,
     toColour,
     toFlavour,
@@ -23,14 +24,15 @@ where
 
 import Data.Maybe (fromMaybe)
 import Data.Text (Text, replace, unpack)
+import qualified Data.Text (toTitle)
 import Discord.Types
-import Tablebot.Plugins.Netrunner.Pack (toCycle)
 import Tablebot.Plugins.Netrunner.Type.Card (Card (..))
+import Tablebot.Plugins.Netrunner.Type.Cycle (Cycle)
 import qualified Tablebot.Plugins.Netrunner.Type.Cycle as Cycle
 import Tablebot.Plugins.Netrunner.Type.Faction (Faction)
 import qualified Tablebot.Plugins.Netrunner.Type.Faction as Faction
 import Tablebot.Plugins.Netrunner.Type.NrApi (NrApi (..))
-import Tablebot.Plugins.Netrunner.Type.Pack (Pack)
+import Tablebot.Plugins.Netrunner.Type.Pack (Pack (cycleCode))
 import qualified Tablebot.Plugins.Netrunner.Type.Pack as Pack
 import Tablebot.Plugins.Netrunner.Utils (formatNr)
 import Tablebot.Utility
@@ -68,7 +70,7 @@ toText card = do
 toSubtitle :: Card -> Text
 toSubtitle Card {..} =
   "**"
-    <> type_code'
+    <> typeCode'
     <> keywords'
     <> cost'
     <> mu
@@ -82,41 +84,41 @@ toSubtitle Card {..} =
   where
     maybeIntToText = maybe "?" intToText
     maybeEmptyPrependI s mi = maybeEmptyPrepend s (intToText <$> mi)
-    type_code' = fromMaybe "?" type_code -- TODO: maybe "?" toTitle type_code
+    typeCode' = maybe "?" Data.Text.toTitle typeCode
     keywords' = maybeEmptyPrepend ": " keywords
     cost' =
       let rezText = " • Rez: "
-       in case (cost, type_code) of
+       in case (cost, typeCode) of
             (Nothing, _) -> ""
             (Just x, Just "asset") -> rezText <> intToText x
             (Just x, Just "ice") -> rezText <> intToText x
             (Just x, Just "upgrade") -> rezText <> intToText x
             (Just x, _) -> " • Cost: " <> intToText x
-    mu = maybeEmptyPrependI " • MU: " memory_cost
+    mu = maybeEmptyPrependI " • MU: " memoryCost
     strength' = maybeEmptyPrependI " • Strength: " strength
     agendaStats =
-      let adv = maybeIntToText advancement_cost
-          points = maybeIntToText agenda_points
-       in case type_code of
+      let adv = maybeIntToText advancementCost
+          points = maybeIntToText agendaPoints
+       in case typeCode of
             Just "agenda" -> " • " <> adv <> "/" <> points
             _ -> ""
-    trash = maybeEmptyPrependI " • Trash: " trash_cost
-    influence = case faction_cost of
+    trash = maybeEmptyPrependI " • Trash: " trashCost
+    influence = case factionCost of
       Nothing -> ""
       Just x ->
-        if x == 0 && fromMaybe "" type_code `elem` ["agenda", "identity"]
+        if x == 0 && fromMaybe "" typeCode `elem` ["agenda", "identity"]
           then ""
           else " • Influence: " <> intToText x
-    deckbuilding = case type_code of
-      Just "identity" -> " • " <> maybeIntToText minimum_deck_size <> "/" <> maybeIntToText influence_limit
+    deckbuilding = case typeCode of
+      Just "identity" -> " • " <> maybeIntToText minimumDeckSize <> "/" <> maybeIntToText influenceLimit
       Nothing -> ""
       _ -> ""
-    link = maybeEmptyPrependI " • Link: " base_link
+    link = maybeEmptyPrependI " • Link: " baseLink
 
 -- | @toFaction@ takes a card and attempts to find its faction.
 toFaction :: NrApi -> Card -> Maybe Faction
 toFaction api card = do
-  cardCode <- faction_code card
+  cardCode <- factionCode card
   let fRes = filter ((== cardCode) . Faction.code) $ factions api
   case fRes of
     [] -> Nothing
@@ -125,9 +127,18 @@ toFaction api card = do
 -- | @toPack@ takes a card and attempts to find its data pack.
 toPack :: NrApi -> Card -> Maybe Pack
 toPack api card = do
-  cardPack <- pack_code card
-  let pRes = filter ((== cardPack) . Pack.code) $ packs api
+  pCode <- packCode card
+  let pRes = filter ((== pCode) . Pack.code) $ packs api
   case pRes of
+    [] -> Nothing
+    (p : _) -> Just p
+
+-- | @toCycle@ takes a card and attempts to find its cycle.
+toCycle :: NrApi -> Card -> Maybe Cycle
+toCycle api card = do
+  cCode <- cycleCode <$> toPack api card
+  let cRes = filter ((== cCode) . Cycle.code) $ cycles api
+  case cRes of
     [] -> Nothing
     (p : _) -> Just p
 
@@ -140,7 +151,7 @@ toReleaseData api card = fromMaybe "" helper
     helper = do
       f <- toFaction api card
       p <- toPack api card
-      c <- toCycle api p
+      c <- toCycle api card
       let faction = Faction.name f
       let rotation =
             if Cycle.rotated c
@@ -159,7 +170,7 @@ toColour api card = maybe Default (hexToDiscordColour . unpack . Faction.colour)
 
 -- | @toFlavour@ gets a cards flavour text (and makes it italic).
 toFlavour :: Card -> EnvDatabaseDiscord NrApi (Maybe Text)
-toFlavour Card {flavor = flavor} = case flavor of
+toFlavour Card {flavour = flavour} = case flavour of
   Nothing -> return Nothing
   Just f -> do
     f' <- formatNr f

@@ -7,24 +7,26 @@
 -- Portability : POSIX
 --
 -- The Pack and Packs types.
-module Tablebot.Plugins.Netrunner.Type.Pack where
+module Tablebot.Plugins.Netrunner.Type.Type where
 
-import Data.Aeson (FromJSON, parseJSON, withObject, (.:))
+import Data.Aeson (FromJSON, parseJSON, withObject, (.:), (.:?))
 import Data.Text (Text)
 import GHC.Generics (Generic)
 
--- | @Pack@ represents a single data pack in the NetrunnerDB API.
-data Pack = Pack
+-- | @Type@ represents a single card type in the NetrunnerDB API.
+data Type = Type
   { code :: !Text,
-    cycleCode :: !Text,
     name :: !Text,
-    position :: !Int
+    position :: !Int,
+    is_subtype :: !Bool,
+    side_code :: !(Maybe Text)
   }
   deriving (Show, Generic)
 
-instance FromJSON Pack where
-  parseJSON = withObject "Pack" $ \o ->
-    Pack <$> o .: "code"
-      <*> o .: "cycle_code"
+instance FromJSON Type where
+  parseJSON = withObject "Type" $ \o ->
+    Type <$> o .: "code"
       <*> o .: "name"
       <*> o .: "position"
+      <*> o .: "is_subtype"
+      <*> o .:? "side_code"

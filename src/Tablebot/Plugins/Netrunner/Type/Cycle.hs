@@ -9,7 +9,7 @@
 -- The Cycle and Cycles types.
 module Tablebot.Plugins.Netrunner.Type.Cycle where
 
-import Data.Aeson (FromJSON)
+import Data.Aeson (FromJSON, parseJSON, withObject, (.:))
 import Data.Text (Text)
 import GHC.Generics (Generic)
 
@@ -23,4 +23,10 @@ data Cycle = Cycle
   }
   deriving (Show, Generic)
 
-instance FromJSON Cycle
+instance FromJSON Cycle where
+  parseJSON = withObject "Cycle" $ \o ->
+    Cycle <$> o .: "code"
+      <*> o .: "name"
+      <*> o .: "position"
+      <*> o .: "size"
+      <*> o .: "rotated"

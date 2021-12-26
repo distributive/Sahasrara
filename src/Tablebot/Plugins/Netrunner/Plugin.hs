@@ -19,7 +19,7 @@ import Tablebot.Plugins.Netrunner.Embed
 import Tablebot.Plugins.Netrunner.NrApi (getNrApi)
 import Tablebot.Plugins.Netrunner.Query
 import Tablebot.Plugins.Netrunner.Type.Card (Card)
-import Tablebot.Plugins.Netrunner.Type.NrApi (NrApi)
+import Tablebot.Plugins.Netrunner.Type.NrApi (NrApi (..))
 import Tablebot.Utility
 import Tablebot.Utility.Discord (formatFromEmojiName, sendEmbedMessage, sendMessage)
 import Tablebot.Utility.Exception (BotException (NetrunnerException), throwBot)

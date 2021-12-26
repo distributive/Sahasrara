@@ -9,39 +9,66 @@
 -- The Card and Cards types.
 module Tablebot.Plugins.Netrunner.Type.Card where
 
-import Data.Aeson (FromJSON)
+import Data.Aeson (FromJSON, parseJSON, withObject, (.:?))
 import Data.Text (Text)
 import GHC.Generics (Generic)
 
 -- | @Card@ represents a single card in the NetrunnerDB API.
 data Card = Card
-  { advancement_cost :: !(Maybe Int),
-    agenda_points :: !(Maybe Int),
-    base_link :: !(Maybe Int),
+  { advancementCost :: !(Maybe Int),
+    agendaPoints :: !(Maybe Int),
+    baseLink :: !(Maybe Int),
     code :: !(Maybe Text),
     cost :: !(Maybe Int),
-    deck_limit :: !(Maybe Int),
-    faction_code :: !(Maybe Text),
-    faction_cost :: !(Maybe Int),
-    flavor :: !(Maybe Text),
+    deckLimit :: !(Maybe Int),
+    factionCode :: !(Maybe Text),
+    factionCost :: !(Maybe Int),
+    flavour :: !(Maybe Text),
     illustrator :: !(Maybe Text),
-    influence_limit :: !(Maybe Int),
+    influenceLimit :: !(Maybe Int),
     keywords :: !(Maybe Text),
-    memory_cost :: !(Maybe Int),
-    minimum_deck_size :: !(Maybe Int),
-    pack_code :: !(Maybe Text),
+    memoryCost :: !(Maybe Int),
+    minimumDeckSize :: !(Maybe Int),
+    packCode :: !(Maybe Text),
     position :: !(Maybe Int),
     quantity :: !(Maybe Int),
-    side_code :: !(Maybe Text),
+    sideCode :: !(Maybe Text),
     strength :: !(Maybe Int),
-    stripped_text :: !(Maybe Text),
-    stripped_title :: !(Maybe Text),
+    strippedText :: !(Maybe Text),
+    strippedTitle :: !(Maybe Text),
     text :: !(Maybe Text),
     title :: !(Maybe Text),
-    trash_cost :: !(Maybe Int),
-    type_code :: !(Maybe Text),
+    trashCost :: !(Maybe Int),
+    typeCode :: !(Maybe Text),
     uniqueness :: !(Maybe Bool)
   }
   deriving (Show, Generic)
 
-instance FromJSON Card
+instance FromJSON Card where
+  parseJSON = withObject "Card" $ \o ->
+    Card <$> o .:? "advancement_cost"
+      <*> o .:? "agenda_points"
+      <*> o .:? "base_link"
+      <*> o .:? "code"
+      <*> o .:? "cost"
+      <*> o .:? "deck_limit"
+      <*> o .:? "faction_code"
+      <*> o .:? "faction_cost"
+      <*> o .:? "flavor"
+      <*> o .:? "illustrator"
+      <*> o .:? "influence_limit"
+      <*> o .:? "keywords"
+      <*> o .:? "memory_cost"
+      <*> o .:? "minimum_deck_size"
+      <*> o .:? "pack_code"
+      <*> o .:? "position"
+      <*> o .:? "quantity"
+      <*> o .:? "side_code"
+      <*> o .:? "strength"
+      <*> o .:? "stripped_text"
+      <*> o .:? "stripped_title"
+      <*> o .:? "text"
+      <*> o .:? "title"
+      <*> o .:? "trash_cost"
+      <*> o .:? "type_code"
+      <*> o .:? "uniqueness"
