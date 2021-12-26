@@ -8,11 +8,10 @@
 -- Stability   : experimental
 -- Portability : POSIX
 --
--- Functions for embedding Netrunner data.
-module Tablebot.Plugins.Netrunner.Query
+-- Backend for the search command.
+module Tablebot.Plugins.Netrunner.Command.Search
   ( Query,
     QueryComp,
-    queryCard,
     searchCards,
     fixSearch,
     pairsToQuery,
@@ -24,7 +23,7 @@ import Data.Bifunctor (first)
 import Data.List (nubBy)
 import Data.Maybe (fromMaybe, mapMaybe)
 import Data.Text (Text, intercalate, isInfixOf, pack, replace, singleton, toLower, unpack, unwords)
-import Tablebot.Plugins.Netrunner.Card (toCycle)
+import Tablebot.Plugins.Netrunner.Utility.Card (toCycle)
 import Tablebot.Plugins.Netrunner.Type.Card as Card (Card (..))
 import Tablebot.Plugins.Netrunner.Type.Cycle (Cycle)
 import qualified Tablebot.Plugins.Netrunner.Type.Cycle as Cycle (Cycle (..))
@@ -33,6 +32,7 @@ import qualified Tablebot.Plugins.Netrunner.Type.Faction as Faction (Faction (..
 import Tablebot.Plugins.Netrunner.Type.NrApi (NrApi (..))
 import Tablebot.Plugins.Netrunner.Type.Type (Type)
 import qualified Tablebot.Plugins.Netrunner.Type.Type as Type (Type (..))
+import Tablebot.Plugins.Netrunner.Type.BanList (BanList)
 import Tablebot.Utility
 import Tablebot.Utility.Search (FuzzyCosts (..), autocomplete, closestMatch, closestValueWithCosts)
 import Tablebot.Utility.Types ()
@@ -40,42 +40,12 @@ import Tablebot.Utility.Utils (standardise)
 import Text.Read (readMaybe)
 import Prelude hiding (unwords)
 
--- | @queryCard@ searches the given library of cards by title, first checking if
--- the search query is a substring of any cards, then performing a fuzzy search on
--- the cards given, or all of the cards if no cards are found
-queryCard :: NrApi -> Text -> Card
-queryCard NrApi {cards = cards} txt = findCard (substringSearch pairs txt) txt pairs
-  where
-    pairs = zip (map (standardise . fromMaybe "" . Card.title) cards) cards
-    substringSearch pairs' searchTxt = filter (isInfixOf (standardise searchTxt) . fst) pairs'
-
--- | @findCard@ finds a card from the given list of pairs that is some subset of a
--- full list. If the sublist is empty, it will fuzzy search the full list. If the sublist
--- has exactly 1 element, it'll return that element. If the sublist has multiple
--- elements, it will fuzzy search the sublist
-findCard :: [(Text, Card)] -> Text -> [(Text, Card)] -> Card
-findCard [] searchTxt allCards = fuzzyQueryCard allCards searchTxt
-findCard [(_, card)] _ _ = card
-findCard cards searchTxt _ = fuzzyQueryCard cards searchTxt
-
--- | @queryCard@ fuzzy searches the given library of cards by title.
-fuzzyQueryCard :: [(Text, Card)] -> Text -> Card
-fuzzyQueryCard pairs = closestValueWithCosts editCosts unpackedPairs . unpack
-  where
-    unpackedPairs = fmap (first unpack) pairs
-    editCosts =
-      FuzzyCosts
-        { deletion = 10,
-          insertion = 2,
-          substitution = 10,
-          transposition = 1
-        }
-
 -- | @Query@ represents a single search query with its arguments.
 data Query
   = QText Text QueryComp (Card -> Maybe Text) [Text]
   | QInt Text QueryComp (Card -> Maybe Int) [Text]
   | QBool Text QueryComp (Card -> Maybe Bool) [Text]
+  | QBan Text QueryComp (Card -> [Text]) [Text]
 
 -- | @QueryComp@ represents the types of comparison queries might take
 data QueryComp = QEQ | QNE | QGT | QLT
@@ -116,6 +86,8 @@ searchCards api pairs = Just $ nubBy cardEq $ foldr filterCards (cards api) pair
     filterBool QEQ f _ = filter (fromMaybe False . f)
     filterBool QNE f _ = filter (maybe True not . f)
     filterBool _ _ _ = id
+    filterBan :: QueryComp -> (Card -> [Text]) -> a -> ([Card] -> [Card])
+    filterBan _ f xs = id -- TODO
 
 -- | @fixSearch@ takes a list of key/value pairs, formats them, and
 -- repairs damaged queries to ensure they are valid for NetrunnerDB.
@@ -141,8 +113,8 @@ fixSearch api = mapMaybe fix
     format ("a", sep, v) = Just $ QText "a" sep flavour v
     format ("e", sep, v) = Just $ QText "e" sep packCode v
     format ("c", sep, v) = Just $ QText "c" sep (\c -> Cycle.name <$> toCycle api c) v
-    format ("f", sep, v) = Just $ QText "f" sep keywords $ map fixFaction v
     format ("t", sep, v) = Just $ QText "t" sep typeCode $ map fixType v
+    format ("f", sep, v) = Just $ QText "f" sep keywords $ map fixFaction v
     format ("d", sep, v) = Just $ QText "d" sep sideCode v
     format ("i", sep, v) = Just $ QText "i" sep illustrator v
     format ("o", sep, v) = Just $ QInt "o" sep cost v
@@ -154,7 +126,7 @@ fixSearch api = mapMaybe fix
     format ("h", sep, v) = Just $ QInt "h" sep trashCost v
     -- format ("r", sep, v) =
     format ("u", sep, v) = Just $ QBool "u" sep uniqueness v
-    -- format ("b", sep, v) =
+    format ("b", sep, v) = Just $ QBan "b" sep (\c -> mapMaybe code $ filter ((code c ==) . code) $ cards api) v
     -- format ("z", sep, v) =
     format _ = Nothing
     fixFaction f = case autocomplete fNames f of
@@ -162,19 +134,20 @@ fixSearch api = mapMaybe fix
       Nothing -> pack $ closestMatch (map unpack fNames) $ unpack f
     fixType t = case autocomplete tNames t of
       Just t' -> t'
-      Nothing -> pack $ closestMatch (map unpack tNames) $ unpack #t
+      Nothing -> pack $ closestMatch (map unpack tNames) $ unpack t
     fNames = map Faction.code $ factions api
     tNames = map (toLower . Type.name) $ filter (not . Type.is_subtype) $ types api
     checkComp :: Query -> Maybe Query
     checkComp (QText _ QGT _ _) = Nothing
     checkComp (QText _ QLT _ _) = Nothing
-    checkComp (QText k sep f s) = Just (QText k sep f s)
+    checkComp (QText k sep f s) = Just $ QText k sep f s
     checkComp (QInt k QGT f s) = if length s == 1 then Just (QInt k QGT f s) else Nothing
     checkComp (QInt k QLT f s) = if length s == 1 then Just (QInt k QLT f s) else Nothing
-    checkComp (QInt k sep f s) = Just (QInt k sep f s)
+    checkComp (QInt k sep f s) = Just $ QInt k sep f s
     checkComp (QBool _ QGT _ _) = Nothing
     checkComp (QBool _ QLT _ _) = Nothing
-    checkComp (QBool k sep f s) = Just (QBool k sep f s)
+    checkComp (QBool k sep f s) = Just $ QBool k sep f s
+    checkComp (QBan k _ f s) = Just $ QBan k QEQ f s -- NRDB allows QNE but it's functionally the same as QEQ
 
 -- | @pairsToQuery@ takes a set of search query pairs ands turns it into a link
 -- to an equivalent search on NetrunnerDB.

@@ -9,7 +9,7 @@
 -- Portability : POSIX
 --
 -- The backend functionality of the Netrunner commands.
-module Tablebot.Plugins.Netrunner.Embed
+module Tablebot.Plugins.Netrunner.Utility.Embed
   ( cardToEmbed,
     cardsToEmbed,
     cardToImgEmbed,
@@ -20,8 +20,8 @@ where
 import Data.Maybe (fromMaybe)
 import Data.Text (Text, intercalate, pack)
 import Discord.Types
-import Tablebot.Plugins.Netrunner.Card
-import Tablebot.Plugins.Netrunner.Faction
+import Tablebot.Plugins.Netrunner.Utility.Card
+import Tablebot.Plugins.Netrunner.Utility.Faction
 import Tablebot.Plugins.Netrunner.Type.Card as Card (Card (..))
 import Tablebot.Plugins.Netrunner.Type.NrApi (NrApi (..))
 import Tablebot.Utility

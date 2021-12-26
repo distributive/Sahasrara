@@ -6,8 +6,8 @@
 -- Stability   : experimental
 -- Portability : POSIX
 --
--- The functionality of the custom card features of the Netrunner command.
-module Tablebot.Plugins.Netrunner.Custom (customCard) where
+-- Backend for the custom command.
+module Tablebot.Plugins.Netrunner.Command.Custom (customCard) where
 
 import Data.Map (fromList, lookup)
 import Data.Maybe (catMaybes)

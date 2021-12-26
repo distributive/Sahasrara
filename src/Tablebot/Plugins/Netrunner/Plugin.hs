@@ -14,10 +14,11 @@ import Control.Monad.Trans.Reader (ask)
 import Data.Text (Text, pack)
 import Discord.Types
 import Tablebot.Internal.Handler.Command ()
-import Tablebot.Plugins.Netrunner.Custom (customCard)
-import Tablebot.Plugins.Netrunner.Embed
-import Tablebot.Plugins.Netrunner.NrApi (getNrApi)
-import Tablebot.Plugins.Netrunner.Query
+import Tablebot.Plugins.Netrunner.Command.Custom (customCard)
+import Tablebot.Plugins.Netrunner.Utility.Embed
+import Tablebot.Plugins.Netrunner.Utility.NrApi (getNrApi)
+import Tablebot.Plugins.Netrunner.Command.Search
+import Tablebot.Plugins.Netrunner.Command.Find
 import Tablebot.Plugins.Netrunner.Type.Card (Card)
 import Tablebot.Plugins.Netrunner.Type.NrApi (NrApi (..))
 import Tablebot.Utility
@@ -256,7 +257,6 @@ If the list is excessively long, it will display a link to an equivalent search 
 Searches are case insensitive
 
 The following fields are not implemented:
-> `c` - cycle
 > `r` - release date
 > `b` - ban list
 > `z` - rotation

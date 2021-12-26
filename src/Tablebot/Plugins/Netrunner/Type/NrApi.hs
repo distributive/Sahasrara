@@ -16,14 +16,17 @@ import Tablebot.Plugins.Netrunner.Type.Cycle (Cycle)
 import Tablebot.Plugins.Netrunner.Type.Faction (Faction)
 import Tablebot.Plugins.Netrunner.Type.Pack (Pack)
 import Tablebot.Plugins.Netrunner.Type.Type (Type)
+import Tablebot.Plugins.Netrunner.Type.BanList (BanList)
 
 -- | @NrApi@ represents all required Netrunner data collected in one record.
 data NrApi = NrApi
   { cards :: [Card],
-    cycles :: [Cycle],
-    factions :: [Faction],
-    packs :: [Pack],
+    imageTemplate :: Text,
     types :: [Type],
-    imageTemplate :: Text
+    factions :: [Faction],
+    cycles :: [Cycle],
+    packs :: [Pack],
+    banLists :: [BanList],
+    currentBanList :: BanList
   }
   deriving (Show, Generic)

@@ -7,7 +7,7 @@
 -- Portability : POSIX
 --
 -- Handles the representation of Netrunner factions in Tablebot.
-module Tablebot.Plugins.Netrunner.Faction where
+module Tablebot.Plugins.Netrunner.Utility.Faction where
 
 import Data.Text
 import Tablebot.Plugins.Netrunner.Type.Faction (Faction (..))

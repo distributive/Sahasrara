@@ -7,4 +7,4 @@
 -- Portability : POSIX
 --
 -- Handles the representation of Netrunner cycles in Tablebot.
-module Tablebot.Plugins.Netrunner.Cycle where
+module Tablebot.Plugins.Netrunner.Utility.Cycle where

@@ -7,7 +7,7 @@
 -- Portability : POSIX
 --
 -- Handles the representation of Netrunner packs in Tablebot.
-module Tablebot.Plugins.Netrunner.Pack (toCycle) where
+module Tablebot.Plugins.Netrunner.Utility.Pack (toCycle) where
 
 import Tablebot.Plugins.Netrunner.Type.Cycle (Cycle (code))
 import Tablebot.Plugins.Netrunner.Type.NrApi (NrApi (cycles))

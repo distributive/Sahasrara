@@ -7,7 +7,7 @@
 -- Portability : POSIX
 --
 -- Handles the representation of Netrunner cards in Tablebot.
-module Tablebot.Plugins.Netrunner.Card
+module Tablebot.Plugins.Netrunner.Utility.Card
   ( toTitle,
     toText,
     toLink,
@@ -34,7 +34,7 @@ import qualified Tablebot.Plugins.Netrunner.Type.Faction as Faction
 import Tablebot.Plugins.Netrunner.Type.NrApi (NrApi (..))
 import Tablebot.Plugins.Netrunner.Type.Pack (Pack (cycleCode))
 import qualified Tablebot.Plugins.Netrunner.Type.Pack as Pack
-import Tablebot.Plugins.Netrunner.Utils (formatNr)
+import Tablebot.Plugins.Netrunner.Utility.Misc (formatNr)
 import Tablebot.Utility
 import Tablebot.Utility.Types ()
 import Tablebot.Utility.Utils (intToText, maybeEmptyPrepend)

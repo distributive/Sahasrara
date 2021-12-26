@@ -7,7 +7,7 @@
 -- Portability : POSIX
 --
 -- General purpose Netrunner functions.
-module Tablebot.Plugins.Netrunner.Utils where
+module Tablebot.Plugins.Netrunner.Utility.Misc where
 
 import Data.Text (Text, replace)
 import Tablebot.Plugins.Netrunner.Type.NrApi (NrApi)

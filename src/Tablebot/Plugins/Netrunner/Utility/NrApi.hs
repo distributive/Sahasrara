@@ -7,7 +7,7 @@
 -- Portability : POSIX
 --
 -- Handles the representation of all Netrunner data in Tablebot.
-module Tablebot.Plugins.Netrunner.NrApi (getNrApi) where
+module Tablebot.Plugins.Netrunner.Utility.NrApi (getNrApi) where
 
 import Data.Aeson (FromJSON, Value (Object), eitherDecode, parseJSON, (.:))
 import Data.Either (fromRight)
@@ -21,6 +21,7 @@ import Tablebot.Plugins.Netrunner.Type.Faction (Faction)
 import Tablebot.Plugins.Netrunner.Type.NrApi (NrApi (..))
 import Tablebot.Plugins.Netrunner.Type.Pack (Pack)
 import Tablebot.Plugins.Netrunner.Type.Type (Type)
+import Tablebot.Plugins.Netrunner.Type.BanList (BanList (active), defaultBanList)
 
 -- | @getNrApi@ is a function that attempts to get the JSON objects containing
 -- all required Netrunner data (cards, cycles, and packs) as provided by
@@ -30,27 +31,32 @@ getNrApi = do
   cardReq <- parseRequest "https://netrunnerdb.com/api/2.0/public/cards"
   cardRes <- httpLBS cardReq
   let cardData = fromRight defaultCards ((eitherDecode $ responseBody cardRes) :: Either String Cards)
+      cards = reverse $ cardContent cardData -- Reversing the list of cards prioritises newer cards in the search
+      imageTemplate = imageUrlTemplate cardData
   cycleReq <- parseRequest "https://netrunnerdb.com/api/2.0/public/cycles"
   cycleRes <- httpLBS cycleReq
   let cycleData = fromRight defaultCycles ((eitherDecode $ responseBody cycleRes) :: Either String Cycles)
+      cycles = cycleContent cycleData
   factionReq <- parseRequest "https://netrunnerdb.com/api/2.0/public/factions"
   factionRes <- httpLBS factionReq
   let factionData = fromRight defaultFactions ((eitherDecode $ responseBody factionRes) :: Either String Factions)
+      factions = factionContent factionData
   packReq <- parseRequest "https://netrunnerdb.com/api/2.0/public/packs"
   packRes <- httpLBS packReq
   let packData = fromRight defaultPacks ((eitherDecode $ responseBody packRes) :: Either String Packs)
+      packs = packContent packData
   typeReq <- parseRequest "https://netrunnerdb.com/api/2.0/public/types"
   typeRes <- httpLBS typeReq
   let typeData = fromRight defaultTypes ((eitherDecode $ responseBody typeRes) :: Either String Types)
-  return $
-    NrApi
-      { cards = reverse $ cardContent cardData, -- Reversing the list of cards prioritises newer cards in the search
-        cycles = cycleContent cycleData,
-        factions = factionContent factionData,
-        packs = packContent packData,
-        types = typeContent typeData,
-        imageTemplate = imageUrlTemplate cardData
-      }
+      types = typeContent typeData
+  banReq <- parseRequest "https://netrunnerdb.com/api/2.0/public/mwl"
+  banRes <- httpLBS banReq
+  let banData = fromRight defaultBanLists ((eitherDecode $ responseBody banRes) :: Either String BanLists)
+      banLists = banContent banData
+      currentBanList = case filter active banLists of
+        [] -> defaultBanList
+        xs -> last xs -- Last to ensure it's the most recent active version if there's somehow multiple
+  return NrApi {..}
 
 -- | @Cards@ represents the full library of cards in Netrunner.
 data Cards = Cards
@@ -116,3 +122,15 @@ instance FromJSON Types where
 
 defaultTypes :: Types
 defaultTypes = Types {typeContent = []}
+
+-- | @BanLists@ represents all card types in the game.
+data BanLists = BanLists {banContent :: [BanList]} deriving (Show, Generic)
+
+instance FromJSON BanLists where
+  parseJSON (Object v) = do
+    content <- v .: "data"
+    return $ BanLists {banContent = content}
+  parseJSON _ = return defaultBanLists
+
+defaultBanLists :: BanLists
+defaultBanLists = BanLists {banContent = []}
