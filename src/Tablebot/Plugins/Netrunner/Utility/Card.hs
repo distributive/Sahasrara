@@ -159,7 +159,7 @@ toReleaseData api card = fromMaybe "" helper
               else ""
       let expansion =
             if Pack.name p == Cycle.name c
-              then Pack.name p
+              then Pack.name p <> rotation
               else Cycle.name c <> rotation <> " • " <> Pack.name p
       let pos = maybe "" (\t -> " #" <> intToText t) (position card)
       return $ faction <> " • " <> expansion <> pos
