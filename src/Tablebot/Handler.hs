@@ -16,10 +16,15 @@ module Tablebot.Handler
   )
 where
 
+import Control.Concurrent (MVar)
 import Control.Monad (unless)
 import Control.Monad.Exception
 import Control.Monad.IO.Class (MonadIO (liftIO))
+import Control.Monad.Reader (ReaderT, ask, lift, runReaderT)
+import Data.Pool (Pool)
 import Data.Text (Text)
+import Database.Persist.Sqlite (SqlBackend, runSqlPool)
+import Discord (DiscordHandler)
 import Discord.Types
 import Tablebot.Internal.Handler.Command
   ( parseNewMessage,
@@ -34,6 +39,7 @@ import Tablebot.Internal.Plugins (changeAction)
 import Tablebot.Internal.Types
 import Tablebot.Utility.Discord (sendEmbedMessage)
 import Tablebot.Utility.Exception
+import Tablebot.Utility.Types (TablebotCache)
 import UnliftIO.Concurrent
   ( ThreadId,
     forkIO,
@@ -73,17 +79,22 @@ eventHandler pl prefix = \case
 -- 'Control.Concurrent.threadDelay') and a computation @fn@ to run repeatedly,
 -- each separated by a delay of @delay@.
 --
--- This is implemented by removing the @ReaderT@ layers of the
--- @DatabaseDiscord@ monad transformer stack and then running a lifted @forkIO@
--- so may need rewriting if you change the @DatabaseDiscord@ monad stack.
-runCron :: CompiledCronJob -> CompiledDatabaseDiscord ThreadId
-runCron (CCronJob delay fn) = forkIO withDelay
+-- Due to how @runSqlPool@ runs a transaction when started, we need it to be
+-- run with each call of a @CronJob@ - so we pass it in as argument and
+-- manually unwrap the monad transformer stack within each call.
+runCron ::
+  Pool SqlBackend ->
+  CompiledCronJob ->
+  ReaderT (MVar TablebotCache) DiscordHandler ThreadId
+runCron pool (CCronJob delay fn) = do
+  cache <- ask
+  lift . forkIO $ withDelay cache
   where
-    withDelay :: CompiledDatabaseDiscord ()
-    withDelay = do
-      catchAny fn (liftIO . print)
+    withDelay :: MVar TablebotCache -> DiscordHandler ()
+    withDelay cache = do
+      catchAny (runSqlPool (runReaderT fn cache) pool) (liftIO . print)
       liftIO $ threadDelay delay
-      withDelay
+      withDelay cache
 
 -- | @killCron@ takes a list of @ThreadId@ and kills each thread.
 killCron :: [ThreadId] -> IO ()
