@@ -9,8 +9,8 @@
 -- The Card and Cards types.
 module Tablebot.Plugins.Netrunner.Type.BanList where
 
-import Data.Map (Map, fromList)
 import Data.Aeson (FromJSON, parseJSON, withObject, (.:), (.:?))
+import Data.Map (Map, fromList)
 import Data.Text (Text)
 import GHC.Generics (Generic)
 
@@ -61,13 +61,14 @@ instance FromJSON CardBan where
     return CardBan {..}
 
 defaultBanList :: BanList
-defaultBanList = BanList
-  { id = -1,
-    dateCreation = "",
-    dateUpdate = "",
-    code = "",
-    name = "",
-    active = False,
-    dateStart = "",
-    affectedCards = fromList []
-  }
+defaultBanList =
+  BanList
+    { id = -1,
+      dateCreation = "",
+      dateUpdate = "",
+      code = "",
+      name = "",
+      active = False,
+      dateStart = "",
+      affectedCards = fromList []
+    }

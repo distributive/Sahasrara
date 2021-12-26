@@ -15,12 +15,12 @@ import Data.Text (Text, pack)
 import Discord.Types
 import Tablebot.Internal.Handler.Command ()
 import Tablebot.Plugins.Netrunner.Command.Custom (customCard)
-import Tablebot.Plugins.Netrunner.Utility.Embed
-import Tablebot.Plugins.Netrunner.Utility.NrApi (getNrApi)
-import Tablebot.Plugins.Netrunner.Command.Search
 import Tablebot.Plugins.Netrunner.Command.Find
+import Tablebot.Plugins.Netrunner.Command.Search
 import Tablebot.Plugins.Netrunner.Type.Card (Card)
 import Tablebot.Plugins.Netrunner.Type.NrApi (NrApi (..))
+import Tablebot.Plugins.Netrunner.Utility.Embed
+import Tablebot.Plugins.Netrunner.Utility.NrApi (getNrApi)
 import Tablebot.Utility
 import Tablebot.Utility.Discord (formatFromEmojiName, sendEmbedMessage, sendMessage)
 import Tablebot.Utility.Exception (BotException (NetrunnerException), throwBot)

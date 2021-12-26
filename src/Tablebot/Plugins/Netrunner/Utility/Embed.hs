@@ -20,10 +20,10 @@ where
 import Data.Maybe (fromMaybe)
 import Data.Text (Text, intercalate, pack)
 import Discord.Types
-import Tablebot.Plugins.Netrunner.Utility.Card
-import Tablebot.Plugins.Netrunner.Utility.Faction
 import Tablebot.Plugins.Netrunner.Type.Card as Card (Card (..))
 import Tablebot.Plugins.Netrunner.Type.NrApi (NrApi (..))
+import Tablebot.Plugins.Netrunner.Utility.Card
+import Tablebot.Plugins.Netrunner.Utility.Faction
 import Tablebot.Utility
 import Tablebot.Utility.Embed (addColour)
 import Tablebot.Utility.Types ()

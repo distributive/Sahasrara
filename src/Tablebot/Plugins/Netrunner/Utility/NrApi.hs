@@ -15,13 +15,13 @@ import Data.Text (Text)
 import GHC.Generics (Generic)
 import Network.HTTP.Conduit (Response (responseBody), parseRequest)
 import Network.HTTP.Simple (httpLBS)
+import Tablebot.Plugins.Netrunner.Type.BanList (BanList (active), defaultBanList)
 import Tablebot.Plugins.Netrunner.Type.Card (Card)
 import Tablebot.Plugins.Netrunner.Type.Cycle (Cycle)
 import Tablebot.Plugins.Netrunner.Type.Faction (Faction)
 import Tablebot.Plugins.Netrunner.Type.NrApi (NrApi (..))
 import Tablebot.Plugins.Netrunner.Type.Pack (Pack)
 import Tablebot.Plugins.Netrunner.Type.Type (Type)
-import Tablebot.Plugins.Netrunner.Type.BanList (BanList (active), defaultBanList)
 
 -- | @getNrApi@ is a function that attempts to get the JSON objects containing
 -- all required Netrunner data (cards, cycles, and packs) as provided by

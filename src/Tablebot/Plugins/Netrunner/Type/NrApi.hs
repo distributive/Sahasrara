@@ -11,12 +11,12 @@ module Tablebot.Plugins.Netrunner.Type.NrApi where
 
 import Data.Text (Text)
 import GHC.Generics (Generic)
+import Tablebot.Plugins.Netrunner.Type.BanList (BanList)
 import Tablebot.Plugins.Netrunner.Type.Card (Card)
 import Tablebot.Plugins.Netrunner.Type.Cycle (Cycle)
 import Tablebot.Plugins.Netrunner.Type.Faction (Faction)
 import Tablebot.Plugins.Netrunner.Type.Pack (Pack)
 import Tablebot.Plugins.Netrunner.Type.Type (Type)
-import Tablebot.Plugins.Netrunner.Type.BanList (BanList)
 
 -- | @NrApi@ represents all required Netrunner data collected in one record.
 data NrApi = NrApi
