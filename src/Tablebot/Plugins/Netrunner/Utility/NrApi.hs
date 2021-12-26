@@ -53,7 +53,6 @@ getNrApi = do
   banRes <- httpLBS banReq
   let banData = fromRight defaultBanLists ((eitherDecode $ responseBody banRes) :: Either String BanLists)
       banLists = banContent banData
-  putStrLn $ fromLeft "" ((eitherDecode $ responseBody banRes) :: Either String BanLists)
   return NrApi {..}
 
 -- | @Cards@ represents the full library of cards in Netrunner.

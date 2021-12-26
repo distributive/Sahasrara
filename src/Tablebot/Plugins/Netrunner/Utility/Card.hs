@@ -23,7 +23,7 @@ module Tablebot.Plugins.Netrunner.Utility.Card
 where
 
 import Data.Maybe (fromMaybe)
-import Data.Text (Text, replace, unpack)
+import Data.Text (Text, pack, replace, unpack)
 import qualified Data.Text (toTitle)
 import Discord.Types
 import Tablebot.Plugins.Netrunner.Type.Card (Card (..))
@@ -34,6 +34,7 @@ import qualified Tablebot.Plugins.Netrunner.Type.Faction as Faction
 import Tablebot.Plugins.Netrunner.Type.NrApi (NrApi (..))
 import Tablebot.Plugins.Netrunner.Type.Pack (Pack (cycleCode))
 import qualified Tablebot.Plugins.Netrunner.Type.Pack as Pack
+import Tablebot.Plugins.Netrunner.Utility.BanList (activeBanList, isBanned, isRestricted, toGlobalPenalty, toUniversalInfluence)
 import Tablebot.Plugins.Netrunner.Utility.Misc (formatNr)
 import Tablebot.Utility
 import Tablebot.Utility.Types ()
@@ -153,15 +154,23 @@ toReleaseData api card = fromMaybe "" helper
       p <- toPack api card
       c <- toCycle api card
       let faction = Faction.name f
-      let rotation =
-            if Cycle.rotated c
-              then " (rotated)"
-              else ""
-      let expansion =
-            if Pack.name p == Cycle.name c
-              then Pack.name p <> rotation
-              else Cycle.name c <> rotation <> " • " <> Pack.name p
-      let pos = maybe "" (\t -> " #" <> intToText t) (position card)
+          rotation = if Cycle.rotated c then " (rotated)" else ""
+          banList = activeBanList api
+          banStatus = if isBanned api banList card then " (banned)" else ""
+          restriction = if isRestricted api banList card then " (restricted)" else ""
+          globalPenalty = case toGlobalPenalty api banList card of
+            0 -> ""
+            x -> " (global penalty: " <> pack (show x) <> ")"
+          universalInf = case toUniversalInfluence api banList card of
+            0 -> ""
+            x -> " (universal influence: " <> pack (show x) <> ")"
+          legality = rotation <> banStatus <> restriction <> globalPenalty <> universalInf
+          expansion =
+            Cycle.name c <> legality
+              <> if Pack.name p /= Cycle.name c
+                then " • " <> Pack.name p
+                else ""
+          pos = maybe "" (\t -> " #" <> intToText t) (position card)
       return $ faction <> " • " <> expansion <> pos
 
 -- | @toColour@ gets the factional colour of a card to use in its embed.

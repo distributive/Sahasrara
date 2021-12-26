@@ -153,7 +153,7 @@ embedCards pre cards err m = do
   api <- ask
   sendEmbedMessage m "" =<< cardsToEmbed api pre cards err
 
--- | @embedCardImg@ takes a card and embeds its image in a message, if able.
+-- | @embedCardImg@ embeds a card's image in a message, if able.
 embedCardImg :: Card -> Message -> EnvDatabaseDiscord NrApi ()
 embedCardImg card m = do
   api <- ask
@@ -161,7 +161,7 @@ embedCardImg card m = do
     Nothing -> throwBot $ NetrunnerException "Could not get card art"
     Just embed -> sendEmbedMessage m "" embed
 
--- | @embedCardFlavour@ takes a card and embeds its image in a message, if able.
+-- | @embedCardFlavour@ embeds a card's flavour in a message, if able.
 embedCardFlavour :: Card -> Message -> EnvDatabaseDiscord NrApi ()
 embedCardFlavour card m = do
   api <- ask

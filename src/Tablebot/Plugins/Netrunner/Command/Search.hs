@@ -85,7 +85,7 @@ searchCards api pairs = Just $ nubBy cardEq $ foldr filterCards (cards api) pair
     filterBool QNE f _ = filter (maybe True not . f)
     filterBool _ _ _ = id
     filterBan :: QueryComp -> (Text, BanList) -> ([Card] -> [Card])
-    filterBan _ (_, b) = filter (not . (isBanned b))
+    filterBan _ (_, b) = filter (not . (isBanned api b))
 
 -- | @fixSearch@ takes a list of key/value pairs, formats them, and
 -- repairs damaged queries to ensure they are valid for NetrunnerDB.
