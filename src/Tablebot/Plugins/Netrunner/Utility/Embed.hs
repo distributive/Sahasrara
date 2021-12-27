@@ -11,6 +11,7 @@
 -- The backend functionality of the Netrunner commands.
 module Tablebot.Plugins.Netrunner.Utility.Embed
   ( cardToEmbed,
+    cardToEmbedWithText,
     cardsToEmbed,
     cardToImgEmbed,
     cardToFlavourEmbed,
@@ -39,6 +40,15 @@ cardToEmbed api card = do
       eColour = toColour api card
   eText <- toText card
   return $ addColour eColour $ createEmbed $ CreateEmbed "" "" Nothing eTitle eURL eImg eText [] Nothing eFoot Nothing Nothing
+
+-- | @cardToEmbedWithText@ embeds some text and decorates it with a given card.
+cardToEmbedWithText :: NrApi -> Card -> Text -> EnvDatabaseDiscord NrApi (Maybe Embed)
+cardToEmbedWithText api card text = do
+  let eTitle = toTitle card
+      eURL = toLink card
+      eColour = toColour api card
+      eImg = toImage api card
+  return $ Just $ addColour eColour $ createEmbed $ CreateEmbed "" "" Nothing eTitle eURL eImg text [] Nothing "" Nothing Nothing
 
 -- | @cardsToEmbed@ takes a list of cards and embeds their names with links.
 cardsToEmbed :: NrApi -> Text -> [Card] -> Text -> EnvDatabaseDiscord NrApi Embed

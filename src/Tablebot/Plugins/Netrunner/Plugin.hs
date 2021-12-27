@@ -14,6 +14,7 @@ import Control.Monad.Trans.Reader (ask)
 import Data.Text (Text, pack)
 import Discord.Types
 import Tablebot.Internal.Handler.Command ()
+import Tablebot.Plugins.Netrunner.Command.BanHistory (listBanHistory)
 import Tablebot.Plugins.Netrunner.Command.Custom (customCard)
 import Tablebot.Plugins.Netrunner.Command.Find
 import Tablebot.Plugins.Netrunner.Command.Search
@@ -34,7 +35,15 @@ netrunner =
   Command
     "netrunner"
     (parseComm nrComm)
-    [nrFind, nrFindImg, commandAlias "img" nrFindImg, nrFindFlavour, nrSearch, nrCustom]
+    [ nrFind,
+      nrFindImg,
+      commandAlias "img" nrFindImg,
+      nrFindFlavour,
+      nrSearch,
+      nrCustom,
+      nrBanHistory,
+      commandAlias "bh" nrBanHistory
+    ]
   where
     nrComm ::
       WithError
@@ -107,6 +116,7 @@ nrFindInline = InlineCommand nrInlineComm
         NrQueryCard q -> embedCard (queryCard api $ pack q) m
         NrQueryImg q -> embedCardImg (queryCard api $ pack q) m
         NrQueryFlavour q -> embedCardFlavour (queryCard api $ pack q) m
+        NrQueryBanHistory q -> embedBanHistory (queryCard api $ pack q) m
 
 -- | @nrSearch@ searches the card database with specific queries.
 nrSearch :: EnvCommand NrApi
@@ -141,6 +151,21 @@ nrCustom = Command "custom" customPars []
         api <- ask
         embedCard (customCard api pairs) m
 
+-- | @nrBanHistory@ is a command that lists a card's banlist history.
+nrBanHistory :: EnvCommand NrApi
+nrBanHistory = Command "banHistory" (parseComm banHistoryComm) []
+  where
+    banHistoryComm ::
+      WithError "No card title given!" (Either (Quoted Text) (RestOfInput1 Text)) ->
+      Message ->
+      EnvDatabaseDiscord NrApi ()
+    banHistoryComm (WErr (Left (Qu q))) = sendEmbed q
+    banHistoryComm (WErr (Right (ROI1 q))) = sendEmbed q
+    sendEmbed :: Text -> Message -> EnvDatabaseDiscord NrApi ()
+    sendEmbed query m = do
+      api <- ask
+      embedBanHistory (queryCard api query) m
+
 -- | @embedCard@ takes a card and embeds it in a message.
 embedCard :: Card -> Message -> EnvDatabaseDiscord NrApi ()
 embedCard card m = do
@@ -170,6 +195,15 @@ embedCardFlavour card m = do
     Nothing -> throwBot $ NetrunnerException "Card has no flavour text"
     Just e -> sendEmbedMessage m "" e
 
+-- | @embedBanHistory@ embeds a card's banlist history.
+embedBanHistory :: Card -> Message -> EnvDatabaseDiscord NrApi ()
+embedBanHistory card m = do
+  api <- ask
+  embed <- cardToEmbedWithText api card $ listBanHistory api card
+  case embed of
+    Nothing -> throwBot $ NetrunnerException "Could not generate history"
+    Just e -> sendEmbedMessage m "" e
+
 netrunnerHelp :: HelpPage
 netrunnerHelp =
   HelpPage
@@ -188,8 +222,9 @@ Add additional syntax to the start of the query to fetch only the card's image o
   - `{{card name}}        ` -> finds the card with title closest matching "card name"
   - `{{card 1}} {{card 2}}` -> searches for cards matching "card 1" and "card 2"
   - `{{!card image}}      ` -> fetches the image of the card matching "card image"
-  - `{{|card flavour}}    ` -> fetches the flavour text of the card matching "card flavour" |]
-    [findHelp, findImgHelp, findFlavourHelp, searchHelp, customHelp]
+  - `{{|card flavour}}    ` -> fetches the flavour text of the card matching "card flavour"
+  - `{{#banned card}}     ` -> fetches the ban history of the card matching "banned card"|]
+    [findHelp, findImgHelp, findFlavourHelp, searchHelp, customHelp, banHistoryHelp]
     None
 
 findHelp :: HelpPage
@@ -208,7 +243,8 @@ Add additional syntax to the start of the query to fetch only the card's image o
   - `{{card name}}           ` -> the inline version of the above command
   - `{{card 1}} {{card 2}}   ` -> searches for cards matching "card 1" and "card 2"
   - `{{!card image}}         ` -> fetches the image of the card matching "card image"
-  - `{{|card flavour}}       ` -> fetches the flavour text of the card matching "card flavour" |]
+  - `{{|card flavour}}       ` -> fetches the flavour text of the card matching "card flavour"
+  - `{{#banned card}}     ` -> fetches the ban history of the card matching "banned card"|]
     []
     None
 
@@ -289,6 +325,21 @@ If you mispell a card parameter (e.g. "typ" instead of "type") it will attempt t
 - `netrunner custom minSize:40 maxInf:15 link:2` -> creates a card with a minimum deck size, maximum influence, and link
 - `netrunner custom flavour:"Raspberry & mint" ` -> creates a card with flavour text
 - `netrunner custom unique:true                ` -> creates a unique card|]
+    []
+    None
+
+banHistoryHelp :: HelpPage
+banHistoryHelp =
+  HelpPage
+    "banHistory"
+    ["bh"]
+    "lists the banlist history of a card"
+    [r|**Netrunner Card Ban History**
+Shows the history of a card's legality in each version of Netrunner's MWL
+
+*Usage:*
+- `netrunner banHistory card name` -> displays the history of the card matching "card name"
+- `{{#card name}}                ` -> the inline version of the above command|]
     []
     None
 

@@ -32,7 +32,6 @@ import qualified Tablebot.Plugins.Netrunner.Type.Type as Type
 import Tablebot.Plugins.Netrunner.Utility.BanList (activeBanList, isBanned, latestBanList)
 import Tablebot.Plugins.Netrunner.Utility.Card (toCycle)
 import Tablebot.Utility.Search (autocomplete, closestMatch, closestPair)
-import Tablebot.Utility.Types ()
 import Tablebot.Utility.Utils (standardise)
 import Text.Read (readMaybe)
 import Prelude hiding (unwords)
