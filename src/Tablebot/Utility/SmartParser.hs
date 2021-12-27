@@ -74,13 +74,6 @@ instance IsString a => CanParse (Quoted a) where
 instance CanParse a => CanParse (Maybe a) where
   pars = optional $ try (pars @a)
 
--- pars = do
---   res <- optional $ try (pars @a)
---   prependSpace res
---   return res
---   where prependSpace Nothing = updateParserState (\State {..} -> State (cons ' ' stateInput) stateOffset statePosState stateParseErrors )
---         prependSpace _ = return ()
-
 -- A parser for @[a]@ parses any number of @a@s.
 instance {-# OVERLAPPABLE #-} CanParse a => CanParse [a] where
   pars = many pars
