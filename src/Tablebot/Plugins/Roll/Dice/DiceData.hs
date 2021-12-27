@@ -9,17 +9,17 @@
 -- This plugin contains the basics for dice expressions and values.
 module Tablebot.Plugins.Roll.Dice.DiceData where
 
-import Data.Bifunctor (Bifunctor (first))
 import Data.Map as M (Map, fromList)
-import Data.String (IsString (fromString))
+import Data.Text (Text)
 import Data.Tuple (swap)
 import Tablebot.Plugins.Roll.Dice.DiceFunctions (FuncInfo, FuncInfoBase)
 
+-- | The type for list values. Currently a fair bit overloaded.
 data ListValues = NoList Expr | MultipleValues NumBase Base | LVList [Expr] | LVFunc (FuncInfoBase IO [Integer]) [ListValues]
   deriving (Show)
 
--- | The type of the top level expression. Represents one of addition, subtraction, or a
--- single term.
+-- | The type of the top level expression. Represents one of addition,
+-- subtraction, or a single term.
 data Expr = Add Term Expr | Sub Term Expr | NoExpr Term
   deriving (Show)
 
@@ -52,8 +52,8 @@ data Base = NBase NumBase | DiceBase Dice
 -- | The type representing a simple N sided die or a custom die.
 data Die = Die NumBase | CustomDie [Expr] | LazyDie Die deriving (Show)
 
--- | The type representing a number of dice equal to the `Base` value, and possibly some
--- die options.
+-- | The type representing a number of dice equal to the `Base` value, and
+-- possibly some die options.
 data Dice = Dice Base Die (Maybe DieOpRecur)
   deriving (Show)
 
@@ -61,30 +61,32 @@ data Dice = Dice Base Die (Maybe DieOpRecur)
 data DieOpRecur = DieOpRecur DieOpOption (Maybe DieOpRecur)
   deriving (Show)
 
+-- | Some more advanced ordering options for things like `<=` and `/=`.
 data AdvancedOrdering = Not AdvancedOrdering | OrderingId Ordering | And [AdvancedOrdering] | Or [AdvancedOrdering]
   deriving (Show, Eq, Ord)
 
+-- | Compare two values according an advanced ordering.
 applyCompare :: Ord a => AdvancedOrdering -> a -> a -> Bool
 applyCompare (OrderingId o) a b = o == compare a b
 applyCompare (And os) a b = all (\o -> applyCompare o a b) os
 applyCompare (Or os) a b = any (\o -> applyCompare o a b) os
 applyCompare (Not o) a b = not (applyCompare o a b)
 
-advancedOrderingMapping :: (IsString a, Ord a) => (Map a AdvancedOrdering, Map AdvancedOrdering a)
+-- | Create a mapping between a Text of the advanced ordering, and vice versa.
+advancedOrderingMapping :: (Map Text AdvancedOrdering, Map AdvancedOrdering Text)
 advancedOrderingMapping = (M.fromList lst, M.fromList $ swap <$> lst)
   where
     lst =
-      fmap
-        (first fromString)
-        [ ("/=", Not (OrderingId EQ)),
-          ("<=", Or [OrderingId EQ, OrderingId LT]),
-          (">=", Or [OrderingId EQ, OrderingId GT]),
-          ("<", OrderingId LT),
-          ("=", OrderingId EQ),
-          (">", OrderingId GT)
-        ]
+      [ ("/=", Not (OrderingId EQ)),
+        ("<=", Or [OrderingId EQ, OrderingId LT]),
+        (">=", Or [OrderingId EQ, OrderingId GT]),
+        ("<", OrderingId LT),
+        ("=", OrderingId EQ),
+        (">", OrderingId GT)
+      ]
 
--- | The type representing a die option.
+-- | The type representing a die option; a reroll, a keep/drop operation, or
+-- lazily performing some other die option.
 data DieOpOption
   = Reroll {rerollOnce :: Bool, condition :: AdvancedOrdering, limit :: NumBase}
   | DieOpOptionKD KeepDrop LowHighWhere
@@ -94,9 +96,9 @@ data DieOpOption
 -- | A type used to designate how the keep/drop option should work
 data LowHighWhere = Low NumBase | High NumBase | Where AdvancedOrdering NumBase deriving (Show)
 
--- | Utility function to get the integer determining how many values to get given a
--- `LowHighWhere`. If the given value is `Low` or `High`, then Just the NumBase contained
--- is returned. Else, Nothing is returned.
+-- | Utility function to get the integer determining how many values to get
+-- given a `LowHighWhere`. If the given value is `Low` or `High`, then Just the
+-- NumBase contained is returned. Else, Nothing is returned.
 getValueLowHigh :: LowHighWhere -> Maybe NumBase
 getValueLowHigh (Low i) = Just i
 getValueLowHigh (High i) = Just i
@@ -110,7 +112,7 @@ isLow _ = False
 -- | Utility value for whether to keep or drop values.
 data KeepDrop = Keep | Drop deriving (Show, Eq)
 
--- | Utility type class for quickly promoting values
+-- | Utility type class for quickly promoting values.
 class Converter a b where
   -- | Function that promotes an element of type `a` to an element of type `b`.
   promote :: a -> b

@@ -101,7 +101,7 @@ data NrQuery = NrQueryCard String | NrQueryImg String | NrQueryFlavour String
 -- | @netrunnerQuery@ gets an inline Netrunner search query.
 -- This means that it matches @{{card title}}@.
 netrunnerQuery :: Parser [NrQuery]
-netrunnerQuery = many $ try $ skipManyTill anySingle query
+netrunnerQuery = some $ try $ skipManyTill anySingle query
   where
     query :: Parser NrQuery
     query = do
@@ -147,7 +147,7 @@ keyValuesSepOn seps ors = many $ try $ skipManyTill anySingle pair
       content <- (quotedWithout ors <|> nonSpaceWord') `sepBy` satisfy (`elem` ors)
       return (cat, sep, content)
     nonSpaceWord' :: Parser String
-    nonSpaceWord' = some $ satisfy $ \c -> (not $ isSpace c) && (c `notElem` ors)
+    nonSpaceWord' = some $ satisfy $ \c -> not (isSpace c) && (c `notElem` ors)
 
 -- | @sp@ parses an optional space character.
 sp :: Parser ()
@@ -187,7 +187,7 @@ inlineCommandHelper :: Text -> Text -> Parser e -> (e -> Message -> EnvDatabaseD
 inlineCommandHelper open close p action =
   InlineCommand
     ( do
-        getExprs <- many (try $ skipManyTill anySingle (string open *> skipSpace *> p <* skipSpace <* string close))
+        getExprs <- some (try $ skipManyTill anySingle (string open *> skipSpace *> p <* skipSpace <* string close))
         return $ \m -> mapM_ (`action` m) (take maxInlineCommands getExprs)
     )
   where

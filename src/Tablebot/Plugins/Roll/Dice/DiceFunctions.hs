@@ -6,7 +6,8 @@
 -- Stability   : experimental
 -- Portability : POSIX
 --
--- Type classes, data, and functions that deal with functions when evaluating dice.
+-- Type classes, data, and functions that deal with functions when evaluating
+-- dice.
 module Tablebot.Plugins.Roll.Dice.DiceFunctions
   ( basicFunctionsList,
     basicFunctions,
@@ -74,6 +75,8 @@ listFunctions' =
   constructFuncInfo "take" (genericTake @Integer @Integer) :
   (uncurry constructFuncInfo <$> [("sort", sort @Integer), ("reverse", reverse)])
 
+-- | A data structure to contain the information about a given function,
+-- including types, the function name, and the function itself.
 data FuncInfoBase m j = FuncInfo {funcInfoName :: Text, funcInfoParameters :: [ArgTypes], funcReturnType :: ArgTypes, funcInfoFunc :: MonadException m => [ListInteger] -> m j}
 
 type FuncInfo m = FuncInfoBase m Integer
@@ -81,21 +84,29 @@ type FuncInfo m = FuncInfoBase m Integer
 instance Show (FuncInfoBase m j) where
   show (FuncInfo fin ft frt _) = "FuncInfo " <> unpack fin <> " " <> show ft <> " " <> show frt
 
+-- | A simple way to construct a function that returns a value j, and has no
+-- constraints on the given values.
 constructFuncInfo :: (MonadException m, ApplyFunc m f, Returns f ~ j) => Text -> f -> FuncInfoBase m j
 constructFuncInfo s f = constructFuncInfo' s f (Nothing, Nothing, const False)
 
+-- | Construct a function info when given optional constraints.
 constructFuncInfo' :: (MonadException m, ApplyFunc m f, Returns f ~ j) => Text -> f -> (Maybe Integer, Maybe Integer, Integer -> Bool) -> FuncInfoBase m j
 constructFuncInfo' s f bs = FuncInfo s params (last types) (applyFunc f (fromIntegral (length params)) bs)
   where
     types = getTypes f
     params = init types
 
+-- | Some evaluated values, either an integer or a list of values with their
+-- representations.
 data ListInteger = LIInteger Integer | LIList [(Integer, Text)]
   deriving (Show, Eq, Ord)
 
+-- | Values representing types.
 data ArgTypes = ATInteger | ATIntegerList
   deriving (Show, Eq)
 
+-- | A type class for counting the amount of arguments of a function, and their
+-- types.
 class ArgCount f where
   getArgs :: f -> Integer
   getArgs = (+ (-1)) . fromIntegral . length . getTypes
@@ -111,11 +122,17 @@ instance ArgCount f => ArgCount (Integer -> f) where
   getTypes f = ATInteger : getTypes (f 1)
 
 instance ArgCount f => ArgCount ([Integer] -> f) where
-  getTypes f = ATIntegerList : getTypes (f [])
+  getTypes f = ATIntegerList : getTypes (f [1])
 
+-- | Type class which represents applying a function f to some inputs when given
+-- the bounds for the function and some number of inputs.
+--
+-- If the number of inputs is incorrect or the value given out of the range, an
+-- exception is thrown.
 class ArgCount f => ApplyFunc m f where
   applyFunc :: (MonadException m, Returns f ~ j) => f -> Integer -> (Maybe Integer, Maybe Integer, Integer -> Bool) -> [ListInteger] -> m j
 
+-- | Check whether a given value is within the given bounds.
 checkBounds :: (MonadException m) => Integer -> (Maybe Integer, Maybe Integer, Integer -> Bool) -> m Integer
 checkBounds i (ml, mh, bs)
   | not (maybe True (i >) ml) = throwBot $ EvaluationException ("value too low for function. expected >" <> show (fromJust ml) <> ", got " <> show i) []
@@ -145,6 +162,8 @@ instance {-# OVERLAPPABLE #-} (ApplyFunc m f) => ApplyFunc m ([Integer] -> f) wh
   applyFunc f args bs ((LIList x) : xs) = applyFunc (f (fst <$> x)) args bs xs
   applyFunc _ _ _ (_ : _) = throwBot $ EvaluationException "incorrect type given to function. expected a list, got an integer" []
 
+-- | Simple type that is just the return type of whatever function or value is
+-- given
 type family Returns f where
   Returns (i -> j) = Returns j
   Returns j = j

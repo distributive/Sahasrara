@@ -8,8 +8,8 @@
 -- Stability   : experimental
 -- Portability : POSIX
 --
--- This plugin contains the tools for parsing Dice. -Wno-orphans is enabled so that
--- parsing can occur here instead of in SmartCommand or DiceData.
+-- This plugin contains the tools for parsing Dice. -Wno-orphans is enabled so
+-- that parsing can occur here instead of in SmartParser or DiceData.
 module Tablebot.Plugins.Roll.Dice.DiceParsing () where
 
 import Data.Functor (($>), (<&>))
@@ -52,6 +52,7 @@ instance CanParse ListValues where
         )
       <|> functionParser (listFunctions @IO) LVFunc NoList
 
+-- | Helper function to try to parse the second part of a binary operator.
 binOpParseHelp :: (CanParse a) => Char -> (a -> a) -> Parser a
 binOpParseHelp c con = try (skipSpace *> char c) *> skipSpace *> (con <$> pars)
 
@@ -68,6 +69,10 @@ instance CanParse Term where
 instance CanParse Func where
   pars = functionParser (basicFunctions @IO) Func NoFunc
 
+-- | A generic function parser that takes a mapping from function names to
+-- functions, the main way to contruct the function data type `e`, and a
+-- constructor for `e` that takes only one value, `a` (which has its own,
+-- previously defined parser).
 functionParser :: (CanParse a) => M.Map Text (FuncInfoBase m j) -> (FuncInfoBase m j -> [ListValues] -> e) -> (a -> e) -> Parser e
 functionParser m mainCons fallbackCons =
   ( do
@@ -82,6 +87,7 @@ functionParser m mainCons fallbackCons =
     matchType (NoList _, ATInteger) = True
     matchType (LVList _, ATIntegerList) = True
     matchType (MultipleValues _ _, ATIntegerList) = True
+    matchType (LVFunc _ _, ATIntegerList) = True
     matchType _ = False
     checkTypes es ft fname
       | length es > length ft = fail $ "too many values given to function " ++ fname
@@ -131,9 +137,9 @@ instance CanParse Dice where
     let t' = NBase $ fromMaybe (Value 1) t
     return $ bd t'
 
--- | Helper for parsing Dice, where as many `Dice` as possible are parsed and a function
--- that takes a `Base` value and returns a `Dice` value is returned. This `Base` value is
--- meant to be first value that `Dice` have.
+-- | Helper for parsing Dice, where as many `Dice` as possible are parsed and a
+-- function that takes a `Base` value and returns a `Dice` value is returned.
+-- This `Base` value is meant to be first value that `Dice` have.
 parseDice' :: Parser (Base -> Dice)
 parseDice' = do
   d <- pars :: Parser Die
@@ -150,7 +156,7 @@ parseAdvancedOrdering = (try (choice opts) <?> "could not parse an ordering") >>
   where
     matchO :: Text -> Parser AdvancedOrdering
     matchO s = M.findWithDefault (failure' s (S.fromList opts')) s (M.map return $ fst advancedOrderingMapping)
-    opts' = M.keys $ fst (advancedOrderingMapping @Text)
+    opts' = M.keys $ fst advancedOrderingMapping
     opts = fmap string opts'
 
 -- | Parse a `LowHighWhere`, which is an `h` followed by an integer.
