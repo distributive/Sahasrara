@@ -58,7 +58,7 @@ With the introduction of this notation, it is worth noting that the normal (with
 
 ## Lists
 
-As well as simple expressions, basic list expressions can be formed. You can form a basic list using `{e,f,g}`, where `e`, `f`, and `g` are expressions as seen before. Additionally, by using `N#YdX` syntax, you can roll `N` amount of dice following `YdX`. There are some functions that can come with this - `sort`, `reverse`, `take` and `drop`, which sort a list, reverse a list, take some amount of values from a list, or drop a certain amount of values from the list, respectively.
+As well as simple expressions, basic list expressions can be formed. You can form a basic list using `{e,f,g}`, where `e`, `f`, and `g` are expressions as seen before. Additionally, by using `N#YdX` syntax, you can roll `N` amount of dice following `YdX`.
 
 As an addendum to custom dice, if a list value is bracketed then it can be used in custom dice. For example, `5d(4#4d6)` rolls five dice, whose sides are determined by rolling 4d6 4 times. Do note that laziness still applies here, meaning that the RNG cap can be very quickly reached.
 
@@ -75,6 +75,8 @@ Here are all the functions, what they take, and what they return.
 - mod (two integers, second /= 0) - get the modulo of two integers
 - neg (integer) - the negation of an integer
 - sum (list) - the summation of all values in a list
+- length (list) - the length of the list
+- index (integer (within list bounds), list) - get the item at a given index in the list, 0 indexed
 
 ### Returns a List
 - drop (integer, list) - drop the first `n` values from a list, where `n` is the integer given

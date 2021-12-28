@@ -18,10 +18,11 @@ import Tablebot.Plugins.Roll.Dice.DiceFunctions (FuncInfo, FuncInfoBase)
 data ArgValue = AVExpr Expr | AVListValues ListValues
   deriving (Show)
 
--- | The type for list values. Currently a fair bit overloaded.
+-- | The type for list values.
 data ListValues = MultipleValues NumBase Base | LVFunc (FuncInfoBase IO [Integer]) [ArgValue] | LVBase ListValuesBase
   deriving (Show)
 
+-- | The type for basic list values (that can be used as is for custom dice).
 data ListValuesBase = LVBParen (Paren ListValues) | LVBList [Expr]
   deriving (Show)
 
@@ -128,8 +129,6 @@ class Converter a b where
   -- | Function that promotes an element of type `a` to an element of type `b`.
   promote :: a -> b
 
--- instance (Converter a Expr) => Converter a ListValues where
---   promote = NoList . promote
 instance Converter ListValuesBase ListValues where
   promote = LVBase
 

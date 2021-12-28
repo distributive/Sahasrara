@@ -21,7 +21,7 @@ module Tablebot.Plugins.Roll.Dice.DiceFunctions
 where
 
 import Control.Monad.Exception (MonadException)
-import Data.List (genericDrop, genericTake, sort)
+import Data.List (genericDrop, genericLength, genericTake, sort)
 import Data.Map as M (Map, fromList, keys)
 import Data.Maybe (fromJust)
 import Data.Text (Text, unpack)
@@ -44,9 +44,11 @@ basicFunctionsList = M.keys (basicFunctions @IO)
 -- | The base details of the basic functions.
 basicFunctions' :: MonadException m => [FuncInfo m]
 basicFunctions' =
-  sumFI :
-  maximumFI :
-  minimumFI :
+  funcInfoIndex :
+  constructFuncInfo "length" (genericLength @Integer @Integer) :
+  constructFuncInfo "sum" (sum @[] @Integer) :
+  constructFuncInfo "maximum" (maximum @[] @Integer) :
+  constructFuncInfo "minimum" (minimum @[] @Integer) :
   constructFuncInfo' "mod" (mod @Integer) (Nothing, Nothing, (== 0)) :
   constructFuncInfo' "fact" fact (Nothing, Just factorialLimit, const False) :
   (uncurry constructFuncInfo <$> [("abs", abs @Integer), ("id", id), ("neg", negate)])
@@ -56,9 +58,6 @@ basicFunctions' =
       | n == 0 = 1
       | n > factorialLimit = fact factorialLimit
       | otherwise = n * fact (n - 1)
-    sumFI = constructFuncInfo "sum" (sum @[] @Integer)
-    maximumFI = constructFuncInfo "maximum" (maximum @[] @Integer)
-    minimumFI = constructFuncInfo "minimum" (minimum @[] @Integer)
 
 -- | Mapping from function names to the functions themselves for list functions.
 listFunctions :: MonadException m => Map Text (FuncInfoBase m [Integer])
@@ -78,6 +77,14 @@ listFunctions' =
 -- | A data structure to contain the information about a given function,
 -- including types, the function name, and the function itself.
 data FuncInfoBase m j = FuncInfo {funcInfoName :: Text, funcInfoParameters :: [ArgType], funcReturnType :: ArgType, funcInfoFunc :: MonadException m => [ListInteger] -> m j}
+
+funcInfoIndex :: FuncInfo m
+funcInfoIndex = FuncInfo "index" [ATInteger, ATIntegerList] ATInteger fiIndex
+  where
+    fiIndex (LIInteger i : [LIList is])
+      | i < 0 || i >= genericLength is = throwBot $ EvaluationException ("index out of range: " ++ show i) []
+      | otherwise = return ((fst <$> is) !! fromInteger i)
+    fiIndex is = throwBot $ EvaluationException ("incorrect number of arguments. expected 2, got " ++ show (length is)) []
 
 type FuncInfo m = FuncInfoBase m Integer
 

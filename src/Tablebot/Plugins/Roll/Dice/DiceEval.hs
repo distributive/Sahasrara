@@ -56,16 +56,6 @@ eval a = do
   (is, ss, _) <- evalShowL (RNGCount 0) a
   return (is, fromMaybe (prettyShow a) ss)
 
--- evalListValues :: ListValues -> IO (ListInteger, Text)
--- evalListValues lv = do
---   (is, ss, _) <- evalShowL (RNGCount 0) lv
---   return (is, fromMaybe (prettyShow lv) ss)
-
--- evalExpr :: Expr -> IO (Integer, Text)
--- evalExpr e = do
---   (i, s, _) <- evalShow (RNGCount 0) e
---   return (i, s)
-
 -- | Utility function to display dice.
 --
 -- The tuple of integers denotes what the critvalues of this dice value are. The
