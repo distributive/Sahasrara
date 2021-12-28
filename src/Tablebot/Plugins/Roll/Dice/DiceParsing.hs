@@ -85,7 +85,7 @@ functionParser m mainCons =
   do
     fi <- try (choice (string <$> M.keys m) >>= \t -> return (m M.! t)) <?> "could not find function"
     let ft = funcInfoParameters fi
-    es <- string "(" *> skipSpace *> parseArgValues ft <* skipSpace <* (try (string ")") <?> "expected only " ++ show (length ft) ++ " arguments, got more")
+    es <- skipSpace *> string "(" *> skipSpace *> parseArgValues ft <* skipSpace <* (try (string ")") <?> "expected only " ++ show (length ft) ++ " arguments, got more")
     return $ mainCons fi es
 
 instance CanParse Negation where
