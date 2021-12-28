@@ -8,7 +8,7 @@
 --
 -- Functions, type classes, and other utilities to evaluate dice values and
 -- expressions.
-module Tablebot.Plugins.Roll.Dice.DiceEval (PrettyShow (prettyShow), evalListValues) where
+module Tablebot.Plugins.Roll.Dice.DiceEval (PrettyShow (prettyShow), eval) where
 
 import Control.Monad (when)
 import Control.Monad.Exception (MonadException)
@@ -51,10 +51,20 @@ evaluationException nm locs = throwBot $ EvaluationException (unpack nm) (unpack
 
 -- | Given an expression, evaluate it, getting the pretty printed string and the
 -- value of the result.
-evalListValues :: ListValues -> IO (ListInteger, Text)
-evalListValues lv = do
-  (is, ss, _) <- evalShowL (RNGCount 0) lv
-  return (is, fromMaybe (prettyShow lv) ss)
+eval :: (IOEvalList a, PrettyShow a) => a -> IO (ListInteger, Text)
+eval a = do
+  (is, ss, _) <- evalShowL (RNGCount 0) a
+  return (is, fromMaybe (prettyShow a) ss)
+
+-- evalListValues :: ListValues -> IO (ListInteger, Text)
+-- evalListValues lv = do
+--   (is, ss, _) <- evalShowL (RNGCount 0) lv
+--   return (is, fromMaybe (prettyShow lv) ss)
+
+-- evalExpr :: Expr -> IO (Integer, Text)
+-- evalExpr e = do
+--   (i, s, _) <- evalShow (RNGCount 0) e
+--   return (i, s)
 
 -- | Utility function to display dice.
 --
@@ -128,8 +138,12 @@ class IOEvalList a where
 instance {-# OVERLAPPABLE #-} IOEval a => IOEvalList a where
   evalShowL' rngCount a = evalShow rngCount a >>= \(i, t, rc) -> return (LIInteger i, Just t, rc)
 
+instance IOEvalList ArgValue where
+  evalShowL' rngCount (AVExpr e) = evalShowL rngCount e
+  evalShowL' rngCount (AVListValues lv) = evalShowL rngCount lv
+
 instance IOEvalList ListValues where
-  evalShowL' rngCount (NoList expr) = evalShowL rngCount expr
+  -- evalShowL' rngCount (NoList expr) = evalShowL rngCount expr
   evalShowL' rngCount (MultipleValues nb b) = do
     (nb', _, rngCount') <- evalShow rngCount nb
     (vs, rc) <- evalShowList' rngCount' (genericReplicate nb' b)
@@ -336,7 +350,7 @@ instance IOEval Func where
   evalShow' rngCount (NoFunc b) = evalShow rngCount b
 
 -- | Evaluate a function when given a list of parameters
-evaluateFunction :: RNGCount -> FuncInfoBase IO j -> [ListValues] -> IO (j, Text, RNGCount)
+evaluateFunction :: RNGCount -> FuncInfoBase IO j -> [ArgValue] -> IO (j, Text, RNGCount)
 evaluateFunction rngCount fi exprs = do
   (exprs', rngCount') <- evalShowList'' evalShowL rngCount exprs
   f <- funcInfoFunc fi (fst <$> exprs')
@@ -359,7 +373,7 @@ instance IOEval Expo where
         return (b' ^ expo', b's <> " ^ " <> expo's, rngCount'')
 
 instance IOEval NumBase where
-  evalShow' rngCount (Paren e) = do
+  evalShow' rngCount (NBParen (Paren e)) = do
     (r, s, rngCount') <- evalShow rngCount e
     return (r, "(" <> s <> ")", rngCount')
   evalShow' rngCount (Value i) = return (i, pack (show i), rngCount)
@@ -372,8 +386,12 @@ class PrettyShow a where
   -- | Print the given value prettily.
   prettyShow :: a -> Text
 
+instance PrettyShow ArgValue where
+  prettyShow (AVExpr e) = prettyShow e
+  prettyShow (AVListValues lv) = prettyShow lv
+
 instance PrettyShow ListValues where
-  prettyShow (NoList e) = prettyShow e
+  -- prettyShow (NoList e) = prettyShow e
   prettyShow (MultipleValues nb b) = prettyShow nb <> "#" <> prettyShow b
   prettyShow (LVList es) = "{" <> intercalate ", " (prettyShow <$> es) <> "}"
   prettyShow (LVFunc s n) = funcInfoName s <> "(" <> intercalate "," (prettyShow <$> n) <> ")"
@@ -401,8 +419,11 @@ instance PrettyShow Expo where
   prettyShow (Expo b expo) = prettyShow b <> " ^ " <> prettyShow expo
 
 instance PrettyShow NumBase where
-  prettyShow (Paren e) = "(" <> prettyShow e <> ")"
+  prettyShow (NBParen p) = prettyShow p
   prettyShow (Value i) = fromString $ show i
+
+instance (PrettyShow a) => PrettyShow (Paren a) where
+  prettyShow (Paren a) = "(" <> prettyShow a <> ")"
 
 instance PrettyShow Base where
   prettyShow (NBase nb) = prettyShow nb
@@ -427,3 +448,7 @@ instance PrettyShow Dice where
       helper (Reroll False o i) = "rr" <> fromOrdering o <> prettyShow i
       helper (DieOpOptionKD Keep lhw) = "k" <> fromLHW lhw
       helper (DieOpOptionKD Drop lhw) = "d" <> fromLHW lhw
+
+instance (PrettyShow a, PrettyShow b) => PrettyShow (Either a b) where
+  prettyShow (Left a) = prettyShow a
+  prettyShow (Right b) = prettyShow b

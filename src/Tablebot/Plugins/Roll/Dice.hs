@@ -8,16 +8,17 @@
 --
 -- This plugin contains the neccessary parsers and stucture to get the AST for an
 -- expression that contains dice, as well as evaluate that expression.
-module Tablebot.Plugins.Roll.Dice (evalListValues, ListValues (..), defaultRoll, PrettyShow (prettyShow), basicFunctionsList, Converter (promote)) where
+module Tablebot.Plugins.Roll.Dice (eval, ListValues (..), defaultRoll, PrettyShow (prettyShow), basicFunctionsList, listFunctionsList, Converter (promote)) where
 
 import Tablebot.Plugins.Roll.Dice.DiceData
   ( Converter (promote),
     Die (Die),
+    Expr,
     ListValues (..),
     NumBase (Value),
   )
-import Tablebot.Plugins.Roll.Dice.DiceEval (PrettyShow (prettyShow), evalListValues)
-import Tablebot.Plugins.Roll.Dice.DiceFunctions (basicFunctionsList)
+import Tablebot.Plugins.Roll.Dice.DiceEval (PrettyShow (prettyShow), eval)
+import Tablebot.Plugins.Roll.Dice.DiceFunctions (basicFunctionsList, listFunctionsList)
 import Tablebot.Plugins.Roll.Dice.DiceParsing ()
 
 {-
@@ -40,5 +41,5 @@ funcBasics - {some string identifier} "(" spcs (lstv (spcs "," spcs lstv)*)? spc
 -}
 
 -- | The default expression to evaluate if no expression is given.
-defaultRoll :: ListValues
+defaultRoll :: Expr
 defaultRoll = promote (Die (Value 20))

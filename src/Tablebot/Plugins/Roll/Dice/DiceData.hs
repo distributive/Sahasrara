@@ -14,8 +14,12 @@ import Data.Text (Text)
 import Data.Tuple (swap)
 import Tablebot.Plugins.Roll.Dice.DiceFunctions (FuncInfo, FuncInfoBase)
 
+-- | The value of an argument given to a function.
+data ArgValue = AVExpr Expr | AVListValues ListValues
+  deriving (Show)
+
 -- | The type for list values. Currently a fair bit overloaded.
-data ListValues = NoList Expr | MultipleValues NumBase Base | LVList [Expr] | LVFunc (FuncInfoBase IO [Integer]) [ListValues]
+data ListValues = MultipleValues NumBase Base | LVList [Expr] | LVFunc (FuncInfoBase IO [Integer]) [ArgValue]
   deriving (Show)
 
 -- | The type of the top level expression. Represents one of addition,
@@ -36,11 +40,15 @@ data Expo = Expo Func Expo | NoExpo Func
   deriving (Show)
 
 -- | The type representing a single function application, or a base item.
-data Func = Func (FuncInfo IO) [ListValues] | NoFunc Base
+data Func = Func (FuncInfo IO) [ArgValue] | NoFunc Base
   deriving (Show)
 
 -- | The type representing an integer value or an expression in brackets.
-data NumBase = Paren Expr | Value Integer
+data NumBase = NBParen (Paren Expr) | Value Integer
+  deriving (Show)
+
+-- | Container for a parenthesised value.
+newtype Paren a = Paren a
   deriving (Show)
 
 -- | The type representing a numeric base value value or a dice value.
@@ -117,8 +125,8 @@ class Converter a b where
   -- | Function that promotes an element of type `a` to an element of type `b`.
   promote :: a -> b
 
-instance (Converter a Expr) => Converter a ListValues where
-  promote = NoList . promote
+-- instance (Converter a Expr) => Converter a ListValues where
+--   promote = NoList . promote
 
 instance (Converter a Term) => Converter a Expr where
   promote = NoExpr . promote

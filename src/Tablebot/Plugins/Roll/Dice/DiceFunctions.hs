@@ -16,7 +16,7 @@ module Tablebot.Plugins.Roll.Dice.DiceFunctions
     FuncInfoBase (..),
     FuncInfo,
     ListInteger (..),
-    ArgTypes (..),
+    ArgType (..),
   )
 where
 
@@ -77,7 +77,7 @@ listFunctions' =
 
 -- | A data structure to contain the information about a given function,
 -- including types, the function name, and the function itself.
-data FuncInfoBase m j = FuncInfo {funcInfoName :: Text, funcInfoParameters :: [ArgTypes], funcReturnType :: ArgTypes, funcInfoFunc :: MonadException m => [ListInteger] -> m j}
+data FuncInfoBase m j = FuncInfo {funcInfoName :: Text, funcInfoParameters :: [ArgType], funcReturnType :: ArgType, funcInfoFunc :: MonadException m => [ListInteger] -> m j}
 
 type FuncInfo m = FuncInfoBase m Integer
 
@@ -102,7 +102,7 @@ data ListInteger = LIInteger Integer | LIList [(Integer, Text)]
   deriving (Show, Eq, Ord)
 
 -- | Values representing types.
-data ArgTypes = ATInteger | ATIntegerList
+data ArgType = ATInteger | ATIntegerList
   deriving (Show, Eq)
 
 -- | A type class for counting the amount of arguments of a function, and their
@@ -110,7 +110,7 @@ data ArgTypes = ATInteger | ATIntegerList
 class ArgCount f where
   getArgs :: f -> Integer
   getArgs = (+ (-1)) . fromIntegral . length . getTypes
-  getTypes :: f -> [ArgTypes]
+  getTypes :: f -> [ArgType]
 
 instance ArgCount Integer where
   getTypes _ = [ATInteger]

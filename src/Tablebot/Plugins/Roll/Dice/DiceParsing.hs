@@ -20,12 +20,12 @@ import Data.Set as S (Set, fromList, map)
 import Data.Text (Text, singleton, unpack)
 import Tablebot.Plugins.Roll.Dice.DiceData
 import Tablebot.Plugins.Roll.Dice.DiceFunctions
-  ( ArgTypes (..),
+  ( ArgType (..),
     FuncInfoBase (..),
     basicFunctions,
     listFunctions,
   )
-import Tablebot.Utility.Parser (integer, parseCommaSeparated, parseCommaSeparated1, skipSpace)
+import Tablebot.Utility.Parser (integer, parseCommaSeparated1, skipSpace)
 import Tablebot.Utility.SmartParser (CanParse (..))
 import Tablebot.Utility.Types (Parser)
 import Text.Megaparsec (MonadParsec (try), choice, failure, optional, (<?>), (<|>))
@@ -50,7 +50,7 @@ instance CanParse ListValues where
             _ <- char '#'
             MultipleValues nb <$> pars
         )
-      <|> functionParser (listFunctions @IO) LVFunc NoList
+      <|> functionParser (listFunctions @IO) LVFunc
 
 -- | Helper function to try to parse the second part of a binary operator.
 binOpParseHelp :: (CanParse a) => Char -> (a -> a) -> Parser a
@@ -67,35 +67,19 @@ instance CanParse Term where
     binOpParseHelp '*' (Multi t) <|> binOpParseHelp '/' (Div t) <|> (return . NoTerm) t
 
 instance CanParse Func where
-  pars = functionParser (basicFunctions @IO) Func NoFunc
+  pars = try (functionParser (basicFunctions @IO) Func) <|> NoFunc <$> pars
 
 -- | A generic function parser that takes a mapping from function names to
 -- functions, the main way to contruct the function data type `e`, and a
 -- constructor for `e` that takes only one value, `a` (which has its own,
 -- previously defined parser).
-functionParser :: (CanParse a) => M.Map Text (FuncInfoBase m j) -> (FuncInfoBase m j -> [ListValues] -> e) -> (a -> e) -> Parser e
-functionParser m mainCons fallbackCons =
-  ( do
-      fi <- try (choice (string <$> M.keys m) >>= \t -> return (m M.! t)) <?> "could not find function"
-      let ft = funcInfoParameters fi
-      es <- string "(" *> skipSpace *> parseCommaSeparated pars <* skipSpace <* string ")"
-      es' <- checkTypes es ft (unpack $ funcInfoName fi)
-      return $ mainCons fi es'
-  )
-    <|> fallbackCons <$> pars
-  where
-    matchType (NoList _, ATInteger) = True
-    matchType (LVList _, ATIntegerList) = True
-    matchType (MultipleValues _ _, ATIntegerList) = True
-    matchType (LVFunc _ _, ATIntegerList) = True
-    matchType _ = False
-    checkTypes es ft fname
-      | length es > length ft = fail $ "too many values given to function " ++ fname
-      | length ft > length es = fail $ "too few values given to function " ++ fname
-      | length matched /= length es = fail $ "type mismatch in parameters to function " ++ fname ++ ", in parameter " ++ show (length matched)
-      | otherwise = return es
-      where
-        matched = takeWhile matchType (zip es ft)
+functionParser :: M.Map Text (FuncInfoBase m j) -> (FuncInfoBase m j -> [ArgValue] -> e) -> Parser e
+functionParser m mainCons =
+  do
+    fi <- try (choice (string <$> M.keys m) >>= \t -> return (m M.! t)) <?> "could not find function"
+    let ft = funcInfoParameters fi
+    es <- string "(" *> skipSpace *> parseArgValues ft <* skipSpace <* (try (string ")") <?> "expected only " ++ show (length ft) ++ " arguments, got more")
+    return $ mainCons fi es
 
 instance CanParse Negation where
   pars =
@@ -109,11 +93,14 @@ instance CanParse Expo where
 
 instance CanParse NumBase where
   pars =
-    (try (skipSpace *> char '(') *> skipSpace *> (Paren . unnest <$> pars) <* skipSpace <* char ')')
-      <|> try (Value <$> integer)
+    try (NBParen . unnest <$> pars)
+      <|> Value <$> integer
     where
-      unnest (NoExpr (NoTerm (NoNeg (NoExpo (NoFunc (NBase (Paren e))))))) = e
+      unnest (Paren (NoExpr (NoTerm (NoNeg (NoExpo (NoFunc (NBase (NBParen (Paren e))))))))) = Paren e
       unnest e = e
+
+instance (CanParse a) => CanParse (Paren a) where
+  pars = char '(' *> skipSpace *> (Paren <$> pars) <* skipSpace <* char ')'
 
 instance CanParse Base where
   pars = try (DiceBase <$> pars) <|> try (NBase <$> pars)
@@ -178,9 +165,20 @@ parseDieOpRecur = do
 parseDieOpOption :: Parser DieOpOption
 parseDieOpOption = do
   lazyFunc <- (try (char '!') $> DieOpOptionLazy) <|> return id
-  ( (try (string "ro") *> parseAdvancedOrdering >>= \o -> Reroll True o <$> pars)
-      <|> (try (string "rr") *> parseAdvancedOrdering >>= \o -> Reroll False o <$> pars)
-      <|> ((try (char 'k') *> parseLowHigh) <&> DieOpOptionKD Keep)
-      <|> ((try (char 'd') *> parseLowHigh) <&> DieOpOptionKD Drop) <&> lazyFunc
+  ( ( (try (string "ro") *> parseAdvancedOrdering >>= \o -> Reroll True o <$> pars)
+        <|> (try (string "rr") *> parseAdvancedOrdering >>= \o -> Reroll False o <$> pars)
+        <|> ((try (char 'k') *> parseLowHigh) <&> DieOpOptionKD Keep)
+        <|> ((try (char 'd') *> parseLowHigh) <&> DieOpOptionKD Drop)
+    )
+      <&> lazyFunc
     )
     <?> "could not parse dieOpOption - expecting one of the options described in the doc (call `help roll` to access)"
+
+parseArgValue :: ArgType -> Parser ArgValue
+parseArgValue ATIntegerList = AVListValues <$> try pars <?> "could not parse a list value from the argument"
+parseArgValue ATInteger = AVExpr <$> try pars <?> "could not parse an integer from the argument"
+
+parseArgValues :: [ArgType] -> Parser [ArgValue]
+parseArgValues [] = return []
+parseArgValues [at] = (: []) <$> parseArgValue at
+parseArgValues (at : ats) = parseArgValue at >>= \av -> skipSpace *> (try (char ',') <?> "expected " ++ show (length ats) ++ " more arguments") *> skipSpace *> ((av :) <$> parseArgValues ats)

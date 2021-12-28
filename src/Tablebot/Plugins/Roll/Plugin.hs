@@ -12,7 +12,7 @@ module Tablebot.Plugins.Roll.Plugin (rollPlugin) where
 import Control.Monad.Writer (MonadIO (liftIO))
 import Data.Maybe (fromMaybe)
 import Data.Text (Text, intercalate, pack, replicate, unpack)
-import qualified Data.Text as T
+import Data.Text qualified as T
 import Discord.Types (Message (messageAuthor))
 import Tablebot.Plugins.Roll.Dice
 import Tablebot.Plugins.Roll.Dice.DiceData
@@ -26,10 +26,12 @@ import Text.RawString.QQ (r)
 
 -- | The basic execution function for rolling dice. Both the expression and message are
 -- optional. If the expression is not given, then the default roll is used.
-rollDice' :: Maybe ListValues -> Maybe (Quoted Text) -> Message -> DatabaseDiscord ()
+rollDice' :: Maybe (Either ListValues Expr) -> Maybe (Quoted Text) -> Message -> DatabaseDiscord ()
 rollDice' e' t m = do
-  let e = fromMaybe defaultRoll e'
-  (vs, ss) <- liftIO $ evalListValues e
+  let e = fromMaybe (Right defaultRoll) e'
+  (vs, ss) <- case e of
+    (Left a) -> liftIO $ eval a
+    (Right b) -> liftIO $ eval b
   let msg = makeMsg vs ss
   if countFormatting msg < 199
     then sendMessage m msg
@@ -89,7 +91,9 @@ Given an expression, evaluate the expression. Can roll inline using |]
 
 This supports addition, subtraction, multiplication, integer division, exponentiation, parentheses, dice of arbitrary size, dice with custom sides, rerolling dice once on a condition, rerolling dice indefinitely on a condition, keeping or dropping the highest or lowest dice, keeping or dropping dice based on a condition, and using functions like |]
       ++ unpack (intercalate ", " basicFunctionsList)
-      ++ [r|.
+      ++ [r| (which return integers), or functions like |]
+      ++ unpack (intercalate ", " listFunctionsList)
+      ++ [r| (which return lists).
 
 To see a full list of uses and options, please go to <https://github.com/WarwickTabletop/tablebot/blob/main/docs/Roll.md>.
 
@@ -104,7 +108,7 @@ To see a full list of uses and options, please go to <https://github.com/Warwick
 genchar :: Command
 genchar = Command "genchar" (snd $ head rpgSystems') (toCommand <$> rpgSystems')
   where
-    doDiceRoll (nm, lv) = (nm, parseComm $ rollDice' (Just lv) (Just (Qu ("genchar for " <> nm))))
+    doDiceRoll (nm, lv) = (nm, parseComm $ rollDice' (Just (Left lv)) (Just (Qu ("genchar for " <> nm))))
     rpgSystems' = doDiceRoll <$> rpgSystems
     toCommand (nm, ps) = Command nm ps []
 
@@ -112,7 +116,7 @@ genchar = Command "genchar" (snd $ head rpgSystems') (toCommand <$> rpgSystems')
 rpgSystems :: [(Text, ListValues)]
 rpgSystems =
   [ ("dnd", MultipleValues (Value 6) (DiceBase (Dice (NBase (Value 4)) (Die (Value 6)) (Just (DieOpRecur (DieOpOptionKD Drop (Low (Value 1))) Nothing))))),
-    ("wfrp", MultipleValues (Value 8) (NBase (Paren (Add (promote (Value 20)) (promote (Die (Value 10)))))))
+    ("wfrp", MultipleValues (Value 8) (NBase (NBParen (Paren (Add (promote (Value 20)) (promote (Die (Value 10))))))))
   ]
 
 -- | Small help page for gen char.
