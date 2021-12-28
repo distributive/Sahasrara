@@ -24,7 +24,8 @@ import Tablebot.Plugins.Roll.Dice.DiceParsing ()
 {-
 if there is a gap between terms, any number of spaces (including none) is valid, barring in lstv, func, dice, die, dopr, ords; spaces are added manually in those.
 
-lstv - expr | "{" spcs expr ("," spcs expr spcs)* spcs "}" | nbse "#" base | funcBasics
+lstv - nbse "#" base | funcBasics | lstb
+lstb - "{" expr ("," expr)* "}" | "(" lstv ")"
 expr - term ([+-] expr)?
 term - nega ([*/] term)?
 nega - "-" expo | expo
@@ -33,7 +34,7 @@ func - funcBasics | base
 base - dice | nbse
 nbse - "(" expr ")" | [0-9]+
 dice - base die dopr?
-die  - "d" "!"? (bse | "{" spcs expr (spcs ", " spcs expr)* spcs "}")
+die  - "d" "!"? (bse | lstb)
 dopr - "!"? (("rr" | "ro") ords | ("k"|"d") (("l" | "h") nbse | "w" ords))
 ords - ("/=" | "<=" | ">=" | "<" | "=" | ">") nbase
 spcs - " "*

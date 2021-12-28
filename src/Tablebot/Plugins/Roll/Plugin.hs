@@ -89,7 +89,7 @@ Given an expression, evaluate the expression. Can roll inline using |]
       ++ "`[|to roll|]`."
       ++ [r| Can use `r` instead of `roll`.
 
-This supports addition, subtraction, multiplication, integer division, exponentiation, parentheses, dice of arbitrary size, dice with custom sides, rerolling dice once on a condition, rerolling dice indefinitely on a condition, keeping or dropping the highest or lowest dice, keeping or dropping dice based on a condition, and using functions like |]
+This supports addition, subtraction, multiplication, integer division, exponentiation, parentheses, dice of arbitrary size, dice with custom sides, rerolling dice once on a condition, rerolling dice indefinitely on a condition, keeping or dropping the highest or lowest dice, keeping or dropping dice based on a condition, operating on lists, and using functions like |]
       ++ unpack (intercalate ", " basicFunctionsList)
       ++ [r| (which return integers), or functions like |]
       ++ unpack (intercalate ", " listFunctionsList)
