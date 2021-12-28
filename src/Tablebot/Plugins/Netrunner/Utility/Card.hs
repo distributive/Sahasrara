@@ -42,7 +42,7 @@ import Tablebot.Utility.Utils (intToText, maybeEmptyPrepend)
 
 -- | @toLink@ takes a card and generates a link to its NetrunnerDB page.
 toLink :: Card -> Text
-toLink card = maybeEmptyPrepend "https://netrunnerdb.com/en/card/" (code card)
+toLink card = maybeEmptyPrepend "https://netrunnerdb.com/en/card/" $ code card
 
 -- | @toImage@ takes a Netrunner card and loads an embed image of it.
 toImage :: NrApi -> Card -> Maybe CreateEmbedImage

@@ -57,6 +57,7 @@ dependencies:
 - safe
 - edit-distance
 - unliftio
+- split
 
 library:
   source-dirs: src

@@ -14,19 +14,20 @@ import Control.Monad.Trans.Reader (ask)
 import Data.Text (Text, pack)
 import Discord.Types
 import Tablebot.Internal.Handler.Command ()
-import Tablebot.Plugins.Netrunner.Command.BanHistory (listBanHistory)
-import Tablebot.Plugins.Netrunner.Command.Custom (customCard)
+import Tablebot.Plugins.Netrunner.Command.BanList
+import Tablebot.Plugins.Netrunner.Command.Custom
 import Tablebot.Plugins.Netrunner.Command.Find
 import Tablebot.Plugins.Netrunner.Command.Search
+import Tablebot.Plugins.Netrunner.Type.BanList (BanList (active))
+import qualified Tablebot.Plugins.Netrunner.Type.BanList as BanList
 import Tablebot.Plugins.Netrunner.Type.Card (Card)
 import Tablebot.Plugins.Netrunner.Type.NrApi (NrApi (..))
 import Tablebot.Plugins.Netrunner.Utility.Embed
 import Tablebot.Plugins.Netrunner.Utility.NrApi (getNrApi)
 import Tablebot.Utility
 import Tablebot.Utility.Discord (formatFromEmojiName, sendEmbedMessage, sendMessage)
-import Tablebot.Utility.Exception (BotException (NetrunnerException), throwBot)
 import Tablebot.Utility.Parser (NrQuery (..), keyValue, keyValuesSepOn, netrunnerQuery)
-import Tablebot.Utility.SmartParser (PComm (parseComm), Quoted (Qu), RestOfInput1 (ROI1), WithError (WErr))
+import Tablebot.Utility.SmartParser (PComm (parseComm), Quoted (Qu), RestOfInput (ROI), RestOfInput1 (ROI1), WithError (WErr))
 import Text.RawString.QQ (r)
 
 -- | @netrunner@ is the user-facing command that searches for Netrunner cards.
@@ -42,7 +43,9 @@ netrunner =
       nrSearch,
       nrCustom,
       nrBanHistory,
-      commandAlias "bh" nrBanHistory
+      commandAlias "bh" nrBanHistory,
+      nrBanList,
+      commandAlias "bl" nrBanList
     ]
   where
     nrComm ::
@@ -156,15 +159,29 @@ nrBanHistory :: EnvCommand NrApi
 nrBanHistory = Command "banHistory" (parseComm banHistoryComm) []
   where
     banHistoryComm ::
-      WithError "No card title given!" (Either (Quoted Text) (RestOfInput1 Text)) ->
+      WithError "No card title given!" (RestOfInput1 Text) ->
       Message ->
       EnvDatabaseDiscord NrApi ()
-    banHistoryComm (WErr (Left (Qu q))) = sendEmbed q
-    banHistoryComm (WErr (Right (ROI1 q))) = sendEmbed q
+    banHistoryComm (WErr (ROI1 q)) = sendEmbed q
     sendEmbed :: Text -> Message -> EnvDatabaseDiscord NrApi ()
     sendEmbed query m = do
       api <- ask
       embedBanHistory (queryCard api query) m
+
+-- | @nrBanList@ is a command listing all cards affected by a banlist.
+nrBanList :: EnvCommand NrApi
+nrBanList = Command "banList" (parseComm banListComm) []
+  where
+    banListComm ::
+      Either () (RestOfInput Text) ->
+      Message ->
+      EnvDatabaseDiscord NrApi ()
+    banListComm (Left ()) = embedBanLists
+    banListComm (Right (ROI q)) = sendEmbed q
+    sendEmbed :: Text -> Message -> EnvDatabaseDiscord NrApi ()
+    sendEmbed query m = do
+      api <- ask
+      embedBanList (queryBanList api query) m
 
 -- | @embedCard@ takes a card and embeds it in a message.
 embedCard :: Card -> Message -> EnvDatabaseDiscord NrApi ()
@@ -182,27 +199,41 @@ embedCards pre cards err m = do
 embedCardImg :: Card -> Message -> EnvDatabaseDiscord NrApi ()
 embedCardImg card m = do
   api <- ask
-  case cardToImgEmbed api card of
-    Nothing -> throwBot $ NetrunnerException "Could not get card art"
-    Just embed -> sendEmbedMessage m "" embed
+  sendEmbedMessage m "" $ cardToImgEmbed api card
 
 -- | @embedCardFlavour@ embeds a card's flavour in a message, if able.
 embedCardFlavour :: Card -> Message -> EnvDatabaseDiscord NrApi ()
 embedCardFlavour card m = do
   api <- ask
   embed <- cardToFlavourEmbed api card
-  case embed of
-    Nothing -> throwBot $ NetrunnerException "Card has no flavour text"
-    Just e -> sendEmbedMessage m "" e
+  sendEmbedMessage m "" embed
 
 -- | @embedBanHistory@ embeds a card's banlist history.
 embedBanHistory :: Card -> Message -> EnvDatabaseDiscord NrApi ()
 embedBanHistory card m = do
   api <- ask
   embed <- cardToEmbedWithText api card $ listBanHistory api card
-  case embed of
-    Nothing -> throwBot $ NetrunnerException "Could not generate history"
-    Just e -> sendEmbedMessage m "" e
+  sendEmbedMessage m "" embed
+
+-- | @embedBanLists@ embeds all banlists in Netrunner history.
+embedBanLists :: Message -> EnvDatabaseDiscord NrApi ()
+embedBanLists m = do
+  api <- ask
+  sendEmbedMessage m "" $ embedTextWithUrl "Standard Banlists" "https://netrunnerdb.com/en/banlists" $ listBanLists api
+
+-- | @embedBanList@ embeds a card's banlist history.
+embedBanList :: BanList -> Message -> EnvDatabaseDiscord NrApi ()
+embedBanList banList m = do
+  api <- ask
+  let (pre, cCards, rCards) = listAffectedCards api banList
+  sendEmbedMessage m "" $ embedColumns header pre [("Corp Cards", cCards), ("Runner Cards", rCards)]
+  where
+    header :: Text
+    header =
+      BanList.name banList
+        <> if active banList
+          then " (active)"
+          else ""
 
 netrunnerHelp :: HelpPage
 netrunnerHelp =
@@ -224,7 +255,14 @@ Add additional syntax to the start of the query to fetch only the card's image o
   - `{{!card image}}      ` -> fetches the image of the card matching "card image"
   - `{{|card flavour}}    ` -> fetches the flavour text of the card matching "card flavour"
   - `{{#banned card}}     ` -> fetches the ban history of the card matching "banned card"|]
-    [findHelp, findImgHelp, findFlavourHelp, searchHelp, customHelp, banHistoryHelp]
+    [ findHelp,
+      findImgHelp,
+      findFlavourHelp,
+      searchHelp,
+      customHelp,
+      banHistoryHelp,
+      banListHelp
+    ]
     None
 
 findHelp :: HelpPage
@@ -340,6 +378,22 @@ Shows the history of a card's legality in each version of Netrunner's MWL
 *Usage:*
 - `netrunner banHistory card name` -> displays the history of the card matching "card name"
 - `{{#card name}}                ` -> the inline version of the above command|]
+    []
+    None
+
+banListHelp :: HelpPage
+banListHelp =
+  HelpPage
+    "banList"
+    ["bl"]
+    "lists all cards affected by a given banlist"
+    [r|**Netrunner Banlists**
+Shows the list of cards affected by the given banlist
+"latest" and "active" will provide their respective banlists (they differ only when the latest banlist has not yet been made active)
+If no argument is given it will instead list all banlists from Netrunner history
+
+*Usage:*
+- `netrunner banList name` -> displays the history of the banlist version matching "name"|]
     []
     None
 

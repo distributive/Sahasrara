@@ -11,12 +11,13 @@ module Tablebot.Plugins.Netrunner.Type.BanList where
 
 import Data.Aeson (FromJSON, parseJSON, withObject, (.:), (.:?))
 import Data.Map (Map, fromList)
+import Data.Maybe (fromMaybe)
 import Data.Text (Text)
 import GHC.Generics (Generic)
 
 -- | @BanList@ represents a single version of the Netrunner banlist.
 data BanList = BanList
-  { id :: !Int,
+  { listId :: !Int,
     dateCreation :: !Text,
     dateUpdate :: !Text,
     code :: !Text,
@@ -39,36 +40,42 @@ instance FromJSON BanList where
       <*> o .: "cards"
 
 -- | @BanCard@ represents the ban status of a card
-data CardBan = CardBan
-  { globalPenalty :: !(Maybe Int),
-    universalInfluence :: !(Maybe Int),
-    restricted :: !(Maybe Bool),
-    banned :: !(Maybe Bool)
-  }
-  deriving (Show, Generic)
+-- This implementation assumes a card cannot be more than one of banned,
+-- restricted, having a global penalty, or having universal influence.
+data CardBan
+  = None
+  | GlobalPenalty !Int
+  | UniversalInfluence !Int
+  | Restricted
+  | Banned
+  deriving (Eq, Show, Generic)
 
 instance FromJSON CardBan where
   parseJSON = withObject "CardBan" $ \o -> do
-    globalPenalty <- o .:? "global_penalty"
-    universalInfluence <- o .:? "universal_faction_cost"
+    globalPenalty <- do
+      gp <- o .:? "global_penalty"
+      return $ fromMaybe 0 gp
+    universalInfluence <- do
+      fc <- o .:? "universal_faction_cost"
+      return $ fromMaybe 0 fc
     restricted <- do
       (restriction :: Maybe Int) <- o .:? "is_restricted"
-      return $ case restriction of
-        Just 0 -> Just False
-        Just _ -> Just True
-        Nothing -> Nothing
+      return $ maybe False (/= 0) restriction
     banned <- do
       (limit :: Maybe Int) <- o .:? "deck_limit"
-      return $ case limit of
-        Just 0 -> Just True
-        Just _ -> Just False
-        Nothing -> Nothing
-    return CardBan {..}
+      return $ maybe False (== 0) limit
+    return $
+      if
+          | banned -> Banned
+          | restricted -> Restricted
+          | universalInfluence > 0 -> UniversalInfluence universalInfluence
+          | globalPenalty > 0 -> GlobalPenalty globalPenalty
+          | otherwise -> GlobalPenalty universalInfluence
 
 defaultBanList :: BanList
 defaultBanList =
   BanList
-    { id = -1,
+    { listId = -1,
       dateCreation = "",
       dateUpdate = "",
       code = "",

@@ -39,26 +39,40 @@ toBanEntries NrApi {cards = cards} bl card =
       codes = mapMaybe Card.code reprints
    in mapMaybe (\c -> lookup c $ affectedCards bl) codes
 
--- | @toGlobalPenalty@ gets a cards global penalty under a given ban list.
-toGlobalPenalty :: NrApi -> BanList -> Card -> Int
-toGlobalPenalty api bl c = case mapMaybe globalPenalty $ toBanEntries api bl c of
-  [] -> 0
-  xs -> maximum xs
-
--- | @toUniversalInfluence@ gets a cards universal influence under a ban list.
-toUniversalInfluence :: NrApi -> BanList -> Card -> Int
-toUniversalInfluence api bl c = case mapMaybe universalInfluence $ toBanEntries api bl c of
-  [] -> 0
-  xs -> maximum xs
+-- | @toMwlStatus@ checks if any version of a card appears in the given banlist
+-- and returns the MWL legality of that card.
+toMwlStatus :: NrApi -> BanList -> Card -> CardBan
+toMwlStatus api bl c
+  | isBanned api bl c = Banned
+  | isRestricted api bl c = Restricted
+  | toUniversalInfluence api bl c /= 0 = UniversalInfluence $ toUniversalInfluence api bl c
+  | toGlobalPenalty api bl c /= 0 = GlobalPenalty $ toGlobalPenalty api bl c
+  | otherwise = None
 
 -- | @isBanned@ determines if a card is banned under a given ban list.
 isBanned :: NrApi -> BanList -> Card -> Bool
-isBanned api bl c = case mapMaybe banned $ toBanEntries api bl c of
-  [] -> False
-  xs -> or xs
+isBanned api bl c = any (== Banned) $ toBanEntries api bl c
 
 -- | @isRestricted@ determines if a card is restricted under a given ban list.
 isRestricted :: NrApi -> BanList -> Card -> Bool
-isRestricted api bl c = case mapMaybe restricted $ toBanEntries api bl c of
-  [] -> False
-  xs -> or xs
+isRestricted api bl c = any (== Restricted) $ toBanEntries api bl c
+
+-- | @toUniversalInfluence@ gets a cards universal influence under a ban list.
+toUniversalInfluence :: NrApi -> BanList -> Card -> Int
+toUniversalInfluence api bl c = case map ui $ toBanEntries api bl c of
+  [] -> 0
+  xs -> maximum xs
+  where
+    ui :: CardBan -> Int
+    ui (UniversalInfluence x) = x
+    ui _ = 0
+
+-- | @toGlobalPenalty@ gets a cards global penalty under a given ban list.
+toGlobalPenalty :: NrApi -> BanList -> Card -> Int
+toGlobalPenalty api bl c = case map gp $ toBanEntries api bl c of
+  [] -> 0
+  xs -> maximum xs
+  where
+    gp :: CardBan -> Int
+    gp (GlobalPenalty x) = x
+    gp _ = 0

@@ -10,7 +10,7 @@
 module Tablebot.Plugins.Netrunner.Utility.NrApi (getNrApi) where
 
 import Data.Aeson (FromJSON, Value (Object), eitherDecode, parseJSON, (.:))
-import Data.Either (fromLeft, fromRight)
+import Data.Either (fromRight)
 import Data.Text (Text)
 import GHC.Generics (Generic)
 import Network.HTTP.Conduit (Response (responseBody), parseRequest)
