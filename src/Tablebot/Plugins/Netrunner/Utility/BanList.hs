@@ -30,6 +30,10 @@ activeBanList NrApi {banLists = banLists} = case filter active banLists of
   [] -> defaultBanList
   xs -> last xs -- Last to ensure it's the most recent active version if there's somehow multiple
 
+-- | @latestBanListActive@ checks if the latest banlist is active.
+latestBanListActive :: NrApi -> Bool
+latestBanListActive api = latestBanList api == activeBanList api
+
 -- | @toBanEntries@ finds all ban entries for all versions of a given card to
 -- account for reprints.
 -- NOTE: Assumes two cards with the same title are the same card.
@@ -47,7 +51,11 @@ toMwlStatus api bl c
   | isRestricted api bl c = Restricted
   | toUniversalInfluence api bl c /= 0 = UniversalInfluence $ toUniversalInfluence api bl c
   | toGlobalPenalty api bl c /= 0 = GlobalPenalty $ toGlobalPenalty api bl c
-  | otherwise = None
+  | otherwise = Legal
+
+-- | @isLegal@ determines if a card is unaffected by a banlist.
+isLegal :: NrApi -> BanList -> Card -> Bool
+isLegal api bl c = Legal == toMwlStatus api bl c
 
 -- | @isBanned@ determines if a card is banned under a given ban list.
 isBanned :: NrApi -> BanList -> Card -> Bool

@@ -18,16 +18,19 @@ import Tablebot.Plugins.Netrunner.Command.BanList
 import Tablebot.Plugins.Netrunner.Command.Custom
 import Tablebot.Plugins.Netrunner.Command.Find
 import Tablebot.Plugins.Netrunner.Command.Search
-import Tablebot.Plugins.Netrunner.Type.BanList (BanList (active))
+import Tablebot.Plugins.Netrunner.Type.BanList (BanList (active), CardBan (..))
 import qualified Tablebot.Plugins.Netrunner.Type.BanList as BanList
 import Tablebot.Plugins.Netrunner.Type.Card (Card)
 import Tablebot.Plugins.Netrunner.Type.NrApi (NrApi (..))
+import Tablebot.Plugins.Netrunner.Utility.BanList (activeBanList, latestBanListActive, toMwlStatus)
 import Tablebot.Plugins.Netrunner.Utility.Embed
 import Tablebot.Plugins.Netrunner.Utility.NrApi (getNrApi)
 import Tablebot.Utility
 import Tablebot.Utility.Discord (formatFromEmojiName, sendEmbedMessage, sendMessage)
+import Tablebot.Utility.Embed (addColour)
 import Tablebot.Utility.Parser (NrQuery (..), keyValue, keyValuesSepOn, netrunnerQuery)
 import Tablebot.Utility.SmartParser (PComm (parseComm), Quoted (Qu), RestOfInput (ROI), RestOfInput1 (ROI1), WithError (WErr))
+import Tablebot.Utility.Types ()
 import Text.RawString.QQ (r)
 
 -- | @netrunner@ is the user-facing command that searches for Netrunner cards.
@@ -45,7 +48,8 @@ netrunner =
       nrBanHistory,
       commandAlias "bh" nrBanHistory,
       nrBanList,
-      commandAlias "bl" nrBanList
+      commandAlias "bl" nrBanList,
+      commandAlias "mwl" nrBanList
     ]
   where
     nrComm ::
@@ -213,27 +217,28 @@ embedBanHistory :: Card -> Message -> EnvDatabaseDiscord NrApi ()
 embedBanHistory card m = do
   api <- ask
   embed <- cardToEmbedWithText api card $ listBanHistory api card
-  sendEmbedMessage m "" embed
+  let colour = case toMwlStatus api (activeBanList api) card of
+        Banned -> Red
+        Legal -> Green
+        _ -> Yellow
+  sendEmbedMessage m "" $ addColour colour embed
 
 -- | @embedBanLists@ embeds all banlists in Netrunner history.
 embedBanLists :: Message -> EnvDatabaseDiscord NrApi ()
 embedBanLists m = do
   api <- ask
-  sendEmbedMessage m "" $ embedTextWithUrl "Standard Banlists" "https://netrunnerdb.com/en/banlists" $ listBanLists api
+  let embed = embedTextWithUrl "Standard Banlists" "https://netrunnerdb.com/en/banlists" $ listBanLists api
+      colour = if latestBanListActive api then Red else Yellow
+  sendEmbedMessage m "" $ addColour colour embed
 
--- | @embedBanList@ embeds a card's banlist history.
+-- | @embedBanList@ embeds the list of cards affected by a given banlist.
 embedBanList :: BanList -> Message -> EnvDatabaseDiscord NrApi ()
 embedBanList banList m = do
   api <- ask
   let (pre, cCards, rCards) = listAffectedCards api banList
-  sendEmbedMessage m "" $ embedColumns header pre [("Corp Cards", cCards), ("Runner Cards", rCards)]
-  where
-    header :: Text
-    header =
-      BanList.name banList
-        <> if active banList
-          then " (active)"
-          else ""
+      header = BanList.name banList <> if active banList then " (active)" else ""
+      colour = if active banList then Red else Yellow
+  sendEmbedMessage m "" $ addColour colour $ embedColumns header pre [("Corp Cards", cCards), ("Runner Cards", rCards)]
 
 netrunnerHelp :: HelpPage
 netrunnerHelp =
@@ -385,7 +390,7 @@ banListHelp :: HelpPage
 banListHelp =
   HelpPage
     "banList"
-    ["bl"]
+    ["bl", "mwl"]
     "lists all cards affected by a given banlist"
     [r|**Netrunner Banlists**
 Shows the list of cards affected by the given banlist

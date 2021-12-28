@@ -26,7 +26,7 @@ data BanList = BanList
     dateStart :: !Text,
     affectedCards :: Map Text CardBan
   }
-  deriving (Show, Generic)
+  deriving (Eq, Show, Generic)
 
 instance FromJSON BanList where
   parseJSON = withObject "BanList" $ \o ->
@@ -43,7 +43,7 @@ instance FromJSON BanList where
 -- This implementation assumes a card cannot be more than one of banned,
 -- restricted, having a global penalty, or having universal influence.
 data CardBan
-  = None
+  = Legal
   | GlobalPenalty !Int
   | UniversalInfluence !Int
   | Restricted

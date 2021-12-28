@@ -27,7 +27,6 @@ import qualified Tablebot.Plugins.Netrunner.Type.BanList as BanList
 import Tablebot.Plugins.Netrunner.Type.Card (Card (code, keywords, sideCode, title))
 import Tablebot.Plugins.Netrunner.Type.NrApi (NrApi (..))
 import Tablebot.Plugins.Netrunner.Utility.BanList
-import Tablebot.Plugins.Netrunner.Utility.Card (toLink)
 import Tablebot.Utility.Search (FuzzyCosts (..), closestValueWithCosts)
 
 -- | @queryBanList@ matches the input to the banlist with the closest name.
@@ -86,7 +85,7 @@ listAffectedCards api b =
       [] -> Nothing
       xs -> Just $ head xs
     format :: Card -> Text
-    format card = symbol (toMwlStatus api b card) <> " [" <> condense (fromMaybe "?" $ title card) <> "](" <> ")"
+    format card = symbol (toMwlStatus api b card) <> " " <> condense (fromMaybe "?" $ title card)
     condense :: Text -> Text
     condense t =
       if T.length t > 30
