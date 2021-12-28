@@ -22,7 +22,7 @@ import Tablebot.Plugins.Roll.Dice.DiceFunctions (basicFunctionsList, listFunctio
 import Tablebot.Plugins.Roll.Dice.DiceParsing ()
 
 {-
-if there is a gap between terms, any number of spaces (including none) is valid, barring in lstv, func, dice, die, dopr, ords; spaces are added manually in those.
+if there is a gap between terms, any number of spaces (including none) is valid, barring in lstv, dice, die, dopr, ords; spaces are added manually in those.
 
 lstv - nbse "#" base | funcBasics | lstb
 lstb - "{" expr ("," expr)* "}" | "(" lstv ")"
@@ -38,7 +38,7 @@ die  - "d" "!"? (bse | lstb)
 dopr - "!"? (("rr" | "ro") ords | ("k"|"d") (("l" | "h") nbse | "w" ords))
 ords - ("/=" | "<=" | ">=" | "<" | "=" | ">") nbase
 spcs - " "*
-funcBasics - {some string identifier} "(" spcs (lstv (spcs "," spcs lstv)*)? spcs ")"
+funcBasics - {some string identifier} "(" (lstv ("," lstv)*)? ")"
 -}
 
 -- | The default expression to evaluate if no expression is given.
