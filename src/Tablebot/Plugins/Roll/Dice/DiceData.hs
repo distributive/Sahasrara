@@ -19,7 +19,10 @@ data ArgValue = AVExpr Expr | AVListValues ListValues
   deriving (Show)
 
 -- | The type for list values. Currently a fair bit overloaded.
-data ListValues = MultipleValues NumBase Base | LVList [Expr] | LVFunc (FuncInfoBase IO [Integer]) [ArgValue]
+data ListValues = MultipleValues NumBase Base | LVFunc (FuncInfoBase IO [Integer]) [ArgValue] | LVBase ListValuesBase
+  deriving (Show)
+
+data ListValuesBase = LVBParen (Paren ListValues) | LVBList [Expr]
   deriving (Show)
 
 -- | The type of the top level expression. Represents one of addition,
@@ -58,7 +61,7 @@ data Base = NBase NumBase | DiceBase Dice
 -- Dice Operations after this point
 
 -- | The type representing a simple N sided die or a custom die.
-data Die = Die NumBase | CustomDie [Expr] | LazyDie Die deriving (Show)
+data Die = Die NumBase | CustomDie ListValuesBase | LazyDie Die deriving (Show)
 
 -- | The type representing a number of dice equal to the `Base` value, and
 -- possibly some die options.
@@ -127,6 +130,8 @@ class Converter a b where
 
 -- instance (Converter a Expr) => Converter a ListValues where
 --   promote = NoList . promote
+instance Converter ListValuesBase ListValues where
+  promote = LVBase
 
 instance (Converter a Term) => Converter a Expr where
   promote = NoExpr . promote

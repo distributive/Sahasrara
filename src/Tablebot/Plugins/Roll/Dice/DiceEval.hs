@@ -143,15 +143,18 @@ instance IOEvalList ArgValue where
   evalShowL' rngCount (AVListValues lv) = evalShowL rngCount lv
 
 instance IOEvalList ListValues where
-  -- evalShowL' rngCount (NoList expr) = evalShowL rngCount expr
   evalShowL' rngCount (MultipleValues nb b) = do
     (nb', _, rngCount') <- evalShow rngCount nb
     (vs, rc) <- evalShowList' rngCount' (genericReplicate nb' b)
     return (LIList vs, Nothing, rc)
-  evalShowL' rngCount (LVList es) = do
+  evalShowL' rngCount (LVFunc fi exprs) = evaluateFunction rngCount fi exprs >>= \(i, s, rc) -> return (LIList ((,"") <$> i), Just s, rc)
+  evalShowL' rngCount (LVBase lvb) = evalShowL rngCount lvb
+
+instance IOEvalList ListValuesBase where
+  evalShowL' rngCount (LVBList es) = do
     (vs, rc) <- evalShowList' rngCount es
     return (LIList vs, Nothing, rc)
-  evalShowL' rngCount (LVFunc fi exprs) = evaluateFunction rngCount fi exprs >>= \(i, s, rc) -> return (LIList ((,"") <$> i), Just s, rc)
+  evalShowL' rngCount (LVBParen (Paren lv)) = evalShowL rngCount lv
 
 -- | This type class gives a function which evaluates the value to an integer
 -- and a string.
@@ -180,12 +183,18 @@ instance IOEval Die where
     (i, _, rngCount') <- evalShow rngCount d
     ds <- dieShow Nothing ld [(i, Nothing)]
     return (i, ds, rngCount')
-  evalShow' rngCount d@(CustomDie is) = do
-    i <- chooseOne is
-    (i', _, rngCount') <- evalShow rngCount i
-    ds <- dieShow Nothing d [(i', Nothing)]
+  evalShow' rngCount d@(CustomDie (LVBList es)) = do
+    e <- chooseOne es
+    (i, _, rngCount') <- evalShow rngCount e
+    ds <- dieShow Nothing d [(i, Nothing)]
     checkRNGCount (incRNGCount rngCount')
-    return (i', ds, incRNGCount rngCount')
+    return (i, ds, incRNGCount rngCount')
+  evalShow' rngCount d@(CustomDie is) = do
+    (LIList is', _, rngCount') <- evalShowL rngCount is
+    i <- chooseOne (fst <$> is')
+    ds <- dieShow Nothing d [(i, Nothing)]
+    checkRNGCount (incRNGCount rngCount')
+    return (i, ds, incRNGCount rngCount')
   evalShow' rngCount d@(Die b) = do
     (bound, _, rngCount') <- evalShow rngCount b
     if bound < 1
@@ -236,8 +245,8 @@ evalDieOp rngCount (Dice b ds dopo) = do
       (i, _, rngCount'') <- evalShow rngCount' dBase
       return (Die (Value i), rngCount'', Just (1, i))
     condenseDie rngCount' (CustomDie is) = do
-      (is', _, rngCount'') <- evalShowList rngCount' is
-      return (CustomDie (promote <$> is'), rngCount'', Nothing)
+      (LIList is', _, rngCount'') <- evalShowL rngCount' is
+      return (CustomDie (LVBList (promote . fst <$> is')), rngCount'', Nothing)
     condenseDie rngCount' (LazyDie d) = return (d, rngCount', Nothing)
     sortByOption (e :| es, _) (f :| fs, _)
       | e == f = compare (length fs) (length es)
@@ -391,10 +400,13 @@ instance PrettyShow ArgValue where
   prettyShow (AVListValues lv) = prettyShow lv
 
 instance PrettyShow ListValues where
-  -- prettyShow (NoList e) = prettyShow e
+  prettyShow (LVBase e) = prettyShow e
   prettyShow (MultipleValues nb b) = prettyShow nb <> "#" <> prettyShow b
-  prettyShow (LVList es) = "{" <> intercalate ", " (prettyShow <$> es) <> "}"
   prettyShow (LVFunc s n) = funcInfoName s <> "(" <> intercalate "," (prettyShow <$> n) <> ")"
+
+instance PrettyShow ListValuesBase where
+  prettyShow (LVBList es) = "{" <> intercalate ", " (prettyShow <$> es) <> "}"
+  prettyShow (LVBParen p) = prettyShow p
 
 instance PrettyShow Expr where
   prettyShow (Add t e) = prettyShow t <> " + " <> prettyShow e
@@ -431,7 +443,8 @@ instance PrettyShow Base where
 
 instance PrettyShow Die where
   prettyShow (Die b) = "d" <> prettyShow b
-  prettyShow (CustomDie is) = "d{" <> intercalate ", " (prettyShow <$> is) <> "}"
+  prettyShow (CustomDie lv) = "d" <> prettyShow lv
+  -- prettyShow (CustomDie is) = "d{" <> intercalate ", " (prettyShow <$> is) <> "}"
   prettyShow (LazyDie d) = "d!" <> T.tail (prettyShow d)
 
 instance PrettyShow Dice where

@@ -12,7 +12,7 @@ module Tablebot.Plugins.Roll.Plugin (rollPlugin) where
 import Control.Monad.Writer (MonadIO (liftIO))
 import Data.Maybe (fromMaybe)
 import Data.Text (Text, intercalate, pack, replicate, unpack)
-import Data.Text qualified as T
+import qualified Data.Text as T
 import Discord.Types (Message (messageAuthor))
 import Tablebot.Plugins.Roll.Dice
 import Tablebot.Plugins.Roll.Dice.DiceData

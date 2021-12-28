@@ -37,13 +37,9 @@ failure' :: Text -> Set Text -> Parser a
 failure' s ss = failure (Just $ Tokens $ NE.fromList $ unpack s) (S.map (Tokens . NE.fromList . unpack) ss)
 
 instance CanParse ListValues where
-  pars = do
-    LVList
-      <$> ( try (char '{' *> skipSpace)
-              *> parseCommaSeparated1 pars
-              <* skipSpace
-              <* char '}'
-          )
+  pars =
+    do
+      try (LVBase <$> pars)
       <|> try
         ( do
             nb <- pars
@@ -51,6 +47,17 @@ instance CanParse ListValues where
             MultipleValues nb <$> pars
         )
       <|> functionParser (listFunctions @IO) LVFunc
+
+instance CanParse ListValuesBase where
+  pars = do
+    LVBList
+      <$> ( try (char '{' *> skipSpace)
+              *> parseCommaSeparated1 pars
+              <* skipSpace
+              <* char '}'
+          )
+      <|> LVBParen
+      <$> pars
 
 -- | Helper function to try to parse the second part of a binary operator.
 binOpParseHelp :: (CanParse a) => Char -> (a -> a) -> Parser a
@@ -109,13 +116,12 @@ instance CanParse Die where
   pars = do
     _ <- char 'd'
     lazyFunc <- (try (char '!') $> LazyDie) <|> return id
-    try (lazyFunc . Die <$> pars)
-      <|> lazyFunc . CustomDie
-        <$> ( try (char '{' *> skipSpace)
-                *> parseCommaSeparated1 pars
-                <* skipSpace
-                <* char '}'
-            )
+    try
+      ( lazyFunc . CustomDie
+          <$> pars
+      )
+      <|> lazyFunc . Die
+      <$> pars
 
 instance CanParse Dice where
   pars = do
