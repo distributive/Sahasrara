@@ -11,10 +11,12 @@
 module Tablebot.Utility.Parser where
 
 import Data.Char (isDigit, isLetter, isSpace)
-import Data.Functor (($>))
+import Data.Functor (void, ($>))
 import Data.Text (Text)
+import qualified Data.Text as T
 import Discord.Internal.Rest (Message)
 import Tablebot.Utility
+import Tablebot.Utility.Discord (reactToMessage)
 import Text.Megaparsec
 import Text.Megaparsec.Char (char, string)
 
@@ -183,15 +185,17 @@ double = do
 -- | For helping to create inline commands. Takes the opening characters, closing
 -- characters, a parser to get a value `e`, and an action that takes that `e` and a
 -- message and produces a DatabaseDiscord effect.
-inlineCommandHelper :: Text -> Text -> Parser e -> (e -> Message -> EnvDatabaseDiscord d f) -> EnvInlineCommand d
+inlineCommandHelper :: Text -> Text -> Parser e -> (e -> Message -> EnvDatabaseDiscord d ()) -> EnvInlineCommand d
 inlineCommandHelper open close p action =
   InlineCommand
     ( do
-        getExprs <- some (try $ skipManyTill anySingle (string open *> skipSpace *> p <* skipSpace <* string close))
-        return $ \m -> mapM_ (`action` m) (take maxInlineCommands getExprs)
+        getExprs <- some (try $ skipManyTill anySingle (string open *> skipSpace *> (((Right <$> try p) <* skipSpace <* string close) <|> (Left . T.pack <$> manyTill anySingle (string close)))))
+        return $ \m -> mapM_ (`action'` m) (take maxInlineCommands getExprs)
     )
   where
     maxInlineCommands = 3
+    action' (Right p') m = action p' m
+    action' (Left _) m = void $ reactToMessage m "x"
 
 -- | Parse 0 or more comma separated values.
 parseCommaSeparated :: Parser a -> Parser [a]
