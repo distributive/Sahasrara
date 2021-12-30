@@ -125,5 +125,5 @@ makeReadable e = (mapParseError (const UnknownError) e, Nothing)
 parseInlineCommands :: [CompiledInlineCommand] -> Message -> CompiledDatabaseDiscord ()
 parseInlineCommands cs m = mapM_ (fromResult . (\cic -> parse (inlineCommandParser cic) "" (messageText m))) cs
   where
-    fromResult (Right p) = UIOE.tryAny (p m) >>= const (return ())
-    fromResult _ = return ()
+    fromResult (Right p) = UIOE.tryAny (p m)
+    fromResult _ = return $ return ()
