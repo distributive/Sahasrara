@@ -12,6 +12,7 @@ module Tablebot.Plugins.Netrunner.Plugin (netrunnerPlugin) where
 import Control.Monad.IO.Class
 import Control.Monad.Trans.Reader (ask)
 import Data.Text (Text, pack)
+import qualified Data.Text as T (head)
 import Discord.Types
 import Tablebot.Internal.Handler.Command ()
 import Tablebot.Plugins.Netrunner.Command.BanList
@@ -30,8 +31,8 @@ import Tablebot.Plugins.Netrunner.Utility.NrApi (getNrApi)
 import Tablebot.Utility
 import Tablebot.Utility.Discord (formatFromEmojiName, sendEmbedMessage, sendMessage)
 import Tablebot.Utility.Embed (addColour)
-import Tablebot.Utility.Parser (NrQuery (..), keyValue, keyValuesSepOn, netrunnerQuery)
-import Tablebot.Utility.SmartParser (PComm (parseComm), Quoted (Qu), RestOfInput (ROI), RestOfInput1 (ROI1), WithError (WErr))
+import Tablebot.Utility.Parser (inlineCommandHelper, keyValue, keyValuesSepOn)
+import Tablebot.Utility.SmartParser (PComm (parseComm), Quoted (Qu), RestOfInput (ROI), RestOfInput1 (ROI1), WithError (WErr), pars)
 import Tablebot.Utility.Types ()
 import Text.RawString.QQ (r)
 
@@ -111,23 +112,15 @@ nrFindFlavour = Command "flavour" (parseComm findComm) []
       api <- ask
       embedCardFlavour (queryCard api query) m
 
--- | @nrFindInline@ is the inline version of @nrFind@.
-nrFindInline :: EnvInlineCommand NrApi
-nrFindInline = InlineCommand nrInlineComm
-  where
-    nrInlineComm :: Parser (Message -> EnvDatabaseDiscord NrApi ())
-    nrInlineComm = do
-      queries <- netrunnerQuery
-      let limitedQs = if length queries > 5 then take 5 queries else queries
-      return $ \m -> mapM_ (\q -> sendEmbed q m) limitedQs
-    sendEmbed :: NrQuery -> Message -> EnvDatabaseDiscord NrApi ()
-    sendEmbed query m = do
-      api <- ask
-      case query of
-        NrQueryCard q -> embedCard (queryCard api $ pack q) m
-        NrQueryImg q -> embedCardImg (queryCard api $ pack q) m
-        NrQueryFlavour q -> embedCardFlavour (queryCard api $ pack q) m
-        NrQueryBanHistory q -> embedBanHistory (queryCard api $ pack q) m
+-- | @nrInline@ is the inline version of the commands that find cards.
+nrInline :: EnvInlineCommand NrApi
+nrInline = inlineCommandHelper "{{" "}}" pars $ \q m -> do
+  api <- ask
+  case T.head q of
+    '!' -> embedCardImg (queryCard api q) m
+    '|' -> embedCardFlavour (queryCard api q) m
+    '#' -> embedBanHistory (queryCard api q) m
+    _ -> embedCard (queryCard api q) m
 
 -- | @nrSearch@ searches the card database with specific queries.
 nrSearch :: EnvCommand NrApi
@@ -284,6 +277,6 @@ netrunnerPlugin :: EnvPlugin NrApi
 netrunnerPlugin =
   (envPlug "netrunner" netrunnerStartUp)
     { commands = [netrunner, commandAlias "nr" netrunner],
-      inlineCommands = [nrFindInline],
+      inlineCommands = [nrInline],
       helpPages = helpPageRoots
     }
