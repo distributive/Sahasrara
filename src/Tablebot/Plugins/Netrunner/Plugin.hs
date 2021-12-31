@@ -23,18 +23,20 @@ import Tablebot.Plugins.Netrunner.Command.Rules
 import Tablebot.Plugins.Netrunner.Command.Search
 import Tablebot.Plugins.Netrunner.Type.BanList (BanList (active), CardBan (..))
 import qualified Tablebot.Plugins.Netrunner.Type.BanList as BanList
-import Tablebot.Plugins.Netrunner.Type.Card (Card)
+import Tablebot.Plugins.Netrunner.Type.Card (Card (code))
 import Tablebot.Plugins.Netrunner.Type.NrApi (NrApi (..))
 import Tablebot.Plugins.Netrunner.Utility.BanList (activeBanList, latestBanListActive, toMwlStatus)
 import Tablebot.Plugins.Netrunner.Utility.Embed
 import Tablebot.Plugins.Netrunner.Utility.NrApi (getNrApi)
+import Tablebot.Plugins.Netrunner.Utility.Card (toText)
 import Tablebot.Utility
 import Tablebot.Utility.Discord (formatFromEmojiName, sendEmbedMessage, sendMessage)
 import Tablebot.Utility.Embed (addColour)
 import Tablebot.Utility.Parser (inlineCommandHelper, keyValue, keyValuesSepOn)
-import Tablebot.Utility.SmartParser (PComm (parseComm), Quoted (Qu), RestOfInput (ROI), RestOfInput1 (ROI1), WithError (WErr), pars)
+import Tablebot.Utility.SmartParser (PComm (parseComm), Quoted (Qu), RestOfInput (ROI), RestOfInput1 (ROI1), WithError (WErr))
 import Tablebot.Utility.Types ()
 import Text.RawString.QQ (r)
+import Text.Megaparsec (some, anySingleBut)
 
 -- | @netrunner@ is the user-facing command that searches for Netrunner cards.
 netrunner :: EnvCommand NrApi
@@ -114,13 +116,14 @@ nrFindFlavour = Command "flavour" (parseComm findComm) []
 
 -- | @nrInline@ is the inline version of the commands that find cards.
 nrInline :: EnvInlineCommand NrApi
-nrInline = inlineCommandHelper "{{" "}}" pars $ \q m -> do
+nrInline = inlineCommandHelper "{{" "}}" (some $ anySingleBut '}') $ \q m -> do
   api <- ask
-  case T.head q of
-    '!' -> embedCardImg (queryCard api q) m
-    '|' -> embedCardFlavour (queryCard api q) m
-    '#' -> embedBanHistory (queryCard api q) m
-    _ -> embedCard (queryCard api q) m
+  let query = pack q
+  case T.head query of
+    '!' -> embedCardImg (queryCard api query) m
+    '|' -> embedCardFlavour (queryCard api query) m
+    '#' -> embedBanHistory (queryCard api query) m
+    _ -> embedCard (queryCard api query) m
 
 -- | @nrSearch@ searches the card database with specific queries.
 nrSearch :: EnvCommand NrApi
@@ -217,7 +220,14 @@ embedCardImg card m = do
 embedCardFlavour :: Card -> Message -> EnvDatabaseDiscord NrApi ()
 embedCardFlavour card m = do
   api <- ask
-  embed <- cardToFlavourEmbed api card
+  let card' = case code card of
+                Just "07024" -> queryCard api "Déjà Vu"
+                Just "01002" -> queryCard api "The Twins"
+                _ -> card
+  cText <- toText card'
+  embed <- case code card' of
+             Just "12077" -> cardToEmbedWithText api card' cText
+             _ -> cardToFlavourEmbed api card'
   sendEmbedMessage m "" embed
 
 -- | @embedBanHistory@ embeds a card's banlist history.
