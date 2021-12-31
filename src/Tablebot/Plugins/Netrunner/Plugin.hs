@@ -26,17 +26,17 @@ import qualified Tablebot.Plugins.Netrunner.Type.BanList as BanList
 import Tablebot.Plugins.Netrunner.Type.Card (Card (code))
 import Tablebot.Plugins.Netrunner.Type.NrApi (NrApi (..))
 import Tablebot.Plugins.Netrunner.Utility.BanList (activeBanList, latestBanListActive, toMwlStatus)
+import Tablebot.Plugins.Netrunner.Utility.Card (toText)
 import Tablebot.Plugins.Netrunner.Utility.Embed
 import Tablebot.Plugins.Netrunner.Utility.NrApi (getNrApi)
-import Tablebot.Plugins.Netrunner.Utility.Card (toText)
 import Tablebot.Utility
 import Tablebot.Utility.Discord (formatFromEmojiName, sendEmbedMessage, sendMessage)
 import Tablebot.Utility.Embed (addColour)
 import Tablebot.Utility.Parser (inlineCommandHelper, keyValue, keyValuesSepOn)
 import Tablebot.Utility.SmartParser (PComm (parseComm), Quoted (Qu), RestOfInput (ROI), RestOfInput1 (ROI1), WithError (WErr))
 import Tablebot.Utility.Types ()
+import Text.Megaparsec (anySingleBut, some)
 import Text.RawString.QQ (r)
-import Text.Megaparsec (some, anySingleBut)
 
 -- | @netrunner@ is the user-facing command that searches for Netrunner cards.
 netrunner :: EnvCommand NrApi
@@ -221,13 +221,13 @@ embedCardFlavour :: Card -> Message -> EnvDatabaseDiscord NrApi ()
 embedCardFlavour card m = do
   api <- ask
   let card' = case code card of
-                Just "07024" -> queryCard api "Déjà Vu"
-                Just "01002" -> queryCard api "The Twins"
-                _ -> card
+        Just "07024" -> queryCard api "Déjà Vu"
+        Just "01002" -> queryCard api "The Twins"
+        _ -> card
   cText <- toText card'
   embed <- case code card' of
-             Just "12077" -> cardToEmbedWithText api card' cText
-             _ -> cardToFlavourEmbed api card'
+    Just "12077" -> cardToEmbedWithText api card' cText
+    _ -> cardToFlavourEmbed api card'
   sendEmbedMessage m "" embed
 
 -- | @embedBanHistory@ embeds a card's banlist history.
