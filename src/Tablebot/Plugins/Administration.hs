@@ -17,6 +17,7 @@ import Control.Monad.Cont (liftIO)
 import Control.Monad.Trans.Reader (ask)
 import Data.Text (Text, pack)
 import qualified Data.Text as T
+import Data.Version (showVersion)
 import Database.Persist (Entity, Filter, entityVal, (==.))
 import Discord (stopDiscord)
 import Discord.Types
@@ -129,7 +130,9 @@ version = Command "version" noCommand []
     noCommand :: Parser (Message -> EnvDatabaseDiscord SS ())
     noCommand = noArguments $ \m -> do
       gVersion <- getVersionInfo
-      sendMessage m $ (pack $ show gVersion)
+      sendMessage m $ formatVersions gVersion
+    formatVersions :: VersionInfo -> Text
+    formatVersions vi = "Tablebot version " <> (pack $ showVersion $ procVersion vi) <> "\nGit Hash: `" <> (gitHash vi) <> "`"
 
 -- | @botcontrol@ reloads the bot with any new configuration changes.
 botControl :: MVar ShutdownReason -> EnvCommand SS
@@ -193,8 +196,10 @@ versionHelp =
     []
     "print version information"
     [r|**Version**
-Print the current bot version and git hash of the running bot.|]
-    [reloadHelp]
+Print the current bot version and git hash of the running bot.
+
+*Usage:* `version`|]
+    []
     Superuser
 
 botControlHelp :: HelpPage
@@ -205,7 +210,7 @@ botControlHelp =
     "administrative commands"
     [r|**Bot Control**
 General management commands for superuser use|]
-    [reloadHelp]
+    [reloadHelp, restartHelp, haltHelp]
     Superuser
 
 reloadHelp :: HelpPage
@@ -217,7 +222,33 @@ reloadHelp =
     [r|**Reload**
 Restart the bot without recompiling
 
-*Usage:* `reload`|]
+*Usage:* `botcontrol reload`|]
+    []
+    Superuser
+
+restartHelp :: HelpPage
+restartHelp =
+  HelpPage
+    "restart"
+    []
+    "recompile and restart the bot"
+    [r|**Restart**
+Recompile and restart the bot
+
+*Usage:* `botcontrol restart`|]
+    []
+    Superuser
+
+haltHelp :: HelpPage
+haltHelp =
+  HelpPage
+    "halt"
+    []
+    "stop the bot"
+    [r|**Halt**
+Stop the bot
+
+*Usage:* `botcontrol halt`|]
     []
     Superuser
 
@@ -226,7 +257,7 @@ blacklistAddHelp =
   HelpPage
     "add"
     []
-    "Disable a plugin"
+    "disable a plugin"
     "**Blacklist Add**\n\
     \Disable a plugin. This does **not** check that the entered plugin is currently avaliable. \
     \This allows you to upgrade without having a new plugin enabled breifly.\n\n\
@@ -253,7 +284,7 @@ blacklistListHelp =
   HelpPage
     "list"
     []
-    "List disabled plugins"
+    "list disabled plugins"
     [r|**Blacklist List**
 List the current plugins in the blacklist.
 
@@ -267,7 +298,7 @@ blacklistHelp =
   HelpPage
     "blacklist"
     []
-    "Enable and disable plugins"
+    "enable and disable plugins"
     [r|**Blacklist**
 Enable and disable plugins|]
     [blacklistListHelp, blacklistAddHelp, blacklistRemoveHelp]
@@ -281,4 +312,4 @@ adminStartup cps =
 -- | @administrationPlugin@ assembles the commands into a plugin.
 -- Note the use of an underscore in the name, this prevents the plugin being disabled.
 administrationPlugin :: MVar ShutdownReason -> [CompiledPlugin] -> EnvPlugin SS
-administrationPlugin rFlag cps = (envPlug "_admin" $ adminStartup cps) {commands = [botControl rFlag, blacklist, version], helpPages = [botControlHelp, blacklistHelp]}
+administrationPlugin rFlag cps = (envPlug "_admin" $ adminStartup cps) {commands = [botControl rFlag, blacklist, version], helpPages = [versionHelp, botControlHelp, blacklistHelp]}
