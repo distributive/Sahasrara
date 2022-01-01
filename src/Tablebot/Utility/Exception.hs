@@ -1,14 +1,13 @@
 -- |
--- Module      : Tablebot.Util.Error
--- Description : A plugin for error types.
--- Copyright   : (c) Amelie WD, Sam Coy 2021
+-- Module      : Tablebot.Utility.Exception
+-- Description : Helpers for error handling in plugins.
 -- License     : MIT
--- Maintainer  : tablebot@ameliewd.com
+-- Maintainer  : tagarople@gmail.com
 -- Stability   : experimental
 -- Portability : POSIX
 --
--- A plugin for error handling.
-module Tablebot.Plugin.Exception
+-- Helpers for error handling in plugins.
+module Tablebot.Utility.Exception
   ( BotException (..),
     throwBot,
     catchBot,
@@ -24,8 +23,8 @@ import Control.Monad.Exception (Exception, MonadException, catch, throw)
 import Data.List (intercalate)
 import Data.Text (pack)
 import Discord.Internal.Types
-import Tablebot.Plugin.Embed
-import Tablebot.Plugin.Types (DiscordColour (..))
+import Tablebot.Utility.Embed
+import Tablebot.Utility.Types (DiscordColour (..))
 
 -- | @BotException@ is the type for errors caught in TableBot.
 -- Declare new errors here, and define them at the bottom of the file.
@@ -36,6 +35,8 @@ data BotException
   | IndexOutOfBoundsException Int (Int, Int)
   | RandomException String
   | EvaluationException String [String]
+  | IOException String
+  | NetrunnerException String
   deriving (Show, Eq)
 
 instance Exception BotException
@@ -123,3 +124,5 @@ errorInfo (EvaluationException msg' locs) = ErrorInfo "EvaluationException" $ ms
       if l > 6
         then connectVs fs ++ "\n...\n" ++ connectVs ls
         else connectVs (reverse locs)
+errorInfo (IOException msg') = ErrorInfo "IOException" msg'
+errorInfo (NetrunnerException msg') = ErrorInfo "NetrunnerException" msg'

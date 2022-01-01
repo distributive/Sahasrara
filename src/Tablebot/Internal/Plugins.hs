@@ -1,5 +1,5 @@
 -- |
--- Module      : Tablebot.Handler.Plugins
+-- Module      : Tablebot.Internal.Plugins
 -- Description : Some internal code for handling plugins
 -- License     : MIT
 -- Maintainer  : finnjkeating@gmail.com
@@ -7,13 +7,13 @@
 -- Portability : POSIX
 --
 -- This contains some functions to combine and compile plugins
-module Tablebot.Handler.Plugins where
+module Tablebot.Internal.Plugins where
 
 import Control.Monad.Trans.Reader (runReaderT)
 import Discord.Types (Message)
-import Tablebot.Handler.Types hiding (helpPages, migrations)
-import qualified Tablebot.Handler.Types as HT
-import Tablebot.Plugin.Types
+import Tablebot.Internal.Types hiding (helpPages, migrations)
+import qualified Tablebot.Internal.Types as HT
+import Tablebot.Utility.Types
 
 -- | Combines a list of plugins into a single plugin with the combined
 -- functionality. The bot actually runs a single plugin, which is just the
@@ -78,7 +78,6 @@ compilePlugin p = CPl (pluginName p) sa (helpPages p) (migrations p)
 
 -- * Helper converters
 
--- |
 compileParser :: s -> Parser (Message -> EnvDatabaseDiscord s a) -> Parser (Message -> CompiledDatabaseDiscord a)
 compileParser s = fmap (changeMessageAction s)
 

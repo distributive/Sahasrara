@@ -2,7 +2,7 @@
 {-# LANGUAGE TypeApplications #-}
 
 -- |
--- Module      : Tablebot.Plugin.SmartCommand
+-- Module      : Tablebot.Utility.SmartParser
 -- Description : Automatic parser generation from function types.
 -- License     : MIT
 -- Maintainer  : tagarople@gmail.com
@@ -12,15 +12,15 @@
 -- Generates a parser based on the shape of the command function.
 -- For example, if you have a command that takes in an Int as argument, we
 -- build a parser that reads in that Int and then runs the command.
-module Tablebot.Plugin.SmartCommand where
+module Tablebot.Utility.SmartParser where
 
 import Data.Proxy
 import Data.String (IsString (fromString))
 import Data.Text (Text, pack)
 import Discord.Types (Message)
 import GHC.TypeLits
-import Tablebot.Plugin.Parser
-import Tablebot.Plugin.Types (EnvDatabaseDiscord, Parser)
+import Tablebot.Utility.Parser
+import Tablebot.Utility.Types (EnvDatabaseDiscord, Parser)
 import Text.Megaparsec
 
 -- | @PComm@ defines function types that we can automatically turn into parsers
@@ -64,7 +64,7 @@ instance {-# OVERLAPPING #-} CanParse String where
   pars = word
 
 -- | @Quoted a@ defines an input of type @a@ that is contained within quotes.
-newtype Quoted a = Qu a
+newtype Quoted a = Qu a deriving (Show)
 
 instance IsString a => CanParse (Quoted a) where
   pars = Qu . fromString <$> quoted
@@ -114,13 +114,13 @@ instance (CanParse a, CanParse b, CanParse c, CanParse d) => CanParse (a, b, c, 
 instance (CanParse a, CanParse b, CanParse c, CanParse d, CanParse e) => CanParse (a, b, c, d, e) where
   pars = do
     x <- pars @a
-    space
+    skipSpace1
     y <- pars @b
-    space
+    skipSpace1
     z <- pars @c
-    space
+    skipSpace1
     w <- pars @d
-    space
+    skipSpace1
     v <- pars @e
     return (x, y, z, w, v)
 
@@ -153,6 +153,12 @@ newtype RestOfInput a = ROI a
 
 instance IsString a => CanParse (RestOfInput a) where
   pars = ROI . fromString <$> untilEnd
+
+-- | @RestOfInput a@ parses the rest of the input, giving a value of type @a@.
+newtype RestOfInput1 a = ROI1 a
+
+instance IsString a => CanParse (RestOfInput1 a) where
+  pars = ROI1 . fromString <$> untilEnd1
 
 -- | @noArguments@ is a type-specific alias for @parseComm@ for commands that
 -- have no arguments (thus making it extremely clear).

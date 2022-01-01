@@ -17,8 +17,9 @@ Here are some good practice tips for git and this project.
 * Before making a pull request, make sure your branch is up to date with main (and that it compiles and complies with `ormolu` - see below for details) so that it can be merged without hassle
 * Write comments! This project will be maintained by many people, and it can be difficult to work out what others' code does
 * To communicate with the maintainers, please join the [Tabletop Discord server](https://warwicktabletop.co.uk/discord) and give yourself the @computer_person role to join the developer channel
+* If you need help finding a function to do a particular task, you can search on [Hoogle](https://hoogle.haskell.org/). The two libraries that deal with parsing are `Text.Megaparsec` and `Control.Monad.Combinators`, and `Discord` is the package that deals with Discord itself. You can filter by package if that helps to find certain functions
 
-You can check out the [README](https://github.com/WarwickTabletop/tablebot#readme) for a brief overview on how to set up a local bot for testing. If you've never done something like this before, see the bottom of this document for a walkthrough.
+You can check out the [README](README.md) for a brief overview on how to set up a local bot for testing. If you've never done something like this before, see the bottom of this document for a walkthrough.
 
 ## Ormolu
 
@@ -37,17 +38,20 @@ You can see full documentation on the [Ormolu repo](https://github.com/tweag/orm
 You may also wish to set up Ormolu to run when you stage a file (get ready to commit it) - this can be done using `.gitattributes` and `.gitconfig` as follows.
 
 1. We need to define what runs on commit, which is done via a filter. Add the following to `~/.gitconfig`:
-```
-[filter "haskell-linting"]
-    clean = ormolu
-    smudge = cat
-```
-This globally defines a filter that you can call from individual git respositories.
+
+    ```gitconfig
+    [filter "haskell-linting"]
+        clean = ormolu
+        smudge = cat
+    ```
+
+    This globally defines a filter that you can call from individual git respositories.
 
 2. Now we need to tell this git repository that it should run this filter. Simply add the following to `.gitattributes`. Note that this has been added to `.gitignore` to avoid people who don't want this filter being forced to use it.
-```
-*.hs filter=haskell-linting
-```
+
+    ```gitattributes
+    *.hs filter=haskell-linting
+    ```
 
 That's it! (With thanks to Sam Coy for explaining this process)
 
@@ -55,7 +59,7 @@ That's it! (With thanks to Sam Coy for explaining this process)
 
 We're happy to accept any contribution, big or small. You can find our list of issues [here](https://github.com/WarwickTabletop/tablebot/issues). If you think of a feature you'd like added or a bug in the current implementation please do create a new ticket! There's no obligation to implement the issue. If you don't have any ideas but do want to get involved with programming you can check the issues page for new features and fixes to work on. If you're not too familiar with Haskell or our codebase, look out for the "good first issue" label. We put this on issues that we think would be good for newcomers to the language/project to get started on.
 
-If you have trouble at any time, please do ask for help in an issue thread or on our Discord. You can also check out the [tutorials](https://github.com/WarwickTabletop/tablebot/tree/main/tutorials) in the repository and pre-existing solutions in the code for guidance.
+If you have trouble at any time, please do ask for help in an issue thread or on our Discord. You can also check out the [tutorials](tutorials) in the repository and pre-existing solutions in the code for guidance.
 
 ## Setup from Scratch
 
@@ -93,7 +97,7 @@ If at any point something doesn't work, restart your computer first and try it a
     7. Open a file and marvel at the colours, and the fact you can hover over things and see values and stuff
 3. Discord and Environment variables
     1. Create a file in the top level of the project folder called `.env`, based on the template in `.env.example`
-    2. Follow the instructions in [Environment File Setup](#environment-file-setup) to fill in the `.env`. Make sure to get a `DISCORD_TOKEN` and a `SQLITE_FILENAME` (which can be named anything, but use something like `database.db`)
+    2. Follow the instructions in [Environment File Setup](README.md#environment-file-setup) to fill in the `.env`. Make sure to get a `DISCORD_TOKEN` and a `SQLITE_FILENAME` (which can be named anything, but use something like `database.db`)
     3. To run the bot, type `stack run` into the terminal, and the bot will start to run
     4. Make sure to invite the bot to a server so you can test it out!
 

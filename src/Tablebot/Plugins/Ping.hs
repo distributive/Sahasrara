@@ -10,9 +10,9 @@
 module Tablebot.Plugins.Ping (pingPlugin) where
 
 import Data.Text (Text)
-import Tablebot.Plugin
-import Tablebot.Plugin.Discord (Message, sendMessage)
-import Tablebot.Plugin.SmartCommand (parseComm)
+import Tablebot.Utility
+import Tablebot.Utility.Discord (Message, sendMessage)
+import Tablebot.Utility.SmartParser (parseComm)
 
 -- | @echo@ pulled out to help resolve parser overlapping instances errors.
 -- Sends the provided text, regardless of received message.
@@ -40,10 +40,10 @@ pong =
     []
 
 pingHelp :: HelpPage
-pingHelp = HelpPage "ping" "show a debug message" "**Ping**\nShows a debug message\n\n*Usage:* `ping`" [] None
+pingHelp = HelpPage "ping" [] "show a debug message" "**Ping**\nShows a debug message\n\n*Usage:* `ping`" [] None
 
 pongHelp :: HelpPage
-pongHelp = HelpPage "pong" "show a more different debug message" "**Pong**\nShows a different debug message\n\n*Usage:* `pong`" [] None
+pongHelp = HelpPage "pong" [] "show a more different debug message" "**Pong**\nShows a different debug message\n\n*Usage:* `pong`" [] None
 
 -- | @pingPlugin@ assembles these commands into a plugin containing both ping
 -- and pong.

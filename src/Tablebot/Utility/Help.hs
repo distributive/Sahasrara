@@ -1,5 +1,5 @@
 -- -- |
--- Module      : Tablebot.Plugin.Help
+-- Module      : Tablebot.Utility.Help
 -- Description : Help text generation and storage
 -- License     : MIT
 -- Maintainer  : tagarople@gmail.com
@@ -7,18 +7,18 @@
 -- Portability : POSIX
 --
 -- This module creates functions and data structures to help generate help text for commands
-module Tablebot.Plugin.Help where
+module Tablebot.Utility.Help where
 
 import Data.Functor (($>))
 import Data.Text (Text)
 import qualified Data.Text as T
-import Tablebot.Handler.Permission (getSenderPermission, userHasPermission)
-import Tablebot.Handler.Plugins (changeAction)
-import Tablebot.Handler.Types
-import Tablebot.Plugin.Discord (Message, sendMessage)
-import Tablebot.Plugin.Parser (skipSpace)
-import Tablebot.Plugin.Permission (requirePermission)
-import Tablebot.Plugin.Types hiding (helpPages)
+import Tablebot.Internal.Permission (getSenderPermission, userHasPermission)
+import Tablebot.Internal.Plugins (changeAction)
+import Tablebot.Internal.Types
+import Tablebot.Utility.Discord (Message, sendMessage)
+import Tablebot.Utility.Parser (skipSpace)
+import Tablebot.Utility.Permission (requirePermission)
+import Tablebot.Utility.Types hiding (helpPages)
 import Text.Megaparsec (choice, chunk, eof, try, (<?>), (<|>))
 
 rootBody :: Text
@@ -28,7 +28,7 @@ rootBody =
   \ the running of the Warwick Tabletop Games and Role-Playing Society Discord server."
 
 helpHelpPage :: HelpPage
-helpHelpPage = HelpPage "help" "show information about commands" "**Help**\nShows information about bot commands\n\n*Usage:* `help <page>`" [] None
+helpHelpPage = HelpPage "help" [] "show information about commands" "**Help**\nShows information about bot commands\n\n*Usage:* `help <page>`" [] None
 
 generateHelp :: CombinedPlugin -> CombinedPlugin
 generateHelp p =
@@ -39,11 +39,11 @@ generateHelp p =
 handleHelp :: [HelpPage] -> Parser (Message -> CompiledDatabaseDiscord ())
 handleHelp hp = parseHelpPage root
   where
-    root = HelpPage "" "" rootBody hp None
+    root = HelpPage "" [] "" rootBody hp None
 
 parseHelpPage :: HelpPage -> Parser (Message -> CompiledDatabaseDiscord ())
 parseHelpPage hp = do
-  _ <- chunk (helpName hp)
+  _ <- choice (map chunk (helpName hp : helpAliases hp))
   skipSpace
   (try eof $> displayHelp hp) <|> choice (map parseHelpPage $ helpSubpages hp) <?> "Unknown Subcommand"
 
@@ -56,7 +56,7 @@ formatHelp :: UserPermission -> HelpPage -> Text
 formatHelp up hp = helpBody hp <> formatSubpages hp
   where
     formatSubpages :: HelpPage -> Text
-    formatSubpages (HelpPage _ _ _ [] _) = ""
+    formatSubpages (HelpPage _ _ _ _ [] _) = ""
     formatSubpages hp' = if T.null sp then "" else "\n\n*Subcommands*" <> sp
       where
         sp = T.concat (map formatSubpage (helpSubpages hp'))

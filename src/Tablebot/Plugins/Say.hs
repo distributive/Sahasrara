@@ -11,9 +11,9 @@ module Tablebot.Plugins.Say (sayPlugin) where
 
 import Data.Text (pack)
 import Discord.Types (Message (messageAuthor), User (userId))
-import Tablebot.Plugin
-import Tablebot.Plugin.Discord (sendMessage)
-import Tablebot.Plugin.Parser (untilEnd)
+import Tablebot.Utility
+import Tablebot.Utility.Discord (sendMessage)
+import Tablebot.Utility.Parser (untilEnd)
 import Text.RawString.QQ (r)
 
 -- | @say@ outputs its input.
@@ -30,6 +30,7 @@ sayHelp :: HelpPage
 sayHelp =
   HelpPage
     "say"
+    []
     "make the bot speak"
     [r|**Say**
 Repeat the input.

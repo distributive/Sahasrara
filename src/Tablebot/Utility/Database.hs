@@ -1,5 +1,14 @@
-module Tablebot.Plugin.Database
-  ( module Tablebot.Plugin.Database,
+-- |
+-- Module      : Tablebot.Utility.Database
+-- Description : Wrappers to database functionality to match our main monad.
+-- License     : MIT
+-- Maintainer  : tagarople@gmail.com
+-- Stability   : experimental
+-- Portability : POSIX
+--
+-- Wrappers to database functionality to match our main monad.
+module Tablebot.Utility.Database
+  ( module Tablebot.Utility.Database,
     Sql.fromSqlKey,
     Sql.toSqlKey,
     liftSql,
@@ -7,10 +16,10 @@ module Tablebot.Plugin.Database
 where
 
 import Data.Int (Int64)
-import Data.Map
+import Data.Map (Map)
 import Data.Text (Text)
 import qualified Database.Persist.Sqlite as Sql
-import Tablebot.Plugin (EnvDatabaseDiscord, liftSql)
+import Tablebot.Utility (EnvDatabaseDiscord, liftSql)
 
 insert :: (Sql.PersistEntity record, Sql.PersistEntityBackend record ~ Sql.SqlBackend) => record -> EnvDatabaseDiscord d (Sql.Key record)
 insert r = liftSql $ Sql.insert r

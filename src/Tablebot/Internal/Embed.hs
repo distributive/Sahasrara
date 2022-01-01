@@ -1,14 +1,13 @@
 -- -- |
--- Module      : Tablebot.Handler.Embed
+-- Module      : Tablebot.Internal.Embed
 -- Description : Embed request generation and colours
--- Copyright   : (c) Anna Bruce 2021
 -- License     : MIT
 -- Maintainer  : finnjkeating@gmail.com
 -- Stability   : experimental
 -- Portability : POSIX
 --
 -- This module contains some behind the scenes logic to allow creation of coloured embeds
-module Tablebot.Handler.Embed where
+module Tablebot.Internal.Embed where
 
 import Data.Aeson
 import qualified Data.ByteString.Lazy as BL
@@ -18,7 +17,7 @@ import Discord.Internal.Types
 import Network.HTTP.Client.MultipartFormData (partBS)
 import Network.HTTP.Req ((/:))
 import qualified Network.HTTP.Req as R
-import Tablebot.Plugin.Types
+import Tablebot.Utility.Types
 
 colourToInternal :: DiscordColour -> Integer
 colourToInternal (RGB r g b) = ((r * 256) + g) * 256 + b
@@ -90,4 +89,4 @@ instance Embeddable CreateEmbed where
   asEmbed = createEmbed
 
 instance Embeddable Text where
-  asEmbed t = createEmbed $ CreateEmbed "" "" Nothing "" "" Nothing t [] Nothing "" Nothing
+  asEmbed t = createEmbed $ CreateEmbed "" "" Nothing "" "" Nothing t [] Nothing "" Nothing Nothing

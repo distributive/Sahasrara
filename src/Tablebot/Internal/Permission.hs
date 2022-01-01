@@ -1,21 +1,20 @@
 -- |
--- Module      : Tablebot.Handler.Permission
+-- Module      : Tablebot.Internal.Permission
 -- Description : Some internal code for handling permissions
--- Copyright   : (c) Anna Bruce 2021
 -- License     : MIT
--- Maintainer  : finnjkeating@gmail.com
+-- Maintainer  : tagarople@gmail.com
 -- Stability   : experimental
 -- Portability : POSIX
 --
 -- This contains some functions to extract and handle privileged commands
-module Tablebot.Handler.Permission where
+module Tablebot.Internal.Permission where
 
 import Control.Monad.IO.Class (liftIO)
 import Discord.Types (GuildMember, Message, RoleId, memberRoles)
 import System.Environment (lookupEnv)
-import Tablebot.Plugin.Discord (getMessageMember)
-import Tablebot.Plugin.Types
-import Tablebot.Plugin.Utils (isDebug)
+import Tablebot.Utility.Discord (getMessageMember)
+import Tablebot.Utility.Types
+import Tablebot.Utility.Utils (isDebug)
 import Text.Read (readMaybe)
 
 data KnownRoles = KnownRoles

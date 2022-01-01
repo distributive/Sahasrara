@@ -1,5 +1,5 @@
 -- |
--- Module      : Tablebot.Handler.Command
+-- Module      : Tablebot.Internal.Handler.Command
 -- Description : The event handler for received messages.
 -- License     : MIT
 -- Maintainer  : tagarople@gmail.com
@@ -9,7 +9,7 @@
 -- This module deals with 'Command's and 'InlineCommand's, checking for the
 -- command prefix in the case of 'Command's and then trying each plugin-defined
 -- parser to see if it matches.
-module Tablebot.Handler.Command
+module Tablebot.Internal.Handler.Command
   ( parseNewMessage,
     parseCommands,
     parseInlineCommands,
@@ -22,13 +22,14 @@ import Data.Set (singleton, toList)
 import Data.Text (Text)
 import Data.Void (Void)
 import Discord.Types (Message (messageText))
-import Tablebot.Handler.Plugins (changeAction)
-import Tablebot.Handler.Types
-import Tablebot.Plugin.Discord (sendEmbedMessage)
-import Tablebot.Plugin.Exception (BotException (ParserException), embedError)
-import Tablebot.Plugin.Parser (skipSpace1, space, word)
-import Tablebot.Plugin.Types hiding (commandParser, inlineCommandParser)
+import Tablebot.Internal.Plugins (changeAction)
+import Tablebot.Internal.Types
+import Tablebot.Utility.Discord (sendEmbedMessage)
+import Tablebot.Utility.Exception (BotException (ParserException), embedError)
+import Tablebot.Utility.Parser (skipSpace1, space, word)
+import Tablebot.Utility.Types (Parser)
 import Text.Megaparsec
+import qualified UnliftIO.Exception as UIOE (tryAny)
 
 -- | @parseNewMessage@ parses a new message, first by attempting to match the
 -- bot's prefix to the start of the message, then (if that fails) by attempting
@@ -119,12 +120,10 @@ makeReadable (TrivialError i _ good) =
 makeReadable e = (mapParseError (const UnknownError) e, Nothing)
 
 -- | Given a list of 'InlineCommand' @cs@ and a message @m@, run each inline
--- command's parser on the message text until one succeeds. Errors are not sent
--- to the user, and do not halt command attempts (achieved using 'try').
+-- command's parser on the message text. Errors are not sent to the user, and do
+-- not halt command attempts (achieved using 'tryAny').
 parseInlineCommands :: [CompiledInlineCommand] -> Message -> CompiledDatabaseDiscord ()
-parseInlineCommands cs m = case parse (parser cs) "" (messageText m) of
-  Right p -> p m
-  Left _ -> pure ()
+parseInlineCommands cs m = mapM_ (fromResult . (\cic -> parse (inlineCommandParser cic) "" (messageText m))) cs
   where
-    parser :: [CompiledInlineCommand] -> Parser (Message -> CompiledDatabaseDiscord ())
-    parser cs' = choice $ map (try . inlineCommandParser) cs'
+    fromResult (Right p) = UIOE.tryAny (p m)
+    fromResult _ = return $ return ()

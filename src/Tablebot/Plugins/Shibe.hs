@@ -15,9 +15,9 @@ import Data.Functor ((<&>))
 import Data.Text (Text, pack)
 import Network.HTTP.Conduit (Response (responseBody), parseRequest)
 import Network.HTTP.Simple (httpLBS)
-import Tablebot.Plugin.Discord (Message, sendMessage)
-import Tablebot.Plugin.SmartCommand (parseComm)
-import Tablebot.Plugin.Types
+import Tablebot.Utility.Discord (Message, sendMessage)
+import Tablebot.Utility.SmartParser (parseComm)
+import Tablebot.Utility.Types
   ( Command,
     DatabaseDiscord,
     EnvCommand (Command),
@@ -65,7 +65,7 @@ getShibe esc = case esc of
 
 -- | @shibeHelp@ has the help text for the shibe command
 shibeHelp :: HelpPage
-shibeHelp = HelpPage "shibe" "displays an image of a shibe" "**Shibe**\nGets a random shibe image using <https://shibe.online//>.\n\n*Usage:* `shibe`" [] None
+shibeHelp = HelpPage "shibe" [] "displays an image of a shibe" "**Shibe**\nGets a random shibe image using <https://shibe.online//>.\n\n*Usage:* `shibe`" [] None
 
 -- | @shibePlugin@ assembles these commands into a plugin containing shibe
 shibePlugin :: Plugin
