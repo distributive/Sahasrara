@@ -17,6 +17,7 @@ where
 import Control.Monad.Cont (void, when)
 import Data.Maybe (fromMaybe)
 import Data.Text (Text, pack)
+import Data.Version (Version)
 import Database.Persist
 import Database.Persist.Sqlite (SqlPersistM)
 import Database.Persist.TH
@@ -24,6 +25,7 @@ import Extra (lower, trim)
 import System.Environment (getEnv, lookupEnv)
 import System.Process
 import Tablebot.Internal.Types
+import Tablebot.Utility (debugPrint)
 import Text.Regex.PCRE
 
 share
@@ -73,4 +75,11 @@ updateGit = do
         pattern = "working directory clean"
         clean :: Bool
         clean = status =~ pattern
-    if clean then callProcess "git" ["pull"] else pure ()
+    debugPrint clean
+    if clean
+      then do
+        callProcess "git" ["pull"]
+      else pure ()
+
+gitVersion :: IO Text
+gitVersion = (pack . trim) <$> readProcess "git" ["rev-parse", "HEAD"] ""
