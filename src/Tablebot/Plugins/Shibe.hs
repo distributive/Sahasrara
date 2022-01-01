@@ -97,11 +97,11 @@ getBirb esc = case esc of
 
 -- | @shibeHelp@ has the help text for the shibe command
 shibeHelp :: HelpPage
-shibeHelp = HelpPage "shibe" [] "displays an image of a shibe" "**Shibe**\nGets a random shibe image using <https://shibe.online//>.\n\n*Usage:* `shibe`" [] None
+shibeHelp = HelpPage "shibe" [] "displays an image of a shibe" "**Shibe**\nGets a random shibe image using <https://shibe.online/>.\n\n*Usage:* `shibe`" [] None
 
 -- | @shibeHelp@ has the help text for the shibe command
 birbHelp :: HelpPage
-birbHelp = HelpPage "bird" [] "displays an image of a bird" "**Bird**\nGets a random bird image using <https://shibe.online//>.\n\n*Usage:* `bird`" [] None
+birbHelp = HelpPage "bird" [] "displays an image of a bird" "**Bird**\nGets a random bird image using <https://shibe.online/>.\n\n*Usage:* `bird`" [] None
 
 -- | @shibePlugin@ assembles these commands into a plugin containing shibe
 shibePlugin :: Plugin

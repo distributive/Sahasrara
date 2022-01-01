@@ -54,7 +54,7 @@ getDogAPI = do
 
 -- | @dogHelp@ has the help text for the dog command
 dogHelp :: HelpPage
-dogHelp = HelpPage "dog" [] "displays an image of a dog" "**Dog**\nGets a random dog image using <https://random.dog//>.\n\n*Usage:* `dog`" [] None
+dogHelp = HelpPage "dog" [] "displays an image of a dog" "**Dog**\nGets a random dog image using <https://random.dog/>.\n\n*Usage:* `dog`" [] None
 
 -- | @dogPlugin@ assembles these commands into a plugin containing dog
 dogPlugin :: Plugin

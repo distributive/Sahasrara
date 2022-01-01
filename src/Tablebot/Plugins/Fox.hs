@@ -71,7 +71,7 @@ getFox esc = case esc of
 
 -- | @foxHelp@ has the help text for the fox command
 foxHelp :: HelpPage
-foxHelp = HelpPage "fox" [] "displays an image of a fox" "**Fox**\nGets a random fox image using <https://randomfox.ca//>.\n\n*Usage:* `fox`" [] None
+foxHelp = HelpPage "fox" [] "displays an image of a fox" "**Fox**\nGets a random fox image using <https://randomfox.ca/>.\n\n*Usage:* `fox`" [] None
 
 -- | @foxPlugin@ assembles these commands into a plugin containing fox
 foxPlugin :: Plugin
