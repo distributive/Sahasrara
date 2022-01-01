@@ -20,43 +20,46 @@ extra-source-files:
 description:         Please see the README on GitHub at <https://github.com/tagarople/tablebot#readme>
 
 dependencies:
-- base >= 4.7 && < 5
-- discord-haskell
-- emoji
-- text
-- text-icu
-- transformers
-- load-env
-- megaparsec
-- persistent
-- persistent-sqlite
-- persistent-template
-- random
-- esqueleto
-- monad-logger
-- time
-- aeson
-- bytestring
-- yaml
-- http-conduit
-- raw-strings-qq
-- template-haskell
-- timezone-olson
-- duckling
-- unordered-containers
-- bytestring
-- req
-- http-client
-- data-default
-- exception-transformers
-- resourcet
-- resource-pool
-- containers
-- th-printf
-- mtl
-- safe
-- edit-distance
-- unliftio
+  - base >= 4.7 && < 5
+  - extra
+  - discord-haskell
+  - emoji
+  - text
+  - text-icu
+  - transformers
+  - load-env
+  - megaparsec
+  - persistent
+  - persistent-sqlite
+  - persistent-template
+  - random
+  - esqueleto
+  - monad-logger
+  - time
+  - aeson
+  - bytestring
+  - yaml
+  - http-conduit
+  - raw-strings-qq
+  - template-haskell
+  - timezone-olson
+  - duckling
+  - unordered-containers
+  - bytestring
+  - req
+  - http-client
+  - data-default
+  - exception-transformers
+  - resourcet
+  - resource-pool
+  - containers
+  - th-printf
+  - mtl
+  - safe
+  - edit-distance
+  - unliftio
+  - process
+  - regex-pcre
 
 library:
   source-dirs: src

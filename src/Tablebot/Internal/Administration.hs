@@ -14,11 +14,17 @@ module Tablebot.Internal.Administration
   )
 where
 
+import Control.Monad.Cont (void, when)
+import Data.Maybe (fromMaybe)
 import Data.Text (Text, pack)
 import Database.Persist
 import Database.Persist.Sqlite (SqlPersistM)
 import Database.Persist.TH
+import Extra (lower, trim)
+import System.Environment (getEnv, lookupEnv)
+import System.Process
 import Tablebot.Internal.Types
+import Text.Regex.PCRE
 
 share
   [mkPersist sqlSettings, mkMigrate "adminMigration"]
@@ -40,3 +46,31 @@ removeBlacklisted :: [Text] -> [CompiledPlugin] -> [CompiledPlugin]
 removeBlacklisted bl = filter isNotBlacklisted
   where
     isNotBlacklisted p' = compiledName p' `notElem` bl
+
+data ShutdownReason = Halt | Reload | Restart | GitUpdate
+
+restartAction :: ShutdownReason -> IO ()
+restartAction GitUpdate = do
+  putStrLn "Git Update Requested"
+  updateGit
+  void $ spawnProcess "stack" ["run"]
+restartAction Restart = do
+  putStrLn "Restart Requested"
+  void $ spawnProcess "stack" ["run"]
+restartAction _ = return ()
+
+restartIsTerminal :: ShutdownReason -> Bool
+restartIsTerminal Reload = False
+restartIsTerminal _ = True
+
+updateGit :: IO ()
+updateGit = do
+  maybeEnabled <- lookupEnv "ALLOW_GIT_UPDATE"
+  let enabled = maybe False ((== "true") . lower . trim) maybeEnabled
+  when enabled $ do
+    status <- readProcess "git" ["status"] ""
+    let pattern :: String
+        pattern = "working directory clean"
+        clean :: Bool
+        clean = status =~ pattern
+    if clean then callProcess "git" ["pull"] else pure ()

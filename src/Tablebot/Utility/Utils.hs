@@ -42,3 +42,8 @@ standardise :: Text -> Text
 standardise x = filter (not . property Diacritic) normalizedText
   where
     normalizedText = normalize NFD $ toLower x
+
+newtype DebugString = DStr String
+
+instance Show DebugString where
+  show (DStr a) = a

@@ -9,9 +9,11 @@
 -- Commands that manage the loading and reloading of plugins
 module Tablebot.Plugins.Administration (administrationPlugin) where
 
--- import from handler is unorthodox, but I don't want other plugins messing with that table...
+-- import from internal is unorthodox, but I don't want other plugins messing with that table...
 
+import Control.Concurrent.MVar (MVar, swapMVar)
 import Control.Monad (when)
+import Control.Monad.Cont (liftIO)
 import Control.Monad.Trans.Reader (ask)
 import Data.Text (Text, pack)
 import qualified Data.Text as T
@@ -119,14 +121,54 @@ listBlacklist m = requirePermission Superuser m $ do
 ```|]
           (T.concat $ map (<> ("\n" :: Text)) l)
 
--- | @restart@ reloads the bot with any new configuration changes.
-reload :: EnvCommand SS
-reload = Command "reload" restartCommand []
+-- | @botcontrol@ reloads the bot with any new configuration changes.
+botControl :: MVar ShutdownReason -> EnvCommand SS
+botControl rFlag = Command "botcontrol" noCommand [reload rFlag, restart rFlag, halt rFlag]
+  where
+    noCommand :: Parser (Message -> EnvDatabaseDiscord SS ())
+    noCommand = noArguments $ \m -> requirePermission Superuser m $ do
+      sendMessage m "Please enter a subcommand"
+
+-- | @reload@ reloads the bot with any new configuration changes.
+reload :: MVar ShutdownReason -> EnvCommand SS
+reload rFlag = Command "reload" restartCommand []
   where
     restartCommand :: Parser (Message -> EnvDatabaseDiscord SS ())
     restartCommand = noArguments $ \m -> requirePermission Superuser m $ do
       sendMessage m "Reloading bot..."
+      _ <- liftIO $ swapMVar rFlag Reload
       liftDiscord $ stopDiscord
+
+-- | @reload@ reloads the bot with any new configuration changes.
+restart :: MVar ShutdownReason -> EnvCommand SS
+restart rFlag = Command "restart" restartCommand []
+  where
+    restartCommand :: Parser (Message -> EnvDatabaseDiscord SS ())
+    restartCommand = noArguments $ \m -> requirePermission Superuser m $ do
+      sendMessage m "Restarting bot... (this may take some time)"
+      _ <- liftIO $ swapMVar rFlag Restart
+      liftDiscord $ stopDiscord
+
+-- | @halt@ stops the bot.
+halt :: MVar ShutdownReason -> EnvCommand SS
+halt rFlag = Command "halt" restartCommand []
+  where
+    restartCommand :: Parser (Message -> EnvDatabaseDiscord SS ())
+    restartCommand = noArguments $ \m -> requirePermission Superuser m $ do
+      sendMessage m "Halting bot! (Goodnight, cruel world)"
+      _ <- liftIO $ swapMVar rFlag Halt
+      liftDiscord $ stopDiscord
+
+botControlHelp :: HelpPage
+botControlHelp =
+  HelpPage
+    "botcontrol"
+    []
+    "administrative commands"
+    [r|**Bot Control**
+General management commands for superuser use|]
+    [reloadHelp]
+    Superuser
 
 reloadHelp :: HelpPage
 reloadHelp =
@@ -134,8 +176,8 @@ reloadHelp =
     "reload"
     []
     "reload the bot"
-    [r|**Restart**
-Restart the bot
+    [r|**Reload**
+Restart the bot without recompiling
 
 *Usage:* `reload`|]
     []
@@ -200,5 +242,5 @@ adminStartup cps =
 
 -- | @administrationPlugin@ assembles the commands into a plugin.
 -- Note the use of an underscore in the name, this prevents the plugin being disabled.
-administrationPlugin :: [CompiledPlugin] -> EnvPlugin SS
-administrationPlugin cps = (envPlug "_admin" $ adminStartup cps) {commands = [reload, blacklist], helpPages = [reloadHelp, blacklistHelp]}
+administrationPlugin :: MVar ShutdownReason -> [CompiledPlugin] -> EnvPlugin SS
+administrationPlugin rFlag cps = (envPlug "_admin" $ adminStartup cps) {commands = [botControl rFlag, blacklist], helpPages = [botControlHelp, blacklistHelp]}
