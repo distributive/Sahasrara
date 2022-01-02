@@ -8,8 +8,7 @@ If you're new to this project, or completely new to git, and Haskell, you might 
 
 ## Environment file setup
 
-Create a `.env` file containing the following keys. Consult `.env.example` if you're unsure how this should be
-formatted!
+Create a `.env` file containing the following keys. Consult `.env.example` if you're unsure how this should be formatted! Please note that the `.env` file must have a newline at the end of it - i.e. the last line should be blank.
 
 * `DEBUG` (mandatory) - whether the bot should run in debug mode. This bypasses all permission checks, and prints
   certain log message that would otherwise be suppressed
