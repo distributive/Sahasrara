@@ -8,7 +8,7 @@ If you're new to this project, or completely new to git, and Haskell, you might 
 
 ## Environment file setup
 
-Create a `.env` file containing the following keys. Consult `.env.example` if you're unsure how this should be formatted!
+Create a `.env` file containing the following keys. Consult `.env.example` if you're unsure how this should be formatted! Please note that the `.env` file must have a newline at the end of it - i.e. the last line should be blank.
 
 * `DISCORD_TOKEN` (mandatory) - the Discord token for your bot. Go to the [Discord Developer Portal](https://discord.com/developers/applications), create an application representing your bot, then create a bot user and copy its token.
 * `PREFIX` (optional, defaults to `!`) - the prefix for each bot command. For example, if you set it to `$`, then you would call `$ping` to ping the bot.
