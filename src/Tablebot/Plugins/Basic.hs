@@ -58,6 +58,14 @@ basicCommands =
     ( "about",
       "This bot was created by finnbar to replace a couple of other bots in Tabletop. It's written in Haskell, and you can find the github here: <https://github.com/WarwickTabletop/tablebot>. There are setup guides and a contributor's guide to help you get started.",
       Simple ("some information about the bot", "Some information about the bot, including how you can get involved")
+    ),
+    ( "inventory",
+      "Here's the board games we possess! -> https://www.warwicktabletop.co.uk/inventory/boardgames/",
+      Simple ("the inventory", "The inventory, with a link to the actual inventory")
+    ),
+    ( "suggest boardgame",
+      "Want to suggest a board game? Here you go! -> https://www.warwicktabletop.co.uk/inventory/boardgames/suggestions/",
+      Simple ("suggest a boardgame on the website", "Suggest a boardgame on the website")
     )
   ]
 
