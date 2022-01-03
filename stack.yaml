@@ -51,6 +51,17 @@ extra-deps:
 - duckling-0.2.0.0
 - dependent-sum-0.7.1.0
 - constraints-extras-0.3.1.0
+- Chart-diagrams-1.9.3
+- SVGFonts-1.7.0.1
+- diagrams-core-1.5.0
+- diagrams-lib-1.4.5.1
+- diagrams-postscript-1.5.1
+- diagrams-svg-1.4.3.1
+- svg-builder-0.1.1
+- active-0.2.0.15
+- dual-tree-0.2.3.0
+- monoid-extras-0.6.1
+- statestack-0.3
 
 # Override default flag values for local packages and extra-deps
 # flags: {}

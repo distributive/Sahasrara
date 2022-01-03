@@ -17,6 +17,7 @@ import Discord.Types (Message (messageAuthor))
 import Tablebot.Plugins.Roll.Dice
 import Tablebot.Plugins.Roll.Dice.DiceData
 import Tablebot.Plugins.Roll.Dice.DiceFunctions (ListInteger (LIInteger, LIList))
+import Tablebot.Plugins.Roll.Dice.DiceStats (Range (range))
 import Tablebot.Utility
 import Tablebot.Utility.Discord (Format (Code), formatText, sendMessage, toMention)
 import Tablebot.Utility.Parser (inlineCommandHelper)
@@ -63,7 +64,7 @@ rollDiceParser = choice (try <$> options)
 
 -- | Basic command for rolling dice.
 rollDice :: Command
-rollDice = Command "roll" rollDiceParser []
+rollDice = Command "roll" rollDiceParser [statsCommand]
 
 -- | Rolling dice inline.
 rollDiceInline :: InlineCommand
@@ -129,6 +130,14 @@ gencharHelp =
     ("**Genchar**\nCan be used to generate stat arrays for certain systems.\n\nCurrently supported systems: " <> intercalate ", " (fst <$> rpgSystems) <> ".\n\n*Usage:* `genchar`, `genchar dnd`")
     []
     None
+
+statsCommand :: Command
+statsCommand = Command "stats" (parseComm statsCommand') []
+  where
+    statsCommand' :: Expr -> Message -> DatabaseDiscord ()
+    statsCommand' e m = do
+      range' <- range e
+      sendMessage m (T.pack $ show range')
 
 -- | @rollPlugin@ assembles the command into a plugin.
 rollPlugin :: Plugin

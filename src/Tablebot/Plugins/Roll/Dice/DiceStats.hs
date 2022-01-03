@@ -1,7 +1,5 @@
-{-# OPTIONS_GHC -Wno-unused-imports #-}
-
 -- |
--- Module      : Tablebot.Plugin.DiceStats
+-- Module      : Tablebot.Plugins.Roll.Dice.DiceStats
 -- Description : Get statistics on particular expressions.
 -- License     : MIT
 -- Maintainer  : tagarople@gmail.com
@@ -9,15 +7,115 @@
 -- Portability : POSIX
 --
 -- This plugin generates statistics based on the values of dice in given expressions
-module Tablebot.Plugin.DiceStats where
+module Tablebot.Plugins.Roll.Dice.DiceStats where
 
-import Data.Map as M ((!))
-import Data.Maybe (fromMaybe)
-import Data.Set as S (Set, fromList, singleton, toList, unions)
-import Safe.Foldable (maximumMay, minimumMay)
-import Tablebot.Plugin.Dice
+import Control.Monad.Exception (MonadException)
+import Data.List (genericTake)
+import Data.Map as M
+import Tablebot.Plugins.Roll.Dice.DiceData
+import Tablebot.Plugins.Roll.Dice.DiceEval
+import Tablebot.Plugins.Roll.Dice.DiceEval (evaluationException)
+import Tablebot.Plugins.Roll.Dice.DiceFunctions
+import Tablebot.Plugins.Roll.Dice.DiceStatsBase
 
--- {-
+-- combineDistributionsBinOp'  :: (Monad m) => (Integer -> Integer -> Integer) -> m Distribution -> m Distribution -> m Distribution
+-- combineDistributionsBinOp' f m m' = do
+--     d <- m
+--     d' <- m'
+--     return $ combineDistributionsBinOp f d d'
+
+combineRangesBinOp :: (MonadException m, Range a, Range b) => (Integer -> Integer -> Integer) -> a -> b -> m Distribution
+combineRangesBinOp f a b = do
+  d <- range a
+  d' <- range b
+  return $ combineDistributionsBinOp f d d'
+
+class Range a where
+  range :: MonadException m => a -> m Distribution
+
+-- maxValue :: MonadException m => a -> m Integer
+-- minValue :: MonadException m => a -> m Integer
+
+instance Range Expr where
+  range (NoExpr t) = range t
+  range (Add t e) = combineRangesBinOp (+) t e
+  range (Sub t e) = combineRangesBinOp (-) t e
+
+instance Range Term where
+  range (NoTerm t) = range t
+  range (Multi t e) = combineRangesBinOp (*) t e
+  range (Div t e) = do
+    d <- range t
+    d' <- range e
+    return $ combineDistributionsBinOp div d (dropWhereDistribution (== 0) d')
+
+instance Range Negation where
+  range (Neg t) = do
+    d <- range t
+    return $ mapOverValue negate d
+  range (NoNeg t) = range t
+
+instance Range Expo where
+  range (NoExpo t) = range t
+  range (Expo t e) = do
+    d <- range t
+    d' <- range e
+    return $ combineDistributionsBinOp (^) d (dropWhereDistribution (>= 0) d')
+
+instance Range Func where
+  range (NoFunc t) = range t
+  range f@(Func _ _) = evaluationException "tried to find range of function" [prettyShow f]
+
+instance Range NumBase where
+  range (Value i) = return $ toDistribution [(i, 1)]
+  range (NBParen (Paren e)) = range e
+
+instance Range Base where
+  range (NBase nb) = range nb
+  range (DiceBase d) = range d
+
+instance Range Die where
+  range (LazyDie d) = range d
+  range (Die nb) = do
+    nbr <- range nb
+    let vcs = (\(hv, p) -> (toDistribution ((,1 / fromIntegral hv) <$> [1 .. hv]), p)) <$> fromDistribution nbr
+    return $ mergeWeightedDistributions vcs
+  range (CustomDie (LVBList es)) = do
+    exprs <- mapM range es
+    let l = fromIntegral $ length es
+    return $ mergeWeightedDistributions ((,1 / l) <$> exprs)
+  range cd@(CustomDie _) = evaluationException "tried to find range of complex custom die" [prettyShow cd]
+
+instance Range Dice where
+  range dice@(Dice b d mdor) = rangeDieOp dice
+
+rangeDieOp :: (MonadException m) => Dice -> m Distribution
+rangeDieOp (Dice b d Nothing) = do
+  bDis <- range b
+  dDis <- range d
+  let endDises = do
+        (i, p) <- fromDistribution bDis
+        if i < 1
+          then []
+          else do
+            let v = Prelude.foldr1 (combineDistributionsBinOp (+)) (genericTake i (repeat dDis))
+            [(v, p)]
+  return $ mergeWeightedDistributions endDises
+rangeDieOp d = evaluationException "die modifiers are unimplemented" [prettyShow d]
+
+-- rangeDieOpHelpKD :: (MonadException m) => KeepDrop -> LowHighWhere -> (Distribution , Distribution ) -> m (Distribution , Distribution )
+-- rangeDieOpHelpKD kd (Where cmp i) ds@(counts,values) = do
+--   iDis <- range i
+--   let ds = do
+--         (i,r) <- fromDistribution iDis
+--         if doesActivate i then return () else r
+--   r
+--   where
+--     vs = fromDistribution values
+--     doesActivate i' = any (\(i'',_) -> applyCompare cmp i'' i') vs
+
+{-
+
 --- Finding the range of an expression.
 
 -- TODO: make range return all possible values, repeated the number of times they would be
@@ -55,12 +153,12 @@ instance Range Term where
 
 -- NOTE: this is unsafe since the function requested may not be defined
 -- if using the dice parser functions, it'll be safe, but for all other uses, beware
-instance Range Func where
-  range' (Func s n) = S.fromList $ (supportedFunctions M.! s) <$> range n
-  maxVal (Func "id" n) = maxVal n
-  maxVal f = maximum (range f)
-  minVal (Func "id" n) = minVal n
-  minVal f = minimum (range f)
+-- instance Range Func where
+--   range' (Func s n) = S.fromList $ (supportedFunctions M.! s) <$> range n
+--   maxVal (Func "id" n) = maxVal n
+--   maxVal f = maximum (range f)
+--   minVal (Func "id" n) = minVal n
+--   minVal f = minimum (range f)
 
 instance Range Negation where
   range' (Neg expo) = S.fromList $ negate <$> range expo
@@ -164,4 +262,5 @@ diceVals' :: Maybe DieOpRecur -> ([Integer], DieRange, DieRange) -> ([Integer], 
 diceVals' Nothing t = t
 diceVals' (Just (DieOpRecur doo mdor)) t = diceVals' mdor (applyDieOpVal doo t)
 
--- -}
+-}
+-}

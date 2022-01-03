@@ -57,6 +57,13 @@ dependencies:
 - safe
 - edit-distance
 - unliftio
+- Chart-diagrams
+- diagrams-core
+- diagrams-lib
+- diagrams-postscript
+- diagrams-svg
+- SVGFonts
+- graphviz
 
 library:
   source-dirs: src
