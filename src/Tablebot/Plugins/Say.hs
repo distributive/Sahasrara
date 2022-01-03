@@ -24,7 +24,8 @@ say = Command "say" saycomm []
     saycomm = do
       input <- untilEnd
       return $ \m -> do
-        sendMessage m $ pack $ "> " ++ input ++ "\n - <@" ++ show (userId $ messageAuthor m) ++ ">"
+        let quoted = unlines . (("> " ++) <$>) . lines
+        sendMessage m $ pack $ quoted input ++ " - <@" ++ show (userId $ messageAuthor m) ++ ">"
 
 sayHelp :: HelpPage
 sayHelp =
