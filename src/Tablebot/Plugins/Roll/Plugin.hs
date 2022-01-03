@@ -39,12 +39,12 @@ rollDice' e' t m = do
   where
     dsc = maybe ": " (\(Qu t') -> " \"" <> t' <> "\": ") t
     baseMsg = toMention (messageAuthor m) <> " rolled" <> dsc
-    makeLine (i, s) = pack (formatText Code $ show i) <> Data.Text.replicate (max 0 (6 - length (show i))) " " <> " ⟵ " <> s
+    makeLine (i, s) = pack (show i) <> Data.Text.replicate (max 0 (6 - length (show i))) " " <> " ⟵ " <> s
     makeMsg (LIInteger v) s = baseMsg <> s <> ".\nOutput: " <> pack (show v)
     makeMsg (LIList []) _ = baseMsg <> "No output."
     makeMsg (LIList ls) ss
-      | all (T.null . snd) ls = baseMsg <> formatText Code ss <> "\nOutput: {" <> intercalate ", " (pack . show . fst <$> ls) <> "}"
-      | otherwise = baseMsg <> formatText Code ss <> "\n  " <> intercalate "\n  " (makeLine <$> ls)
+      | all (T.null . snd) ls = baseMsg <> ss <> "\nOutput: {" <> intercalate ", " (pack . show . fst <$> ls) <> "}"
+      | otherwise = baseMsg <> ss <> "\n  " <> intercalate "\n  " (makeLine <$> ls)
     simplify (LIList ls) = LIList $ fmap (\(i, _) -> (i, "...")) ls
     simplify li = li
     countFormatting s = (`div` 4) $ T.foldr (\c cf -> cf + (2 * fromEnum (c == '`')) + fromEnum (c `elem` ['~', '_', '*'])) 0 s
