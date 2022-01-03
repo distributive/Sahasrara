@@ -57,6 +57,7 @@ dependencies:
 - safe
 - edit-distance
 - unliftio
+- regex-pcre
 
 library:
   source-dirs: src
