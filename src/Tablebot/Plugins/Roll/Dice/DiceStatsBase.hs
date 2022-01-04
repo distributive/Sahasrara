@@ -29,7 +29,7 @@ where
 
 import Data.Bifunctor (Bifunctor (second))
 import qualified Data.ByteString.Lazy as B
-import Data.ByteString.Char8 qualified as C
+import qualified Data.ByteString.Char8 as C
 import Data.Map as M
 import Data.Text qualified as T
 import Diagrams (Diagram, dims2D, renderDia, mkWidth)
