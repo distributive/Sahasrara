@@ -20,25 +20,14 @@ module Tablebot.Plugins.Roll.Dice.DiceStatsBase
   )
 where
 
--- import Diagrams.Backend.SVG.CmdLine
--- import Diagrams.Core
--- import Diagrams.Core.Names
--- import Diagrams.Prelude hiding (Renderable)
--- import Diagrams.TwoD.GraphViz
--- import Graphics.SVGFonts
-
-import Data.Bifunctor (Bifunctor (second))
+import Codec.Picture (PngSavable (encodePng))
 import qualified Data.ByteString.Lazy as B
-import qualified Data.ByteString.Char8 as C
 import Data.Map as M
-import Data.Text qualified as T
-import Diagrams (Diagram, dims2D, renderDia, mkWidth)
--- import Diagrams.Backend.SVG
+import Diagrams (Diagram, dims2D, renderDia)
 import Diagrams.Backend.Rasterific
 import Graphics.Rendering.Chart.Backend.Diagrams (defaultEnv, runBackendR)
 import Graphics.Rendering.Chart.Backend.Types
 import Graphics.Rendering.Chart.Easy
-import Codec.Picture (PngSavable(encodePng))
 
 newtype Distribution = Distribution (Map Integer Rational)
   deriving (Show)
@@ -94,5 +83,4 @@ distributionRenderable t d = toRenderable $ do
   plot $ plotBars <$> bars ["values"] pts
   where
     pts :: [(Double, [Double])]
-    pts = (\(o, s) -> (fromInteger o, [ fromRational s])) <$> fromDistribution d
-
+    pts = (\(o, s) -> (fromInteger o, [fromRational s])) <$> fromDistribution d

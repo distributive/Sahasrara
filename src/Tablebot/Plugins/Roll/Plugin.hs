@@ -9,7 +9,6 @@
 -- A command that outputs the result of rolling the input dice.
 module Tablebot.Plugins.Roll.Plugin (rollPlugin) where
 
-import Control.Exception (throwIO)
 import Control.Monad.Writer (MonadIO (liftIO), void)
 import Data.Bifunctor (Bifunctor (first))
 import Data.ByteString.Lazy (toStrict)
@@ -18,7 +17,7 @@ import Data.Text (Text, intercalate, pack, replicate, unpack)
 import qualified Data.Text as T
 import Discord (restCall)
 import Discord.Internal.Rest.Channel (ChannelRequest (CreateMessageDetailed), MessageDetailedOpts (MessageDetailedOpts))
-import Discord.Types (Channel (channelId), Message (messageAuthor, messageChannel))
+import Discord.Types (Message (messageAuthor, messageChannel))
 import System.Timeout
 import Tablebot.Plugins.Roll.Dice
 import Tablebot.Plugins.Roll.Dice.DiceData
