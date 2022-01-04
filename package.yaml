@@ -86,6 +86,8 @@ library:
   - ConstraintKinds
   - RecordWildCards
   - ScopedTypeVariables
+  - TypeOperators
+  - RankNTypes
   ghc-options:
   - -Wall
 

@@ -11,11 +11,10 @@ module Tablebot.Plugins.Netrunner.Command.Custom (customCard) where
 
 import Data.Map (fromList, lookup)
 import Data.Maybe (catMaybes)
-import Data.Text (Text, pack, unpack)
+import Data.Text (Text, pack)
 import Tablebot.Plugins.Netrunner.Type.Card as Card
-import Tablebot.Plugins.Netrunner.Type.Faction as Faction
 import Tablebot.Plugins.Netrunner.Type.NrApi (NrApi (..))
-import Tablebot.Utility.Search (FuzzyCosts (..), closestMatch, closestPairWithCosts, closestValue)
+import Tablebot.Utility.Search (FuzzyCosts (..), closestPairWithCosts, closestValue)
 import Prelude hiding (lookup)
 
 -- | @NrData@ allows us to parse parameters into a type of our choosing.
@@ -65,16 +64,16 @@ keys =
 fuzzyBool :: String -> Bool
 fuzzyBool = closestValue [("true", True), ("false", False)]
 
--- | @fuzzyType@ maps a string to the closest card type.
-fuzzyType :: String -> String
-fuzzyType = closestMatch ["agenda", "asset", "event", "hardware", "ice", "identity", "operation", "program", "resource", "upgrade"]
-
--- | @fuzzyFaction@ maps a string to the closest card faction by name.
-fuzzyFaction :: NrApi -> String -> String
-fuzzyFaction api query =
-  let names = unpack . Faction.name <$> factions api
-      codes = unpack . Faction.code <$> factions api
-   in closestValue (zip names codes) query
+-- -- | @fuzzyType@ maps a string to the closest card type.
+-- fuzzyType :: String -> String
+-- fuzzyType = closestMatch ["agenda", "asset", "event", "hardware", "ice", "identity", "operation", "program", "resource", "upgrade"]
+--
+-- -- | @fuzzyFaction@ maps a string to the closest card faction by name.
+-- fuzzyFaction :: NrApi -> String -> String
+-- fuzzyFaction api query =
+--   let names = unpack . Faction.name <$> factions api
+--       codes = unpack . Faction.code <$> factions api
+--    in closestValue (zip names codes) query
 
 -- | @customCard@ takes a set of parameters and does its best to turn that data
 -- into a card.

@@ -143,7 +143,7 @@ nrSearch = Command "search" searchPars []
             embedCards
               ("Query: `" <> pairsToNrdb pairs <> "`\n")
               res
-              ("_[..." <> (pack $ show $ length res - 10) <> " more](" <> pairsToQuery pairs <> ")_")
+              ("_[..." <> pack (show $ length res - 10) <> " more](" <> pairsToQuery pairs <> ")_")
               m
 
 -- | @nrCustom@ is a command that lets users generate a card embed out of custom

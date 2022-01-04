@@ -134,7 +134,7 @@ keyValuesSepOn seps ors = many $ try $ skipManyTill anySingle pair
       content <- (quotedWithout ors <|> nonSpaceWord') `sepBy` satisfy (`elem` ors)
       return (cat, sep, content)
     nonSpaceWord' :: Parser String
-    nonSpaceWord' = some $ satisfy $ \c -> (not $ isSpace c) && (c `notElem` ors)
+    nonSpaceWord' = some $ satisfy $ \c -> not (isSpace c) && (c `notElem` ors)
 
 -- | @sp@ parses an optional space character.
 sp :: Parser ()
@@ -181,3 +181,17 @@ inlineCommandHelper open close p action =
     maxInlineCommands = 3
     action' (Right p') m = action p' m
     action' (Left _) m = void $ reactToMessage m "x"
+<<<<<<< HEAD
+=======
+
+-- | Parse 0 or more comma separated values.
+parseCommaSeparated :: Parser a -> Parser [a]
+parseCommaSeparated p = do
+  f <- optional $ try p
+  maybe (return []) (\first' -> (first' :) <$> many (try (skipSpace *> char ',' *> skipSpace) *> p)) f
+
+-- | Parse 1 or more comma separated values.
+parseCommaSeparated1 :: Parser a -> Parser [a]
+parseCommaSeparated1 p = do
+  p >>= (\first' -> (first' :) <$> many (try (skipSpace *> char ',' *> skipSpace) *> p))
+>>>>>>> 787be1ad79e46753da5f124a04f0141025338a50

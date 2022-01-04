@@ -64,7 +64,7 @@ instance {-# OVERLAPPING #-} CanParse String where
   pars = word
 
 -- | @Quoted a@ defines an input of type @a@ that is contained within quotes.
-newtype Quoted a = Qu a
+newtype Quoted a = Qu a deriving (Show)
 
 instance IsString a => CanParse (Quoted a) where
   pars = Qu . fromString <$> quoted
@@ -114,13 +114,13 @@ instance (CanParse a, CanParse b, CanParse c, CanParse d) => CanParse (a, b, c, 
 instance (CanParse a, CanParse b, CanParse c, CanParse d, CanParse e) => CanParse (a, b, c, d, e) where
   pars = do
     x <- pars @a
-    space
+    skipSpace1
     y <- pars @b
-    space
+    skipSpace1
     z <- pars @c
-    space
+    skipSpace1
     w <- pars @d
-    space
+    skipSpace1
     v <- pars @e
     return (x, y, z, w, v)
 
