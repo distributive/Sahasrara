@@ -58,6 +58,7 @@ dependencies:
 - edit-distance
 - unliftio
 - split
+- regex-pcre
 
 library:
   source-dirs: src
