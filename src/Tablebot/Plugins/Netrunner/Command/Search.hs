@@ -176,9 +176,14 @@ fixSearch api = mapMaybe fix
           active = ("active", activeBanList api)
           latest = ("latest", latestBanList api)
           blsPairs = active : latest : (zip (map (unpack . BanList.name) bls) bls)
-       in (\(x, y) -> (pack x, y)) $ closestPair blsPairs $ unpack b
+       in (\(x, y) -> (formatBanListName $ pack x, y)) $ closestPair blsPairs $ unpack b
+    formatBanListName :: Text -> Text
+    formatBanListName = toLower . (replace " " "-") . (replace "." "-")
+    cNames :: [Text]
     cNames = "draft" : (map Cycle.name $ cycles api)
+    fNames :: [Text]
     fNames = map Faction.code $ factions api
+    tNames :: [Text]
     tNames = map (toLower . Type.name) $ filter (not . Type.is_subtype) $ types api
     checkComp :: Query -> Maybe Query
     checkComp (QText _ QGT _ _) = Nothing
