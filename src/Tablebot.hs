@@ -86,7 +86,11 @@ runTablebot dToken prefix dbpath plugins =
               flip runSqlPool pool . flip runReaderT cacheMVar . eventHandler actions prefix,
             discordOnStart = do
               -- Build list of cron jobs, saving them to the mvar.
-              runSqlPool (runReaderT (mapM runCron (compiledCronJobs actions) >>= liftIO . putMVar mvar) cacheMVar) pool
+              -- Note that we cannot just use @runSqlPool@ here - this creates
+              -- a single transaction which is reverted in case of exception
+              -- (which can just happen due to databases being unavailable
+              -- sometimes).
+              runReaderT (mapM (runCron pool) (compiledCronJobs actions) >>= liftIO . putMVar mvar) cacheMVar
               liftIO $ putStrLn "Tablebot lives!",
             -- Kill every cron job in the mvar.
             discordOnEnd = takeMVar mvar >>= killCron

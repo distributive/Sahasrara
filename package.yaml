@@ -67,6 +67,7 @@ dependencies:
 - SVGFonts
 - graphviz
 - JuicyPixels
+- regex-pcre
 
 library:
   source-dirs: src
