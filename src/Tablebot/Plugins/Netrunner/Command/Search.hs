@@ -128,38 +128,22 @@ fixSearch api = mapMaybe fix
     format ("b", sep, v) = Just $ QBan "b" sep $ fixBan $ head v
     -- format ("z", sep, v) =
     format _ = Nothing
-    -- This needs explaining: for some reason on NetrunnerDB the draft cycle
-    -- is listed as the 0th cycle (with the core set and sequential cycles 1
-    -- onwards. However, in the API draft isn't the 0th element in the list of
-    -- cycles. It's the *fourth*.
-    -- Clarity: when I say "fourth" I'm zero indexing. Point is: accept these
-    -- functions suck but find someone else to blame because it isn't me.
-    fixCycleIndex :: Int -> Int
-    fixCycleIndex i =
-      if
-          | i < 4 -> i + 1
-          | i > 4 -> i
-          | otherwise -> 0
-    unfixCycleIndex :: Int -> Int
-    unfixCycleIndex i =
-      if
-          | i < 4 -> i
-          | i > 4 -> i - 1
-          | otherwise -> 0
     cycleIndex :: Card -> Maybe Int
     cycleIndex card =
       let matchCycle c = Just (Cycle.code c) == (Cycle.code <$> toCycle api card)
        in Just $ case findIndex matchCycle $ cycles api of
             Nothing -> 0
-            Just i -> fixCycleIndex i
-    fixCycle :: Text -> Text
-    fixCycle c = pack $
-      show $
-        unfixCycleIndex $ case decimal c of
-          Right x -> fst x
-          Left _ -> case autocomplete cNames c of
-            Just c' -> fromMaybe 0 $ findIndex (== c') cNames
-            Nothing -> closestValue (zip (map unpack cNames) [0 ..]) $ unpack c
+            Just i -> i
+    fixCycle :: Text -> Text -- Turns the name of a cycle into its index
+    fixCycle c =
+      let names = zip (map unpack cNames) [0 ..]
+          codes = zip (map unpack cCodes) [0 ..]
+       in pack $
+            show $ case decimal c of
+              Right x -> fst x
+              Left _ -> case autocomplete (map toLower cNames) $ toLower c of
+                Just c' -> fromMaybe 0 $ findIndex (== c') (map toLower cNames)
+                Nothing -> closestValue (names ++ codes) $ unpack c
     fixFaction :: Text -> Text
     fixFaction f = case autocomplete fNames f of
       Just f' -> f'
@@ -180,7 +164,9 @@ fixSearch api = mapMaybe fix
     formatBanListName :: Text -> Text
     formatBanListName = toLower . (replace " " "-") . (replace "." "-")
     cNames :: [Text]
-    cNames = "draft" : (map Cycle.name $ cycles api)
+    cNames = map Cycle.name $ cycles api
+    cCodes :: [Text]
+    cCodes = map Cycle.code $ cycles api
     fNames :: [Text]
     fNames = map Faction.code $ factions api
     tNames :: [Text]

@@ -73,11 +73,18 @@ defaultCards :: Cards
 defaultCards = Cards {cardContent = [], imageUrlTemplate = ""}
 
 -- | @Cycles@ represents all cycles in the game's history.
+-- This needs explaining: for some reason on NetrunnerDB the draft cycle
+-- is listed as the 0th cycle (with the core set and sequential cycles 1
+-- onwards. However, in the API draft isn't the 0th element in the list of
+-- cycles. It's the *fourth* (zero indexed).
+-- To avoid this weirdness propagating the order is fixed on import.
 data Cycles = Cycles {cycleContent :: [Cycle]} deriving (Show, Generic)
 
 instance FromJSON Cycles where
   parseJSON (Object v) = do
-    content <- v .: "data"
+    content <- do
+      cs <- v .: "data"
+      return $ (cs !! 4) : (take 4 cs) ++ (drop 5 cs)
     return $ Cycles {cycleContent = content}
   parseJSON _ = return defaultCycles
 
