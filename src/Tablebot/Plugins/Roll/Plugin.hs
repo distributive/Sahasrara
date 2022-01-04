@@ -10,15 +10,15 @@
 module Tablebot.Plugins.Roll.Plugin (rollPlugin) where
 
 import Control.Monad.Writer (MonadIO (liftIO))
+import Data.Bifunctor (Bifunctor (first))
 import Data.Maybe (fromMaybe)
 import Data.Text (Text, intercalate, pack, replicate, unpack)
-import qualified Data.Text as T
+import Data.Text qualified as T
 import Discord.Types (Message (messageAuthor))
 import Tablebot.Plugins.Roll.Dice
 import Tablebot.Plugins.Roll.Dice.DiceData
-import Tablebot.Plugins.Roll.Dice.DiceFunctions (ListInteger (LIInteger, LIList))
 import Tablebot.Utility
-import Tablebot.Utility.Discord (Format (Code), formatText, sendMessage, toMention)
+import Tablebot.Utility.Discord (sendMessage, toMention)
 import Tablebot.Utility.Parser (inlineCommandHelper)
 import Tablebot.Utility.SmartParser (PComm (parseComm), Quoted (Qu), pars)
 import Text.Megaparsec (MonadParsec (try), choice, (<?>))
@@ -30,8 +30,8 @@ rollDice' :: Maybe (Either ListValues Expr) -> Maybe (Quoted Text) -> Message ->
 rollDice' e' t m = do
   let e = fromMaybe (Right defaultRoll) e'
   (vs, ss) <- case e of
-    (Left a) -> liftIO $ eval a
-    (Right b) -> liftIO $ eval b
+    (Left a) -> liftIO $ first Left <$> evalList a
+    (Right b) -> liftIO $ first Right <$> evalInteger b
   let msg = makeMsg vs ss
   if countFormatting msg < 199
     then sendMessage m msg
@@ -40,12 +40,12 @@ rollDice' e' t m = do
     dsc = maybe ": " (\(Qu t') -> " \"" <> t' <> "\": ") t
     baseMsg = toMention (messageAuthor m) <> " rolled" <> dsc
     makeLine (i, s) = pack (show i) <> Data.Text.replicate (max 0 (6 - length (show i))) " " <> " ⟵ " <> s
-    makeMsg (LIInteger v) s = baseMsg <> s <> ".\nOutput: " <> pack (show v)
-    makeMsg (LIList []) _ = baseMsg <> "No output."
-    makeMsg (LIList ls) ss
+    makeMsg (Right v) s = baseMsg <> s <> ".\nOutput: " <> pack (show v)
+    makeMsg (Left []) _ = baseMsg <> "No output."
+    makeMsg (Left ls) ss
       | all (T.null . snd) ls = baseMsg <> ss <> "\nOutput: {" <> intercalate ", " (pack . show . fst <$> ls) <> "}"
       | otherwise = baseMsg <> ss <> "\n  " <> intercalate "\n  " (makeLine <$> ls)
-    simplify (LIList ls) = LIList $ fmap (\(i, _) -> (i, "...")) ls
+    simplify (Left ls) = Left $ fmap (\(i, _) -> (i, "...")) ls
     simplify li = li
     countFormatting s = (`div` 4) $ T.foldr (\c cf -> cf + (2 * fromEnum (c == '`')) + fromEnum (c `elem` ['~', '_', '*'])) 0 s
 
@@ -90,7 +90,7 @@ Given an expression, evaluate the expression. Can roll inline using |]
       ++ [r| Can use `r` instead of `roll`.
 
 This supports addition, subtraction, multiplication, integer division, exponentiation, parentheses, dice of arbitrary size, dice with custom sides, rerolling dice once on a condition, rerolling dice indefinitely on a condition, keeping or dropping the highest or lowest dice, keeping or dropping dice based on a condition, operating on lists, and using functions like |]
-      ++ unpack (intercalate ", " basicFunctionsList)
+      ++ unpack (intercalate ", " integerFunctionsList)
       ++ [r| (which return integers), or functions like |]
       ++ unpack (intercalate ", " listFunctionsList)
       ++ [r| (which return lists).
