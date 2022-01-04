@@ -11,8 +11,7 @@ module Tablebot.Plugins.Netrunner.Plugin (netrunnerPlugin) where
 
 import Control.Monad.IO.Class
 import Control.Monad.Trans.Reader (ask)
-import Data.Text (Text, pack)
-import qualified Data.Text as T (head)
+import Data.Text (Text, pack, uncons)
 import Discord.Types
 import Tablebot.Internal.Handler.Command ()
 import Tablebot.Plugins.Netrunner.Command.BanList
@@ -116,14 +115,13 @@ nrFindFlavour = Command "flavour" (parseComm findComm) []
 
 -- | @nrInline@ is the inline version of the commands that find cards.
 nrInline :: EnvInlineCommand NrApi
-nrInline = inlineCommandHelper "{{" "}}" (some $ anySingleBut '}') $ \q m -> do
+nrInline = inlineCommandHelper "{{" "}}" (some $ anySingleBut '}') $ \query m -> do
   api <- ask
-  let query = pack q
-  case T.head query of
-    '!' -> embedCardImg (queryCard api query) m
-    '|' -> embedCardFlavour (queryCard api query) m
-    '#' -> embedBanHistory (queryCard api query) m
-    _ -> embedCard (queryCard api query) m
+  case uncons $ pack query of
+    Just ('!', q) -> embedCardImg (queryCard api q) m
+    Just ('|', q) -> embedCardFlavour (queryCard api q) m
+    Just ('#', q) -> embedBanHistory (queryCard api q) m
+    _ -> embedCard (queryCard api $ pack query) m
 
 -- | @nrSearch@ searches the card database with specific queries.
 nrSearch :: EnvCommand NrApi
