@@ -19,9 +19,10 @@ module Tablebot.Plugins.Netrunner.Command.Search
   )
 where
 
-import Data.List (nubBy)
+import Data.List (findIndex, nubBy)
 import Data.Maybe (fromMaybe, mapMaybe)
 import Data.Text (Text, intercalate, isInfixOf, pack, replace, toLower, unpack, unwords)
+import Data.Text.Read (decimal)
 import Tablebot.Plugins.Netrunner.Type.BanList (BanList)
 import qualified Tablebot.Plugins.Netrunner.Type.BanList as BanList
 import Tablebot.Plugins.Netrunner.Type.Card as Card
@@ -31,7 +32,7 @@ import Tablebot.Plugins.Netrunner.Type.NrApi (NrApi (..))
 import qualified Tablebot.Plugins.Netrunner.Type.Type as Type
 import Tablebot.Plugins.Netrunner.Utility.BanList (activeBanList, isBanned, latestBanList)
 import Tablebot.Plugins.Netrunner.Utility.Card (toCycle)
-import Tablebot.Utility.Search (autocomplete, closestMatch, closestPair)
+import Tablebot.Utility.Search (autocomplete, closestMatch, closestPair, closestValue)
 import Tablebot.Utility.Utils (standardise)
 import Text.Read (readMaybe)
 import Prelude hiding (unwords)
@@ -109,10 +110,10 @@ fixSearch api = mapMaybe fix
     format ("x", sep, v) = Just $ QText "x" sep strippedText v
     format ("a", sep, v) = Just $ QText "a" sep flavour v
     format ("e", sep, v) = Just $ QText "e" sep packCode v
-    format ("c", sep, v) = Just $ QText "c" sep (\c -> Cycle.name <$> toCycle api c) v
+    format ("c", sep, v) = Just $ QInt "c" sep cycleIndex $ map fixCycle v
     format ("t", sep, v) = Just $ QText "t" sep typeCode $ map fixType v
     format ("f", sep, v) = Just $ QText "f" sep keywords $ map fixFaction v
-    format ("d", sep, v) = Just $ QText "d" sep sideCode v
+    format ("d", sep, v) = Just $ QText "d" sep sideCode $ map fixSide v
     format ("i", sep, v) = Just $ QText "i" sep illustrator v
     format ("o", sep, v) = Just $ QInt "o" sep cost v
     format ("g", sep, v) = Just $ QInt "g" sep advancementCost v
@@ -127,12 +128,48 @@ fixSearch api = mapMaybe fix
     format ("b", sep, v) = Just $ QBan "b" sep $ fixBan $ head v
     -- format ("z", sep, v) =
     format _ = Nothing
+    -- This needs explaining: for some reason on NetrunnerDB the draft cycle
+    -- is listed as the 0th cycle (with the core set and sequential cycles 1
+    -- onwards. However, in the API draft isn't the 0th element in the list of
+    -- cycles. It's the *fourth*.
+    -- Clarity: when I say "fourth" I'm zero indexing. Point is: accept these
+    -- functions suck but find someone else to blame because it isn't me.
+    fixCycleIndex :: Int -> Int
+    fixCycleIndex i =
+      if
+          | i < 4 -> i + 1
+          | i > 4 -> i
+          | otherwise -> 0
+    unfixCycleIndex :: Int -> Int
+    unfixCycleIndex i =
+      if
+          | i < 4 -> i
+          | i > 4 -> i - 1
+          | otherwise -> 0
+    cycleIndex :: Card -> Maybe Int
+    cycleIndex card =
+      let matchCycle c = Just (Cycle.code c) == (Cycle.code <$> toCycle api card)
+       in Just $ case findIndex matchCycle $ cycles api of
+            Nothing -> 0
+            Just i -> fixCycleIndex i
+    fixCycle :: Text -> Text
+    fixCycle c = pack $
+      show $
+        unfixCycleIndex $ case decimal c of
+          Right x -> fst x
+          Left _ -> case autocomplete cNames c of
+            Just c' -> fromMaybe 0 $ findIndex (== c') cNames
+            Nothing -> closestValue (zip (map unpack cNames) [0 ..]) $ unpack c
+    fixFaction :: Text -> Text
     fixFaction f = case autocomplete fNames f of
       Just f' -> f'
       Nothing -> pack $ closestMatch (map unpack fNames) $ unpack f
+    fixType :: Text -> Text
     fixType t = case autocomplete tNames t of
       Just t' -> t'
       Nothing -> pack $ closestMatch (map unpack tNames) $ unpack t
+    fixSide :: Text -> Text
+    fixSide = pack . closestValue [("r", "runner"), ("c", "corp"), ("runner", "runner"), ("corp", "corp")] . unpack
     fixBan :: Text -> (Text, BanList)
     fixBan b =
       let bls = banLists api
@@ -140,6 +177,7 @@ fixSearch api = mapMaybe fix
           latest = ("latest", latestBanList api)
           blsPairs = active : latest : (zip (map (unpack . BanList.name) bls) bls)
        in (\(x, y) -> (pack x, y)) $ closestPair blsPairs $ unpack b
+    cNames = "draft" : (map Cycle.name $ cycles api)
     fNames = map Faction.code $ factions api
     tNames = map (toLower . Type.name) $ filter (not . Type.is_subtype) $ types api
     checkComp :: Query -> Maybe Query
