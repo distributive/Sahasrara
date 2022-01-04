@@ -11,10 +11,12 @@
 module Tablebot.Utility.Parser where
 
 import Data.Char (isDigit, isLetter, isSpace)
-import Data.Functor (($>))
+import Data.Functor (void, ($>))
 import Data.Text (Text)
+import qualified Data.Text as T
 import Discord.Internal.Rest (Message)
 import Tablebot.Utility
+import Tablebot.Utility.Discord (reactToMessage)
 import Text.Megaparsec
 import Text.Megaparsec.Char (char, string)
 
@@ -101,7 +103,7 @@ data NrQuery = NrQueryCard String | NrQueryImg String | NrQueryFlavour String
 -- | @netrunnerQuery@ gets an inline Netrunner search query.
 -- This means that it matches @{{card title}}@.
 netrunnerQuery :: Parser [NrQuery]
-netrunnerQuery = many $ try $ skipManyTill anySingle query
+netrunnerQuery = some $ try $ skipManyTill anySingle query
   where
     query :: Parser NrQuery
     query = do
@@ -147,7 +149,7 @@ keyValuesSepOn seps ors = many $ try $ skipManyTill anySingle pair
       content <- (quotedWithout ors <|> nonSpaceWord') `sepBy` satisfy (`elem` ors)
       return (cat, sep, content)
     nonSpaceWord' :: Parser String
-    nonSpaceWord' = some $ satisfy $ \c -> (not $ isSpace c) && (c `notElem` ors)
+    nonSpaceWord' = some $ satisfy $ \c -> not (isSpace c) && (c `notElem` ors)
 
 -- | @sp@ parses an optional space character.
 sp :: Parser ()
@@ -183,12 +185,25 @@ double = do
 -- | For helping to create inline commands. Takes the opening characters, closing
 -- characters, a parser to get a value `e`, and an action that takes that `e` and a
 -- message and produces a DatabaseDiscord effect.
-inlineCommandHelper :: Text -> Text -> Parser e -> (e -> Message -> EnvDatabaseDiscord d f) -> EnvInlineCommand d
+inlineCommandHelper :: Text -> Text -> Parser e -> (e -> Message -> EnvDatabaseDiscord d ()) -> EnvInlineCommand d
 inlineCommandHelper open close p action =
   InlineCommand
     ( do
-        getExprs <- many (try $ skipManyTill anySingle (string open *> skipSpace *> p <* skipSpace <* string close))
-        return $ \m -> mapM_ (`action` m) (take maxInlineCommands getExprs)
+        getExprs <- some (try $ skipManyTill anySingle (string open *> skipSpace *> (((Right <$> try p) <* skipSpace <* string close) <|> (Left . T.pack <$> manyTill anySingle (string close)))))
+        return $ \m -> mapM_ (`action'` m) (take maxInlineCommands getExprs)
     )
   where
     maxInlineCommands = 3
+    action' (Right p') m = action p' m
+    action' (Left _) m = void $ reactToMessage m "x"
+
+-- | Parse 0 or more comma separated values.
+parseCommaSeparated :: Parser a -> Parser [a]
+parseCommaSeparated p = do
+  f <- optional $ try p
+  maybe (return []) (\first' -> (first' :) <$> many (try (skipSpace *> char ',' *> skipSpace) *> p)) f
+
+-- | Parse 1 or more comma separated values.
+parseCommaSeparated1 :: Parser a -> Parser [a]
+parseCommaSeparated1 p = do
+  p >>= (\first' -> (first' :) <$> many (try (skipSpace *> char ',' *> skipSpace) *> p))

@@ -85,6 +85,8 @@ library:
   - ConstraintKinds
   - ImportQualifiedPost
   - RecordWildCards
+  - TypeOperators
+  - RankNTypes
   ghc-options:
   - -Wall
 

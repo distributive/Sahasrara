@@ -95,8 +95,7 @@ nrFindInline = InlineCommand nrInlineComm
     nrInlineComm :: Parser (Message -> EnvDatabaseDiscord NrApi ())
     nrInlineComm = do
       queries <- netrunnerQuery
-      let limitedQs = if length queries > 5 then take 5 queries else queries
-      return $ \m -> mapM_ (\q -> sendEmbed q m) limitedQs
+      return $ \m -> mapM_ (`sendEmbed` m) (take 5 queries)
     sendEmbed :: NrQuery -> Message -> EnvDatabaseDiscord NrApi ()
     sendEmbed query m = do
       api <- ask
@@ -123,7 +122,7 @@ nrSearch = Command "search" searchPars []
             embedCards
               ("Query: `" <> pairsToNrdb pairs <> "`\n")
               res
-              ("_[..." <> (pack $ show $ length res - 10) <> " more](" <> pairsToQuery pairs <> ")_")
+              ("_[..." <> pack (show $ length res - 10) <> " more](" <> pairsToQuery pairs <> ")_")
               m
 
 -- | @nrCustom@ is a command that lets users generate a card embed out of custom
