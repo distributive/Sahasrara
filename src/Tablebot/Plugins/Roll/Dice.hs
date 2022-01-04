@@ -9,6 +9,13 @@
 -- This plugin contains the neccessary parsers and stucture to get the AST for an
 -- expression that contains dice, as well as evaluate that expression.
 --
+-- The behind the scenes for the dice is split into four files.
+-- - DiceData - the data structures for the AST for dice
+-- - DiceFunctions - functionality for dealing with functions and processing
+--    them
+-- - DiceParsing - parsers for getting all the DiceData items
+-- - DiceEval - methods for evaluating elements from DiceData
+--
 -- Below is the regex representing the parsing for the expressions, and
 -- explanations for each component
 --
