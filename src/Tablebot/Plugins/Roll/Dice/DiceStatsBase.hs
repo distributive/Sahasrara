@@ -28,7 +28,7 @@ where
 -- import Graphics.SVGFonts
 
 import Data.Bifunctor (Bifunctor (second))
-import Data.ByteString.Lazy qualified as B
+import qualified Data.ByteString.Lazy as B
 import Data.ByteString.Char8 qualified as C
 import Data.Map as M
 import Data.Text qualified as T

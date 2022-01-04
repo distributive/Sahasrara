@@ -15,7 +15,7 @@ import Data.Bifunctor (Bifunctor (first))
 import Data.ByteString.Lazy (toStrict)
 import Data.Maybe (fromMaybe)
 import Data.Text (Text, intercalate, pack, replicate, unpack)
-import Data.Text qualified as T
+import qualified Data.Text as T
 import Discord (restCall)
 import Discord.Internal.Rest.Channel (ChannelRequest (CreateMessageDetailed), MessageDetailedOpts (MessageDetailedOpts))
 import Discord.Types (Channel (channelId), Message (messageAuthor, messageChannel))
@@ -160,7 +160,7 @@ statsCommand = Command "stats" (parseComm statsCommand') []
       where
         se = prettyShow e
         sse = unpack se
-        msg d = let (modalOrder, mean, std) = getStats d in ("Here are the statistics for your dice (" <> sse <> ").\n  Ten most common totals: " <> show (take 10 modalOrder) <> "\n  Mean: " <> show mean <> "\n  Standard deviation: " <> show std )
+        msg d = let (modalOrder, mean, std) = getStats d in ("Here are the statistics for your dice (" <> sse <> ").\n  Ten most common totals: " <> show (take 10 modalOrder) <> "\n  Mean: " <> show mean <> "\n  Standard deviation: " <> show std)
 
 -- sendMessage m (T.pack $ show range')
 
