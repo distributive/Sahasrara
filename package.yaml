@@ -57,13 +57,16 @@ dependencies:
 - safe
 - edit-distance
 - unliftio
+- Chart
 - Chart-diagrams
 - diagrams-core
 - diagrams-lib
 - diagrams-postscript
 - diagrams-svg
+- diagrams-rasterific
 - SVGFonts
 - graphviz
+- JuicyPixels
 
 library:
   source-dirs: src

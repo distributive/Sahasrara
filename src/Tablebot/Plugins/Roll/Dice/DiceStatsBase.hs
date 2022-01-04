@@ -16,19 +16,29 @@ module Tablebot.Plugins.Roll.Dice.DiceStatsBase
     mergeWeightedDistributions,
     dropWhereDistribution,
     mapOverValue,
-    -- getCount,
+    distributionByteString,
   )
 where
 
+-- import Diagrams.Backend.SVG.CmdLine
+-- import Diagrams.Core
+-- import Diagrams.Core.Names
+-- import Diagrams.Prelude hiding (Renderable)
+-- import Diagrams.TwoD.GraphViz
+-- import Graphics.SVGFonts
+
+import Data.Bifunctor (Bifunctor (second))
+import Data.ByteString.Lazy qualified as B
+import Data.ByteString.Char8 qualified as C
 import Data.Map as M
-import Diagrams
-import Diagrams.Backend.SVG
-import Diagrams.Backend.SVG.CmdLine
-import Diagrams.Core
-import Diagrams.Core.Names
-import Diagrams.Prelude
-import Diagrams.TwoD.GraphViz
-import Graphics.SVGFonts
+import Data.Text qualified as T
+import Diagrams (Diagram, dims2D, renderDia, mkWidth)
+-- import Diagrams.Backend.SVG
+import Diagrams.Backend.Rasterific
+import Graphics.Rendering.Chart.Backend.Diagrams (defaultEnv, runBackendR)
+import Graphics.Rendering.Chart.Backend.Types
+import Graphics.Rendering.Chart.Easy
+import Codec.Picture (PngSavable(encodePng))
 
 newtype Distribution = Distribution (Map Integer Rational)
   deriving (Show)
@@ -52,7 +62,7 @@ combineDistributionsBinOp f (Distribution m) (Distribution m') = toDistribution 
     combineFunc (v, c) (v', c') = (f v v', c * c')
 
 mergeDistributions :: [Distribution] -> Distribution
-mergeDistributions ds = normaliseDistribution $ Prelude.foldr helper (Distribution empty) ds
+mergeDistributions ds = normaliseDistribution $ Prelude.foldr helper (Distribution M.empty) ds
   where
     helper (Distribution d) (Distribution d') = Distribution $ unionWith (+) d d'
 
@@ -63,10 +73,26 @@ dropWhereDistribution :: (Integer -> Bool) -> Distribution -> Distribution
 dropWhereDistribution f (Distribution m) = normaliseDistribution $ Distribution $ M.filterWithKey (\k _ -> f k) m
 
 mapOverValue :: (Integer -> Integer) -> Distribution -> Distribution
-mapOverValue f (Distribution m) = Distribution $ M.mapKeys f m
+mapOverValue f (Distribution m) = Distribution $ M.mapKeysWith (+) f m
 
--- mergeDistributions :: Distribution -> Distribution -> Distribution
--- mergeDistributions (Distribution d) (Distribution d') = normaliseDistribution $ Distribution $ unionWith (+) d d'
+distributionByteString :: String -> Distribution -> IO B.ByteString
+distributionByteString t d = encodePng . renderDia Rasterific opts <$> distributionDiagram t d
+  where
+    opts = RasterificOptions (dims2D 700 400)
 
-toDiagrams :: Distribution -> Diagram B
-toDiagrams = undefined
+distributionDiagram :: String -> Distribution -> IO (Diagram B)
+distributionDiagram t d = do
+  defEnv <- defaultEnv (AlignmentFns id id) 700 400
+  return . fst $ runBackendR defEnv r
+  where
+    r = distributionRenderable t d
+
+distributionRenderable :: String -> Distribution -> Renderable ()
+distributionRenderable t d = toRenderable $ do
+  layout_title .= t
+  setColors [opaque blue, opaque red]
+  plot $ plotBars <$> bars ["values"] pts
+  where
+    pts :: [(Double, [Double])]
+    pts = (\(o, s) -> (fromInteger o, [ fromRational s])) <$> fromDistribution d
+

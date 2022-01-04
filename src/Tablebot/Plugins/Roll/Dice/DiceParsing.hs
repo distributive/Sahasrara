@@ -22,7 +22,7 @@ import Tablebot.Plugins.Roll.Dice.DiceData
 import Tablebot.Plugins.Roll.Dice.DiceFunctions
   ( ArgType (..),
     FuncInfoBase (..),
-    basicFunctions,
+    integerFunctions,
     listFunctions,
   )
 import Tablebot.Utility.Parser (integer, parseCommaSeparated1, skipSpace)
@@ -74,7 +74,7 @@ instance CanParse Term where
     binOpParseHelp '*' (Multi t) <|> binOpParseHelp '/' (Div t) <|> (return . NoTerm) t
 
 instance CanParse Func where
-  pars = try (functionParser (basicFunctions @IO) Func) <|> NoFunc <$> pars
+  pars = try (functionParser (integerFunctions @IO) Func) <|> NoFunc <$> pars
 
 -- | A generic function parser that takes a mapping from function names to
 -- functions, the main way to contruct the function data type `e`, and a

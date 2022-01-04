@@ -8,7 +8,7 @@
 --
 -- Functions, type classes, and other utilities to evaluate dice values and
 -- expressions.
-module Tablebot.Plugins.Roll.Dice.DiceEval (PrettyShow (prettyShow), eval, evaluationException) where
+module Tablebot.Plugins.Roll.Dice.DiceEval (PrettyShow (prettyShow), evalList, evalInteger, evaluationException) where
 
 import Control.Monad (when)
 import Control.Monad.Exception (MonadException)
@@ -27,6 +27,9 @@ import Tablebot.Utility.Exception (BotException (EvaluationException), catchBot,
 import Tablebot.Utility.Random (chooseOne)
 
 -- | A wrapper type to differentiate between the RNGCount and other Integers.
+--
+-- Represents the total number of calls to the RNG throughout the program
+-- (effectively, how many die rolls have occured).
 newtype RNGCount = RNGCount {getRNGCount :: Integer} deriving (Eq, Ord)
 
 -- | The maximum depth that should be permitted. Used to limit number of dice
@@ -49,12 +52,19 @@ evaluationException nm locs = throwBot $ EvaluationException (unpack nm) (unpack
 
 --- Evaluating an expression. Uses IO because dice are random
 
--- | Given an expression, evaluate it, getting the pretty printed string and the
--- value of the result.
-eval :: (IOEvalList a, PrettyShow a) => a -> IO (ListInteger, Text)
-eval a = do
+-- | Given a list expression, evaluate it, getting the pretty printed string and
+-- the value of the result.
+evalList :: (IOEvalList a, PrettyShow a) => a -> IO ([(Integer, Text)], Text)
+evalList a = do
   (is, ss, _) <- evalShowL (RNGCount 0) a
   return (is, fromMaybe (prettyShow a) ss)
+
+-- | Given an integer expression, evaluate it, getting the pretty printed string
+-- and the value of the result.
+evalInteger :: (IOEval a, PrettyShow a) => a -> IO (Integer, Text)
+evalInteger a = do
+  (is, ss, _) <- evalShow (RNGCount 0) a
+  return (is, ss)
 
 -- | Utility function to display dice.
 --
@@ -99,7 +109,7 @@ evalShowList' = evalShowList'' evalShow
 
 -- | Evaluate (using a custom evaluator function) a series of values, getting
 -- strings and values as a result.
-evalShowList'' :: (RNGCount -> a -> IO (i, s, RNGCount)) -> RNGCount -> [a] -> IO ([(i, s)], RNGCount)
+evalShowList'' :: (RNGCount -> a -> IO (i, Text, RNGCount)) -> RNGCount -> [a] -> IO ([(i, Text)], RNGCount)
 evalShowList'' customEvalShow rngCount = foldr foldF (return ([], rngCount))
   where
     foldF a sumrngcount = do
@@ -107,43 +117,49 @@ evalShowList'' customEvalShow rngCount = foldr foldF (return ([], rngCount))
       (i, s, rngCountTemp) <- customEvalShow rngCountTotal a
       return ((i, s) : diceSoFar, rngCountTemp)
 
--- | This type class evaluates an item and returns a ListInteger (which is
--- either a value or values and their representations).
+-- | When given a value that may possibly have an `EvaluationException`, add the
+-- representation of the current value to the exception stack.
+propagateException :: (MonadException m) => Text -> m v -> m v
+propagateException t a = catchBot a handleException
+  where
+    handleException (EvaluationException msg' locs) = throwBot (EvaluationException msg' (addIfNotIn locs))
+    handleException e = throwBot e
+    pa = unpack t
+    addIfNotIn locs = if null locs || pa /= Prelude.head locs then pa : locs else locs
+
+-- | This type class evaluates an item and returns a list of integers (with
+-- their representations if valid).
 class IOEvalList a where
-  -- | Evaluate the given item into a ListInteger, possibly a string
-  -- representation of the value, and the number of RNG calls it took. If the
-  -- `a` value is a dice value, the values of the dice should be displayed. The
-  -- integer given initially is the current RNG count of the expression. This
-  -- function adds the current location to the exception callstack.
-  evalShowL :: PrettyShow a => RNGCount -> a -> IO (ListInteger, Maybe Text, RNGCount)
-  evalShowL rngCount a = catchBot (evalShowL' rngCount a) handleException
-    where
-      handleException (EvaluationException msg' locs) = throwBot (EvaluationException msg' (addIfNotIn locs))
-      handleException e = throwBot e
-      pa = unpack $ prettyShow a
-      addIfNotIn locs = if null locs || pa /= Prelude.head locs then pa : locs else locs
+  -- | Evaluate the given item into a list of integers and text,
+  -- possibly a string representation of the value, and the number of RNG calls
+  -- it took. If the `a` value is a dice value, the values of the dice should be
+  -- displayed. This function adds the current location to the exception
+  -- callstack.
+  evalShowL :: PrettyShow a => RNGCount -> a -> IO ([(Integer, Text)], Maybe Text, RNGCount)
+  evalShowL rngCount a = propagateException (prettyShow a) (evalShowL' rngCount a)
 
-  evalShowL' :: PrettyShow a => RNGCount -> a -> IO (ListInteger, Maybe Text, RNGCount)
+  evalShowL' :: PrettyShow a => RNGCount -> a -> IO ([(Integer, Text)], Maybe Text, RNGCount)
 
-instance {-# OVERLAPPABLE #-} IOEval a => IOEvalList a where
-  evalShowL' rngCount a = evalShow rngCount a >>= \(i, t, rc) -> return (LIInteger i, Just t, rc)
-
-instance IOEvalList ArgValue where
-  evalShowL' rngCount (AVExpr e) = evalShowL rngCount e
-  evalShowL' rngCount (AVListValues lv) = evalShowL rngCount lv
+evalArgValue :: RNGCount -> ArgValue -> IO (ListInteger, RNGCount)
+evalArgValue rngCount (AVExpr e) = do
+  (i, _, rngCount') <- evalShow rngCount e
+  return (LIInteger i, rngCount')
+evalArgValue rngCount (AVListValues e) = do
+  (i, _, rngCount') <- evalShowL rngCount e
+  return (LIList (fst <$> i), rngCount')
 
 instance IOEvalList ListValues where
   evalShowL' rngCount (MultipleValues nb b) = do
     (nb', _, rngCount') <- evalShow rngCount nb
     (vs, rc) <- evalShowList' rngCount' (genericReplicate nb' b)
-    return (LIList vs, Nothing, rc)
-  evalShowL' rngCount (LVFunc fi exprs) = evaluateFunction rngCount fi exprs >>= \(i, s, rc) -> return (LIList ((,"") <$> i), Just s, rc)
+    return (vs, Nothing, rc)
+  evalShowL' rngCount (LVFunc fi exprs) = evaluateFunction rngCount fi exprs >>= \(i, s, rc) -> return ((,"") <$> i, Just s, rc)
   evalShowL' rngCount (LVBase lvb) = evalShowL rngCount lvb
 
 instance IOEvalList ListValuesBase where
   evalShowL' rngCount (LVBList es) = do
     (vs, rc) <- evalShowList' rngCount es
-    return (LIList vs, Nothing, rc)
+    return (vs, Nothing, rc)
   evalShowL' rngCount (LVBParen (Paren lv)) = evalShowL rngCount lv
 
 -- | This type class gives a function which evaluates the value to an integer
@@ -151,16 +167,10 @@ instance IOEvalList ListValuesBase where
 class IOEval a where
   -- | Evaluate the given item to an integer, a string representation of the
   -- value, and the number of RNG calls it took. If the `a` value is a dice
-  -- value, the values of the dice should be displayed. The integer given
-  -- initially is the current RNG count of the expression. This function adds
+  -- value, the values of the dice should be displayed. This function adds
   -- the current location to the exception callstack.
   evalShow :: PrettyShow a => RNGCount -> a -> IO (Integer, Text, RNGCount)
-  evalShow rngCount a = catchBot (evalShow' rngCount a) handleException
-    where
-      handleException (EvaluationException msg' locs) = throwBot (EvaluationException msg' (addIfNotIn locs))
-      handleException e = throwBot e
-      pa = unpack $ prettyShow a
-      addIfNotIn locs = if null locs || pa /= Prelude.head locs then pa : locs else locs
+  evalShow rngCount a = propagateException (prettyShow a) (evalShow' rngCount a)
 
   evalShow' :: PrettyShow a => RNGCount -> a -> IO (Integer, Text, RNGCount)
 
@@ -180,7 +190,7 @@ instance IOEval Die where
     checkRNGCount (incRNGCount rngCount')
     return (i, ds, incRNGCount rngCount')
   evalShow' rngCount d@(CustomDie is) = do
-    (LIList is', _, rngCount') <- evalShowL rngCount is
+    (is', _, rngCount') <- evalShowL rngCount is
     i <- chooseOne (fst <$> is')
     ds <- dieShow Nothing d [(i, Nothing)]
     checkRNGCount (incRNGCount rngCount')
@@ -235,7 +245,7 @@ evalDieOp rngCount (Dice b ds dopo) = do
       (i, _, rngCount'') <- evalShow rngCount' dBase
       return (Die (Value i), rngCount'', Just (1, i))
     condenseDie rngCount' (CustomDie is) = do
-      (LIList is', _, rngCount'') <- evalShowL rngCount' is
+      (is', _, rngCount'') <- evalShowL rngCount' is
       return (CustomDie (LVBList (promote . fst <$> is')), rngCount'', Nothing)
     condenseDie rngCount' (LazyDie d) = return (d, rngCount', Nothing)
     sortByOption (e :| es, _) (f :| fs, _)
@@ -351,7 +361,7 @@ instance IOEval Func where
 -- | Evaluate a function when given a list of parameters
 evaluateFunction :: RNGCount -> FuncInfoBase IO j -> [ArgValue] -> IO (j, Text, RNGCount)
 evaluateFunction rngCount fi exprs = do
-  (exprs', rngCount') <- evalShowList'' evalShowL rngCount exprs
+  (exprs', rngCount') <- evalShowList'' (\r a -> evalArgValue r a >>= \(i, r') -> return (i, "", r')) rngCount exprs
   f <- funcInfoFunc fi (fst <$> exprs')
   return (f, funcInfoName fi <> "(" <> intercalate ", " (prettyShow <$> exprs) <> ")", rngCount')
 

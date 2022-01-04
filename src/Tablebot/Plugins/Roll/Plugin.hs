@@ -9,17 +9,24 @@
 -- A command that outputs the result of rolling the input dice.
 module Tablebot.Plugins.Roll.Plugin (rollPlugin) where
 
-import Control.Monad.Writer (MonadIO (liftIO))
+import Control.Exception (throwIO)
+import Control.Monad.Writer (MonadIO (liftIO), void)
+import Data.Bifunctor (Bifunctor (first))
+import Data.ByteString.Lazy (toStrict)
 import Data.Maybe (fromMaybe)
 import Data.Text (Text, intercalate, pack, replicate, unpack)
-import qualified Data.Text as T
-import Discord.Types (Message (messageAuthor))
+import Data.Text qualified as T
+import Discord (restCall)
+import Discord.Internal.Rest.Channel (ChannelRequest (CreateMessageDetailed), MessageDetailedOpts (MessageDetailedOpts))
+import Discord.Types (Channel (channelId), Message (messageAuthor, messageChannel))
+import System.Timeout
 import Tablebot.Plugins.Roll.Dice
 import Tablebot.Plugins.Roll.Dice.DiceData
-import Tablebot.Plugins.Roll.Dice.DiceFunctions (ListInteger (LIInteger, LIList))
-import Tablebot.Plugins.Roll.Dice.DiceStats (Range (range))
+import Tablebot.Plugins.Roll.Dice.DiceStats (Range (range), getStats)
+import Tablebot.Plugins.Roll.Dice.DiceStatsBase
 import Tablebot.Utility
-import Tablebot.Utility.Discord (Format (Code), formatText, sendMessage, toMention)
+import Tablebot.Utility.Discord (sendMessage, toMention)
+import Tablebot.Utility.Exception (BotException (EvaluationException), throwBot)
 import Tablebot.Utility.Parser (inlineCommandHelper)
 import Tablebot.Utility.SmartParser (PComm (parseComm), Quoted (Qu), pars)
 import Text.Megaparsec (MonadParsec (try), choice, (<?>))
@@ -31,8 +38,8 @@ rollDice' :: Maybe (Either ListValues Expr) -> Maybe (Quoted Text) -> Message ->
 rollDice' e' t m = do
   let e = fromMaybe (Right defaultRoll) e'
   (vs, ss) <- case e of
-    (Left a) -> liftIO $ eval a
-    (Right b) -> liftIO $ eval b
+    (Left a) -> liftIO $ first Left <$> evalList a
+    (Right b) -> liftIO $ first Right <$> evalInteger b
   let msg = makeMsg vs ss
   if countFormatting msg < 199
     then sendMessage m msg
@@ -40,13 +47,13 @@ rollDice' e' t m = do
   where
     dsc = maybe ": " (\(Qu t') -> " \"" <> t' <> "\": ") t
     baseMsg = toMention (messageAuthor m) <> " rolled" <> dsc
-    makeLine (i, s) = pack (formatText Code $ show i) <> Data.Text.replicate (max 0 (6 - length (show i))) " " <> " ⟵ " <> s
-    makeMsg (LIInteger v) s = baseMsg <> s <> ".\nOutput: " <> pack (show v)
-    makeMsg (LIList []) _ = baseMsg <> "No output."
-    makeMsg (LIList ls) ss
-      | all (T.null . snd) ls = baseMsg <> formatText Code ss <> "\nOutput: {" <> intercalate ", " (pack . show . fst <$> ls) <> "}"
-      | otherwise = baseMsg <> formatText Code ss <> "\n  " <> intercalate "\n  " (makeLine <$> ls)
-    simplify (LIList ls) = LIList $ fmap (\(i, _) -> (i, "...")) ls
+    makeLine (i, s) = pack (show i) <> Data.Text.replicate (max 0 (6 - length (show i))) " " <> " ⟵ " <> s
+    makeMsg (Right v) s = baseMsg <> s <> ".\nOutput: " <> pack (show v)
+    makeMsg (Left []) _ = baseMsg <> "No output."
+    makeMsg (Left ls) ss
+      | all (T.null . snd) ls = baseMsg <> ss <> "\nOutput: {" <> intercalate ", " (pack . show . fst <$> ls) <> "}"
+      | otherwise = baseMsg <> ss <> "\n  " <> intercalate "\n  " (makeLine <$> ls)
+    simplify (Left ls) = Left $ fmap (\(i, _) -> (i, "...")) ls
     simplify li = li
     countFormatting s = (`div` 4) $ T.foldr (\c cf -> cf + (2 * fromEnum (c == '`')) + fromEnum (c `elem` ['~', '_', '*'])) 0 s
 
@@ -91,7 +98,7 @@ Given an expression, evaluate the expression. Can roll inline using |]
       ++ [r| Can use `r` instead of `roll`.
 
 This supports addition, subtraction, multiplication, integer division, exponentiation, parentheses, dice of arbitrary size, dice with custom sides, rerolling dice once on a condition, rerolling dice indefinitely on a condition, keeping or dropping the highest or lowest dice, keeping or dropping dice based on a condition, operating on lists, and using functions like |]
-      ++ unpack (intercalate ", " basicFunctionsList)
+      ++ unpack (intercalate ", " integerFunctionsList)
       ++ [r| (which return integers), or functions like |]
       ++ unpack (intercalate ", " listFunctionsList)
       ++ [r| (which return lists).
@@ -134,10 +141,28 @@ gencharHelp =
 statsCommand :: Command
 statsCommand = Command "stats" (parseComm statsCommand') []
   where
+    oneSecond = 1000000
     statsCommand' :: Expr -> Message -> DatabaseDiscord ()
     statsCommand' e m = do
-      range' <- range e
-      sendMessage m (T.pack $ show range')
+      mrange' <- liftIO $ timeout (oneSecond * 5) $ range e
+      case mrange' of
+        Nothing -> liftIO $ throwBot (EvaluationException "Timed out calculating statistics" [])
+        (Just range') -> do
+          mimage <- liftIO $ timeout (oneSecond * 5) $ distributionByteString sse range'
+          case mimage of
+            Nothing -> liftIO $ throwBot (EvaluationException ("Timed out displaying statistics.\n" <> msg range') [])
+            (Just image) -> do
+              liftDiscord $
+                void $
+                  restCall
+                    ( CreateMessageDetailed (messageChannel m) (MessageDetailedOpts (pack (msg range')) False Nothing (Just (se <> ".png", toStrict image)) Nothing Nothing)
+                    )
+      where
+        se = prettyShow e
+        sse = unpack se
+        msg d = let (modalOrder, mean, std) = getStats d in ("Here are the statistics for your dice (" <> sse <> ").\n  Ten most common totals: " <> show (take 10 modalOrder) <> "\n  Mean: " <> show mean <> "\n  Standard deviation: " <> show std )
+
+-- sendMessage m (T.pack $ show range')
 
 -- | @rollPlugin@ assembles the command into a plugin.
 rollPlugin :: Plugin

@@ -62,6 +62,7 @@ extra-deps:
 - dual-tree-0.2.3.0
 - monoid-extras-0.6.1
 - statestack-0.3
+- diagrams-rasterific-1.4.2.2
 
 # Override default flag values for local packages and extra-deps
 # flags: {}

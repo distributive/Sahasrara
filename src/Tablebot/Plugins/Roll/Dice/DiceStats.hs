@@ -10,19 +10,18 @@
 module Tablebot.Plugins.Roll.Dice.DiceStats where
 
 import Control.Monad.Exception (MonadException)
-import Data.List (genericTake)
-import Data.Map as M
+import Data.List
 import Tablebot.Plugins.Roll.Dice.DiceData
 import Tablebot.Plugins.Roll.Dice.DiceEval
-import Tablebot.Plugins.Roll.Dice.DiceEval (evaluationException)
-import Tablebot.Plugins.Roll.Dice.DiceFunctions
 import Tablebot.Plugins.Roll.Dice.DiceStatsBase
 
--- combineDistributionsBinOp'  :: (Monad m) => (Integer -> Integer -> Integer) -> m Distribution -> m Distribution -> m Distribution
--- combineDistributionsBinOp' f m m' = do
---     d <- m
---     d' <- m'
---     return $ combineDistributionsBinOp f d d'
+getStats :: Distribution -> ([Integer], Double, Double)
+getStats d = (modalOrder, fromRational mean, std)
+  where
+    vals = fromDistribution d
+    (mean, len) = Prelude.foldr (\(i, r) (a, c) -> (fromInteger i * r + a, c + 1)) (0, 0) vals
+    modalOrder = fst <$> sortBy (\(_, r) (_, r') -> compare r' r) vals
+    std = sqrt $ (1 / fromRational len) * sum ((\(i, r) -> fromRational (fromInteger i * r - mean) ** 2) <$> vals)
 
 combineRangesBinOp :: (MonadException m, Range a, Range b) => (Integer -> Integer -> Integer) -> a -> b -> m Distribution
 combineRangesBinOp f a b = do
@@ -32,9 +31,6 @@ combineRangesBinOp f a b = do
 
 class Range a where
   range :: MonadException m => a -> m Distribution
-
--- maxValue :: MonadException m => a -> m Integer
--- minValue :: MonadException m => a -> m Integer
 
 instance Range Expr where
   range (NoExpr t) = range t
@@ -87,32 +83,49 @@ instance Range Die where
   range cd@(CustomDie _) = evaluationException "tried to find range of complex custom die" [prettyShow cd]
 
 instance Range Dice where
-  range dice@(Dice b d mdor) = rangeDieOp dice
+  range (Dice b d mdor) = do
+    b' <- range b
+    d' <- range d
+    fromCountAndDie <$> rangeDieOp mdor (b', d')
 
-rangeDieOp :: (MonadException m) => Dice -> m Distribution
-rangeDieOp (Dice b d Nothing) = do
-  bDis <- range b
-  dDis <- range d
-  let endDises = do
-        (i, p) <- fromDistribution bDis
-        if i < 1
-          then []
-          else do
-            let v = Prelude.foldr1 (combineDistributionsBinOp (+)) (genericTake i (repeat dDis))
-            [(v, p)]
-  return $ mergeWeightedDistributions endDises
-rangeDieOp d = evaluationException "die modifiers are unimplemented" [prettyShow d]
+fromCountAndDie :: (Distribution, Distribution) -> Distribution
+fromCountAndDie (c, d) = mergeWeightedDistributions $ do
+  (i, p) <- fromDistribution c
+  if i < 1
+    then []
+    else do
+      let v = Prelude.foldr1 (combineDistributionsBinOp (+)) (genericTake i (repeat d))
+      [(v, p)]
 
--- rangeDieOpHelpKD :: (MonadException m) => KeepDrop -> LowHighWhere -> (Distribution , Distribution ) -> m (Distribution , Distribution )
--- rangeDieOpHelpKD kd (Where cmp i) ds@(counts,values) = do
---   iDis <- range i
---   let ds = do
---         (i,r) <- fromDistribution iDis
---         if doesActivate i then return () else r
---   r
---   where
---     vs = fromDistribution values
---     doesActivate i' = any (\(i'',_) -> applyCompare cmp i'' i') vs
+rangeDieOp :: (MonadException m) => Maybe DieOpRecur -> (Distribution, Distribution) -> m (Distribution, Distribution)
+rangeDieOp Nothing ds = return ds
+rangeDieOp (Just (DieOpRecur doo mdor)) ds = rangeDieOp' doo ds >>= rangeDieOp mdor
+
+rangeDieOp' :: MonadException m => DieOpOption -> (Distribution, Distribution) -> m (Distribution, Distribution)
+rangeDieOp' (DieOpOptionLazy o) ds = rangeDieOp' o ds
+
+-- rangeDieOp' (DieOpOptionKD kd lhw) ds = rangeDieOpHelpKD kd lhw ds
+-- rangeDieOp' (Reroll True cond lim) (c,d) = do
+
+-- rangeDieOp :: (MonadException m) => Dice -> m Distribution
+-- rangeDieOp (Dice b d Nothing) = do
+--   bDis <- range b
+--   dDis <- range d
+--   return $ fromCountAndDie (bDis, dDis)
+-- rangeDieOp d = evaluationException "die modifiers are unimplemented" [prettyShow d]
+
+rangeDieOpHelpKD :: (MonadException m) => KeepDrop -> LowHighWhere -> (Distribution, Distribution) -> m (Distribution, Distribution)
+-- rangeDieOpHelpKD _ (Where _ _) _ = evaluationException "keep/drop where is unsupported" []
+rangeDieOpHelpKD kd lhw (c, d) = do
+  let nb = getValueLowHigh lhw
+  case nb of
+    Nothing -> evaluationException "keep/drop where is unsupported" []
+    Just nb' -> do
+      nbd <- range nb'
+      return (kdFunc kd nbd, d)
+  where
+    kdFunc Drop nbd = combineDistributionsBinOp (\a b -> max 0 (a - b)) c nbd
+    kdFunc Keep nbd = combineDistributionsBinOp min c nbd
 
 {-
 

@@ -6,7 +6,10 @@
 -- Stability   : experimental
 -- Portability : POSIX
 --
--- This plugin contains the basics for dice expressions and values.
+-- This plugin contains the basics for dice expressions and values. For an
+-- overview of how they all fit together, you can view
+-- `Tablebot.Plugins.Roll.Dice` to see the regex for this and brief explanations
+-- for each data type.
 module Tablebot.Plugins.Roll.Dice.DiceData where
 
 import Data.Map as M (Map, fromList)
@@ -61,7 +64,8 @@ data Base = NBase NumBase | DiceBase Dice
 
 -- Dice Operations after this point
 
--- | The type representing a simple N sided die or a custom die.
+-- | The type representing a simple N sided die or a custom die, or a lazy one
+-- of one of those values.
 data Die = Die NumBase | CustomDie ListValuesBase | LazyDie Die deriving (Show)
 
 -- | The type representing a number of dice equal to the `Base` value, and
