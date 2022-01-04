@@ -181,8 +181,6 @@ inlineCommandHelper open close p action =
     maxInlineCommands = 3
     action' (Right p') m = action p' m
     action' (Left _) m = void $ reactToMessage m "x"
-<<<<<<< HEAD
-=======
 
 -- | Parse 0 or more comma separated values.
 parseCommaSeparated :: Parser a -> Parser [a]
@@ -194,4 +192,3 @@ parseCommaSeparated p = do
 parseCommaSeparated1 :: Parser a -> Parser [a]
 parseCommaSeparated1 p = do
   p >>= (\first' -> (first' :) <$> many (try (skipSpace *> char ',' *> skipSpace) *> p))
->>>>>>> 787be1ad79e46753da5f124a04f0141025338a50
