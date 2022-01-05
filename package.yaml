@@ -68,6 +68,7 @@ dependencies:
 - graphviz
 - JuicyPixels
 - regex-pcre
+- distribution
 
 library:
   source-dirs: src
