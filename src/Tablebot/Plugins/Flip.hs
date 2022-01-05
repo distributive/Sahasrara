@@ -26,7 +26,7 @@ flip = Command "flip" flipcomm []
   where
     flipcomm :: Parser (Message -> DatabaseDiscord ())
     flipcomm = do
-      args <- nonSpaceWord `sepBy` space
+      args <- (try quoted <|> nonSpaceWord) `sepBy` some space
       return $ \m -> do
         c <- case length args of
           0 -> liftIO $ chooseOneWithDefault "" ["Heads", "Tails"]
