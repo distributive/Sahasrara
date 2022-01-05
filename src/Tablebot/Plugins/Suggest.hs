@@ -36,7 +36,5 @@ suggest = Command "suggest" suggestcomm []
 suggestHelp :: HelpPage
 suggestHelp = HelpPage "suggest" [] "show links to suggest a new game for the society to buy" "**Suggest**\nShows the link to suggest a new game for the society to buy\n\n*Usage:* \n- `suggest boardgame` -> get the link to suggest a new boardgame to buy\n- `suggest ccg` -> get the link to suggest a new CCG to buy\n- `suggest wargame` -> get the link to suggest a new wargame to buy\n- `suggest rpg` -> get the link to request a new RPG to buy" [] None
 
--- | @pingPlugin@ assembles these commands into a plugin containing both ping
--- and pong.
 suggestPlugin :: Plugin
 suggestPlugin = (plug "suggest") {commands = [suggest], helpPages = [suggestHelp]}
