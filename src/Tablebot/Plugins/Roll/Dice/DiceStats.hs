@@ -10,13 +10,16 @@
 -- expressions.
 module Tablebot.Plugins.Roll.Dice.DiceStats where
 
-import Control.Monad (join)
+import Control.Monad
 import Control.Monad.Exception (MonadException)
+import Data.Functor ((<&>))
 import Data.List
 import Tablebot.Plugins.Roll.Dice.DiceData
 import Tablebot.Plugins.Roll.Dice.DiceEval
 import Tablebot.Plugins.Roll.Dice.DiceStatsBase
 
+-- | Get the most common values, the mean, and the standard deviation of a given
+-- distribution.
 getStats :: Distribution -> ([Integer], Double, Double)
 getStats d = (modalOrder, fromRational mean, std)
   where
@@ -26,13 +29,23 @@ getStats d = (modalOrder, fromRational mean, std)
     -- https://stats.stackexchange.com/a/295015
     std = sqrt $ fromRational $ sum ((\(x, w) -> w * (fromInteger x - mean) * (fromInteger x - mean)) <$> vals)
 
+-- | Convenience wrapper for
+-- `Tablebot.Plugins.Roll.Dice.DiceStatsBase.combineDistributionsBinOp`, which
+-- gets the range of the given values then applies the function to the resultant
+-- distributions.
 combineRangesBinOp :: (MonadException m, Range a, Range b) => (Integer -> Integer -> Integer) -> a -> b -> m Distribution
 combineRangesBinOp f a b = do
   d <- range a
   d' <- range b
-  return $ combineDistributionsBinOp f d d'
+  combineDistributionsBinOp f d d'
 
+-- | Type class to get the overall range of a value.
+--
+-- A `Tablebot.Plugins.Roll.Dice.DiceStatsBase.Distribution` is a map of values
+-- to probabilities, and has a variety of functions that operate on them.
 class Range a where
+  -- | Try and get the `Distribution` of the given value, throwing a
+  -- `MonadException` on failure.
   range :: MonadException m => a -> m Distribution
 
 instance Range Expr where
@@ -46,7 +59,9 @@ instance Range Term where
   range (Div t e) = do
     d <- range t
     d' <- range e
-    return $ combineDistributionsBinOp div d (dropWhereDistribution (== 0) d')
+    -- having 0 as a denominator is bad
+    d'' <- dropWhereDistribution (== 0) d'
+    combineDistributionsBinOp div d d''
 
 instance Range Negation where
   range (Neg t) = do
@@ -59,14 +74,15 @@ instance Range Expo where
   range (Expo t e) = do
     d <- range t
     d' <- range e
-    return $ combineDistributionsBinOp (^) d (dropWhereDistribution (>= 0) d')
+    d'' <- dropWhereDistribution (>= 0) d'
+    combineDistributionsBinOp (^) d d''
 
 instance Range Func where
   range (NoFunc t) = range t
   range f@(Func _ _) = evaluationException "tried to find range of function" [prettyShow f]
 
 instance Range NumBase where
-  range (Value i) = return $ toDistribution [(i, 1)]
+  range (Value i) = toDistribution [(i, 1)]
   range (NBParen (Paren e)) = range e
 
 instance Range Base where
@@ -77,30 +93,34 @@ instance Range Die where
   range (LazyDie d) = range d
   range (Die nb) = do
     nbr <- range nb
-    let vcs = (\(hv, p) -> (toDistribution ((,1 / fromIntegral hv) <$> [1 .. hv]), p)) <$> fromDistribution nbr
-    return $ mergeWeightedDistributions vcs
+    vcs <- sequence $ (\(hv, p) -> toDistribution ((,1 / fromIntegral hv) <$> [1 .. hv]) <&> (,p)) <$> fromDistribution nbr
+    mergeWeightedDistributions vcs
   range (CustomDie (LVBList es)) = do
     exprs <- mapM range es
     let l = fromIntegral $ length es
-    return $ mergeWeightedDistributions ((,1 / l) <$> exprs)
+    mergeWeightedDistributions ((,1 / l) <$> exprs)
   range cd@(CustomDie _) = evaluationException "tried to find range of complex custom die" [prettyShow cd]
 
 instance Range Dice where
   range (Dice b d mdor) = do
     b' <- range b
     d' <- range d
-    mergeWeightedDistributions . (fromCountAndDie <$>) <$> rangeDieOp d' mdor [(b', d', 1)]
+    dcs <- rangeDieOp d' mdor [(b', d', 1)] >>= sequence . (fromCountAndDie <$>)
+    mergeWeightedDistributions dcs
 
 type DiceCollection = (Distribution, Distribution, Rational)
 
-fromCountAndDie :: DiceCollection -> (Distribution, Rational)
-fromCountAndDie (c, d, r) = (,r) . mergeWeightedDistributions $ do
-  (i, p) <- fromDistribution c
-  if i < 1
-    then []
-    else do
-      let v = Prelude.foldr1 (combineDistributionsBinOp (+)) (genericTake i (repeat d))
-      [(v, p)]
+fromCountAndDie :: MonadException m => DiceCollection -> m (Distribution, Rational)
+fromCountAndDie (c, d, r) = do
+  mwd <- sequence $ do
+    (i, p) <- fromDistribution c
+    if i < 1
+      then []
+      else do
+        let v = Prelude.foldr1 (\a b -> a >>= \a' -> b >>= \b' -> combineDistributionsBinOp (+) a' b') (genericTake i (repeat (return d)))
+        [v <&> (,p)]
+  mwd' <- mergeWeightedDistributions mwd
+  return (mwd', r)
 
 rangeDieOp :: (MonadException m) => Distribution -> Maybe DieOpRecur -> [DiceCollection] -> m [DiceCollection]
 rangeDieOp _ Nothing ds = return ds
@@ -118,17 +138,21 @@ rangeDieOp' die (Reroll rro cond lim) ds = do
           return
             ( do
                 nd <- die' v
-                return
+                sequence
                   ( do
                       (c, d, cp) <- ds
-                      let d' =
-                            ( do
-                                (dieV, dieP) <- fromDistribution d
-                                if applyCompare cond dieV v
-                                  then [(nd, dieP)]
-                                  else [(toDistribution [(dieV, 1)], dieP)]
-                            )
-                      return (c, mergeWeightedDistributions d', cp * p)
+                      let d' = do
+                            (dieV, dieP) <- fromDistribution d
+                            if applyCompare cond dieV v
+                              then [return (nd, dieP)]
+                              else [toDistribution [(dieV, 1)] <&> (,dieP)]
+
+                      return $
+                        sequence
+                          d'
+                          >>= ( mergeWeightedDistributions
+                                  >=> (\mwd -> return (c, mwd, cp * p))
+                              )
                   )
             )
       )
@@ -136,7 +160,11 @@ rangeDieOp' die (Reroll rro cond lim) ds = do
     die' :: forall m. (MonadException m) => Integer -> m Distribution
     die' v
       | rro = return die
-      | otherwise = let d = dropWhereDistribution (\i -> not $ applyCompare cond i v) die in if nullDistribution d then evaluationException "cannot reroll die infinitely; range is incorrect" [] else return d
+      | otherwise = do
+        d <- dropWhereDistribution (\i -> not $ applyCompare cond i v) die
+        if nullDistribution d
+          then evaluationException "cannot reroll die infinitely; range is incorrect" []
+          else return d
 
 rangeDieOpHelpKD :: (MonadException m) => KeepDrop -> LowHighWhere -> [DiceCollection] -> m [DiceCollection]
 rangeDieOpHelpKD kd lhw ds = do
@@ -146,14 +174,14 @@ rangeDieOpHelpKD kd lhw ds = do
     Just nb' -> do
       repeatType <- chooseType kd lhw
       nbd <- range nb'
-      return
+      sequence
         ( do
             (i, p) <- fromDistribution nbd
             (c, d, dcp) <- ds
             (ci, cp) <- fromDistribution c
             let toKeep = getRemaining ci i
                 d' = repeatType (ci - toKeep) d
-            return (toDistribution [(toKeep, 1)], d', p * dcp * cp)
+            return $ d' >>= \d'' -> toDistribution [(toKeep, 1)] <&> (,d'',p * dcp * cp)
         )
   where
     whereException = evaluationException "keep/drop where is unsupported" []
@@ -161,12 +189,12 @@ rangeDieOpHelpKD kd lhw ds = do
       | kd == Keep = min total value
       | otherwise = max 0 (total - value)
     repeatedM m i d
-      | i <= 0 = d
-      | otherwise = combineDistributionsBinOp m d (repeatedM m (i - 1) d)
+      | i <= 0 = return d
+      | otherwise = repeatedM m (i - 1) d >>= combineDistributionsBinOp m d
     repeatedMinimum = repeatedM min
     repeatedMaximum = repeatedM max
     chooseType Keep (High _) = return repeatedMaximum
     chooseType Keep (Low _) = return repeatedMinimum
     chooseType Drop (Low _) = return repeatedMaximum
     chooseType Drop (High _) = return repeatedMaximum
-    chooseType _ _ = whereException
+    chooseType _ _ = evaluationException "keep/drop where is unsupported" []

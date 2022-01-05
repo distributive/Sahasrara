@@ -23,6 +23,7 @@ module Tablebot.Plugins.Roll.Dice.DiceStatsBase
 where
 
 import Codec.Picture (PngSavable (encodePng))
+import Control.Monad.Exception (MonadException)
 import qualified Data.ByteString.Lazy as B
 import qualified Data.Map as M
 import Diagrams (Diagram, dims2D, renderDia)
@@ -30,6 +31,7 @@ import Diagrams.Backend.Rasterific
 import Graphics.Rendering.Chart.Backend.Diagrams (defaultEnv, runBackendR)
 import Graphics.Rendering.Chart.Backend.Types
 import Graphics.Rendering.Chart.Easy
+import Tablebot.Plugins.Roll.Dice.DiceEval (evaluationException)
 
 -- | A wrapper type for mapping values to their probabilities.
 --
@@ -43,15 +45,21 @@ nullDistribution :: Distribution -> Bool
 nullDistribution (Distribution m) = M.null m
 
 -- | Given a distribution, normalise the probabilities so that they sum to 1.
-normaliseDistribution :: Distribution -> Distribution
-normaliseDistribution d@(Distribution m) = if M.null m then d else Distribution $ M.map (/ total) m
+--
+-- If the distribution is empty, an exception is thrown.
+normaliseDistribution :: MonadException m => Distribution -> m Distribution
+normaliseDistribution (Distribution m) =
+  if emptyDis
+    then evaluationException "cannot process empty distribution" []
+    else return $ Distribution $ M.map (/ total) m
   where
     total = M.foldr (+) 0 m
+    emptyDis = M.null $ M.mapMaybe (\a -> if a == 0 then Nothing else Just a) m
 
 -- | Turn a list of integer-rational tuples into a Distribution. Normalises so
 -- that the Distribution is valid.
-toDistribution :: [(Integer, Rational)] -> Distribution
-toDistribution [(i, _)] = Distribution (M.singleton i 1)
+toDistribution :: MonadException m => [(Integer, Rational)] -> m Distribution
+toDistribution [(i, _)] = return $ Distribution (M.singleton i 1)
 toDistribution xs = normaliseDistribution $ Distribution $ M.fromListWith (+) xs
 
 -- | Get the integer-rational tuples that represent a distribution.
@@ -60,7 +68,7 @@ fromDistribution (Distribution m) = M.toList m
 
 -- | Combine two distributions by applying the given function between every
 -- element of each one, returning the resultant distribution.
-combineDistributionsBinOp :: (Integer -> Integer -> Integer) -> Distribution -> Distribution -> Distribution
+combineDistributionsBinOp :: MonadException m => (Integer -> Integer -> Integer) -> Distribution -> Distribution -> m Distribution
 combineDistributionsBinOp f (Distribution m) (Distribution m') = toDistribution $ combineFunc <$> d <*> d'
   where
     d = M.toList m
@@ -69,7 +77,7 @@ combineDistributionsBinOp f (Distribution m) (Distribution m') = toDistribution 
 
 -- | Merge all distributions by adding together the probabilities of any values
 -- that are in multiple distributions, and normalising at the end.
-mergeDistributions :: [Distribution] -> Distribution
+mergeDistributions :: MonadException m => [Distribution] -> m Distribution
 mergeDistributions ds = normaliseDistribution $ Prelude.foldr helper (Distribution M.empty) ds
   where
     helper (Distribution d) (Distribution d') = Distribution $ M.unionWith (+) d d'
@@ -77,11 +85,11 @@ mergeDistributions ds = normaliseDistribution $ Prelude.foldr helper (Distributi
 -- | Merge all distributions according to a given weighting by multiplying the
 -- probabilities in each distribution by the given weighting. Uses
 -- `mergeDistributions`.
-mergeWeightedDistributions :: [(Distribution, Rational)] -> Distribution
+mergeWeightedDistributions :: MonadException m => [(Distribution, Rational)] -> m Distribution
 mergeWeightedDistributions ds = mergeDistributions $ (\(Distribution m, p) -> Distribution $ M.map (* p) m) <$> ds
 
 -- | Drop all items in the distribution that fulfill the given function.
-dropWhereDistribution :: (Integer -> Bool) -> Distribution -> Distribution
+dropWhereDistribution :: MonadException m => (Integer -> Bool) -> Distribution -> m Distribution
 dropWhereDistribution f (Distribution m) = normaliseDistribution $ Distribution $ M.filterWithKey (\k _ -> f k) m
 
 -- | Map over all the integer values, combining the probabilities that then map
