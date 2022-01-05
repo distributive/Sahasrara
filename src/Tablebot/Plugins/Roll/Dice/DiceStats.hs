@@ -33,7 +33,7 @@ getStats d = (modalOrder, fromRational mean, std)
 -- `Tablebot.Plugins.Roll.Dice.DiceStatsBase.combineDistributionsBinOp`, which
 -- gets the range of the given values then applies the function to the resultant
 -- distributions.
-combineRangesBinOp :: (MonadException m, Range a, Range b) => (Integer -> Integer -> Integer) -> a -> b -> m Distribution
+combineRangesBinOp :: (MonadException m, Range a, Range b, PrettyShow a, PrettyShow b) => (Integer -> Integer -> Integer) -> a -> b -> m Distribution
 combineRangesBinOp f a b = do
   d <- range a
   d' <- range b
@@ -46,17 +46,20 @@ combineRangesBinOp f a b = do
 class Range a where
   -- | Try and get the `Distribution` of the given value, throwing a
   -- `MonadException` on failure.
-  range :: MonadException m => a -> m Distribution
+  range :: (MonadException m, PrettyShow a) => a -> m Distribution
+  range a = propagateException (prettyShow a) (range' a)
+
+  range' :: (MonadException m, PrettyShow a) => a -> m Distribution
 
 instance Range Expr where
-  range (NoExpr t) = range t
-  range (Add t e) = combineRangesBinOp (+) t e
-  range (Sub t e) = combineRangesBinOp (-) t e
+  range' (NoExpr t) = range t
+  range' (Add t e) = combineRangesBinOp (+) t e
+  range' (Sub t e) = combineRangesBinOp (-) t e
 
 instance Range Term where
-  range (NoTerm t) = range t
-  range (Multi t e) = combineRangesBinOp (*) t e
-  range (Div t e) = do
+  range' (NoTerm t) = range t
+  range' (Multi t e) = combineRangesBinOp (*) t e
+  range' (Div t e) = do
     d <- range t
     d' <- range e
     -- having 0 as a denominator is disallowed
@@ -64,12 +67,12 @@ instance Range Term where
     combineDistributionsBinOp div d d''
 
 instance Range Negation where
-  range (Neg t) = mapOverValue negate <$> range t
-  range (NoNeg t) = range t
+  range' (Neg t) = mapOverValue negate <$> range t
+  range' (NoNeg t) = range t
 
 instance Range Expo where
-  range (NoExpo t) = range t
-  range (Expo t e) = do
+  range' (NoExpo t) = range t
+  range' (Expo t e) = do
     d <- range t
     d' <- range e
     -- having negative values is disallowed
@@ -77,20 +80,20 @@ instance Range Expo where
     combineDistributionsBinOp (^) d d''
 
 instance Range Func where
-  range (NoFunc t) = range t
-  range f@(Func _ _) = evaluationException "tried to find range of function, which is currently unsupported" [prettyShow f]
+  range' (NoFunc t) = range t
+  range' f@(Func _ _) = evaluationException "tried to find range of function, which is currently unsupported" [prettyShow f]
 
 instance Range NumBase where
-  range (Value i) = toDistribution [(i, 1)]
-  range (NBParen (Paren e)) = range e
+  range' (Value i) = toDistribution [(i, 1)]
+  range' (NBParen (Paren e)) = range e
 
 instance Range Base where
-  range (NBase nb) = range nb
-  range (DiceBase d) = range d
+  range' (NBase nb) = range nb
+  range' (DiceBase d) = range d
 
 instance Range Die where
-  range (LazyDie d) = range d
-  range (Die nb) = do
+  range' (LazyDie d) = range d
+  range' (Die nb) = do
     nbr <- range nb
     -- for each possible nb value, create a (Distribution, Rational) pair
     -- representing the distribution of the die and the probability of that
@@ -98,17 +101,17 @@ instance Range Die where
     vcs <- sequence $ (\(hv, p) -> toDistribution ((,1 / fromIntegral hv) <$> [1 .. hv]) <&> (,p)) <$> fromDistribution nbr
     -- then condense that into a single distribution
     mergeWeightedDistributions vcs
-  range (CustomDie (LVBList es)) = do
+  range' (CustomDie (LVBList es)) = do
     -- get the distribution for each value in the custom die
     exprs <- mapM range es
     let l = genericLength es
     -- then merge all the distributions. each distribution is equally likely to
     -- come up.
     mergeWeightedDistributions ((,1 / l) <$> exprs)
-  range cd@(CustomDie _) = evaluationException "tried to find range of complex custom die" [prettyShow cd]
+  range' cd@(CustomDie _) = evaluationException "tried to find range of complex custom die" [prettyShow cd]
 
 instance Range Dice where
-  range (Dice b d mdor) = do
+  range' (Dice b d mdor) = do
     b' <- range b
     d' <- range d
     dcs <- rangeDieOp d' mdor [(b', d', 1)] >>= sequence . (fromCountAndDie <$>)
@@ -125,11 +128,11 @@ fromCountAndDie (c, d, r) = do
   mwd <- sequence $ do
     (i, p) <- fromDistribution c
     if i < 1
-      then []
+      then [toDistribution [(0, 1)] <&> (,p)]
       else do
-        let v = Prelude.foldr1 (\a b -> a >>= \a' -> b >>= \b' -> combineDistributionsBinOp (+) a' b') (genericTake i (repeat (return d)))
+        let v = catchEmptyDistribution $ Prelude.foldr1 (\a b -> a >>= \a' -> b >>= \b' -> combineDistributionsBinOp (+) a' b') (genericTake i (repeat (return d)))
         [v <&> (,p)]
-  mwd' <- mergeWeightedDistributions mwd
+  mwd' <- catchEmptyDistribution $ mergeWeightedDistributions mwd
   return (mwd', r)
 
 -- | Step by step apply `rangeDieOp'`, returning the current list of
@@ -216,7 +219,7 @@ rangeDieOpHelpKD kd lhw ds = do
       | otherwise = max 0 (total - value)
     repeatedM m i d
       | i <= 0 = return d
-      | otherwise = repeatedM m (i - 1) d >>= combineDistributionsBinOp m d
+      | otherwise = repeatedM m (i - 1) d >>= \d' -> combineDistributionsBinOp m d d'
     repeatedMinimum = repeatedM min
     repeatedMaximum = repeatedM max
     chooseType Keep (High _) = return repeatedMaximum

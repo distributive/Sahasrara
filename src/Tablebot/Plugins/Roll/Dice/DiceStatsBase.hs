@@ -11,6 +11,7 @@
 -- that a given `Distribution` is valid.
 module Tablebot.Plugins.Roll.Dice.DiceStatsBase
   ( Distribution,
+    catchEmptyDistribution,
     toDistribution,
     fromDistribution,
     combineDistributionsBinOp,
@@ -24,14 +25,15 @@ where
 
 import Codec.Picture (PngSavable (encodePng))
 import Control.Monad.Exception (MonadException)
-import qualified Data.ByteString.Lazy as B
-import qualified Data.Map as M
+import Data.ByteString.Lazy qualified as B
+import Data.Map qualified as M
 import Diagrams (Diagram, dims2D, renderDia)
 import Diagrams.Backend.Rasterific
 import Graphics.Rendering.Chart.Backend.Diagrams (defaultEnv, runBackendR)
 import Graphics.Rendering.Chart.Backend.Types
 import Graphics.Rendering.Chart.Easy
 import Tablebot.Plugins.Roll.Dice.DiceEval (evaluationException)
+import Tablebot.Utility.Exception
 
 -- | A wrapper type for mapping values to their probabilities.
 --
@@ -42,24 +44,31 @@ newtype Distribution = Distribution (M.Map Integer Rational)
 
 -- | Check whether the distribution is empty.
 nullDistribution :: Distribution -> Bool
-nullDistribution (Distribution m) = M.null m
+nullDistribution (Distribution m) = M.null $ M.mapMaybe (\a -> if a == 0 then Nothing else Just a) m
 
 -- | Given a distribution, normalise the probabilities so that they sum to 1.
 --
 -- If the distribution is empty, an exception is thrown.
 normaliseDistribution :: MonadException m => Distribution -> m Distribution
-normaliseDistribution (Distribution m) =
-  if emptyDis
-    then evaluationException "cannot process empty distribution" []
+normaliseDistribution d@(Distribution m) =
+  if nullDistribution d
+    then evaluationException "empty distribution" []
     else return $ Distribution $ M.map (/ total) m
   where
     total = M.foldr (+) 0 m
-    emptyDis = M.null $ M.mapMaybe (\a -> if a == 0 then Nothing else Just a) m
+
+catchEmptyDistribution :: MonadException m => m Distribution -> m Distribution
+catchEmptyDistribution md =
+  catchBot
+    md
+    ( \case
+        EvaluationException "empty distribution" _ -> return (Distribution (M.singleton 0 1))
+        e -> throwBot e
+    )
 
 -- | Turn a list of integer-rational tuples into a Distribution. Normalises so
 -- that the Distribution is valid.
 toDistribution :: MonadException m => [(Integer, Rational)] -> m Distribution
-toDistribution [(i, _)] = return $ Distribution (M.singleton i 1)
 toDistribution xs = normaliseDistribution $ Distribution $ M.fromListWith (+) xs
 
 -- | Get the integer-rational tuples that represent a distribution.
