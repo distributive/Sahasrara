@@ -17,6 +17,7 @@ module Tablebot.Plugins.Roll.Dice.DiceStatsBase
     dropWhereDistribution,
     mapOverValue,
     distributionByteString,
+    nullDistribution,
   )
 where
 
@@ -31,6 +32,9 @@ import Graphics.Rendering.Chart.Easy
 
 newtype Distribution = Distribution (Map Integer Rational)
   deriving (Show)
+
+nullDistribution :: Distribution -> Bool
+nullDistribution (Distribution m) = M.null m
 
 normaliseDistribution :: Distribution -> Distribution
 normaliseDistribution (Distribution m) = Distribution $ M.map (/ total) m

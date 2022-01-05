@@ -1,3 +1,5 @@
+{-# OPTIONS_GHC -Wno-incomplete-patterns #-}
+
 -- |
 -- Module      : Tablebot.Plugins.Roll.Dice.DiceStats
 -- Description : Get statistics on particular expressions.
@@ -9,6 +11,7 @@
 -- This plugin generates statistics based on the values of dice in given expressions
 module Tablebot.Plugins.Roll.Dice.DiceStats where
 
+import Control.Monad (join)
 import Control.Monad.Exception (MonadException)
 import Data.List
 import Tablebot.Plugins.Roll.Dice.DiceData
@@ -19,9 +22,10 @@ getStats :: Distribution -> ([Integer], Double, Double)
 getStats d = (modalOrder, fromRational mean, std)
   where
     vals = fromDistribution d
-    (mean, len) = Prelude.foldr (\(i, r) (a, c) -> (fromInteger i * r + a, c + 1)) (0, 0) vals
+    (mean, _, _) = Prelude.foldr (\(i, r) (a, c, nz) -> (fromInteger i * r + a, c + 1, nz + fromIntegral (fromEnum (r /= 0)))) (0, 0 :: Integer, 0 :: Integer) vals
     modalOrder = fst <$> sortBy (\(_, r) (_, r') -> compare r' r) vals
-    std = sqrt $ (1 / fromRational len) * sum ((\(i, r) -> fromRational (fromInteger i * r - mean) ** 2) <$> vals)
+    -- https://stats.stackexchange.com/a/295015
+    std = sqrt $ fromRational $ sum ((\(x, w) -> w * (fromInteger x - mean) * (fromInteger x - mean)) <$> vals)
 
 combineRangesBinOp :: (MonadException m, Range a, Range b) => (Integer -> Integer -> Integer) -> a -> b -> m Distribution
 combineRangesBinOp f a b = do
@@ -86,10 +90,12 @@ instance Range Dice where
   range (Dice b d mdor) = do
     b' <- range b
     d' <- range d
-    fromCountAndDie <$> rangeDieOp mdor (b', d')
+    mergeWeightedDistributions . (fromCountAndDie <$>) <$> rangeDieOp d' mdor [(b', d', 1)]
 
-fromCountAndDie :: (Distribution, Distribution) -> Distribution
-fromCountAndDie (c, d) = mergeWeightedDistributions $ do
+type DiceCollection = (Distribution, Distribution, Rational)
+
+fromCountAndDie :: DiceCollection -> (Distribution, Rational)
+fromCountAndDie (c, d, r) = (,r) . mergeWeightedDistributions $ do
   (i, p) <- fromDistribution c
   if i < 1
     then []
@@ -97,15 +103,44 @@ fromCountAndDie (c, d) = mergeWeightedDistributions $ do
       let v = Prelude.foldr1 (combineDistributionsBinOp (+)) (genericTake i (repeat d))
       [(v, p)]
 
-rangeDieOp :: (MonadException m) => Maybe DieOpRecur -> (Distribution, Distribution) -> m (Distribution, Distribution)
-rangeDieOp Nothing ds = return ds
-rangeDieOp (Just (DieOpRecur doo mdor)) ds = rangeDieOp' doo ds >>= rangeDieOp mdor
+rangeDieOp :: (MonadException m) => Distribution -> Maybe DieOpRecur -> [DiceCollection] -> m [DiceCollection]
+rangeDieOp _ Nothing ds = return ds
+rangeDieOp die (Just (DieOpRecur doo mdor)) ds = rangeDieOp' die doo ds >>= rangeDieOp die mdor
 
-rangeDieOp' :: MonadException m => DieOpOption -> (Distribution, Distribution) -> m (Distribution, Distribution)
-rangeDieOp' (DieOpOptionLazy o) ds = rangeDieOp' o ds
+rangeDieOp' :: forall m. MonadException m => Distribution -> DieOpOption -> [DiceCollection] -> m [DiceCollection]
+rangeDieOp' die (DieOpOptionLazy o) ds = rangeDieOp' die o ds
+rangeDieOp' _ (DieOpOptionKD kd lhw) ds = rangeDieOpHelpKD kd lhw ds
+rangeDieOp' die (Reroll rro cond lim) ds = do
+  limd <- range lim
+  join
+    <$> sequence
+      ( do
+          (v, p) <- fromDistribution limd
+          return
+            ( do
+                nd <- die' v
+                return
+                  ( do
+                      (c, d, cp) <- ds
+                      let d' =
+                            ( do
+                                (dieV, dieP) <- fromDistribution d
+                                if applyCompare cond dieV v
+                                  then [(nd, dieP)]
+                                  else [(toDistribution [(dieV, 1)], dieP)]
+                            )
+                      return (c, mergeWeightedDistributions d', cp * p)
+                  )
+            )
+      )
+  where
+    die' :: forall m. (MonadException m) => Integer -> m Distribution
+    die' v
+      | rro = return die
+      | otherwise = let d = dropWhereDistribution (\i -> not $ applyCompare cond i v) die in if nullDistribution d then evaluationException "cannot reroll die infinitely; range is incorrect" [] else return d
 
+-- if any (\i -> applyCompare cond v i . fst)
 -- rangeDieOp' (DieOpOptionKD kd lhw) ds = rangeDieOpHelpKD kd lhw ds
--- rangeDieOp' (Reroll True cond lim) (c,d) = do
 
 -- rangeDieOp :: (MonadException m) => Dice -> m Distribution
 -- rangeDieOp (Dice b d Nothing) = do
@@ -114,18 +149,36 @@ rangeDieOp' (DieOpOptionLazy o) ds = rangeDieOp' o ds
 --   return $ fromCountAndDie (bDis, dDis)
 -- rangeDieOp d = evaluationException "die modifiers are unimplemented" [prettyShow d]
 
-rangeDieOpHelpKD :: (MonadException m) => KeepDrop -> LowHighWhere -> (Distribution, Distribution) -> m (Distribution, Distribution)
--- rangeDieOpHelpKD _ (Where _ _) _ = evaluationException "keep/drop where is unsupported" []
-rangeDieOpHelpKD kd lhw (c, d) = do
+rangeDieOpHelpKD :: (MonadException m) => KeepDrop -> LowHighWhere -> [DiceCollection] -> m [DiceCollection]
+rangeDieOpHelpKD kd lhw ds = do
   let nb = getValueLowHigh lhw
+      repeatType = chooseType kd lhw
   case nb of
     Nothing -> evaluationException "keep/drop where is unsupported" []
     Just nb' -> do
       nbd <- range nb'
-      return (kdFunc kd nbd, d)
+      return
+        ( do
+            (i, p) <- fromDistribution nbd
+            (c, d, dcp) <- ds
+            (ci, cp) <- fromDistribution c
+            let toKeep = getRemaining ci i
+                d' = repeatType (ci - toKeep) d
+            return (toDistribution [(toKeep, 1)], d', p * dcp * cp)
+        )
   where
-    kdFunc Drop nbd = combineDistributionsBinOp (\a b -> max 0 (a - b)) c nbd
-    kdFunc Keep nbd = combineDistributionsBinOp min c nbd
+    getRemaining total value
+      | kd == Keep = min total value
+      | kd == Drop = max 0 (total - value)
+    repeatedM m i d
+      | i <= 0 = d
+      | otherwise = combineDistributionsBinOp m d (repeatedM m (i - 1) d)
+    repeatedMinimum = repeatedM min
+    repeatedMaximum = repeatedM max
+    chooseType Keep (High _) = repeatedMaximum
+    chooseType Keep (Low _) = repeatedMinimum
+    chooseType Drop (Low _) = repeatedMaximum
+    chooseType Drop (High _) = repeatedMaximum
 
 {-
 
