@@ -6,7 +6,8 @@
 -- Stability   : experimental
 -- Portability : POSIX
 --
--- This plugin generates statistics based on the values of dice in given expressions
+-- This plugin generates statistics based on the values of dice in given
+-- expressions.
 module Tablebot.Plugins.Roll.Dice.DiceStats where
 
 import Control.Monad (join)
