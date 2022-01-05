@@ -137,6 +137,30 @@ rangeDieOp :: (MonadException m) => Distribution -> Maybe DieOpRecur -> [DiceCol
 rangeDieOp _ Nothing ds = return ds
 rangeDieOp die (Just (DieOpRecur doo mdor)) ds = rangeDieOp' die doo ds >>= rangeDieOp die mdor
 
+rangeDiceExperiment :: (MonadException m) => Distribution -> Maybe DieOpRecur -> Experiment [Integer] -> m (Experiment [Integer])
+rangeDiceExperiment _ Nothing is = return is
+rangeDiceExperiment die (Just (DieOpRecur doo mdor)) is = rangeDieOpExperiment die doo is >>= rangeDiceExperiment die mdor
+
+rangeDieOpExperiment :: MonadException m => Distribution -> DieOpOption -> Experiment [Integer] -> m (Experiment [Integer])
+rangeDieOpExperiment die (DieOpOptionLazy o) is = rangeDieOpExperiment die o is
+rangeDieOpExperiment die (DieOpOptionKD kd lhw) is = rangeDieOpExperimentKD kd lhw is
+
+rangeDieOpExperimentKD :: (MonadException m) => KeepDrop -> LowHighWhere -> Experiment [Integer] -> m (Experiment [Integer])
+rangeDieOpExperimentKD kd lhw is = do
+  let nb = getValueLowHigh lhw
+  case nb of
+    Nothing -> whereException
+    Just nb' -> do
+      nbd <- range nb'
+      return $ do
+        kdlh <- from nbd
+        getKeep kdlh . sortBy' <$> is
+  where
+    whereException = evaluationException "keep/drop where is unsupported" []
+    order l l' = if isLow lhw then compare l l' else compare l' l
+    sortBy' = sortBy order
+    getKeep = if kd == Keep then genericTake else genericDrop
+
 -- | Apply a single `DieOpOption` to the current list of `DiceCollection`s.
 rangeDieOp' :: forall m. MonadException m => Distribution -> DieOpOption -> [DiceCollection] -> m [DiceCollection]
 rangeDieOp' die (DieOpOptionLazy o) ds = rangeDieOp' die o ds
