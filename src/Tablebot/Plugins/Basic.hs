@@ -61,7 +61,7 @@ basicCommands =
     ),
     ( "inventory",
       "Here's the board games we possess! -> https://www.warwicktabletop.co.uk/inventory/boardgames/",
-      Simple ("the inventory", "The inventory, with a link to the actual inventory")
+      Simple ("our board games inventory", "Our board games inventory, with a link to the actual inventory")
     )
   ]
 
