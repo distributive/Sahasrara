@@ -97,21 +97,6 @@ discordUser = do
   num <- between (chunk "<@") (single '>') (some digit)
   return $ "<@" ++ num ++ ">"
 
--- | @NrQuery@ stores the string within a Netrunner query with its query type.
-data NrQuery = NrQueryCard String | NrQueryImg String | NrQueryFlavour String
-
--- | @netrunnerQuery@ gets an inline Netrunner search query.
--- This means that it matches @{{card title}}@.
-netrunnerQuery :: Parser [NrQuery]
-netrunnerQuery = some $ try $ skipManyTill anySingle query
-  where
-    query :: Parser NrQuery
-    query = do
-      container <- NrQueryImg <$ chunk "{{!" <|> NrQueryFlavour <$ chunk "{{|" <|> NrQueryCard <$ chunk "{{"
-      q <- some $ anySingleBut '}'
-      _ <- chunk "}}"
-      return $ container q
-
 -- | @keyValue@ gets a set of key/value pairs where keys are separated from
 -- values by colons. Invalid strings between and surrounding pairs are ignored.
 -- It matches @a:value b:"val ue" c:value ...@

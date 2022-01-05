@@ -42,3 +42,8 @@ standardise :: Text -> Text
 standardise x = filter (not . property Diacritic) normalizedText
   where
     normalizedText = normalize NFD $ toLower x
+
+-- | Utility function to prepend a given Text to Text within a Maybe, or return
+-- the empty Text.
+maybeEmptyPrepend :: Text -> Maybe Text -> Text
+maybeEmptyPrepend s = maybe "" (s <>)

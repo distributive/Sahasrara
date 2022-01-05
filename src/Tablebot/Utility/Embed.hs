@@ -1,4 +1,4 @@
--- -- |
+-- |
 -- Module      : Tablebot.Utility.Embed
 -- Description : Embed manipulation helpers
 -- License     : MIT
