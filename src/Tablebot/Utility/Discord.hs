@@ -132,7 +132,7 @@ sendEmbedMessage ::
 sendEmbedMessage m t e = do
   res <- liftDiscord . restCall $ TablebotEmbedRequest (messageChannel m) t (asEmbed e)
   case res of
-    Left _ -> throw $ MessageSendException "Failed to send embed message."
+    Left _ -> throw $ MessageSendException "Failed to send message."
     Right _ -> return ()
 
 -- | @getChannel@ gets the relevant Channel object for a given 'ChannelId'
