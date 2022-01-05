@@ -25,8 +25,8 @@ where
 
 import Codec.Picture (PngSavable (encodePng))
 import Control.Monad.Exception (MonadException)
-import Data.ByteString.Lazy qualified as B
-import Data.Map qualified as M
+import qualified Data.ByteString.Lazy as B
+import qualified Data.Map as M
 import Diagrams (Diagram, dims2D, renderDia)
 import Diagrams.Backend.Rasterific
 import Graphics.Rendering.Chart.Backend.Diagrams (defaultEnv, runBackendR)
