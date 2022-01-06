@@ -186,6 +186,9 @@ class RangeList a where
 
   rangeList' :: (MonadException m, PrettyShow a) => a -> m DistributionList
 
+-- | Take a list of distributions of type a. For add each one, perform an
+-- experiment where the values in that distribution are prepended to the values
+-- in the rest of the distribution
 spreadDistributions :: (Ord a) => [D.Distribution a] -> Experiment [a]
 spreadDistributions [] = return []
 spreadDistributions (d : ds) = from d >>= \d' -> (d' :) <$> spreadDistributions ds

@@ -15,15 +15,15 @@ import Data.ByteString.Lazy (toStrict)
 import Data.Distribution (isValid)
 import Data.Maybe (fromMaybe)
 import Data.Text (Text, intercalate, pack, replicate, unpack)
-import qualified Data.Text as T
+import Data.Text qualified as T
 import Discord (restCall)
 import Discord.Internal.Rest.Channel (ChannelRequest (CreateMessageDetailed), MessageDetailedOpts (MessageDetailedOpts))
 import Discord.Types (Message (messageAuthor, messageChannel))
-import System.Timeout
+import System.Timeout (timeout)
 import Tablebot.Plugins.Roll.Dice
 import Tablebot.Plugins.Roll.Dice.DiceData
 import Tablebot.Plugins.Roll.Dice.DiceStats (Range (range), getStats)
-import Tablebot.Plugins.Roll.Dice.DiceStatsBase
+import Tablebot.Plugins.Roll.Dice.DiceStatsBase (distributionByteString)
 import Tablebot.Utility
 import Tablebot.Utility.Discord (sendMessage, toMention)
 import Tablebot.Utility.Exception (BotException (EvaluationException), throwBot)
