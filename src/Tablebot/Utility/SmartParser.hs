@@ -46,13 +46,14 @@ instance {-# OVERLAPPING #-} CanParse a => PComm (a -> Message -> EnvDatabaseDis
 -- Recursive case is to parse the domain of the function type, then the rest.
 instance {-# OVERLAPPABLE #-} (CanParse a, PComm as s) => PComm (a -> as) s where
   parseComm comm = do
-    this <- pars @a
-    skipSpace1
+    this <- parsThenMoveToNext @a
     parseComm (comm this)
 
 -- | @CanParse@ defines types from which we can generate parsers.
 class CanParse a where
   pars :: Parser a
+  parsThenMoveToNext :: Parser a
+  parsThenMoveToNext = pars <* (eof <|> skipSpace1)
 
 -- Note: since FromString and (Read, Integral) can overlap, we cannot specify
 -- this instance as FromString a => CanParse a.
@@ -73,6 +74,13 @@ instance IsString a => CanParse (Quoted a) where
 -- correctly parsed, else @Nothing@.
 instance CanParse a => CanParse (Maybe a) where
   pars = optional $ try (pars @a)
+
+  -- Note: we override @parsThenMoveToNext@:
+  -- there will be no spaces to parse if the argument isn't present.
+  parsThenMoveToNext =
+    pars >>= \case
+      Nothing -> return Nothing
+      Just val -> Just val <$ (eof <|> skipSpace1)
 
 -- A parser for @[a]@ parses any number of @a@s.
 instance {-# OVERLAPPABLE #-} CanParse a => CanParse [a] where
