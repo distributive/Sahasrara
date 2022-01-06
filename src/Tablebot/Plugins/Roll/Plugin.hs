@@ -12,6 +12,7 @@ module Tablebot.Plugins.Roll.Plugin (rollPlugin) where
 import Control.Monad.Writer (MonadIO (liftIO), void)
 import Data.Bifunctor (Bifunctor (first))
 import Data.ByteString.Lazy (toStrict)
+import Data.Distribution (isValid)
 import Data.Maybe (fromMaybe)
 import Data.Text (Text, intercalate, pack, replicate, unpack)
 import qualified Data.Text as T
@@ -84,7 +85,7 @@ rollHelp =
     ["r"]
     "roll dice and do maths"
     rollHelpText
-    []
+    [statsHelp]
     None
 
 -- | A large chunk of help text for the roll command.
@@ -137,6 +138,8 @@ gencharHelp =
     []
     None
 
+-- | The command to get the statistics for an expression and display the
+-- results.
 statsCommand :: Command
 statsCommand = Command "stats" (parseComm statsCommand') []
   where
@@ -145,23 +148,51 @@ statsCommand = Command "stats" (parseComm statsCommand') []
     statsCommand' e m = do
       mrange' <- liftIO $ timeout (oneSecond * 5) $ range e
       case mrange' of
-        Nothing -> liftIO $ throwBot (EvaluationException "Timed out calculating statistics" [])
+        Nothing -> throwBot (EvaluationException "Timed out calculating statistics" [])
         (Just range') -> do
           mimage <- liftIO $ timeout (oneSecond * 5) $ distributionByteString sse range'
           case mimage of
-            Nothing -> liftIO $ throwBot (EvaluationException ("Timed out displaying statistics.\n" <> msg range') [])
+            Nothing -> do
+              sendMessage m (msg range')
+              throwBot (EvaluationException "Timed out displaying statistics." [])
             (Just image) -> do
               liftDiscord $
                 void $
                   restCall
-                    ( CreateMessageDetailed (messageChannel m) (MessageDetailedOpts (pack (msg range')) False Nothing (Just (se <> ".png", toStrict image)) Nothing Nothing)
+                    ( CreateMessageDetailed (messageChannel m) (MessageDetailedOpts (msg range') False Nothing (Just (se <> ".png", toStrict image)) Nothing Nothing)
                     )
       where
         se = prettyShow e
         sse = unpack se
-        msg d = let (modalOrder, mean, std) = getStats d in ("Here are the statistics for your dice (" <> sse <> ").\n  Ten most common totals: " <> show (take 10 modalOrder) <> "\n  Mean: " <> show mean <> "\n  Standard deviation: " <> show std)
+        msg d =
+          if (not . isValid) d
+            then "The distribution was empty."
+            else
+              let (modalOrder, mean, std) = getStats d
+               in ( "Here are the statistics for your dice ("
+                      <> se
+                      <> ").\n  Ten most common totals: "
+                      <> T.pack (show (take 10 modalOrder))
+                      <> "\n  Mean: "
+                      <> roundShow mean
+                      <> "\n  Standard deviation: "
+                      <> roundShow std
+                  )
+        roundShow :: Double -> Text
+        roundShow d = T.pack $ show $ fromInteger (round (d * 10 ** precision)) / 10 ** precision
+          where
+            precision = 5 :: Double
 
--- sendMessage m (T.pack $ show range')
+-- | Help page for dice stats.
+statsHelp :: HelpPage
+statsHelp =
+  HelpPage
+    "stats"
+    []
+    "calculate and display statistics for expressions."
+    "**Roll Stats**\nCan be used to display statistics for expressions of dice.\n\n*Usage:* `roll stats 2d20kh1`, `roll stats 4d6rr=1dl1+5`"
+    []
+    None
 
 -- | @rollPlugin@ assembles the command into a plugin.
 rollPlugin :: Plugin

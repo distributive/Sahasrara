@@ -8,12 +8,11 @@
 --
 -- This plugin generates statistics based on the values of dice in given
 -- expressions.
-module Tablebot.Plugins.Roll.Dice.DiceStats where
+module Tablebot.Plugins.Roll.Dice.DiceStats (Range (range), getStats) where
 
 import Control.Monad
 import Control.Monad.Exception (MonadException)
 import Data.Distribution as D hiding (Distribution, fromList)
-import Data.Functor ((<&>))
 import Data.List
 import Tablebot.Plugins.Roll.Dice.DiceData
 import Tablebot.Plugins.Roll.Dice.DiceEval
@@ -58,9 +57,8 @@ instance Range Term where
   range' (Div t e) = do
     d <- range t
     d' <- range e
-    -- having 0 as a denominator is disallowed
-    d'' <- ifInvalidThrow $ assuming (/= 0) d'
-    return $ combineWith div d d''
+    -- If 0 is always the denominator, the distribution will be empty.
+    return $ combineWith div d (assuming (/= 0) d')
 
 instance Range Negation where
   range' (Neg t) = select negate <$> range t
@@ -71,9 +69,8 @@ instance Range Expo where
   range' (Expo t e) = do
     d <- range t
     d' <- range e
-    -- having negative values is disallowed
-    d'' <- ifInvalidThrow $ assuming (>= 0) d'
-    return $ combineWith (^) d d''
+    -- if the exponent is always negative, the distribution will be empty
+    return $ combineWith (^) d (assuming (>= 0) d')
 
 instance Range Func where
   range' (NoFunc t) = range t
@@ -91,61 +88,70 @@ instance Range Die where
   range' (LazyDie d) = range d
   range' (Die nb) = do
     nbr <- range nb
-    -- for each possible nb value, create a (Distribution, Rational) pair
-    -- representing the distribution of the die and the probability of that
-    -- distribution coming up
-    let vcs = (\(hv, p) -> (fromList ((,1 / fromIntegral hv) <$> [1 .. hv]), p)) <$> toList nbr
-    -- then condense that into a single distribution
-    ifInvalidThrow $ mergeWeightedDistributions vcs
+    return $
+      run $ do
+        nbV <- from nbr
+        from $ uniform [1 .. nbV]
   range' (CustomDie (LVBList es)) = do
     -- get the distribution for each value in the custom die
     exprs <- mapM range es
-    let l = genericLength es
-    -- then merge all the distributions. each distribution is equally likely to
-    -- come up.
-    ifInvalidThrow $ mergeWeightedDistributions ((,1 / l) <$> exprs)
+    return $ run $ from (uniform exprs) >>= from
   range' cd@(CustomDie _) = evaluationException "tried to find range of complex custom die" [prettyShow cd]
 
 instance Range Dice where
   range' (Dice b d mdor) = do
     b' <- range b
     d' <- range d
-    dcs <- rangeDieOp d' mdor [(b', d', 1)] >>= sequence . (fromCountAndDie <$>)
-    return $ mergeWeightedDistributions dcs
+    let e = do
+          diecount <- from b'
+          getDiceExperiment diecount d'
+    res <- rangeDiceExperiment d' mdor e
+    return $ run $ sum <$> res
 
--- | Aliased type to represent a singular instance of (number of dice,
--- distribution of a die, the probability of this occuring).
-type DiceCollection = (Distribution, Distribution, Rational)
+-- | Get the distribution of dice values from a given number of dice and the
+-- distribution of the die.
+getDiceExperiment :: Integer -> Distribution -> Experiment [Integer]
+getDiceExperiment i di = replicateM (fromInteger i) (from di)
 
--- | From a `DiceCollection`, get a distribution and the probability of that
--- distribution.
-fromCountAndDie :: MonadException m => DiceCollection -> m (Distribution, Rational)
-fromCountAndDie (c, d, r) = do
-  let mwd = do
-        (i, p) <- toList c
-        return $
-          if i < 1
-            then (fromList [(0, 1)], p)
-            else do
-              let v = sum (genericTake i (repeat d))
-              (v, p)
-  return (mergeWeightedDistributions mwd, r)
-
--- | Step by step apply `rangeDieOp'`, returning the current list of
--- `DiceCollection`s when `Nothing` is encountered.
-rangeDieOp :: (MonadException m) => Distribution -> Maybe DieOpRecur -> [DiceCollection] -> m [DiceCollection]
-rangeDieOp _ Nothing ds = return ds
-rangeDieOp die (Just (DieOpRecur doo mdor)) ds = rangeDieOp' die doo ds >>= rangeDieOp die mdor
-
+-- | Go through each operator on dice and modify the `Experiment` representing
+-- all possible collections of rolls, returning the `Experiment` produced on
+-- finding `Nothing`.
 rangeDiceExperiment :: (MonadException m) => Distribution -> Maybe DieOpRecur -> Experiment [Integer] -> m (Experiment [Integer])
 rangeDiceExperiment _ Nothing is = return is
 rangeDiceExperiment die (Just (DieOpRecur doo mdor)) is = rangeDieOpExperiment die doo is >>= rangeDiceExperiment die mdor
 
+-- | Perform one dice operation on the given `Experiment`, possibly returning
+-- a modified experiment representing the distribution of dice rolls.
 rangeDieOpExperiment :: MonadException m => Distribution -> DieOpOption -> Experiment [Integer] -> m (Experiment [Integer])
 rangeDieOpExperiment die (DieOpOptionLazy o) is = rangeDieOpExperiment die o is
-rangeDieOpExperiment die (DieOpOptionKD kd lhw) is = rangeDieOpExperimentKD kd lhw is
+rangeDieOpExperiment _ (DieOpOptionKD kd lhw) is = rangeDieOpExperimentKD kd lhw is
+rangeDieOpExperiment die (Reroll rro cond lim) is = do
+  limd <- range lim
+  return $ do
+    limit <- from limd
+    let newDie = mkNewDie limit
+    rolls <- is
+    let (count, cutdownRolls) = countTriggers limit rolls
+    if count == 0
+      then return cutdownRolls
+      else (cutdownRolls ++) <$> getDiceExperiment count newDie
+  where
+    mkNewDie limitValue
+      | rro = die
+      | otherwise = assuming (\i -> not $ applyCompare cond i limitValue) die
+    countTriggers limitValue = foldr (\i (c, xs') -> if applyCompare cond i limitValue then (c + 1, xs') else (c, i : xs')) (0, [])
 
+-- | Perform a keep/drop operation on the `Experiment` of dice rolls.
 rangeDieOpExperimentKD :: (MonadException m) => KeepDrop -> LowHighWhere -> Experiment [Integer] -> m (Experiment [Integer])
+rangeDieOpExperimentKD kd (Where cond nb) is = do
+  nbDis <- range nb
+  return $ do
+    wherelimit <- from nbDis
+    filter (\i -> keepDrop $ applyCompare cond i wherelimit) <$> is
+  where
+    keepDrop
+      | kd == Keep = id
+      | otherwise = not
 rangeDieOpExperimentKD kd lhw is = do
   let nb = getValueLowHigh lhw
   case nb of
@@ -156,84 +162,9 @@ rangeDieOpExperimentKD kd lhw is = do
         kdlh <- from nbd
         getKeep kdlh . sortBy' <$> is
   where
+    -- the below exception should never trigger - it is a hold over. it is
+    -- present so that this thing type checks nicely.
     whereException = evaluationException "keep/drop where is unsupported" []
     order l l' = if isLow lhw then compare l l' else compare l' l
     sortBy' = sortBy order
     getKeep = if kd == Keep then genericTake else genericDrop
-
--- | Apply a single `DieOpOption` to the current list of `DiceCollection`s.
-rangeDieOp' :: forall m. MonadException m => Distribution -> DieOpOption -> [DiceCollection] -> m [DiceCollection]
-rangeDieOp' die (DieOpOptionLazy o) ds = rangeDieOp' die o ds
-rangeDieOp' _ (DieOpOptionKD kd lhw) ds = rangeDieOpHelpKD kd lhw ds
-rangeDieOp' die (Reroll rro cond lim) ds = do
-  limd <- range lim
-  -- join together the nested lists, as well as sequencing the
-  -- `MonadException` values
-  join
-    <$> sequence
-      ( do
-          -- for each possible value of the limit, perform the rest of the input
-          (limitValue, limitProbability) <- toList limd
-          return
-            ( -- get the new die distribution (only relevant on infinite
-              -- rerolls). if the die distribution is invalid (no values), an
-              -- exception is thrown here, as early as possible.
-              -- then, transform the given dice collections
-              die' limitValue <&> transformDiceCollections limitValue limitProbability
-            )
-      )
-  where
-    die' limitValue
-      | rro = return die
-      | otherwise = let d = assuming (\i -> not $ applyCompare cond i limitValue) die in ifInvalidThrow d
-
-    -- Go through all the dice values and conditionally perform the reroll.
-    conditionallyReroll dieDistribution limitValue newDie = do
-      (dieV, dieP) <- toList dieDistribution
-      if applyCompare cond dieV limitValue
-        then [(newDie, dieP)]
-        else [(fromList [(dieV, 1)], dieP)]
-    transformDiceCollections limitValue limitProbability newDie =
-      do
-        -- for each dice collection in the list, perform  the
-        -- below.
-        (c, dieDistribution, cp) <- ds
-        -- return the list of dice collections, sequencing as
-        -- needed
-        let mwd = mergeWeightedDistributions $ conditionallyReroll dieDistribution limitValue newDie
-        return (c, mwd, cp * limitProbability)
-
--- | Apply a keep/drop dice operation using the given `LowHighWhere` onto the
--- list of `DiceCollection`s.
-rangeDieOpHelpKD :: (MonadException m) => KeepDrop -> LowHighWhere -> [DiceCollection] -> m [DiceCollection]
-rangeDieOpHelpKD kd lhw ds = do
-  let nb = getValueLowHigh lhw
-  case nb of
-    Nothing -> whereException
-    Just nb' -> do
-      repeatType <- chooseType kd lhw
-      nbd <- range nb'
-      return
-        ( do
-            (i, p) <- toList nbd
-            (c, d, dcp) <- ds
-            (ci, cp) <- toList c
-            let toKeep = getRemaining ci i
-                d' = repeatType (ci - toKeep) d
-            return (fromList [(toKeep, 1 :: Rational)], d', p * dcp * cp)
-        )
-  where
-    whereException = evaluationException "keep/drop where is unsupported" []
-    getRemaining total value
-      | kd == Keep = min total value
-      | otherwise = max 0 (total - value)
-    repeatedM m i d
-      | i <= 0 = d
-      | otherwise = combineWith m d $ repeatedM m (i - 1) d
-    repeatedMinimum = repeatedM min
-    repeatedMaximum = repeatedM max
-    chooseType Keep (High _) = return repeatedMaximum
-    chooseType Keep (Low _) = return repeatedMinimum
-    chooseType Drop (Low _) = return repeatedMaximum
-    chooseType Drop (High _) = return repeatedMinimum
-    chooseType _ _ = evaluationException "keep/drop where is unsupported" []
