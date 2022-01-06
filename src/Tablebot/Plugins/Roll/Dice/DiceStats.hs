@@ -12,10 +12,12 @@ module Tablebot.Plugins.Roll.Dice.DiceStats (Range (range), getStats) where
 
 import Control.Monad
 import Control.Monad.Exception (MonadException)
-import Data.Distribution as D hiding (Distribution, fromList)
+import Data.Distribution hiding (Distribution, fromList)
+import qualified Data.Distribution as D
 import Data.List
 import Tablebot.Plugins.Roll.Dice.DiceData
 import Tablebot.Plugins.Roll.Dice.DiceEval
+import Tablebot.Plugins.Roll.Dice.DiceFunctions
 import Tablebot.Plugins.Roll.Dice.DiceStatsBase
 
 -- | Get the most common values, the mean, and the standard deviation of a given
@@ -36,8 +38,8 @@ combineRangesBinOp f a b = do
 
 -- | Type class to get the overall range of a value.
 --
--- A `Tablebot.Plugins.Roll.Dice.DiceStatsBase.Distribution` is a map of values
--- to probabilities, and has a variety of functions that operate on them.
+-- A `Data.Distribution.Distribution` is a map of values to probabilities, and
+-- has a variety of  functions that operate on them.
 class Range a where
   -- | Try and get the `Distribution` of the given value, throwing a
   -- `MonadException` on failure.
@@ -108,8 +110,8 @@ instance Range Dice where
     res <- rangeDiceExperiment d' mdor e
     return $ run $ sum <$> res
 
--- | Get the distribution of dice values from a given number of dice and the
--- distribution of the die.
+-- | Get the distribution of values from a given number of (identically
+-- distributed) values and the distribution of that value.
 getDiceExperiment :: Integer -> Distribution -> Experiment [Integer]
 getDiceExperiment i di = replicateM (fromInteger i) (from di)
 
@@ -168,3 +170,51 @@ rangeDieOpExperimentKD kd lhw is = do
     order l l' = if isLow lhw then compare l l' else compare l' l
     sortBy' = sortBy order
     getKeep = if kd == Keep then genericTake else genericDrop
+
+-- | Convenient alias for a distribution of lists of integers.
+type DistributionList = D.Distribution [Integer]
+
+-- | Type class to get the overall range of a list of values.
+--
+-- Only used within `DiceStats` as I have no interest in producing statistics on
+-- lists
+class RangeList a where
+  -- | Try and get the `DistributionList` of the given value, throwing a
+  -- `MonadException` on failure.
+  rangeList :: (MonadException m, PrettyShow a) => a -> m DistributionList
+  rangeList a = propagateException (prettyShow a) (rangeList' a)
+
+  rangeList' :: (MonadException m, PrettyShow a) => a -> m DistributionList
+
+spreadDistributions :: (Ord a) => [D.Distribution a] -> Experiment [a]
+spreadDistributions [] = return []
+spreadDistributions (d : ds) = from d >>= \d' -> (d' :) <$> spreadDistributions ds
+
+instance RangeList ListValuesBase where
+  rangeList' (LVBList es) = do
+    exprs <- mapM range es
+    return $ run $ spreadDistributions exprs
+  rangeList' (LVBParen (Paren lv)) = rangeList lv
+
+instance RangeList ListValues where
+  rangeList' (LVBase lvb) = rangeList lvb
+  rangeList' (MultipleValues nb b) = do
+    nbd <- range nb
+    bd <- range b
+    return $
+      run $ do
+        valNum <- from nbd
+        getDiceExperiment valNum bd
+  rangeList' (LVFunc fi avs) = evaluationException "list evaluations are not implmeneted yet" []
+
+rangeArgValue :: MonadException m => ArgValue -> m (D.Distribution ListInteger)
+rangeArgValue (AVExpr e) = run . (LIInteger <$>) . from <$> range e
+rangeArgValue (AVListValues lv) = run . (LIList <$>) . from <$> rangeList lv
+
+rangeFunction :: (MonadException m, MonadException n, Ord (n j)) => FuncInfoBase n j -> [ArgValue] -> m (D.Distribution (n j))
+rangeFunction fi exprs = do
+  exprs' <- mapM rangeArgValue exprs
+  return $
+    run $ do
+      params <- spreadDistributions exprs'
+      return (funcInfoFunc fi params)
