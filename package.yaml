@@ -57,6 +57,8 @@ dependencies:
 - safe
 - edit-distance
 - unliftio
+- split
+- regex-pcre
 
 library:
   source-dirs: src
@@ -82,8 +84,10 @@ library:
   - MultiWayIf
   - TupleSections
   - ConstraintKinds
-  - ImportQualifiedPost
   - RecordWildCards
+  - ScopedTypeVariables
+  - TypeOperators
+  - RankNTypes
   ghc-options:
   - -Wall
 

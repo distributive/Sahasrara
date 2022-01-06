@@ -6,16 +6,15 @@
 -- Stability   : experimental
 -- Portability : POSIX
 --
--- The functionality of the custom card features of the Netrunner command.
-module Tablebot.Plugins.Netrunner.Custom (customCard) where
+-- Backend for the custom command.
+module Tablebot.Plugins.Netrunner.Command.Custom (customCard) where
 
 import Data.Map (fromList, lookup)
 import Data.Maybe (catMaybes)
-import Data.Text (Text, pack, unpack)
-import Tablebot.Plugins.Netrunner.Card as Card
-import Tablebot.Plugins.Netrunner.Faction as Faction
-import Tablebot.Plugins.Netrunner.NrApi (NrApi (..))
-import Tablebot.Utility.Search (FuzzyCosts (..), closestMatch, closestPairWithCosts, closestValue)
+import Data.Text (Text, pack)
+import Tablebot.Plugins.Netrunner.Type.Card as Card
+import Tablebot.Plugins.Netrunner.Type.NrApi (NrApi (..))
+import Tablebot.Utility.Search (FuzzyCosts (..), closestPairWithCosts, closestValue)
 import Prelude hiding (lookup)
 
 -- | @NrData@ allows us to parse parameters into a type of our choosing.
@@ -65,16 +64,16 @@ keys =
 fuzzyBool :: String -> Bool
 fuzzyBool = closestValue [("true", True), ("false", False)]
 
--- | @fuzzyType@ maps a string to the closest card type.
-fuzzyType :: String -> String
-fuzzyType = closestMatch ["agenda", "asset", "event", "hardware", "ice", "identity", "operation", "program", "resource", "upgrade"]
-
--- | @fuzzyFaction@ maps a string to the closest card faction by name.
-fuzzyFaction :: NrApi -> String -> String
-fuzzyFaction api query =
-  let names = unpack . Faction.name <$> factions api
-      codes = unpack . Faction.code <$> factions api
-   in closestValue (zip names codes) query
+-- -- | @fuzzyType@ maps a string to the closest card type.
+-- fuzzyType :: String -> String
+-- fuzzyType = closestMatch ["agenda", "asset", "event", "hardware", "ice", "identity", "operation", "program", "resource", "upgrade"]
+--
+-- -- | @fuzzyFaction@ maps a string to the closest card faction by name.
+-- fuzzyFaction :: NrApi -> String -> String
+-- fuzzyFaction api query =
+--   let names = unpack . Faction.name <$> factions api
+--       codes = unpack . Faction.code <$> factions api
+--    in closestValue (zip names codes) query
 
 -- | @customCard@ takes a set of parameters and does its best to turn that data
 -- into a card.
@@ -82,31 +81,31 @@ customCard :: NrApi -> [(String, String)] -> Card
 customCard _ cardData =
   let params = fromList $ catMaybes $ readParam <$> cardData
    in Card
-        { advancement_cost = nrToInt =<< lookup "advancement" params,
-          agenda_points = nrToInt =<< lookup "points" params,
-          base_link = nrToInt =<< lookup "link" params,
+        { advancementCost = nrToInt =<< lookup "advancement" params,
+          agendaPoints = nrToInt =<< lookup "points" params,
+          baseLink = nrToInt =<< lookup "link" params,
           Card.code = Nothing,
           cost = nrToInt =<< lookup "cost" params,
-          deck_limit = Nothing,
-          faction_code = nrToText =<< lookup "faction" params,
-          faction_cost = nrToInt =<< lookup "influence" params,
-          flavor = nrToText =<< lookup "flavour" params,
+          deckLimit = Nothing,
+          factionCode = nrToText =<< lookup "faction" params,
+          factionCost = nrToInt =<< lookup "influence" params,
+          flavour = nrToText =<< lookup "flavour" params,
           illustrator = Nothing,
-          influence_limit = nrToInt =<< lookup "maxInf" params,
+          influenceLimit = nrToInt =<< lookup "maxInf" params,
           keywords = nrToText =<< lookup "keywords" params,
-          memory_cost = nrToInt =<< lookup "mu" params,
-          minimum_deck_size = nrToInt =<< lookup "minSize" params,
-          pack_code = Nothing,
+          memoryCost = nrToInt =<< lookup "mu" params,
+          minimumDeckSize = nrToInt =<< lookup "minSize" params,
+          packCode = Nothing,
           position = Nothing,
           quantity = Nothing,
-          Card.side_code = Nothing,
+          Card.sideCode = Nothing,
           strength = nrToInt =<< lookup "strength" params,
-          stripped_text = nrToText =<< lookup "text" params, -- TODO - strip this
-          stripped_title = nrToText =<< lookup "title" params, -- TODO - ditto
+          strippedText = nrToText =<< lookup "text" params, -- TODO - strip this
+          strippedTitle = nrToText =<< lookup "title" params, -- TODO - ditto
           text = nrToText =<< lookup "text" params,
           title = nrToText =<< lookup "title" params,
-          trash_cost = nrToInt =<< lookup "trash" params,
-          type_code = nrToText =<< lookup "type" params,
+          trashCost = nrToInt =<< lookup "trash" params,
+          typeCode = nrToText =<< lookup "type" params,
           uniqueness = nrToBool =<< lookup "unique" params
         }
   where
