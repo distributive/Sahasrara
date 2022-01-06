@@ -15,7 +15,7 @@ import Data.ByteString.Lazy (toStrict)
 import Data.Distribution (isValid)
 import Data.Maybe (fromMaybe)
 import Data.Text (Text, intercalate, pack, replicate, unpack)
-import Data.Text qualified as T
+import qualified Data.Text as T
 import Discord (restCall)
 import Discord.Internal.Rest.Channel (ChannelRequest (CreateMessageDetailed), MessageDetailedOpts (MessageDetailedOpts))
 import Discord.Types (Message (messageAuthor, messageChannel))
