@@ -17,7 +17,6 @@ module Tablebot.Plugins.Roll.Dice.DiceStatsBase
 where
 
 import Codec.Picture (PngSavable (encodePng))
-import Control.Monad.Exception (MonadException)
 import qualified Data.ByteString.Lazy as B
 import qualified Data.Distribution as D
 import Diagrams (Diagram, dims2D, renderDia)
@@ -25,7 +24,6 @@ import Diagrams.Backend.Rasterific
 import Graphics.Rendering.Chart.Backend.Diagrams (defaultEnv, runBackendR)
 import Graphics.Rendering.Chart.Backend.Types
 import Graphics.Rendering.Chart.Easy
-import Tablebot.Plugins.Roll.Dice.DiceEval (evaluationException)
 
 -- | A wrapper type for mapping values to their probabilities.
 type Distribution = D.Distribution Integer
