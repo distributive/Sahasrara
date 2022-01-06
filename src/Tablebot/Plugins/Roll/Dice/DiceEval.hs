@@ -359,7 +359,7 @@ instance IOEval Func where
   evalShow' rngCount (NoFunc b) = evalShow rngCount b
 
 -- | Evaluate a function when given a list of parameters
-evaluateFunction :: RNGCount -> FuncInfoBase IO j -> [ArgValue] -> IO (j, Text, RNGCount)
+evaluateFunction :: RNGCount -> FuncInfoBase j -> [ArgValue] -> IO (j, Text, RNGCount)
 evaluateFunction rngCount fi exprs = do
   (exprs', rngCount') <- evalShowList'' (\r a -> evalArgValue r a >>= \(i, r') -> return (i, "", r')) rngCount exprs
   f <- funcInfoFunc fi (fst <$> exprs')

@@ -11,14 +11,16 @@
 module Tablebot.Plugins.Roll.Dice.DiceStats (Range (range), getStats) where
 
 import Control.Monad
-import Control.Monad.Exception (MonadException)
+import Control.Monad.Exception
+import Data.Bifunctor (Bifunctor (first))
 import Data.Distribution hiding (Distribution, fromList)
 import qualified Data.Distribution as D
 import Data.List
 import Tablebot.Plugins.Roll.Dice.DiceData
 import Tablebot.Plugins.Roll.Dice.DiceEval
 import Tablebot.Plugins.Roll.Dice.DiceFunctions
-import Tablebot.Plugins.Roll.Dice.DiceStatsBase
+import Tablebot.Plugins.Roll.Dice.DiceStatsBase (Distribution)
+import Tablebot.Utility.Exception (catchBot)
 
 -- | Get the most common values, the mean, and the standard deviation of a given
 -- distribution.
@@ -76,7 +78,7 @@ instance Range Expo where
 
 instance Range Func where
   range' (NoFunc t) = range t
-  range' f@(Func _ _) = evaluationException "tried to find range of function, which is currently unsupported" [prettyShow f]
+  range' (Func fi avs) = rangeFunction fi avs
 
 instance Range NumBase where
   range' (Value i) = return $ always i
@@ -94,11 +96,9 @@ instance Range Die where
       run $ do
         nbV <- from nbr
         from $ uniform [1 .. nbV]
-  range' (CustomDie (LVBList es)) = do
-    -- get the distribution for each value in the custom die
-    exprs <- mapM range es
-    return $ run $ from (uniform exprs) >>= from
-  range' cd@(CustomDie _) = evaluationException "tried to find range of complex custom die" [prettyShow cd]
+  range' (CustomDie lv) = do
+    dievs <- rangeList lv
+    return $ run $ from dievs >>= from . uniform
 
 instance Range Dice where
   range' (Dice b d mdor) = do
@@ -205,16 +205,16 @@ instance RangeList ListValues where
       run $ do
         valNum <- from nbd
         getDiceExperiment valNum bd
-  rangeList' (LVFunc fi avs) = evaluationException "list evaluations are not implmeneted yet" []
+  rangeList' (LVFunc fi avs) = rangeFunction fi avs
 
 rangeArgValue :: MonadException m => ArgValue -> m (D.Distribution ListInteger)
 rangeArgValue (AVExpr e) = run . (LIInteger <$>) . from <$> range e
 rangeArgValue (AVListValues lv) = run . (LIList <$>) . from <$> rangeList lv
 
-rangeFunction :: (MonadException m, MonadException n, Ord (n j)) => FuncInfoBase n j -> [ArgValue] -> m (D.Distribution (n j))
+rangeFunction :: (MonadException m, Ord j) => FuncInfoBase j -> [ArgValue] -> m (D.Distribution j)
 rangeFunction fi exprs = do
   exprs' <- mapM rangeArgValue exprs
-  return $
-    run $ do
-      params <- spreadDistributions exprs'
-      return (funcInfoFunc fi params)
+  let params = first (funcInfoFunc fi) <$> toList (run $ spreadDistributions exprs')
+  D.fromList <$> foldAndIgnoreErrors params
+  where
+    foldAndIgnoreErrors = foldr (\(mv, p) mb -> mb >>= \b -> catchBot ((: []) . (,p) <$> mv) (const (return [])) >>= \v -> return (v ++ b)) (return [])

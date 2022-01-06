@@ -46,7 +46,7 @@ instance CanParse ListValues where
             _ <- char '#'
             MultipleValues nb <$> pars
         )
-      <|> functionParser (listFunctions @IO) LVFunc
+      <|> functionParser listFunctions LVFunc
 
 instance CanParse ListValuesBase where
   pars = do
@@ -74,13 +74,13 @@ instance CanParse Term where
     binOpParseHelp '*' (Multi t) <|> binOpParseHelp '/' (Div t) <|> (return . NoTerm) t
 
 instance CanParse Func where
-  pars = try (functionParser (integerFunctions @IO) Func) <|> NoFunc <$> pars
+  pars = try (functionParser integerFunctions Func) <|> NoFunc <$> pars
 
 -- | A generic function parser that takes a mapping from function names to
 -- functions, the main way to contruct the function data type `e`, and a
 -- constructor for `e` that takes only one value, `a` (which has its own,
 -- previously defined parser).
-functionParser :: M.Map Text (FuncInfoBase m j) -> (FuncInfoBase m j -> [ArgValue] -> e) -> Parser e
+functionParser :: M.Map Text (FuncInfoBase j) -> (FuncInfoBase j -> [ArgValue] -> e) -> Parser e
 functionParser m mainCons =
   do
     fi <- try (choice (string <$> M.keys m) >>= \t -> return (m M.! t)) <?> "could not find function"

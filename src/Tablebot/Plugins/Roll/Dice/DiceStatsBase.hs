@@ -10,8 +10,6 @@
 -- `Distribution`s.
 module Tablebot.Plugins.Roll.Dice.DiceStatsBase
   ( Distribution,
-    fromList,
-    mergeWeightedDistributions,
     distributionByteString,
   )
 where
@@ -27,18 +25,6 @@ import Graphics.Rendering.Chart.Easy
 
 -- | A wrapper type for mapping values to their probabilities.
 type Distribution = D.Distribution Integer
-
--- | Convenient way to set the types being used so that warnings don't pop up.
-fromList :: [(Integer, Rational)] -> Distribution
-fromList = D.fromList
-
--- | Merge all distributions according to a given weighting by multiplying the
--- probabilities in each distribution by the given weighting.
-mergeWeightedDistributions :: [(Distribution, Rational)] -> Distribution
-mergeWeightedDistributions ds = D.fromList $ do
-  (d, r) <- ds
-  (i, p) <- D.toList d
-  return (i, p * r)
 
 -- | Default x and y values for the output chart.
 diagramX, diagramY :: Double
