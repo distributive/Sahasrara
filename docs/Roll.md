@@ -97,7 +97,7 @@ The bot will give the mean, the standard deviation, and the top ten most common 
 
 For example, the result of calling `roll stats 2d20kh1` (roll two twenty sided dice and keep the higher die) can be seen below.
 
-["The results of asking for stats of 2d20kh1 (roll two twenty sided dice and keep the highest one). The ten most common rolls are 20 to 11. The mean is 13.825. The standard deviation is about 4.7. The bar chart has values on each integer from 1 to 20, with the height of each bar increasing linearly."](./resources/dicestats_2d20kh1.jpg "the result of asking for stats of 2d20kh1")
+!["The results of asking for stats of 2d20kh1 (roll two twenty sided dice and keep the highest one). The ten most common rolls are 20 to 11. The mean is 13.825. The standard deviation is about 4.7. The bar chart has values on each integer from 1 to 20, with the height of each bar increasing linearly."](./resources/dicestats_2d20kh1.jpg "the result of asking for stats of 2d20kh1")
 
 (above: The results of asking for stats of 2d20kh1 (roll two twenty sided dice and keep the highest one). The ten most common rolls are 20 to 11. The mean is 13.825. The standard deviation is about 4.7. The bar chart has values on each integer from 1 to 20, with the height of each bar increasing linearly.)
 
