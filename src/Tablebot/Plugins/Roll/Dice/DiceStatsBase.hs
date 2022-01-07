@@ -15,11 +15,11 @@ module Tablebot.Plugins.Roll.Dice.DiceStatsBase
 where
 
 import Codec.Picture (PngSavable (encodePng))
-import Data.ByteString.Lazy qualified as B
-import Data.Distribution qualified as D
-import Data.Map qualified as M
-import Data.Set qualified as S
-import Data.Text qualified as T
+import qualified Data.ByteString.Lazy as B
+import qualified Data.Distribution as D
+import qualified Data.Map as M
+import qualified Data.Set as S
+import qualified Data.Text as T
 import Diagrams (Diagram, dims2D, renderDia)
 import Diagrams.Backend.Rasterific
 import Graphics.Rendering.Chart.Backend.Diagrams (defaultEnv, runBackendR)
@@ -66,15 +66,15 @@ distributionRenderable d = toRenderable $ do
   layout_x_axis . laxis_title .= "value"
   layout_y_axis . laxis_title .= "probability (%)"
   -- setColors (take[opaque blue, opaque red, opaque green, opaque teal, opaque violet])
-  plot $ plotBars <$> (bars @Double @Double) (barNames d)  pts
+  plot $ plotBars <$> (bars @Double @Double) (barNames d) pts
   where
     ds = M.fromList . D.toList . fst <$> d
     allIntegers = S.toList $ S.unions $ M.keysSet <$> ds
     insertEmpty k = M.insertWith (\_ a -> a) k 0
     ds' = M.unionsWith (++) $ M.map (: []) <$> (applyAll (insertEmpty <$> allIntegers) <$> ds)
-    pts = bimap fromInteger (fromRational . (*100) <$>) <$> M.toList ds'
+    pts = bimap fromInteger (fromRational . (* 100) <$>) <$> M.toList ds'
     applyAll [] = id
-    applyAll (f:fs) = f . applyAll fs
+    applyAll (f : fs) = f . applyAll fs
     defFontStyle = def {_font_size = 2 * _font_size def}
     barNames [_] = [""]
     barNames xs = T.unpack . snd <$> xs
