@@ -15,7 +15,7 @@ import Data.ByteString.Lazy (toStrict)
 import Data.Distribution (isValid)
 import Data.Maybe (fromMaybe)
 import Data.Text (Text, intercalate, pack, replicate, unpack)
-import qualified Data.Text as T
+import Data.Text qualified as T
 import Discord (restCall)
 import Discord.Internal.Rest.Channel (ChannelRequest (CreateMessageDetailed), MessageDetailedOpts (MessageDetailedOpts))
 import Discord.Types (Message (messageAuthor, messageChannel))
@@ -25,11 +25,11 @@ import Tablebot.Plugins.Roll.Dice.DiceData
 import Tablebot.Plugins.Roll.Dice.DiceStats (getStats, rangeExpr)
 import Tablebot.Plugins.Roll.Dice.DiceStatsBase (distributionByteString)
 import Tablebot.Utility
-import Tablebot.Utility.Discord (sendMessage, toMention)
+import Tablebot.Utility.Discord (Format (Code), formatText, sendMessage, toMention)
 import Tablebot.Utility.Exception (BotException (EvaluationException), throwBot)
-import Tablebot.Utility.Parser (inlineCommandHelper)
+import Tablebot.Utility.Parser (inlineCommandHelper, skipSpace)
 import Tablebot.Utility.SmartParser (PComm (parseComm), Quoted (Qu), pars)
-import Text.Megaparsec (MonadParsec (try), choice, (<?>))
+import Text.Megaparsec (MonadParsec (try), choice, many, (<?>))
 import Text.RawString.QQ (r)
 
 -- | The basic execution function for rolling dice. Both the expression and message are
@@ -141,16 +141,21 @@ gencharHelp =
 -- | The command to get the statistics for an expression and display the
 -- results.
 statsCommand :: Command
-statsCommand = Command "stats" (parseComm statsCommand') []
+statsCommand = Command "stats" statsCommandParser []
   where
     oneSecond = 1000000
-    statsCommand' :: Expr -> Message -> DatabaseDiscord ()
-    statsCommand' e m = do
-      mrange' <- liftIO $ timeout (oneSecond * 5) $ rangeExpr e
+    statsCommandParser :: Parser (Message -> DatabaseDiscord ())
+    statsCommandParser = do
+      firstE <- pars
+      restEs <- many (try $ skipSpace *> pars)
+      return $ statsCommand' (firstE : restEs)
+    statsCommand' :: [Expr] -> Message -> DatabaseDiscord ()
+    statsCommand' es m = do
+      mrange' <- liftIO $ timeout (oneSecond * 5) $ mapM (\e -> (,prettyShow e) <$> rangeExpr e) es
       case mrange' of
         Nothing -> throwBot (EvaluationException "Timed out calculating statistics" [])
         (Just range') -> do
-          mimage <- liftIO $ timeout (oneSecond * 5) $ distributionByteString sse range'
+          mimage <- liftIO $ timeout (oneSecond * 5) $ distributionByteString range'
           case mimage of
             Nothing -> do
               sendMessage m (msg range')
@@ -159,18 +164,16 @@ statsCommand = Command "stats" (parseComm statsCommand') []
               liftDiscord $
                 void $
                   restCall
-                    ( CreateMessageDetailed (messageChannel m) (MessageDetailedOpts (msg range') False Nothing (Just (se <> ".png", toStrict image)) Nothing Nothing)
+                    ( CreateMessageDetailed (messageChannel m) (MessageDetailedOpts (msg range') False Nothing (Just (T.unwords (snd <$> range') <> ".png", toStrict image)) Nothing Nothing)
                     )
       where
-        se = prettyShow e
-        sse = unpack se
-        msg d =
+        msg [(d, t)] =
           if (not . isValid) d
             then "The distribution was empty."
             else
               let (modalOrder, mean, std) = getStats d
                in ( "Here are the statistics for your dice ("
-                      <> se
+                      <> formatText Code t
                       <> ").\n  Ten most common totals: "
                       <> T.pack (show (take 10 modalOrder))
                       <> "\n  Mean: "
@@ -178,6 +181,17 @@ statsCommand = Command "stats" (parseComm statsCommand') []
                       <> "\n  Standard deviation: "
                       <> roundShow std
                   )
+        msg dts =
+          let (modalOrders, means, stds) = unzip3 $ getStats . fst <$> dts
+           in ( "Here are the statistics for your dice ("
+                  <> intercalate ", " (formatText Code . snd <$> dts)
+                  <> ").\n  Most common totals (capped to ten total): "
+                  <> T.pack (show (take (div 10 (length modalOrders)) <$> modalOrders))
+                  <> "\n  Means: "
+                  <> intercalate ", " (roundShow <$> means)
+                  <> "\n  Standard deviations: "
+                  <> intercalate ", " (roundShow <$> stds)
+              )
         roundShow :: Double -> Text
         roundShow d = T.pack $ show $ fromInteger (round (d * 10 ** precision)) / 10 ** precision
           where

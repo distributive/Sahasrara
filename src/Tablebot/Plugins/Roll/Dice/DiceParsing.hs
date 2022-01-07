@@ -13,11 +13,12 @@
 module Tablebot.Plugins.Roll.Dice.DiceParsing () where
 
 import Data.Functor (($>), (<&>))
+import Data.List (sortBy)
 import Data.List.NonEmpty as NE (fromList)
 import Data.Map as M (Map, findWithDefault, keys, map, (!))
 import Data.Maybe (fromMaybe)
 import Data.Set as S (Set, fromList, map)
-import Data.Text (Text, singleton, unpack)
+import qualified Data.Text as T
 import Tablebot.Plugins.Roll.Dice.DiceData
 import Tablebot.Plugins.Roll.Dice.DiceFunctions
   ( ArgType (..),
@@ -33,8 +34,8 @@ import Text.Megaparsec.Char (char, string)
 import Text.Megaparsec.Error (ErrorItem (Tokens))
 
 -- | An easier way to handle failure in parsers.
-failure' :: Text -> Set Text -> Parser a
-failure' s ss = failure (Just $ Tokens $ NE.fromList $ unpack s) (S.map (Tokens . NE.fromList . unpack) ss)
+failure' :: T.Text -> Set T.Text -> Parser a
+failure' s ss = failure (Just $ Tokens $ NE.fromList $ T.unpack s) (S.map (Tokens . NE.fromList . T.unpack) ss)
 
 instance CanParse ListValues where
   pars =
@@ -80,7 +81,7 @@ instance CanParse Func where
 -- functions, the main way to contruct the function data type `e`, and a
 -- constructor for `e` that takes only one value, `a` (which has its own,
 -- previously defined parser).
-functionParser :: M.Map Text (FuncInfoBase j) -> (FuncInfoBase j -> [ArgValue] -> e) -> Parser e
+functionParser :: M.Map T.Text (FuncInfoBase j) -> (FuncInfoBase j -> [ArgValue] -> e) -> Parser e
 functionParser m mainCons =
   do
     fi <- try (choice (string <$> M.keys m) >>= \t -> return (m M.! t)) <?> "could not find function"
@@ -147,9 +148,8 @@ parseDice' = do
 parseAdvancedOrdering :: Parser AdvancedOrdering
 parseAdvancedOrdering = (try (choice opts) <?> "could not parse an ordering") >>= matchO
   where
-    matchO :: Text -> Parser AdvancedOrdering
     matchO s = M.findWithDefault (failure' s (S.fromList opts')) s (M.map return $ fst advancedOrderingMapping)
-    opts' = M.keys $ fst advancedOrderingMapping
+    opts' = sortBy (\a b -> compare (T.length b) (T.length a)) $ M.keys $ fst advancedOrderingMapping
     opts = fmap string opts'
 
 -- | Parse a `LowHighWhere`, which is an `h` followed by an integer.
@@ -159,7 +159,7 @@ parseLowHigh = (try (choice @[] $ char <$> "lhw") <?> "could not parse high, low
     helper 'h' = High <$> pars
     helper 'l' = Low <$> pars
     helper 'w' = parseAdvancedOrdering >>= \o -> pars <&> Where o
-    helper c = failure' (singleton c) (S.fromList ["h", "l", "w"])
+    helper c = failure' (T.singleton c) (S.fromList ["h", "l", "w"])
 
 -- | Parse a bunch of die options into, possibly, a DieOpRecur.
 parseDieOpRecur :: Parser (Maybe DieOpRecur)
