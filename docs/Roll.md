@@ -4,6 +4,8 @@ The roll command has a staggering amount of flexibility, as well as additional f
 
 Below are listed the current full capabilities of the bot for rolling dice and evaluation expressions. All operations (currently) result in integers or a list. A list of functions is available in the [functions section](#Functions).
 
+You can also generate statistics of an expression. See the [Statistics](#Statistics) section for more information.
+
 ## Basic Operators
 
 - Addition
@@ -83,3 +85,22 @@ Here are all the functions, what they take, and what they return.
 - reverse (list) - reverse the list
 - sort (list) - sort the list in ascending order
 - take (integer, list) - take the first `n` values from a list, where `n` is the integer given
+- between (integer, integer) - generate a list between the two given integers
+
+# Statistics
+
+As well as generating values, statistics based off of expressions can be found.
+
+To get these statistics, calling the `roll` command with the `stats` subcommand will generate the requested statistics. The expression given has to return an integer.
+
+The bot will give the mean, the standard deviation, and the top ten most common values of the distribution, as well as graphing the entire distribution.
+
+For example, the result of calling `roll stats 2d20kh1` (roll two twenty sided dice and keep the higher die) can be seen below.
+
+!["The results of asking for stats of 2d20kh1 (roll two twenty sided dice and keep the highest one). The ten most common rolls are 20 to 11. The mean is 13.825. The standard deviation is about 4.7. The bar chart has values on each integer from 1 to 20, with the height of each bar increasing linearly."](./resources/dicestats_2d20kh1.jpg "the result of asking for stats of 2d20kh1")
+
+(above: The results of asking for stats of 2d20kh1 (roll two twenty sided dice and keep the highest one). The ten most common rolls are 20 to 11. The mean is 13.825. The standard deviation is about 4.7. The bar chart has values on each integer from 1 to 20, with the height of each bar increasing linearly.)
+
+Currently, the statistics generation supports all valid expressions.
+
+If invalid states occur (such as with division by zero, negative exponents, or infinite rerolls) the bot will alert the user only if the entire distribution becomes empty. For example, in `1d20rr<(21-d{0,1})`, half of the time infinite rerolls will occur. In this case, these invalid cases are ignored, as they can never be actually rolled, and the only value output is `20`. If the expression given is instead `1/0`, the entire distribution will be empty, as there is no valid output from this expression.

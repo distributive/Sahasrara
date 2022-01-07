@@ -22,7 +22,7 @@ import Discord.Types (Message (messageAuthor, messageChannel))
 import System.Timeout (timeout)
 import Tablebot.Plugins.Roll.Dice
 import Tablebot.Plugins.Roll.Dice.DiceData
-import Tablebot.Plugins.Roll.Dice.DiceStats (Range (range), getStats)
+import Tablebot.Plugins.Roll.Dice.DiceStats (getStats, rangeExpr)
 import Tablebot.Plugins.Roll.Dice.DiceStatsBase (distributionByteString)
 import Tablebot.Utility
 import Tablebot.Utility.Discord (sendMessage, toMention)
@@ -146,7 +146,7 @@ statsCommand = Command "stats" (parseComm statsCommand') []
     oneSecond = 1000000
     statsCommand' :: Expr -> Message -> DatabaseDiscord ()
     statsCommand' e m = do
-      mrange' <- liftIO $ timeout (oneSecond * 5) $ range e
+      mrange' <- liftIO $ timeout (oneSecond * 5) $ rangeExpr e
       case mrange' of
         Nothing -> throwBot (EvaluationException "Timed out calculating statistics" [])
         (Just range') -> do
