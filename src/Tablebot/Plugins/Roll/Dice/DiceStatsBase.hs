@@ -60,12 +60,9 @@ distributionDiagram d = do
 distributionRenderable :: [(Distribution, T.Text)] -> Renderable ()
 distributionRenderable d = toRenderable $ do
   layout_title .= T.unpack (title' d)
-  layout_title_style .= defFontStyle
-  layout_axes_title_styles .= defFontStyle
-  layout_axes_styles .= def {_axis_label_style = defFontStyle}
   layout_x_axis . laxis_title .= "value"
   layout_y_axis . laxis_title .= "probability (%)"
-  -- setColors (take[opaque blue, opaque red, opaque green, opaque teal, opaque violet])
+  layout_all_font_styles .= defFontStyle
   plot $ plotBars <$> (bars @Double @Double) (barNames d) pts
   where
     ds = M.fromList . D.toList . fst <$> d
