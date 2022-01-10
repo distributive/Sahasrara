@@ -113,6 +113,7 @@ fixSearch api = mapMaybe fix
     format ("c", sep, v) = Just $ QInt "c" sep cycleIndex $ map fixCycle v
     format ("t", sep, v) = Just $ QText "t" sep typeCode $ map fixType v
     format ("f", sep, v) = Just $ QText "f" sep keywords $ map fixFaction v
+    format ("s", sep, v) = Just $ QText "s" sep keywords v
     format ("d", sep, v) = Just $ QText "d" sep sideCode $ map fixSide v
     format ("i", sep, v) = Just $ QText "i" sep illustrator v
     format ("o", sep, v) = Just $ QInt "o" sep cost v
