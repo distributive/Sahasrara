@@ -63,7 +63,9 @@ distributionRenderable d = toRenderable $ do
   layout_x_axis . laxis_title .= "value"
   layout_y_axis . laxis_title .= "probability (%)"
   layout_all_font_styles .= defFontStyle
-  plot $ plotBars <$> (bars @Double @Double) (barNames d) pts
+  pb <- (bars @Double @Double) (barNames d) pts
+  let pb' = pb {_plot_bars_spacing = BarsFixGap 10 5}
+  plot $ return $ plotBars pb'
   where
     ds = M.fromList . D.toList . fst <$> d
     allIntegers = S.toList $ S.unions $ M.keysSet <$> ds
