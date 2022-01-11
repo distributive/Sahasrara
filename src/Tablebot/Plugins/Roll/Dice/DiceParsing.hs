@@ -18,7 +18,7 @@ import Data.List.NonEmpty as NE (fromList)
 import Data.Map as M (Map, findWithDefault, keys, map, (!))
 import Data.Maybe (fromMaybe)
 import Data.Set as S (Set, fromList, map)
-import Data.Text qualified as T
+import qualified Data.Text as T
 import Tablebot.Plugins.Roll.Dice.DiceData
 import Tablebot.Plugins.Roll.Dice.DiceFunctions
   ( ArgType (..),
