@@ -39,7 +39,7 @@ packages:
 # - git: https://github.com/commercialhaskell/stack.git
 #   commit: e7b331f14bcffb8367cd58fbfc8b40ec7642100a
 #
-allow-newer: true
+# allow-newer: true
 
 extra-deps:
 - discord-haskell-1.9.2
@@ -65,8 +65,8 @@ extra-deps:
 - monoid-extras-0.6.1
 - statestack-0.3
 - diagrams-rasterific-1.4.2.2
-- git: https://github.com/jmct/haskell-distribution.git
-  commit: c8cefde8b4d50ffccf4f9d940eced23f0d56e4c7
+- git: https://github.com/L0neGamer/haskell-distribution.git
+  commit: 569d6452e4bffedb2c0d3795885fccdb22a4d29d
 
 # Override default flag values for local packages and extra-deps
 # flags: {}
