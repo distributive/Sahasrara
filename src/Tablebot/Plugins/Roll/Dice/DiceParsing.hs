@@ -16,7 +16,6 @@ import Data.Functor (($>), (<&>))
 import Data.List (sortBy)
 import Data.List.NonEmpty as NE (fromList)
 import Data.Map as M (Map, findWithDefault, keys, map, (!))
-import Data.Maybe (fromMaybe)
 import Data.Set as S (Set, fromList, map)
 import qualified Data.Text as T
 import Tablebot.Plugins.Roll.Dice.DiceData
@@ -57,8 +56,11 @@ instance CanParse ListValuesBase where
               <* skipSpace
               <* char '}'
           )
-      <|> LVBParen
+      <|> LVBParen . unnest
       <$> pars
+    where
+      unnest (Paren (LVBase (LVBParen e))) = e
+      unnest e = e
 
 -- | Helper function to try to parse the second part of a binary operator.
 binOpParseHelp :: (CanParse a) => Char -> (a -> a) -> Parser a
@@ -104,7 +106,7 @@ instance CanParse NumBase where
     (NBParen . unnest <$> try pars <?> "could not parse number in parentheses")
       <|> Value <$> try integer <?> "could not parse numbase integer"
     where
-      unnest (Paren (NoExpr (NoTerm (NoNeg (NoExpo (NoFunc (NBase (NBParen (Paren e))))))))) = Paren e
+      unnest (Paren (NoExpr (NoTerm (NoNeg (NoExpo (NoFunc (NBase (NBParen e)))))))) = e
       unnest e = e
 
 instance (CanParse a) => CanParse (Paren a) where
@@ -117,8 +119,6 @@ instance CanParse Base where
           <|> return (NBase nb)
     )
       <|> DiceBase <$> try (parseDice (Value 1)) <?> "cannot parse numberless die"
-
---try (DiceBase <$> pars) <|> (NBase <$> pars)
 
 instance CanParse Die where
   pars = do
@@ -133,13 +133,8 @@ instance CanParse Die where
       <|> lazyFunc . Die
       <$> (try pars <?> "couldn't parse base number for die")
 
--- instance CanParse Dice where
---   pars = do
---     t <- optional $ try (pars :: Parser NumBase)
---     bd <- parseDice'
---     let t' = NBase $ fromMaybe (Value 1) t
---     return $ bd t'
-
+-- | Given a `NumBase` (the value on the front of a set of dice), construct a
+-- set of dice.
 parseDice :: NumBase -> Parser Dice
 parseDice nb = parseDice' <*> return (NBase nb)
 
@@ -199,10 +194,12 @@ parseDieOpOption = do
     )
     <?> "could not parse dieOpOption - expecting one of the options described in the doc (call `help roll` to access)"
 
+-- | Parse a single `ArgType` into an `ArgValue`.
 parseArgValue :: ArgType -> Parser ArgValue
 parseArgValue ATIntegerList = AVListValues <$> try pars <?> "could not parse a list value from the argument"
 parseArgValue ATInteger = AVExpr <$> try pars <?> "could not parse an integer from the argument"
 
+-- | Parse a list of comma separated arguments.
 parseArgValues :: [ArgType] -> Parser [ArgValue]
 parseArgValues [] = return []
 parseArgValues [at] = (: []) <$> parseArgValue at
