@@ -90,8 +90,7 @@ parseCommands cs m prefix = case parse (parser cs) "" (messageText m) of
                 Nothing -> Just <$> command
     matchCommand :: CompiledCommand -> Parser (Maybe (Parser (Message -> CompiledDatabaseDiscord ()), [CompiledCommand]))
     matchCommand c = do
-      _ <- chunk (commandName c)
-      skipSpace1 <|> eof
+      try (chunk (commandName c) *> (skipSpace1 <|> eof))
       return (Just (commandParser c, commandSubcommands c))
 
 data ReadableError = UnknownError | KnownError String [String]
