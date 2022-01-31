@@ -74,7 +74,6 @@ dependencies:
 library:
   source-dirs: src
   default-extensions:
-  - ImportQualifiedPost
   - OverloadedStrings
   - LambdaCase
   - EmptyDataDecls

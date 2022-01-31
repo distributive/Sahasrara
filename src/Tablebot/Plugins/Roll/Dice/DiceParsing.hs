@@ -17,7 +17,7 @@ import Data.List (sortBy)
 import Data.List.NonEmpty as NE (fromList)
 import Data.Map as M (Map, findWithDefault, keys, map, (!))
 import Data.Set as S (Set, fromList, map)
-import Data.Text qualified as T
+import qualified Data.Text as T
 import Tablebot.Plugins.Roll.Dice.DiceData
 import Tablebot.Plugins.Roll.Dice.DiceFunctions
   ( ArgType (..),
@@ -48,12 +48,11 @@ instance CanParse ListValues where
     do
       LVBase <$> pars
       <|> functionParser listFunctions LVFunc
-      <|> 
-        ( do
-            nb <- pars
-            _ <- char '#'
-            MultipleValues nb <$> pars
-        )
+      <|> ( do
+              nb <- pars
+              _ <- char '#'
+              MultipleValues nb <$> pars
+          )
 
 instance CanParse ListValuesBase where
   pars = do
@@ -122,12 +121,12 @@ instance (CanParse a) => CanParse (Paren a) where
 instance CanParse Base where
   pars =
     ( do
-      nb <- try pars
-      (DiceBase <$> parseDice nb)
+        nb <- try pars
+        (DiceBase <$> parseDice nb)
           <|> return (NBase nb)
-      -- try pars >>= \nb ->
-      --   (DiceBase <$> parseDice nb)
-      --     <|> return (NBase nb)
+          -- try pars >>= \nb ->
+          --   (DiceBase <$> parseDice nb)
+          --     <|> return (NBase nb)
     )
       <|> DiceBase <$> parseDice (Value 1)
 
@@ -192,10 +191,9 @@ parseDieOpOption = do
   lazyFunc <- (try (char '!') $> DieOpOptionLazy) <|> return id
   ( ( (try (string "ro") *> parseAdvancedOrdering >>= \o -> Reroll True o <$> pars)
         <|> (try (string "rr") *> parseAdvancedOrdering >>= \o -> Reroll False o <$> pars)
-        <|> ( 
-                ( ((try (char 'k') *> parseLowHigh) <&> DieOpOptionKD Keep)
-                    <|> ((try (char 'd') *> parseLowHigh) <&> DieOpOptionKD Drop)
-                )
+        <|> ( ( ((try (char 'k') *> parseLowHigh) <&> DieOpOptionKD Keep)
+                  <|> ((try (char 'd') *> parseLowHigh) <&> DieOpOptionKD Drop)
+              )
                 <??> "could not parse keep/drop"
             )
     )
