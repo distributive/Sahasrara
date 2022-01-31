@@ -165,7 +165,7 @@ statsCommand = Command "stats" statsCommandParser []
       return $ statsCommand' (firstE : restEs)
     statsCommand' :: [Expr] -> Message -> DatabaseDiscord ()
     statsCommand' es m = do
-      mrange' <- liftIO $ timeout (oneSecond * 5) $ mapM (\e -> (,prettyShow e) <$> rangeExpr e) es
+      mrange' <- liftIO $ timeout (oneSecond * 5) $ mapM (\e -> rangeExpr e >>= \re -> re `seq` return (re, prettyShow e)) es
       case mrange' of
         Nothing -> throwBot (EvaluationException "Timed out calculating statistics" [])
         (Just range') -> do

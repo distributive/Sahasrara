@@ -98,6 +98,7 @@ library:
   - ScopedTypeVariables
   - TypeOperators
   - RankNTypes
+  - BangPatterns
   ghc-options:
   - -Wall
 
