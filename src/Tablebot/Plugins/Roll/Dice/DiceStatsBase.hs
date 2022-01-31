@@ -70,11 +70,14 @@ distributionRenderable d = toRenderable $ do
   let pb' = pb {_plot_bars_spacing = BarsFixGap 10 5}
   plot $ return $ plotBars pb'
   where
-    ds = M.fromList . D.toList . fst <$> d
-    allIntegers = S.toList $ S.unions $ M.keysSet <$> ds
+    removeNullMap m
+      | M.null m = M.singleton 0 0
+      | otherwise = m
+    ds = removeNullMap . D.toMap . fst <$> d
+    allIntegers = let s = S.unions $ M.keysSet <$> ds in [S.findMin s .. S.findMax s]
     insertEmpty k = M.insertWith (\_ a -> a) k 0
     ds' = M.unionsWith (++) $ M.map (: []) <$> (applyAll (insertEmpty <$> allIntegers) <$> ds)
-    pts = bimap fromInteger (fromRational . (* 100) <$>) <$> M.toList ds'
+    pts = second (fromRational . (* 100) <$>) <$> M.toList ds'
     r = (fst $ M.findMin ds', fst $ M.findMax ds')
     applyAll [] = id
     applyAll (f : fs) = f . applyAll fs
