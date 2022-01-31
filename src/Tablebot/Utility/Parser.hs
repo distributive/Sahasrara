@@ -45,7 +45,7 @@ skipSpace1 = skipSome space
 -- clear error.
 quoted :: Parser String
 -- TODO: deal with backslash escapes properly.
-quoted = quotedWith '"' <|> quotedWith '\''
+quoted = quotedWith '"' <|> quotedWith '\'' <|> specialQuotes
   where
     quotedWith :: Char -> Parser String
     quotedWith c =
@@ -54,6 +54,14 @@ quoted = quotedWith '"' <|> quotedWith '\''
         (single c <?> "Couldn't find closing quote.")
         (some $ anySingleBut c)
         <?> "Couldn't get quote!"
+    specialQuotes :: Parser String
+    specialQuotes = do
+      let open = '“'
+          closed = '”'
+      _ <- single open
+      q <- some $ anySingleBut closed
+      _ <- single closed
+      return q
 
 quotedWithout :: [Char] -> Parser String
 quotedWithout excl = quotedWith '"' <|> quotedWith '\''
