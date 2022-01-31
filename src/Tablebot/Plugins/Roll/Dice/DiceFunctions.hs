@@ -50,6 +50,8 @@ integerFunctions' =
   funcInfoIndex :
   constructFuncInfo "length" (genericLength @Integer @Integer) :
   constructFuncInfo "sum" (sum @[] @Integer) :
+  constructFuncInfo "max" (max @Integer) :
+  constructFuncInfo "min" (min @Integer) :
   constructFuncInfo "maximum" (maximum @[] @Integer) :
   constructFuncInfo "minimum" (minimum @[] @Integer) :
   constructFuncInfo' "mod" (mod @Integer) (Nothing, Nothing, (== 0)) :

@@ -89,7 +89,7 @@ instance {-# OVERLAPPABLE #-} CanParse a => CanParse [a] where
 -- A parser for @Either a b@ attempts to parse @a@, and if that fails then
 -- attempts to parse @b@.
 instance (CanParse a, CanParse b) => CanParse (Either a b) where
-  pars = (Left <$> pars @a) <|> (Right <$> pars @b)
+  pars = (Left <$> try (pars @a)) <|> (Right <$> pars @b)
 
 -- TODO: automate creation of tuple instances using TemplateHaskell
 instance (CanParse a, CanParse b) => CanParse (a, b) where
@@ -143,7 +143,7 @@ instance KnownSymbol s => CanParse (Exactly s) where
 newtype WithError (err :: Symbol) x = WErr x
 
 instance (KnownSymbol err, CanParse x) => CanParse (WithError err x) where
-  pars = (WErr <$> try (pars @x)) <?> symbolVal (Proxy :: Proxy err)
+  pars = (WErr <$> (pars @x)) <?> symbolVal (Proxy :: Proxy err)
 
 -- | Parsing implementation for all integral types
 -- Overlappable due to the really flexible head state

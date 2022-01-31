@@ -29,7 +29,7 @@ import Tablebot.Utility.Discord (Format (Code), formatText, sendMessage, toMenti
 import Tablebot.Utility.Exception (BotException (EvaluationException), throwBot)
 import Tablebot.Utility.Parser (inlineCommandHelper, skipSpace)
 import Tablebot.Utility.SmartParser (PComm (parseComm), Quoted (Qu), WithError (WErr), pars)
-import Text.Megaparsec (MonadParsec (try), choice, many)
+import Text.Megaparsec (MonadParsec (eof, try), choice, many)
 import Text.RawString.QQ (r)
 
 -- | The basic execution function for rolling dice. Both the expression and message are
@@ -161,7 +161,7 @@ statsCommand = Command "stats" statsCommandParser []
     statsCommandParser :: Parser (Message -> DatabaseDiscord ())
     statsCommandParser = do
       firstE <- pars
-      restEs <- many (try $ skipSpace *> pars)
+      restEs <- many (skipSpace *> pars) <* eof
       return $ statsCommand' (firstE : restEs)
     statsCommand' :: [Expr] -> Message -> DatabaseDiscord ()
     statsCommand' es m = do

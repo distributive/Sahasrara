@@ -17,7 +17,7 @@ import Data.List (sortBy)
 import Data.List.NonEmpty as NE (fromList)
 import Data.Map as M (Map, findWithDefault, keys, map, (!))
 import Data.Set as S (Set, fromList, map)
-import qualified Data.Text as T
+import Data.Text qualified as T
 import Tablebot.Plugins.Roll.Dice.DiceData
 import Tablebot.Plugins.Roll.Dice.DiceFunctions
   ( ArgType (..),
@@ -28,7 +28,7 @@ import Tablebot.Plugins.Roll.Dice.DiceFunctions
 import Tablebot.Utility.Parser (integer, parseCommaSeparated1, skipSpace)
 import Tablebot.Utility.SmartParser (CanParse (..))
 import Tablebot.Utility.Types (Parser)
-import Text.Megaparsec (MonadParsec (try), choice, failure, optional, (<?>), (<|>))
+import Text.Megaparsec (MonadParsec (observing, try), choice, failure, optional, (<?>), (<|>))
 import Text.Megaparsec.Char (char, string)
 import Text.Megaparsec.Error (ErrorItem (Tokens))
 
@@ -36,17 +36,24 @@ import Text.Megaparsec.Error (ErrorItem (Tokens))
 failure' :: T.Text -> Set T.Text -> Parser a
 failure' s ss = failure (Just $ Tokens $ NE.fromList $ T.unpack s) (S.map (Tokens . NE.fromList . T.unpack) ss)
 
+(<??>) :: Parser a -> String -> Parser a
+(<??>) p s = do
+  r <- observing p
+  case r of
+    Left _ -> fail s
+    Right a -> return a
+
 instance CanParse ListValues where
   pars =
     do
-      try (LVBase <$> pars)
-      <|> try
+      LVBase <$> pars
+      <|> functionParser listFunctions LVFunc
+      <|> 
         ( do
             nb <- pars
             _ <- char '#'
             MultipleValues nb <$> pars
         )
-      <|> functionParser listFunctions LVFunc
 
 instance CanParse ListValuesBase where
   pars = do
@@ -103,35 +110,39 @@ instance CanParse Expo where
 
 instance CanParse NumBase where
   pars =
-    (NBParen . unnest <$> try pars <?> "could not parse number in parentheses")
-      <|> Value <$> try integer <?> "could not parse numbase integer"
+    (NBParen . unnest <$> pars)
+      <|> Value <$> integer <??> "could not parse integer"
     where
       unnest (Paren (NoExpr (NoTerm (NoNeg (NoExpo (NoFunc (NBase (NBParen e)))))))) = e
       unnest e = e
 
 instance (CanParse a) => CanParse (Paren a) where
-  pars = char '(' *> skipSpace *> (Paren <$> pars) <* skipSpace <* char ')'
+  pars = try (char '(') *> skipSpace *> (Paren <$> pars) <* skipSpace <* char ')'
 
 instance CanParse Base where
   pars =
-    ( (try pars <?> "could not parse numbase in base") >>= \nb ->
-        (DiceBase <$> parseDice nb)
+    ( do
+      nb <- try pars
+      (DiceBase <$> parseDice nb)
           <|> return (NBase nb)
+      -- try pars >>= \nb ->
+      --   (DiceBase <$> parseDice nb)
+      --     <|> return (NBase nb)
     )
-      <|> DiceBase <$> try (parseDice (Value 1)) <?> "cannot parse numberless die"
+      <|> DiceBase <$> parseDice (Value 1)
 
 instance CanParse Die where
   pars = do
     _ <- try (char 'd') <?> "could not find 'd' for die"
     lazyFunc <- (try (char '!') $> LazyDie) <|> return id
-    ( try
-        ( lazyFunc . CustomDie
-            <$> pars
-        )
-        <?> "could not parse list values for die"
+    ( ( lazyFunc . CustomDie
+          <$> pars
       )
-      <|> lazyFunc . Die
-      <$> (try pars <?> "couldn't parse base number for die")
+        <??> "could not parse list values for die"
+      )
+      <|> ( lazyFunc . Die
+              <$> (pars <??> "couldn't parse base number for die")
+          )
 
 -- | Given a `NumBase` (the value on the front of a set of dice), construct a
 -- set of dice.
@@ -143,16 +154,14 @@ parseDice nb = parseDice' <*> return (NBase nb)
 -- This `Base` value is meant to be first value that `Dice` have.
 parseDice' :: Parser (Base -> Dice)
 parseDice' = do
-  d <- try (pars :: Parser Die) <?> "could not parse die in dice"
+  d <- (pars :: Parser Die)
   mdor <- parseDieOpRecur
-  try
-    ( ( do
-          bd <- try parseDice' <?> "trying to recurse dice failed"
-          return (\b -> bd (DiceBase $ Dice b d mdor))
-      )
-        <|> return (\b -> Dice b d mdor)
+
+  ( do
+      bd <- try parseDice' <?> "trying to recurse dice failed"
+      return (\b -> bd (DiceBase $ Dice b d mdor))
     )
-    <?> "could not recurse dice proper"
+    <|> return (\b -> Dice b d mdor)
 
 -- | Parse a `/=`, `<=`, `>=`, `<`, `=`, `>` as an `AdvancedOrdering`.
 parseAdvancedOrdering :: Parser AdvancedOrdering
@@ -183,11 +192,11 @@ parseDieOpOption = do
   lazyFunc <- (try (char '!') $> DieOpOptionLazy) <|> return id
   ( ( (try (string "ro") *> parseAdvancedOrdering >>= \o -> Reroll True o <$> pars)
         <|> (try (string "rr") *> parseAdvancedOrdering >>= \o -> Reroll False o <$> pars)
-        <|> ( try
+        <|> ( 
                 ( ((try (char 'k') *> parseLowHigh) <&> DieOpOptionKD Keep)
                     <|> ((try (char 'd') *> parseLowHigh) <&> DieOpOptionKD Drop)
                 )
-                <?> "could not parse keep/drop"
+                <??> "could not parse keep/drop"
             )
     )
       <&> lazyFunc

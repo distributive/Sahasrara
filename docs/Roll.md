@@ -72,6 +72,8 @@ Here are all the functions, what they take, and what they return.
 - abs (integer) - the absolute value of an integer
 - fact (integer < 50) - the factorial of an integer
 - id (integer) - the integer
+- max (integer, integer) - get the maximum item between two items
+- min (integer, integer) - get the minimum item between two items
 - maximum (list) - get the maximum item in a list
 - minimum (list) - get the minimum item in a list
 - mod (two integers, second /= 0) - get the modulo of two integers
