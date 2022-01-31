@@ -218,7 +218,7 @@ statsHelp =
     "stats"
     []
     "calculate and display statistics for expressions."
-    "**Roll Stats**\nCan be used to display statistics for expressions of dice.\n\n*Usage:* `roll stats 2d20kh1`, `roll stats 4d6rr=1dl1+5`"
+    "**Roll Stats**\nCan be used to display statistics for expressions of dice.\n\n*Usage:* `roll stats 2d20kh1`, `roll stats 4d6rr=1dl1+5`, `roll stats 3d6dl1+6 4d6dl1`"
     []
     None
 
