@@ -29,7 +29,7 @@ import Tablebot.Utility.Discord (Format (Code), formatText, sendMessage, toMenti
 import Tablebot.Utility.Exception (BotException (EvaluationException), throwBot)
 import Tablebot.Utility.Parser (inlineCommandHelper, skipSpace)
 import Tablebot.Utility.SmartParser (PComm (parseComm), Quoted (Qu), WithError (WErr), pars)
-import Text.Megaparsec (MonadParsec (eof, try), choice, many)
+import Text.Megaparsec (MonadParsec (eof), many)
 import Text.RawString.QQ (r)
 
 -- | The basic execution function for rolling dice. Both the expression and message are
@@ -59,33 +59,31 @@ rollDice' e' t m = do
 
 -- | Manually creating parser for this command, since SmartCommand doesn't work fully for
 -- multiple Maybe values
-rollDiceParser :: Parser (Message -> DatabaseDiscord ())
-rollDiceParser = choice (try <$> options)
-  where
-    justEither :: WithError "Incorrect expression/list value. Please check the expression" (Either ListValues Expr) -> Message -> DatabaseDiscord ()
-    justEither (WErr x) = rollDice' (Just x) Nothing
-    nothingAtAll :: WithError "Expected eof" () -> Message -> DatabaseDiscord ()
-    nothingAtAll (WErr _) = rollDice' Nothing Nothing
-    bothVals :: WithError "Incorrect format. Please check the expression and quote" (Either ListValues Expr, Quoted Text) -> Message -> DatabaseDiscord ()
-    bothVals (WErr (x, y)) = rollDice' (Just x) (Just y)
-    justText :: WithError "Incorrect quote. Please check the quote format" (Quoted Text) -> Message -> DatabaseDiscord ()
-    justText (WErr x) = rollDice' Nothing (Just x)
-    options =
-      [ parseComm justEither,
-        parseComm nothingAtAll,
-        parseComm bothVals,
-        parseComm justText
-      ]
+-- rollDiceParser :: Parser (Message -> DatabaseDiscord ())
+-- rollDiceParser = choice (try <$> options)
+--   where
+--     justEither :: WithError "Incorrect expression/list value. Please check the expression" (Either ListValues Expr) -> Message -> DatabaseDiscord ()
+--     justEither (WErr x) = rollDice' (Just x) Nothing
+--     nothingAtAll :: WithError "Expected eof" () -> Message -> DatabaseDiscord ()
+--     nothingAtAll (WErr _) = rollDice' Nothing Nothing
+--     bothVals :: WithError "Incorrect format. Please check the expression and quote" (Either ListValues Expr, Quoted Text) -> Message -> DatabaseDiscord ()
+--     bothVals (WErr (x, y)) = rollDice' (Just x) (Just y)
+--     justText :: WithError "Incorrect quote. Please check the quote format" (Quoted Text) -> Message -> DatabaseDiscord ()
+--     justText (WErr x) = rollDice' Nothing (Just x)
+--     options =
+--       [ parseComm justEither,
+--         parseComm nothingAtAll,
+--         parseComm bothVals,
+--         parseComm justText
+--       ]
 
 -- | Basic command for rolling dice.
 rollDice :: Command
 rollDice = Command "roll" rollDiceParser [statsCommand]
-
--- where
--- below does not work
--- rollDiceParser = parseComm rollDiceParser'
--- rollDiceParser' :: WithError "Incorrect rolling format. Please check your expression and quote is of the correct format" (Maybe (Either ListValues Expr), Maybe (Quoted Text)) -> Message -> DatabaseDiscord ()
--- rollDiceParser' (WErr (x,y)) = rollDice' x y
+  where
+    rollDiceParser = parseComm rollDiceParser'
+    rollDiceParser' :: WithError "Incorrect rolling format. Please check your expression and quote is of the correct format" (Maybe (Either ListValues Expr), Maybe (Quoted Text)) -> Message -> DatabaseDiscord ()
+    rollDiceParser' (WErr (x, y)) = rollDice' x y
 
 -- | Rolling dice inline.
 rollDiceInline :: InlineCommand
@@ -169,7 +167,7 @@ statsCommand = Command "stats" statsCommandParser []
       case mrange' of
         Nothing -> throwBot (EvaluationException "Timed out calculating statistics" [])
         (Just range') -> do
-          mimage <- liftIO $ timeout (oneSecond * 5) $ distributionByteString range'
+          mimage <- liftIO $ timeout (oneSecond * 5) (distributionByteString range' >>= \res -> res `seq` return res)
           case mimage of
             Nothing -> do
               sendMessage m (msg range')

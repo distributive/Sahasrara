@@ -36,6 +36,8 @@ import Text.Megaparsec.Error (ErrorItem (Tokens))
 failure' :: T.Text -> Set T.Text -> Parser a
 failure' s ss = failure (Just $ Tokens $ NE.fromList $ T.unpack s) (S.map (Tokens . NE.fromList . T.unpack) ss)
 
+-- | Custom infix operator to replace the error of a failing parser (regardless
+-- of parser position) with a user given error message.
 (<??>) :: Parser a -> String -> Parser a
 (<??>) p s = do
   r <- observing p
@@ -124,9 +126,6 @@ instance CanParse Base where
         nb <- try pars
         (DiceBase <$> parseDice nb)
           <|> return (NBase nb)
-          -- try pars >>= \nb ->
-          --   (DiceBase <$> parseDice nb)
-          --     <|> return (NBase nb)
     )
       <|> DiceBase <$> parseDice (Value 1)
 
@@ -172,7 +171,7 @@ parseAdvancedOrdering = (try (choice opts) <?> "could not parse an ordering") >>
 
 -- | Parse a `LowHighWhere`, which is an `h` followed by an integer.
 parseLowHigh :: Parser LowHighWhere
-parseLowHigh = (try (choice @[] $ char <$> "lhw") <?> "could not parse high, low or where") >>= helper
+parseLowHigh = ((choice @[] $ char <$> "lhw") <??> "could not parse high, low or where") >>= helper
   where
     helper 'h' = High <$> pars
     helper 'l' = Low <$> pars
@@ -194,7 +193,7 @@ parseDieOpOption = do
         <|> ( ( ((try (char 'k') *> parseLowHigh) <&> DieOpOptionKD Keep)
                   <|> ((try (char 'd') *> parseLowHigh) <&> DieOpOptionKD Drop)
               )
-                <??> "could not parse keep/drop"
+                <?> "could not parse keep/drop"
             )
     )
       <&> lazyFunc
@@ -203,8 +202,8 @@ parseDieOpOption = do
 
 -- | Parse a single `ArgType` into an `ArgValue`.
 parseArgValue :: ArgType -> Parser ArgValue
-parseArgValue ATIntegerList = AVListValues <$> try pars <?> "could not parse a list value from the argument"
-parseArgValue ATInteger = AVExpr <$> try pars <?> "could not parse an integer from the argument"
+parseArgValue ATIntegerList = AVListValues <$> pars <??> "could not parse a list value from the argument"
+parseArgValue ATInteger = AVExpr <$> pars <??> "could not parse an integer from the argument"
 
 -- | Parse a list of comma separated arguments.
 parseArgValues :: [ArgType] -> Parser [ArgValue]
