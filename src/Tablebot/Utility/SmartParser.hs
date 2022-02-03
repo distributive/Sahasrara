@@ -103,41 +103,31 @@ instance (CanParse a, CanParse b) => CanParse (Either a b) where
 -- TODO: automate creation of tuple instances using TemplateHaskell
 instance (CanParse a, CanParse b) => CanParse (a, b) where
   pars = do
-    x <- pars @a
-    skipSpace1
+    x <- parsThenMoveToNext @a
     y <- pars @b
     return (x, y)
 
 instance (CanParse a, CanParse b, CanParse c) => CanParse (a, b, c) where
   pars = do
-    x <- pars @a
-    skipSpace1
-    y <- pars @b
-    skipSpace1
+    x <- parsThenMoveToNext @a
+    y <- parsThenMoveToNext @b
     z <- pars @c
     return (x, y, z)
 
 instance (CanParse a, CanParse b, CanParse c, CanParse d) => CanParse (a, b, c, d) where
   pars = do
-    x <- pars @a
-    skipSpace1
-    y <- pars @b
-    skipSpace1
-    z <- pars @c
-    skipSpace1
+    x <- parsThenMoveToNext @a
+    y <- parsThenMoveToNext @b
+    z <- parsThenMoveToNext @c
     w <- pars @d
     return (x, y, z, w)
 
 instance (CanParse a, CanParse b, CanParse c, CanParse d, CanParse e) => CanParse (a, b, c, d, e) where
   pars = do
-    x <- pars @a
-    skipSpace1
-    y <- pars @b
-    skipSpace1
-    z <- pars @c
-    skipSpace1
-    w <- pars @d
-    skipSpace1
+    x <- parsThenMoveToNext @a
+    y <- parsThenMoveToNext @b
+    z <- parsThenMoveToNext @c
+    w <- parsThenMoveToNext @d
     v <- pars @e
     return (x, y, z, w, v)
 
