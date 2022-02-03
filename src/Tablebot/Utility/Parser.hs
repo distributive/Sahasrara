@@ -82,10 +82,6 @@ word = some letter
 nonSpaceWord :: Parser String
 nonSpaceWord = some notSpace
 
--- | @number@ parses any whole, non-negative number.
-number :: Parser Int
-number = read <$> some digit
-
 -- | @untilEnd@ gets all of the characters up to the end of the input.
 untilEnd :: Parser String
 untilEnd = manyTill anySingle eof
