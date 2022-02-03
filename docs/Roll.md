@@ -64,6 +64,8 @@ As well as simple expressions, basic list expressions can be formed. You can for
 
 As an addendum to custom dice, if a list value is bracketed then it can be used in custom dice. For example, `5d(4#4d6)` rolls five dice, whose sides are determined by rolling 4d6 4 times. Do note that laziness still applies here, meaning that the RNG cap can be very quickly reached.
 
+Lists are limited to 50 items long currently (which is configurable).
+
 ## Functions
 
 Here are all the functions, what they take, and what they return.
