@@ -142,7 +142,7 @@ instance KnownSymbol s => CanParse (Exactly s) where
 newtype WithError (err :: Symbol) x = WErr x
 
 instance (KnownSymbol err, CanParse x) => CanParse (WithError err x) where
-  pars = (WErr <$> (pars @x)) <?> symbolVal (Proxy :: Proxy err)
+  pars = (WErr <$> try (pars @x)) <?> symbolVal (Proxy :: Proxy err)
 
 -- | Parsing implementation for all integral types
 -- Overlappable due to the really flexible head state
