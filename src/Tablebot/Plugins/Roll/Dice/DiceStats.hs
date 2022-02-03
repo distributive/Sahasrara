@@ -8,7 +8,7 @@
 --
 -- This plugin generates statistics based on the values of dice in given
 -- expressions.
-module Tablebot.Plugins.Roll.Dice.DiceStats (rangeExpr, getStats) where
+module Tablebot.Plugins.Roll.Dice.DiceStats (rangeExpr, rangeListValues, getStats) where
 
 import Control.Monad
 import Control.Monad.Exception
@@ -45,6 +45,19 @@ rangeExpr :: (MonadException m) => Expr -> m Distribution
 rangeExpr e = do
   ex <- range e
   return $ run ex
+
+rangeListValues :: (MonadException m) => ListValues -> m [Distribution]
+rangeListValues lv = do
+  lve <- rangeList lv
+  let lvd = run lve
+      lvd' = toList lvd
+  return $ D.fromList <$> zip' lvd'
+  where
+    head' [] = []
+    head' (x : _) = [x]
+    getHeads xs = (\(xs', p) -> (,p) <$> head' xs') =<< xs
+    getTails xs = first tail <$> xs
+    zip' xs = getHeads xs : zip' (getTails xs)
 
 -- | Type class to get the overall range of a value.
 --

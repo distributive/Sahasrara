@@ -37,6 +37,9 @@ newtype RNGCount = RNGCount {getRNGCount :: Integer} deriving (Eq, Ord)
 maximumRNG :: RNGCount
 maximumRNG = RNGCount 150
 
+maximumListLength :: Integer
+maximumListLength = 50
+
 -- | Increment the rngcount by 1.
 incRNGCount :: RNGCount -> RNGCount
 incRNGCount (RNGCount i) = RNGCount (i + 1)
@@ -136,7 +139,9 @@ class IOEvalList a where
   -- displayed. This function adds the current location to the exception
   -- callstack.
   evalShowL :: PrettyShow a => RNGCount -> a -> IO ([(Integer, Text)], Maybe Text, RNGCount)
-  evalShowL rngCount a = propagateException (prettyShow a) (evalShowL' rngCount a)
+  evalShowL rngCount a = do
+    (is, mt, rngCount') <- propagateException (prettyShow a) (evalShowL' rngCount a)
+    return (genericTake maximumListLength is, mt, rngCount')
 
   evalShowL' :: PrettyShow a => RNGCount -> a -> IO ([(Integer, Text)], Maybe Text, RNGCount)
 
