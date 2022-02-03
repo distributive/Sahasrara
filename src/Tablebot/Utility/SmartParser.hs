@@ -23,6 +23,15 @@ import Tablebot.Utility.Parser
 import Tablebot.Utility.Types (EnvDatabaseDiscord, Parser)
 import Text.Megaparsec
 
+-- | Custom infix operator to replace the error of a failing parser (regardless
+-- of parser position) with a user given error message.
+(<??>) :: Parser a -> String -> Parser a
+(<??>) p s = do
+  r <- observing p
+  case r of
+    Left _ -> fail s
+    Right a -> return a
+
 -- | @PComm@ defines function types that we can automatically turn into parsers
 -- by composing a parser per input of the function provided.
 -- For example, @Int -> Maybe Text -> Message -> DatabaseDiscord s ()@ builds a

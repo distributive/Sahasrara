@@ -26,24 +26,15 @@ import Tablebot.Plugins.Roll.Dice.DiceFunctions
     listFunctions,
   )
 import Tablebot.Utility.Parser (integer, parseCommaSeparated1, skipSpace)
-import Tablebot.Utility.SmartParser (CanParse (..))
+import Tablebot.Utility.SmartParser (CanParse (..), (<??>))
 import Tablebot.Utility.Types (Parser)
-import Text.Megaparsec (MonadParsec (observing, try), choice, failure, optional, (<?>), (<|>))
+import Text.Megaparsec (MonadParsec (try), choice, failure, optional, (<?>), (<|>))
 import Text.Megaparsec.Char (char, string)
 import Text.Megaparsec.Error (ErrorItem (Tokens))
 
 -- | An easier way to handle failure in parsers.
 failure' :: T.Text -> Set T.Text -> Parser a
 failure' s ss = failure (Just $ Tokens $ NE.fromList $ T.unpack s) (S.map (Tokens . NE.fromList . T.unpack) ss)
-
--- | Custom infix operator to replace the error of a failing parser (regardless
--- of parser position) with a user given error message.
-(<??>) :: Parser a -> String -> Parser a
-(<??>) p s = do
-  r <- observing p
-  case r of
-    Left _ -> fail s
-    Right a -> return a
 
 instance CanParse ListValues where
   pars =
