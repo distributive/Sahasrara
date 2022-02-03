@@ -107,8 +107,6 @@ executables:
   tablebot-exe:
     main:                Main.hs
     source-dirs:         app
-    default-extensions:
-    - ImportQualifiedPost
     ghc-options:
     - -threaded
     - -rtsopts
@@ -120,8 +118,6 @@ tests:
   tablebot-test:
     main:                Spec.hs
     source-dirs:         test
-    default-extensions:
-    - ImportQualifiedPost
     ghc-options:
     - -threaded
     - -rtsopts
