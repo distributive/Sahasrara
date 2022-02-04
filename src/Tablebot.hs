@@ -28,9 +28,9 @@ import Control.Monad.IO.Class (MonadIO (liftIO))
 import Control.Monad.Logger (NoLoggingT (runNoLoggingT))
 import Control.Monad.Reader (runReaderT)
 import Control.Monad.Trans.Resource (runResourceT)
-import Data.Map qualified as M
+import qualified Data.Map as M
 import Data.Text (Text, pack)
-import Data.Text.IO qualified as TIO (putStrLn)
+import qualified Data.Text.IO as TIO (putStrLn)
 import Database.Persist.Sqlite
   ( createSqlitePool,
     runMigration,
@@ -38,7 +38,6 @@ import Database.Persist.Sqlite
   )
 import Discord
 import Discord.Internal.Rest
-import Discord.Requests
 import Tablebot.Handler (eventHandler, killCron, runCron)
 import Tablebot.Internal.Administration (adminMigration, currentBlacklist, removeBlacklisted)
 import Tablebot.Internal.Plugins
@@ -94,8 +93,7 @@ runTablebot dToken prefix dbpath plugins =
               -- sometimes).
               runReaderT (mapM (runCron pool) (compiledCronJobs actions) >>= liftIO . putMVar mvar) cacheMVar
               liftIO $ putStrLn "Tablebot lives!"
-              sendCommand (UpdateStatus activityStatus)
-              ,
+              sendCommand (UpdateStatus activityStatus),
             -- Kill every cron job in the mvar.
             discordOnEnd = takeMVar mvar >>= killCron
           }
@@ -107,7 +105,7 @@ runTablebot dToken prefix dbpath plugins =
           updateStatusOptsGame =
             Just
               ( Activity
-                  { activityName = "with dice. Prefix is `" <> prefix <> "`. Call `"<> prefix<>"help` for help",
+                  { activityName = "with dice. Prefix is `" <> prefix <> "`. Call `" <> prefix <> "help` for help",
                     activityType = ActivityTypeGame,
                     activityUrl = Nothing
                   }
