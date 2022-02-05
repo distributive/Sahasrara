@@ -128,12 +128,8 @@ instance CanParse Die where
     lazyFunc <- (try (char '!') $> LazyDie) <|> return id
     lazyFunc
       <$> ( (CustomDie . LVBParen <$> try pars <|> Die . NBParen <$> pars)
-              <|> ( ( CustomDie
-                        <$> pars
-                        <??> "could not parse list values for die"
-                    )
-                      <|> ( Die <$> pars <??> "could not parse base number for die"
-                          )
+              <|> ( (CustomDie <$> pars <??> "could not parse list values for die")
+                      <|> (Die <$> pars <??> "could not parse base number for die")
                   )
           )
 
