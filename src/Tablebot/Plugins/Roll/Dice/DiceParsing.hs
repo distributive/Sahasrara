@@ -130,7 +130,7 @@ instance CanParse Die where
         <??> "could not parse list values for die"
       )
       <|> ( lazyFunc . Die
-              <$> (pars <??> "couldn't parse base number for die")
+              <$> (pars <??> "could not parse base number for die")
           )
 
 -- | Given a `NumBase` (the value on the front of a set of dice), construct a
