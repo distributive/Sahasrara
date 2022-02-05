@@ -37,6 +37,7 @@ import Database.Persist.Sqlite
     runSqlPool,
   )
 import Discord
+import Discord.Internal.Rest
 import Tablebot.Handler (eventHandler, killCron, runCron)
 import Tablebot.Internal.Administration (adminMigration, currentBlacklist, removeBlacklisted)
 import Tablebot.Internal.Plugins
@@ -91,8 +92,24 @@ runTablebot dToken prefix dbpath plugins =
               -- (which can just happen due to databases being unavailable
               -- sometimes).
               runReaderT (mapM (runCron pool) (compiledCronJobs actions) >>= liftIO . putMVar mvar) cacheMVar
-              liftIO $ putStrLn "Tablebot lives!",
+              liftIO $ putStrLn "Tablebot lives!"
+              sendCommand (UpdateStatus activityStatus),
             -- Kill every cron job in the mvar.
             discordOnEnd = takeMVar mvar >>= killCron
           }
     TIO.putStrLn userFacingError
+  where
+    activityStatus =
+      UpdateStatusOpts
+        { updateStatusOptsSince = Nothing,
+          updateStatusOptsGame =
+            Just
+              ( Activity
+                  { activityName = "with dice. Prefix is `" <> prefix <> "`. Call `" <> prefix <> "help` for help",
+                    activityType = ActivityTypeGame,
+                    activityUrl = Nothing
+                  }
+              ),
+          updateStatusOptsNewStatus = UpdateStatusOnline,
+          updateStatusOptsAFK = False
+        }
