@@ -62,12 +62,16 @@ rollDice' e' t m = do
 rollDiceParser :: Parser (Message -> DatabaseDiscord ())
 rollDiceParser = choice (try <$> options)
   where
+    -- Just the value is given to the command, no quote.
     justEither :: WithError "Incorrect expression/list value. Please check the expression" (Either ListValues Expr) -> Message -> DatabaseDiscord ()
     justEither (WErr x) = rollDice' (Just x) Nothing
+    -- Nothing is given to the command, a default case.
     nothingAtAll :: WithError "Expected eof" () -> Message -> DatabaseDiscord ()
     nothingAtAll (WErr _) = rollDice' Nothing Nothing
+    -- Both the value and the quote are present.
     bothVals :: WithError "Incorrect format. Please check the expression and quote" (Either ListValues Expr, Quoted Text) -> Message -> DatabaseDiscord ()
     bothVals (WErr (x, y)) = rollDice' (Just x) (Just y)
+    -- Just the quote is given to the command.
     justText :: WithError "Incorrect quote. Please check the quote format" (Quoted Text) -> Message -> DatabaseDiscord ()
     justText (WErr x) = rollDice' Nothing (Just x)
     options =
