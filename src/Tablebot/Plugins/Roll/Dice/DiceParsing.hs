@@ -53,7 +53,7 @@ instance CanParse ListValuesBase where
       <$> ( try (char '{' *> skipSpace)
               *> parseCommaSeparated1 pars
               <* skipSpace
-              <* char '}'
+              <* (char '}' <??> "could not find closing brace for list")
           )
       <|> LVBParen . unnest
       <$> pars
@@ -85,10 +85,12 @@ instance CanParse Func where
 functionParser :: M.Map T.Text (FuncInfoBase j) -> (FuncInfoBase j -> [ArgValue] -> e) -> Parser e
 functionParser m mainCons =
   do
-    fi <- try (choice (string <$> M.keys m) >>= \t -> return (m M.! t)) <?> "could not find function"
+    fi <- try (choice (string <$> functionNames) >>= \t -> return (m M.! t)) <?> "could not find function"
     let ft = funcInfoParameters fi
-    es <- skipSpace *> string "(" *> skipSpace *> parseArgValues ft <* skipSpace <* (try (string ")") <?> "expected only " ++ show (length ft) ++ " arguments, got more")
+    es <- skipSpace *> string "(" *> skipSpace *> parseArgValues ft <* skipSpace <* (string ")" <??> "could not find closing bracket on function call")
     return $ mainCons fi es
+  where
+    functionNames = sortBy (\a b -> compare (T.length b) (T.length a)) $ M.keys m
 
 instance CanParse Negation where
   pars =
@@ -124,13 +126,15 @@ instance CanParse Die where
   pars = do
     _ <- try (char 'd') <?> "could not find 'd' for die"
     lazyFunc <- (try (char '!') $> LazyDie) <|> return id
-    ( ( lazyFunc . CustomDie
-          <$> pars
-      )
-        <??> "could not parse list values for die"
-      )
-      <|> ( lazyFunc . Die
-              <$> (pars <??> "could not parse base number for die")
+    lazyFunc
+      <$> ( (CustomDie . LVBParen <$> try pars <|> Die . NBParen <$> pars)
+              <|> ( ( CustomDie
+                        <$> pars
+                        <??> "could not parse list values for die"
+                    )
+                      <|> ( Die <$> pars <??> "could not parse base number for die"
+                          )
+                  )
           )
 
 -- | Given a `NumBase` (the value on the front of a set of dice), construct a
@@ -193,8 +197,8 @@ parseDieOpOption = do
 
 -- | Parse a single `ArgType` into an `ArgValue`.
 parseArgValue :: ArgType -> Parser ArgValue
-parseArgValue ATIntegerList = AVListValues <$> pars <??> "could not parse a list value from the argument"
-parseArgValue ATInteger = AVExpr <$> pars <??> "could not parse an integer from the argument"
+parseArgValue ATIntegerList = AVListValues <$> pars <?> "could not parse a list value from the argument"
+parseArgValue ATInteger = AVExpr <$> pars <?> "could not parse an integer from the argument"
 
 -- | Parse a list of comma separated arguments.
 parseArgValues :: [ArgType] -> Parser [ArgValue]

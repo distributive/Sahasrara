@@ -25,6 +25,11 @@ import Text.Megaparsec
 
 -- | Custom infix operator to replace the error of a failing parser (regardless
 -- of parser position) with a user given error message.
+--
+-- Has some effects on other error parsing. Use if you want the error you give
+-- to be the one that is reported (unless this is used at a higher level.)
+--
+-- Overwrites/overpowers WithError errors.
 (<??>) :: Parser a -> String -> Parser a
 (<??>) p s = do
   r <- observing p

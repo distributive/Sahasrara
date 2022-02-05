@@ -76,6 +76,7 @@ listFunctionsList = M.keys listFunctions
 -- each function that returns an integer.
 listFunctions' :: [FuncInfoBase [Integer]]
 listFunctions' =
+  constructFuncInfo "concat" (++) :
   constructFuncInfo "between" between :
   constructFuncInfo "drop" (genericDrop @Integer) :
   constructFuncInfo "take" (genericTake @Integer) :
@@ -154,6 +155,10 @@ class ArgCount f => ApplyFunc f where
   -- on integer values to the function, and a list of `ListInteger`s (which are
   -- either a list of integers or an integer), and returns a wrapped `j` value,
   -- which is a value that the function originally returns.
+  --
+  -- The bounds represent the exclusive lower bound, the exclusive upper bound,
+  -- and an arbitrary function which results in an exception when it is true;
+  -- say, with division when you want to deny just 0 as a value.
   applyFunc :: forall m j. (MonadException m, Returns f ~ j) => f -> Integer -> (Maybe Integer, Maybe Integer, Integer -> Bool) -> [ListInteger] -> m j
 
 -- | Check whether a given value is within the given bounds.
@@ -164,14 +169,23 @@ checkBounds i (ml, mh, bs)
   | bs i = throwBot $ EvaluationException ("invalid value for function: `" <> show i ++ "`") []
   | otherwise = return i
 
+-- This is one of two base cases for applyFunc. This is the case where the
+-- return value is an integer. As it is the return value, no arguments are
+-- accepted.
 instance {-# OVERLAPPING #-} ApplyFunc Integer where
   applyFunc f _ _ [] = return f
   applyFunc _ args _ _ = throwBot $ EvaluationException ("incorrect number of arguments to function. expected " <> show args <> ", got more than that") []
 
+-- This is one of two base cases for applyFunc. This is the case where the
+-- return value is a list of integers. As it is the return value, no arguments
+-- are  accepted.
 instance {-# OVERLAPPING #-} ApplyFunc [Integer] where
   applyFunc f _ _ [] = return f
   applyFunc _ args _ _ = throwBot $ EvaluationException ("incorrect number of arguments to function. expected " <> show args <> ", got more than that") []
 
+-- This is one of two recursive cases for applyFunc. This is the case where the
+-- argument value is an integer. If there are no arguments or the argument is
+-- of the wrong type, an exception is thrown.
 instance {-# OVERLAPPABLE #-} (ApplyFunc f) => ApplyFunc (Integer -> f) where
   applyFunc f args _ [] = throwBot $ EvaluationException ("incorrect number of arguments to function. got " <> show dif <> ", expected " <> show args) []
     where
@@ -179,6 +193,9 @@ instance {-# OVERLAPPABLE #-} (ApplyFunc f) => ApplyFunc (Integer -> f) where
   applyFunc f args bs ((LIInteger x) : xs) = checkBounds x bs >>= \x' -> applyFunc (f x') args bs xs
   applyFunc _ _ _ (_ : _) = throwBot $ EvaluationException "incorrect type given to function. expected an integer, got a list" []
 
+-- This is one of two recursive cases for applyFunc. This is the case where the
+-- argument value is a list of integers. If there are no arguments or the
+-- argument is of the wrong type, an exception is thrown.
 instance {-# OVERLAPPABLE #-} (ApplyFunc f) => ApplyFunc ([Integer] -> f) where
   applyFunc f args _ [] = throwBot $ EvaluationException ("incorrect number of arguments to function. got " <> show dif <> ", expected " <> show args) []
     where

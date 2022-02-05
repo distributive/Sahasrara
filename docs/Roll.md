@@ -89,7 +89,8 @@ Here are all the functions, what they take, and what they return.
 - reverse (list) - reverse the list
 - sort (list) - sort the list in ascending order
 - take (integer, list) - take the first `n` values from a list, where `n` is the integer given
-- between (integer, integer) - generate a list between the two given integers
+- between (integer, integer) - generate a list between the two given integers (inclusive)
+- concat (list, list) - concatenate two lists together
 
 # Statistics
 
