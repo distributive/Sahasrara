@@ -10,7 +10,7 @@
 --
 -- This plugin contains the tools for parsing Dice. -Wno-orphans is enabled so
 -- that parsing can occur here instead of in SmartParser or DiceData.
-module Tablebot.Plugins.Roll.Dice.DiceParsing where
+module Tablebot.Plugins.Roll.Dice.DiceParsing () where
 
 import Data.Functor (($>), (<&>))
 import Data.List (sortBy)
