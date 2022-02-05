@@ -32,6 +32,11 @@ data ListValues
   deriving (Show)
 
 -- | The type for basic list values (that can be used as is for custom dice).
+--
+-- A basic list value can be understood as one that is indivisible, and/or
+-- atomic. They represent either a list value in parentheses, or a list of
+-- expressions. Effectively what this is used for is so that these can be used
+-- as dice side values.
 data ListValuesBase = LVBParen (Paren ListValues) | LVBList [Expr]
   deriving (Show)
 
