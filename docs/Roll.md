@@ -4,6 +4,8 @@ The roll command has a staggering amount of flexibility, as well as additional f
 
 Below are listed the current full capabilities of the bot for rolling dice and evaluation expressions. All operations (currently) result in integers or a list. A list of functions is available in the [functions section](#Functions).
 
+You can also generate statistics of an expression. See the [Statistics](#Statistics) section for more information.
+
 ## Basic Operators
 
 - Addition
@@ -62,6 +64,8 @@ As well as simple expressions, basic list expressions can be formed. You can for
 
 As an addendum to custom dice, if a list value is bracketed then it can be used in custom dice. For example, `5d(4#4d6)` rolls five dice, whose sides are determined by rolling 4d6 4 times. Do note that laziness still applies here, meaning that the RNG cap can be very quickly reached.
 
+Lists are limited to 50 items long currently (which is configurable).
+
 ## Functions
 
 Here are all the functions, what they take, and what they return.
@@ -70,6 +74,8 @@ Here are all the functions, what they take, and what they return.
 - abs (integer) - the absolute value of an integer
 - fact (integer < 50) - the factorial of an integer
 - id (integer) - the integer
+- max (integer, integer) - get the maximum item between two items
+- min (integer, integer) - get the minimum item between two items
 - maximum (list) - get the maximum item in a list
 - minimum (list) - get the minimum item in a list
 - mod (two integers, second /= 0) - get the modulo of two integers
@@ -83,3 +89,31 @@ Here are all the functions, what they take, and what they return.
 - reverse (list) - reverse the list
 - sort (list) - sort the list in ascending order
 - take (integer, list) - take the first `n` values from a list, where `n` is the integer given
+- between (integer, integer) - generate a list between the two given integers (inclusive)
+- concat (list, list) - concatenate two lists together
+
+# Statistics
+
+As well as generating values, statistics based off of expressions can be found. There is a total time limit of 10 seconds for this command, with 5 seconds given to calculations and 5 seconds given to generating the bar chart.
+
+To get these statistics, calling the `roll` command with the `stats` subcommand will generate the requested statistics. The expression given has to return an integer.
+
+The bot will give the mean, the standard deviation, and the top ten most common values of the distribution, as well as graphing the entire distribution.
+
+For example, the result of calling `roll stats 2d20kh1` (roll two twenty sided dice and keep the higher die) can be seen below.
+
+!["The results of asking for stats of 2d20kh1 (roll two twenty sided dice and keep the highest one). The ten most common rolls are 20 to 11. The mean is 13.825. The standard deviation is about 4.7. The bar chart has values on each integer from 1 to 20, with the height of each bar increasing linearly."](./resources/dicestats_2d20kh1.jpg "the result of asking for stats of 2d20kh1")
+
+(above: The results of asking for stats of 2d20kh1 (roll two twenty sided dice and keep the highest one). The ten most common rolls are 20 to 11. The mean is 13.825. The standard deviation is about 4.7. The bar chart has values on each integer from 1 to 20, with the height of each bar increasing linearly.)
+
+Currently, the statistics generation supports all valid expressions.
+
+If invalid states occur (such as with division by zero, negative exponents, or infinite rerolls) the bot will alert the user only if the entire distribution becomes empty. For example, in `1d20rr<(21-d{0,1})`, half of the time infinite rerolls will occur. In this case, these invalid cases are ignored, as they can never be actually rolled, and the only value output is `20`. If the expression given is instead `1/0`, the entire distribution will be empty, as there is no valid output from this expression.
+
+As well as statistics for a given expression, multiple expressions can be shown in the same instance.
+
+For example, the result of calling `roll stats 2d20kh1 4d6dl1` is as follows.
+
+!["The results of asking for stats of 2d20kh1 and 4d6dl1 (roll two twenty sided dice and keep the highest one, and roll four dice with six sides, and drop the lowest value of each). The most common rolls for each expression are 20 to 16, and 13, 12, 14, 11, and 15. The means are about 13.8 and 12.2. The standard deviation are about 4.7 and 2.8. The bar chart has blue values on each integer from 1 to 20, with the height of each bar increasing linearly, and green values that form a weighted bell curve centered on 13."](./resources/dicestats_2d20kh1_4d6dl1.jpg "the result of asking for stats of 2d20kh1 and 4d6dl1")
+
+(above: The results of asking for stats of 2d20kh1 and 4d6dl1 (roll two twenty sided dice and keep the highest one, and roll four dice with six sides, and drop the lowest value of each). The most common rolls for each expression are 20 to 16, and 13, 12, 14, 11, and 15. The means are about 13.8 and 12.2. The standard deviation are about 4.7 and 2.8. The bar chart has blue values on each integer from 1 to 20, with the height of each bar increasing linearly, and green values that form a weighted bell curve centered on 13.)

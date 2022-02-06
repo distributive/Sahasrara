@@ -68,30 +68,9 @@ parseCommands cs m prefix = case parse (parser cs) "" (messageText m) of
     parser cs' =
       do
         _ <- chunk prefix
-        res <- parser' cs'
-        case res of
-          Nothing -> fail "No command with that name was found!"
-          Just p -> return p
-    parser' :: [CompiledCommand] -> Parser (Maybe (Message -> CompiledDatabaseDiscord ()))
-    parser' cs' =
-      do
-        -- 1. Parse the command name (fails if no such command exists).
-        res <- choice (map matchCommand cs') <|> return Nothing
-        case res of
-          Nothing -> return Nothing
-          Just (command, subcommands) ->
-            do
-              -- 2. Try to get a subcommand.
-              maybeComm <- parser' subcommands
-              case maybeComm of
-                -- 2.1. If there's a subcommand, use that.
-                Just pars -> return (Just pars)
-                -- 2.2. Otherwise, use the main command.
-                Nothing -> Just <$> command
-    matchCommand :: CompiledCommand -> Parser (Maybe (Parser (Message -> CompiledDatabaseDiscord ()), [CompiledCommand]))
-    matchCommand c = do
-      try (chunk (commandName c) *> (skipSpace1 <|> eof))
-      return (Just (commandParser c, commandSubcommands c))
+        choice (map toErroringParser cs') <?> "No command with that name was found!"
+    toErroringParser :: CompiledCommand -> Parser (Message -> CompiledDatabaseDiscord ())
+    toErroringParser c = try (chunk $ commandName c) *> (skipSpace1 <|> eof) *> (try (choice $ map toErroringParser $ commandSubcommands c) <|> commandParser c)
 
 data ReadableError = UnknownError | KnownError String [String]
   deriving (Show, Eq, Ord)
@@ -136,7 +115,7 @@ makeReadable (TrivialError i _ good) =
     getLabel :: [ErrorItem (Token Text)] -> (Maybe String, [String])
     getLabel [] = (Nothing, [])
     getLabel ((Tokens nel) : xs) = (Nothing, [NE.toList nel]) <> getLabel xs
-    getLabel ((Label ls) : xs) = (Just (NE.toList ls), []) <> getLabel xs
+    getLabel ((Label ls) : xs) = (Just (NE.toList ls <> "\n"), []) <> getLabel xs
     getLabel (EndOfInput : xs) = (Nothing, ["no more input"]) <> getLabel xs
 makeReadable e = (mapParseError (const UnknownError) e, Nothing)
 

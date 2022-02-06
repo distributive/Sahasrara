@@ -36,20 +36,22 @@ factorialLimit = 50
 
 -- | Mapping from function names to the functions themselves for integer
 -- functions.
-integerFunctions :: MonadException m => Map Text (FuncInfo m)
+integerFunctions :: Map Text FuncInfo
 integerFunctions = M.fromList $ fmap (\fi -> (funcInfoName fi, fi)) integerFunctions'
 
 -- | The names of the integer functions currently supported.
 integerFunctionsList :: [Text]
-integerFunctionsList = M.keys (integerFunctions @IO)
+integerFunctionsList = M.keys integerFunctions
 
 -- | The base details of the integer functions, containing all the information
 -- for each function that returns an integer.
-integerFunctions' :: MonadException m => [FuncInfo m]
+integerFunctions' :: [FuncInfo]
 integerFunctions' =
   funcInfoIndex :
   constructFuncInfo "length" (genericLength @Integer @Integer) :
   constructFuncInfo "sum" (sum @[] @Integer) :
+  constructFuncInfo "max" (max @Integer) :
+  constructFuncInfo "min" (min @Integer) :
   constructFuncInfo "maximum" (maximum @[] @Integer) :
   constructFuncInfo "minimum" (minimum @[] @Integer) :
   constructFuncInfo' "mod" (mod @Integer) (Nothing, Nothing, (== 0)) :
@@ -63,23 +65,27 @@ integerFunctions' =
       | otherwise = n * fact (n - 1)
 
 -- | Mapping from function names to the functions themselves for list functions.
-listFunctions :: MonadException m => Map Text (FuncInfoBase m [Integer])
+listFunctions :: Map Text (FuncInfoBase [Integer])
 listFunctions = M.fromList $ fmap (\fi -> (funcInfoName fi, fi)) listFunctions'
 
 -- | The names of the list functions currently supported.
 listFunctionsList :: [Text]
-listFunctionsList = M.keys (listFunctions @IO)
+listFunctionsList = M.keys listFunctions
 
 -- | The base details of the list functions, containing all the information for
 -- each function that returns an integer.
-listFunctions' :: MonadException m => [FuncInfoBase m [Integer]]
+listFunctions' :: [FuncInfoBase [Integer]]
 listFunctions' =
-  constructFuncInfo @[Integer] "drop" (genericDrop @Integer) :
+  constructFuncInfo "concat" (++) :
+  constructFuncInfo "between" between :
+  constructFuncInfo "drop" (genericDrop @Integer) :
   constructFuncInfo "take" (genericTake @Integer) :
   (uncurry constructFuncInfo <$> [("sort", sort), ("reverse", reverse)])
+  where
+    between i i' = let (mi, ma, rev) = (min i i', max i i', if i > i' then reverse else id) in rev [mi .. ma]
 
 -- | The `FuncInfo` of the function that indexes into a list.
-funcInfoIndex :: FuncInfo m
+funcInfoIndex :: FuncInfo
 funcInfoIndex = FuncInfo "index" [ATInteger, ATIntegerList] ATInteger fiIndex
   where
     fiIndex (LIInteger i : [LIList is])
@@ -89,20 +95,20 @@ funcInfoIndex = FuncInfo "index" [ATInteger, ATIntegerList] ATInteger fiIndex
 
 -- | A data structure to contain the information about a given function,
 -- including types, the function name, and the function itself.
-data FuncInfoBase m j = FuncInfo {funcInfoName :: Text, funcInfoParameters :: [ArgType], funcReturnType :: ArgType, funcInfoFunc :: MonadException m => [ListInteger] -> m j}
+data FuncInfoBase j = FuncInfo {funcInfoName :: Text, funcInfoParameters :: [ArgType], funcReturnType :: ArgType, funcInfoFunc :: forall m. (MonadException m) => [ListInteger] -> m j}
 
-type FuncInfo m = FuncInfoBase m Integer
+type FuncInfo = FuncInfoBase Integer
 
-instance Show (FuncInfoBase m j) where
+instance Show (FuncInfoBase j) where
   show (FuncInfo fin ft frt _) = "FuncInfo " <> unpack fin <> " " <> show ft <> " " <> show frt
 
 -- | A simple way to construct a function that returns a value j, and has no
 -- constraints on the given values.
-constructFuncInfo :: forall j f m. (MonadException m, ApplyFunc m f, Returns f ~ j) => Text -> f -> FuncInfoBase m j
+constructFuncInfo :: forall j f. (ApplyFunc f, Returns f ~ j) => Text -> f -> FuncInfoBase j
 constructFuncInfo s f = constructFuncInfo' s f (Nothing, Nothing, const False)
 
 -- | Construct a function info when given optional constraints.
-constructFuncInfo' :: forall j f m. (MonadException m, ApplyFunc m f, Returns f ~ j) => Text -> f -> (Maybe Integer, Maybe Integer, Integer -> Bool) -> FuncInfoBase m j
+constructFuncInfo' :: forall j f. (ApplyFunc f, Returns f ~ j) => Text -> f -> (Maybe Integer, Maybe Integer, Integer -> Bool) -> FuncInfoBase j
 constructFuncInfo' s f bs = FuncInfo s params (last types) (applyFunc f (fromIntegral (length params)) bs)
   where
     types = getTypes f
@@ -144,12 +150,16 @@ instance ArgCount f => ArgCount ([Integer] -> f) where
 --
 -- If the number of inputs is incorrect or the value given out of the range, an
 -- exception is thrown.
-class ArgCount f => ApplyFunc m f where
+class ArgCount f => ApplyFunc f where
   -- | Takes a function, the number of arguments in the function overall, bounds
   -- on integer values to the function, and a list of `ListInteger`s (which are
   -- either a list of integers or an integer), and returns a wrapped `j` value,
   -- which is a value that the function originally returns.
-  applyFunc :: (MonadException m, Returns f ~ j) => f -> Integer -> (Maybe Integer, Maybe Integer, Integer -> Bool) -> [ListInteger] -> m j
+  --
+  -- The bounds represent the exclusive lower bound, the exclusive upper bound,
+  -- and an arbitrary function which results in an exception when it is true;
+  -- say, with division when you want to deny just 0 as a value.
+  applyFunc :: forall m j. (MonadException m, Returns f ~ j) => f -> Integer -> (Maybe Integer, Maybe Integer, Integer -> Bool) -> [ListInteger] -> m j
 
 -- | Check whether a given value is within the given bounds.
 checkBounds :: (MonadException m) => Integer -> (Maybe Integer, Maybe Integer, Integer -> Bool) -> m Integer
@@ -159,22 +169,34 @@ checkBounds i (ml, mh, bs)
   | bs i = throwBot $ EvaluationException ("invalid value for function: `" <> show i ++ "`") []
   | otherwise = return i
 
-instance {-# OVERLAPPING #-} ApplyFunc m Integer where
+-- This is one of two base cases for applyFunc. This is the case where the
+-- return value is an integer. As it is the return value, no arguments are
+-- accepted.
+instance {-# OVERLAPPING #-} ApplyFunc Integer where
   applyFunc f _ _ [] = return f
   applyFunc _ args _ _ = throwBot $ EvaluationException ("incorrect number of arguments to function. expected " <> show args <> ", got more than that") []
 
-instance {-# OVERLAPPING #-} ApplyFunc m [Integer] where
+-- This is one of two base cases for applyFunc. This is the case where the
+-- return value is a list of integers. As it is the return value, no arguments
+-- are  accepted.
+instance {-# OVERLAPPING #-} ApplyFunc [Integer] where
   applyFunc f _ _ [] = return f
   applyFunc _ args _ _ = throwBot $ EvaluationException ("incorrect number of arguments to function. expected " <> show args <> ", got more than that") []
 
-instance {-# OVERLAPPABLE #-} (ApplyFunc m f) => ApplyFunc m (Integer -> f) where
+-- This is one of two recursive cases for applyFunc. This is the case where the
+-- argument value is an integer. If there are no arguments or the argument is
+-- of the wrong type, an exception is thrown.
+instance {-# OVERLAPPABLE #-} (ApplyFunc f) => ApplyFunc (Integer -> f) where
   applyFunc f args _ [] = throwBot $ EvaluationException ("incorrect number of arguments to function. got " <> show dif <> ", expected " <> show args) []
     where
       dif = args - getArgs f
   applyFunc f args bs ((LIInteger x) : xs) = checkBounds x bs >>= \x' -> applyFunc (f x') args bs xs
   applyFunc _ _ _ (_ : _) = throwBot $ EvaluationException "incorrect type given to function. expected an integer, got a list" []
 
-instance {-# OVERLAPPABLE #-} (ApplyFunc m f) => ApplyFunc m ([Integer] -> f) where
+-- This is one of two recursive cases for applyFunc. This is the case where the
+-- argument value is a list of integers. If there are no arguments or the
+-- argument is of the wrong type, an exception is thrown.
+instance {-# OVERLAPPABLE #-} (ApplyFunc f) => ApplyFunc ([Integer] -> f) where
   applyFunc f args _ [] = throwBot $ EvaluationException ("incorrect number of arguments to function. got " <> show dif <> ", expected " <> show args) []
     where
       dif = args - getArgs f

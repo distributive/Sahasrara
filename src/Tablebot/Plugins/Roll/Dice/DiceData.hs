@@ -22,10 +22,21 @@ data ArgValue = AVExpr Expr | AVListValues ListValues
   deriving (Show)
 
 -- | The type for list values.
-data ListValues = MultipleValues NumBase Base | LVFunc (FuncInfoBase IO [Integer]) [ArgValue] | LVBase ListValuesBase
+data ListValues
+  = -- | Represents `N#B`, where N is a NumBase (numbers, parentheses) and B is a Base (numbase or dice value)
+    MultipleValues NumBase Base
+  | -- | Represents a function call with the given arguments
+    LVFunc (FuncInfoBase [Integer]) [ArgValue]
+  | -- | A base ListValues value - parentheses or a list of expressions
+    LVBase ListValuesBase
   deriving (Show)
 
 -- | The type for basic list values (that can be used as is for custom dice).
+--
+-- A basic list value can be understood as one that is indivisible, and/or
+-- atomic. They represent either a list value in parentheses, or a list of
+-- expressions. Effectively what this is used for is so that these can be used
+-- as dice side values.
 data ListValuesBase = LVBParen (Paren ListValues) | LVBList [Expr]
   deriving (Show)
 
@@ -47,7 +58,7 @@ data Expo = Expo Func Expo | NoExpo Func
   deriving (Show)
 
 -- | The type representing a single function application, or a base item.
-data Func = Func (FuncInfo IO) [ArgValue] | NoFunc Base
+data Func = Func FuncInfo [ArgValue] | NoFunc Base
   deriving (Show)
 
 -- | The type representing an integer value or an expression in brackets.

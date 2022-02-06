@@ -57,14 +57,20 @@ dependencies:
 - safe
 - edit-distance
 - unliftio
+- Chart
+- Chart-diagrams
+- diagrams-core
+- diagrams-lib
+- diagrams-rasterific
+- JuicyPixels
 - split
 - regex-pcre
+- distribution
 
 library:
   source-dirs: src
   default-extensions:
   - OverloadedStrings
-  - ImportQualifiedPost
   - LambdaCase
   - EmptyDataDecls
   - FlexibleContexts
@@ -88,6 +94,7 @@ library:
   - ScopedTypeVariables
   - TypeOperators
   - RankNTypes
+  - BangPatterns
   ghc-options:
   - -Wall
 

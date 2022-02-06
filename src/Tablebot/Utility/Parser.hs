@@ -82,10 +82,6 @@ word = some letter
 nonSpaceWord :: Parser String
 nonSpaceWord = some notSpace
 
--- | @number@ parses any whole, non-negative number.
-number :: Parser Int
-number = read <$> some digit
-
 -- | @untilEnd@ gets all of the characters up to the end of the input.
 untilEnd :: Parser String
 untilEnd = manyTill anySingle eof
@@ -193,10 +189,14 @@ inlineCommandHelper open close p action =
 -- | Parse 0 or more comma separated values.
 parseCommaSeparated :: Parser a -> Parser [a]
 parseCommaSeparated p = do
-  f <- optional $ try p
-  maybe (return []) (\first' -> (first' :) <$> many (try (skipSpace *> char ',' *> skipSpace) *> p)) f
+  first <- optional $ try p
+  case first of
+    Nothing -> return []
+    Just first' -> (first' :) <$> many (try (skipSpace *> char ',' *> skipSpace) *> p)
 
 -- | Parse 1 or more comma separated values.
 parseCommaSeparated1 :: Parser a -> Parser [a]
 parseCommaSeparated1 p = do
-  p >>= (\first' -> (first' :) <$> many (try (skipSpace *> char ',' *> skipSpace) *> p))
+  first <- p
+  others <- many (try (skipSpace *> char ',' *> skipSpace) *> p)
+  return (first : others)
