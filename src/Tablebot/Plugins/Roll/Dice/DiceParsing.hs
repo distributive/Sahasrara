@@ -56,7 +56,7 @@ instance CanParse ListValuesBase where
               <* (char '}' <??> "could not find closing brace for list")
           )
       <|> LVBParen . unnest
-      <$> pars
+      <$> try pars
     where
       unnest (Paren (LVBase (LVBParen e))) = e
       unnest e = e
