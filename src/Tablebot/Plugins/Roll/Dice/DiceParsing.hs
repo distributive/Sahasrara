@@ -39,13 +39,12 @@ failure' s ss = failure (Just $ Tokens $ NE.fromList $ T.unpack s) (S.map (Token
 instance CanParse ListValues where
   pars =
     do
-      LVBase <$> pars
-      <|> functionParser listFunctions LVFunc
+      functionParser listFunctions LVFunc
       <|> ( do
-              nb <- pars
-              _ <- char '#'
+              nb <- try (pars <* char '#')
               MultipleValues nb <$> pars
           )
+      <|> LVBase <$> pars
 
 instance CanParse ListValuesBase where
   pars = do
@@ -56,7 +55,7 @@ instance CanParse ListValuesBase where
               <* (char '}' <??> "could not find closing brace for list")
           )
       <|> LVBParen . unnest
-      <$> try pars
+      <$> pars
     where
       unnest (Paren (LVBase (LVBParen e))) = e
       unnest e = e
