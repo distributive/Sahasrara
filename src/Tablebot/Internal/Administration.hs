@@ -77,7 +77,14 @@ updateGit = do
         clean = status =~ pattern
     if clean
       then do
-        callProcess "git" ["pull"]
+        callProcess "git" ["pull", "--rebase"]
+        pullStatus <- readProcess "git" ["status"] ""
+        let pullClean :: Bool
+            pullClean = pullStatus =~ pattern
+        if pullClean
+          then putStrLn "Git pull failed. Please do it manually"
+          else do
+            callProcess "git" ["rebase", "--abort"]
       else putStrLn "Git directory not clean. Not updating"
 
 gitVersion :: IO Text
