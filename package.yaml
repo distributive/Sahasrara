@@ -1,14 +1,14 @@
-name:                tablebot
+name: tablebot
 version: 0.3.3
-github:              "WarwickTabletop/tablebot"
-license:             MIT
-author:              "Warwick Tabletop"
-maintainer:          "tagarople@gmail.com"
-copyright:           "2021 Warwick Tabletop"
+github: "WarwickTabletop/tablebot"
+license: MIT
+author: "Warwick Tabletop"
+maintainer: "tagarople@gmail.com"
+copyright: "2021 Warwick Tabletop"
 
 extra-source-files:
-- README.md
-- ChangeLog.md
+  - README.md
+  - ChangeLog.md
 
 # Metadata used when publishing your package
 # synopsis:            Short description of your package
@@ -78,12 +78,12 @@ library:
     - EmptyDataDecls
     - FlexibleContexts
     - GADTs
-  - GeneralizedNewtypeDeriving
-  - MultiParamTypeClasses
-  - QuasiQuotes
-  - TemplateHaskell
-  - TypeFamilies
-  - DerivingStrategies
+    - GeneralizedNewtypeDeriving
+    - MultiParamTypeClasses
+    - QuasiQuotes
+    - TemplateHaskell
+    - TypeFamilies
+    - DerivingStrategies
     - StandaloneDeriving
     - UndecidableInstances
     - DataKinds
@@ -99,27 +99,27 @@ library:
     - RankNTypes
     - BangPatterns
   ghc-options:
-  - -Wall
+    - -Wall
 
 
 executables:
   tablebot-exe:
-    main:                Main.hs
-    source-dirs:         app
+    main: Main.hs
+    source-dirs: app
     ghc-options:
-    - -threaded
-    - -rtsopts
-    - -with-rtsopts=-N
+      - -threaded
+      - -rtsopts
+      - -with-rtsopts=-N
     dependencies:
-    - tablebot
+      - tablebot
 
 tests:
   tablebot-test:
-    main:                Spec.hs
-    source-dirs:         test
+    main: Spec.hs
+    source-dirs: test
     ghc-options:
-    - -threaded
-    - -rtsopts
-    - -with-rtsopts=-N
+      - -threaded
+      - -rtsopts
+      - -with-rtsopts=-N
     dependencies:
-    - tablebot
+      - tablebot
