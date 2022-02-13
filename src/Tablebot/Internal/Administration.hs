@@ -75,11 +75,10 @@ updateGit = do
         pattern = "(.*)working directory clean(.*)"
         clean :: Bool
         clean = status =~ pattern
-    print clean
     if clean
       then do
         callProcess "git" ["pull"]
-      else pure ()
+      else putStrLn "Git directory not clean. Not updating"
 
 gitVersion :: IO Text
 gitVersion = (pack . trim) <$> readProcess "git" ["rev-parse", "HEAD"] ""
