@@ -23,6 +23,20 @@ import Tablebot.Utility.Parser
 import Tablebot.Utility.Types (EnvDatabaseDiscord, Parser)
 import Text.Megaparsec
 
+-- | Custom infix operator to replace the error of a failing parser (regardless
+-- of parser position) with a user given error message.
+--
+-- Has some effects on other error parsing. Use if you want the error you give
+-- to be the one that is reported (unless this is used at a higher level.)
+--
+-- Overwrites/overpowers WithError errors.
+(<??>) :: Parser a -> String -> Parser a
+(<??>) p s = do
+  r <- observing p
+  case r of
+    Left _ -> fail s
+    Right a -> return a
+
 -- | @PComm@ defines function types that we can automatically turn into parsers
 -- by composing a parser per input of the function provided.
 -- For example, @Int -> Maybe Text -> Message -> DatabaseDiscord s ()@ builds a
@@ -46,13 +60,14 @@ instance {-# OVERLAPPING #-} CanParse a => PComm (a -> Message -> EnvDatabaseDis
 -- Recursive case is to parse the domain of the function type, then the rest.
 instance {-# OVERLAPPABLE #-} (CanParse a, PComm as s) => PComm (a -> as) s where
   parseComm comm = do
-    this <- pars @a
-    skipSpace1
+    this <- parsThenMoveToNext @a
     parseComm (comm this)
 
 -- | @CanParse@ defines types from which we can generate parsers.
 class CanParse a where
   pars :: Parser a
+  parsThenMoveToNext :: Parser a
+  parsThenMoveToNext = pars <* (eof <|> skipSpace1)
 
 -- Note: since FromString and (Read, Integral) can overlap, we cannot specify
 -- this instance as FromString a => CanParse a.
@@ -64,7 +79,7 @@ instance {-# OVERLAPPING #-} CanParse String where
   pars = word
 
 -- | @Quoted a@ defines an input of type @a@ that is contained within quotes.
-newtype Quoted a = Qu a
+newtype Quoted a = Qu a deriving (Show)
 
 instance IsString a => CanParse (Quoted a) where
   pars = Qu . fromString <$> quoted
@@ -74,6 +89,13 @@ instance IsString a => CanParse (Quoted a) where
 instance CanParse a => CanParse (Maybe a) where
   pars = optional $ try (pars @a)
 
+  -- Note: we override @parsThenMoveToNext@:
+  -- there will be no spaces to parse if the argument isn't present.
+  parsThenMoveToNext =
+    pars >>= \case
+      Nothing -> return Nothing
+      Just val -> Just val <$ (eof <|> skipSpace1)
+
 -- A parser for @[a]@ parses any number of @a@s.
 instance {-# OVERLAPPABLE #-} CanParse a => CanParse [a] where
   pars = many pars
@@ -81,46 +103,36 @@ instance {-# OVERLAPPABLE #-} CanParse a => CanParse [a] where
 -- A parser for @Either a b@ attempts to parse @a@, and if that fails then
 -- attempts to parse @b@.
 instance (CanParse a, CanParse b) => CanParse (Either a b) where
-  pars = (Left <$> pars @a) <|> (Right <$> pars @b)
+  pars = (Left <$> try (pars @a)) <|> (Right <$> pars @b)
 
 -- TODO: automate creation of tuple instances using TemplateHaskell
 instance (CanParse a, CanParse b) => CanParse (a, b) where
   pars = do
-    x <- pars @a
-    skipSpace1
+    x <- parsThenMoveToNext @a
     y <- pars @b
     return (x, y)
 
 instance (CanParse a, CanParse b, CanParse c) => CanParse (a, b, c) where
   pars = do
-    x <- pars @a
-    skipSpace1
-    y <- pars @b
-    skipSpace1
+    x <- parsThenMoveToNext @a
+    y <- parsThenMoveToNext @b
     z <- pars @c
     return (x, y, z)
 
 instance (CanParse a, CanParse b, CanParse c, CanParse d) => CanParse (a, b, c, d) where
   pars = do
-    x <- pars @a
-    skipSpace1
-    y <- pars @b
-    skipSpace1
-    z <- pars @c
-    skipSpace1
+    x <- parsThenMoveToNext @a
+    y <- parsThenMoveToNext @b
+    z <- parsThenMoveToNext @c
     w <- pars @d
     return (x, y, z, w)
 
 instance (CanParse a, CanParse b, CanParse c, CanParse d, CanParse e) => CanParse (a, b, c, d, e) where
   pars = do
-    x <- pars @a
-    space
-    y <- pars @b
-    space
-    z <- pars @c
-    space
-    w <- pars @d
-    space
+    x <- parsThenMoveToNext @a
+    y <- parsThenMoveToNext @b
+    z <- parsThenMoveToNext @c
+    w <- parsThenMoveToNext @d
     v <- pars @e
     return (x, y, z, w, v)
 
@@ -135,7 +147,7 @@ instance KnownSymbol s => CanParse (Exactly s) where
 newtype WithError (err :: Symbol) x = WErr x
 
 instance (KnownSymbol err, CanParse x) => CanParse (WithError err x) where
-  pars = (WErr <$> pars @x) <?> symbolVal (Proxy :: Proxy err)
+  pars = (WErr <$> try (pars @x)) <?> symbolVal (Proxy :: Proxy err)
 
 -- | Parsing implementation for all integral types
 -- Overlappable due to the really flexible head state

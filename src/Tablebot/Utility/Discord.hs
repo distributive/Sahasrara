@@ -132,7 +132,7 @@ sendEmbedMessage ::
 sendEmbedMessage m t e = do
   res <- liftDiscord . restCall $ TablebotEmbedRequest (messageChannel m) t (asEmbed e)
   case res of
-    Left _ -> throw $ MessageSendException "Failed to send embed message."
+    Left _ -> throw $ MessageSendException "Failed to send message."
     Right _ -> return ()
 
 -- | @getChannel@ gets the relevant Channel object for a given 'ChannelId'
@@ -238,8 +238,11 @@ findEmoji ename = fmap msum (liftDiscord readCache >>= cacheToEmoji)
 
 -- | Render an Emoji
 formatEmoji :: Emoji -> Text
-formatEmoji (Emoji (Just eId) eName _ _ _) = "<:" <> eName <> ":" <> pack (show eId) <> ">"
-formatEmoji (Emoji _ eName _ _ _) = eName
+formatEmoji (Emoji (Just eId) eName _ _ _ anim) = prefix anim <> eName <> ":" <> pack (show eId) <> ">"
+  where
+    prefix (Just True) = "<a:"
+    prefix _ = "<:"
+formatEmoji (Emoji _ eName _ _ _ _) = eName
 
 -- | Display an emoji as best as it can from its name
 formatFromEmojiName :: Text -> EnvDatabaseDiscord s Text

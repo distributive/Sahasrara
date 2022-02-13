@@ -11,10 +11,12 @@
 module Tablebot.Utility.Parser where
 
 import Data.Char (isDigit, isLetter, isSpace)
-import Data.Functor (($>))
+import Data.Functor (void, ($>))
 import Data.Text (Text)
+import qualified Data.Text as T
 import Discord.Internal.Rest (Message)
 import Tablebot.Utility
+import Tablebot.Utility.Discord (reactToMessage)
 import Text.Megaparsec
 import Text.Megaparsec.Char (char, string)
 
@@ -43,7 +45,7 @@ skipSpace1 = skipSome space
 -- clear error.
 quoted :: Parser String
 -- TODO: deal with backslash escapes properly.
-quoted = quotedWith '"' <|> quotedWith '\''
+quoted = quotedWith '"' <|> quotedWith '\'' <|> specialQuotes
   where
     quotedWith :: Char -> Parser String
     quotedWith c =
@@ -52,6 +54,14 @@ quoted = quotedWith '"' <|> quotedWith '\''
         (single c <?> "Couldn't find closing quote.")
         (some $ anySingleBut c)
         <?> "Couldn't get quote!"
+    specialQuotes :: Parser String
+    specialQuotes = do
+      let open = '“'
+          closed = '”'
+      _ <- single open
+      q <- some $ anySingleBut closed
+      _ <- single closed
+      return q
 
 quotedWithout :: [Char] -> Parser String
 quotedWithout excl = quotedWith '"' <|> quotedWith '\''
@@ -72,10 +82,6 @@ word = some letter
 nonSpaceWord :: Parser String
 nonSpaceWord = some notSpace
 
--- | @number@ parses any whole, non-negative number.
-number :: Parser Int
-number = read <$> some digit
-
 -- | @untilEnd@ gets all of the characters up to the end of the input.
 untilEnd :: Parser String
 untilEnd = manyTill anySingle eof
@@ -94,21 +100,6 @@ discordUser :: Parser String
 discordUser = do
   num <- between (chunk "<@") (single '>') (some digit)
   return $ "<@" ++ num ++ ">"
-
--- | @NrQuery@ stores the string within a Netrunner query with its query type.
-data NrQuery = NrQueryCard String | NrQueryImg String | NrQueryFlavour String
-
--- | @netrunnerQuery@ gets an inline Netrunner search query.
--- This means that it matches @{{card title}}@.
-netrunnerQuery :: Parser [NrQuery]
-netrunnerQuery = many $ try $ skipManyTill anySingle query
-  where
-    query :: Parser NrQuery
-    query = do
-      container <- NrQueryImg <$ chunk "{{!" <|> NrQueryFlavour <$ chunk "{{|" <|> NrQueryCard <$ chunk "{{"
-      q <- some $ anySingleBut '}'
-      _ <- chunk "}}"
-      return $ container q
 
 -- | @keyValue@ gets a set of key/value pairs where keys are separated from
 -- values by colons. Invalid strings between and surrounding pairs are ignored.
@@ -147,7 +138,7 @@ keyValuesSepOn seps ors = many $ try $ skipManyTill anySingle pair
       content <- (quotedWithout ors <|> nonSpaceWord') `sepBy` satisfy (`elem` ors)
       return (cat, sep, content)
     nonSpaceWord' :: Parser String
-    nonSpaceWord' = some $ satisfy $ \c -> (not $ isSpace c) && (c `notElem` ors)
+    nonSpaceWord' = some $ satisfy $ \c -> not (isSpace c) && (c `notElem` ors)
 
 -- | @sp@ parses an optional space character.
 sp :: Parser ()
@@ -183,12 +174,29 @@ double = do
 -- | For helping to create inline commands. Takes the opening characters, closing
 -- characters, a parser to get a value `e`, and an action that takes that `e` and a
 -- message and produces a DatabaseDiscord effect.
-inlineCommandHelper :: Text -> Text -> Parser e -> (e -> Message -> EnvDatabaseDiscord d f) -> EnvInlineCommand d
+inlineCommandHelper :: Text -> Text -> Parser e -> (e -> Message -> EnvDatabaseDiscord d ()) -> EnvInlineCommand d
 inlineCommandHelper open close p action =
   InlineCommand
     ( do
-        getExprs <- many (try $ skipManyTill anySingle (string open *> skipSpace *> p <* skipSpace <* string close))
-        return $ \m -> mapM_ (`action` m) (take maxInlineCommands getExprs)
+        getExprs <- some (try $ skipManyTill anySingle (string open *> skipSpace *> (((Right <$> try p) <* skipSpace <* string close) <|> (Left . T.pack <$> manyTill anySingle (string close)))))
+        return $ \m -> mapM_ (`action'` m) (take maxInlineCommands getExprs)
     )
   where
     maxInlineCommands = 3
+    action' (Right p') m = action p' m
+    action' (Left _) m = void $ reactToMessage m "x"
+
+-- | Parse 0 or more comma separated values.
+parseCommaSeparated :: Parser a -> Parser [a]
+parseCommaSeparated p = do
+  first <- optional $ try p
+  case first of
+    Nothing -> return []
+    Just first' -> (first' :) <$> many (try (skipSpace *> char ',' *> skipSpace) *> p)
+
+-- | Parse 1 or more comma separated values.
+parseCommaSeparated1 :: Parser a -> Parser [a]
+parseCommaSeparated1 p = do
+  first <- p
+  others <- many (try (skipSpace *> char ',' *> skipSpace) *> p)
+  return (first : others)

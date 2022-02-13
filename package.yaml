@@ -1,5 +1,5 @@
 name:                tablebot
-version:             0.1.0.0
+version: 0.3.3
 github:              "WarwickTabletop/tablebot"
 license:             MIT
 author:              "Warwick Tabletop"
@@ -17,7 +17,7 @@ extra-source-files:
 # To avoid duplicated efforts in documentation and dealing with the
 # complications of embedding Haddock markup inside cabal files, it is
 # common to point users to the README.md file.
-description:         Please see the README on GitHub at <https://github.com/tagarople/tablebot#readme>
+description: Please see the README on GitHub at <https://github.com/tagarople/tablebot#readme>
 
 dependencies:
   - base >= 4.7 && < 5
@@ -59,34 +59,45 @@ dependencies:
   - edit-distance
   - unliftio
   - process
+  - Chart
+  - Chart-diagrams
+  - diagrams-core
+  - diagrams-lib
+  - diagrams-rasterific
+  - JuicyPixels
+  - split
   - regex-pcre
+  - distribution
+
 
 library:
   source-dirs: src
   default-extensions:
-  - OverloadedStrings
-  - ImportQualifiedPost
-  - LambdaCase
-  - EmptyDataDecls
-  - FlexibleContexts
-  - GADTs
+    - OverloadedStrings
+    - LambdaCase
+    - EmptyDataDecls
+    - FlexibleContexts
+    - GADTs
   - GeneralizedNewtypeDeriving
   - MultiParamTypeClasses
   - QuasiQuotes
   - TemplateHaskell
   - TypeFamilies
   - DerivingStrategies
-  - StandaloneDeriving
-  - UndecidableInstances
-  - DataKinds
-  - FlexibleInstances
-  - DeriveGeneric
-  - TypeApplications
-  - MultiWayIf
-  - TupleSections
-  - ConstraintKinds
-  - ImportQualifiedPost
-  - RecordWildCards
+    - StandaloneDeriving
+    - UndecidableInstances
+    - DataKinds
+    - FlexibleInstances
+    - DeriveGeneric
+    - TypeApplications
+    - MultiWayIf
+    - TupleSections
+    - ConstraintKinds
+    - RecordWildCards
+    - ScopedTypeVariables
+    - TypeOperators
+    - RankNTypes
+    - BangPatterns
   ghc-options:
   - -Wall
 

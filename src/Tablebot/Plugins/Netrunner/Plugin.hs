@@ -11,18 +11,30 @@ module Tablebot.Plugins.Netrunner.Plugin (netrunnerPlugin) where
 
 import Control.Monad.IO.Class
 import Control.Monad.Trans.Reader (ask)
-import Data.Text (Text, pack)
+import Data.Text (Text, pack, uncons)
 import Discord.Types
 import Tablebot.Internal.Handler.Command ()
-import Tablebot.Plugins.Netrunner.Card (Card)
-import Tablebot.Plugins.Netrunner.Custom (customCard)
-import Tablebot.Plugins.Netrunner.Netrunner
-import Tablebot.Plugins.Netrunner.NrApi (NrApi, getNrApi)
+import Tablebot.Plugins.Netrunner.Command.BanList
+import Tablebot.Plugins.Netrunner.Command.Custom
+import Tablebot.Plugins.Netrunner.Command.Find
+import Tablebot.Plugins.Netrunner.Command.Help (helpPageRoots)
+import Tablebot.Plugins.Netrunner.Command.Rules
+import Tablebot.Plugins.Netrunner.Command.Search
+import Tablebot.Plugins.Netrunner.Type.BanList (BanList (active), CardBan (..))
+import qualified Tablebot.Plugins.Netrunner.Type.BanList as BanList
+import Tablebot.Plugins.Netrunner.Type.Card (Card (code))
+import Tablebot.Plugins.Netrunner.Type.NrApi (NrApi (..))
+import Tablebot.Plugins.Netrunner.Utility.BanList (activeBanList, latestBanListActive, toMwlStatus)
+import Tablebot.Plugins.Netrunner.Utility.Card (toText)
+import Tablebot.Plugins.Netrunner.Utility.Embed
+import Tablebot.Plugins.Netrunner.Utility.NrApi (getNrApi)
 import Tablebot.Utility
 import Tablebot.Utility.Discord (formatFromEmojiName, sendEmbedMessage, sendMessage)
-import Tablebot.Utility.Exception (BotException (NetrunnerException), throwBot)
-import Tablebot.Utility.Parser (NrQuery (..), keyValue, keyValuesSepOn, netrunnerQuery)
-import Tablebot.Utility.SmartParser (PComm (parseComm), Quoted (Qu), RestOfInput1 (ROI1), WithError (WErr))
+import Tablebot.Utility.Embed (addColour)
+import Tablebot.Utility.Parser (inlineCommandHelper, keyValue, keyValuesSepOn)
+import Tablebot.Utility.SmartParser (PComm (parseComm), Quoted (Qu), RestOfInput (ROI), RestOfInput1 (ROI1), WithError (WErr))
+import Tablebot.Utility.Types ()
+import Text.Megaparsec (anySingleBut, some)
 import Text.RawString.QQ (r)
 
 -- | @netrunner@ is the user-facing command that searches for Netrunner cards.
@@ -31,7 +43,20 @@ netrunner =
   Command
     "netrunner"
     (parseComm nrComm)
-    [nrFind, nrFindImg, commandAlias "img" nrFindImg, nrFindFlavour, nrSearch, nrCustom]
+    [ nrFind,
+      nrFindImg,
+      commandAlias "img" nrFindImg,
+      nrFindFlavour,
+      nrSearch,
+      nrCustom,
+      nrBanHistory,
+      commandAlias "bh" nrBanHistory,
+      nrBanList,
+      commandAlias "bl" nrBanList,
+      commandAlias "mwl" nrBanList,
+      nrRules,
+      commandAlias "cr" nrRules
+    ]
   where
     nrComm ::
       WithError
@@ -88,22 +113,15 @@ nrFindFlavour = Command "flavour" (parseComm findComm) []
       api <- ask
       embedCardFlavour (queryCard api query) m
 
--- | @nrFindInline@ is the inline version of @nrFind@.
-nrFindInline :: EnvInlineCommand NrApi
-nrFindInline = InlineCommand nrInlineComm
-  where
-    nrInlineComm :: Parser (Message -> EnvDatabaseDiscord NrApi ())
-    nrInlineComm = do
-      queries <- netrunnerQuery
-      let limitedQs = if length queries > 5 then take 5 queries else queries
-      return $ \m -> mapM_ (\q -> sendEmbed q m) limitedQs
-    sendEmbed :: NrQuery -> Message -> EnvDatabaseDiscord NrApi ()
-    sendEmbed query m = do
-      api <- ask
-      case query of
-        NrQueryCard q -> embedCard (queryCard api $ pack q) m
-        NrQueryImg q -> embedCardImg (queryCard api $ pack q) m
-        NrQueryFlavour q -> embedCardFlavour (queryCard api $ pack q) m
+-- | @nrInline@ is the inline version of the commands that find cards.
+nrInline :: EnvInlineCommand NrApi
+nrInline = inlineCommandHelper "{{" "}}" (some $ anySingleBut '}') $ \query m -> do
+  api <- ask
+  case uncons $ pack query of
+    Just ('!', q) -> embedCardImg (queryCard api q) m
+    Just ('|', q) -> embedCardFlavour (queryCard api q) m
+    Just ('#', q) -> embedBanHistory (queryCard api q) m
+    _ -> embedCard (queryCard api $ pack query) m
 
 -- | @nrSearch@ searches the card database with specific queries.
 nrSearch :: EnvCommand NrApi
@@ -123,7 +141,7 @@ nrSearch = Command "search" searchPars []
             embedCards
               ("Query: `" <> pairsToNrdb pairs <> "`\n")
               res
-              ("_[..." <> (pack $ show $ length res - 10) <> " more](" <> pairsToQuery pairs <> ")_")
+              ("_[..." <> pack (show $ length res - 10) <> " more](" <> pairsToQuery pairs <> ")_")
               m
 
 -- | @nrCustom@ is a command that lets users generate a card embed out of custom
@@ -138,6 +156,46 @@ nrCustom = Command "custom" customPars []
         api <- ask
         embedCard (customCard api pairs) m
 
+-- | @nrBanHistory@ is a command that lists a card's banlist history.
+nrBanHistory :: EnvCommand NrApi
+nrBanHistory = Command "banHistory" (parseComm banHistoryComm) []
+  where
+    banHistoryComm ::
+      WithError "No card title given!" (RestOfInput1 Text) ->
+      Message ->
+      EnvDatabaseDiscord NrApi ()
+    banHistoryComm (WErr (ROI1 q)) = sendEmbed q
+    sendEmbed :: Text -> Message -> EnvDatabaseDiscord NrApi ()
+    sendEmbed query m = do
+      api <- ask
+      embedBanHistory (queryCard api query) m
+
+-- | @nrBanList@ is a command listing all cards affected by a banlist.
+nrBanList :: EnvCommand NrApi
+nrBanList = Command "banList" (parseComm banListComm) []
+  where
+    banListComm ::
+      Either () (RestOfInput Text) ->
+      Message ->
+      EnvDatabaseDiscord NrApi ()
+    banListComm (Left ()) = embedBanLists
+    banListComm (Right (ROI q)) = sendEmbed q
+    sendEmbed :: Text -> Message -> EnvDatabaseDiscord NrApi ()
+    sendEmbed query m = do
+      api <- ask
+      embedBanList (queryBanList api query) m
+
+-- | @nrRules@ is a command that fetches Netrunner rulings.
+nrRules :: EnvCommand NrApi
+nrRules = Command "rules" (parseComm rulesComm) []
+  where
+    rulesComm :: RestOfInput Text -> Message -> EnvDatabaseDiscord NrApi ()
+    rulesComm (ROI q) m = do
+      let (rTitle, rBody, colour) = case getRuling q of
+            Left (Ruling t b) -> (t, b, Red)
+            Right (Ruling t b) -> (t, b, Blue)
+      sendEmbedMessage m "" $ addColour colour $ embedText rTitle rBody
+
 -- | @embedCard@ takes a card and embeds it in a message.
 embedCard :: Card -> Message -> EnvDatabaseDiscord NrApi ()
 embedCard card m = do
@@ -150,146 +208,53 @@ embedCards pre cards err m = do
   api <- ask
   sendEmbedMessage m "" =<< cardsToEmbed api pre cards err
 
--- | @embedCardImg@ takes a card and embeds its image in a message, if able.
+-- | @embedCardImg@ embeds a card's image in a message, if able.
 embedCardImg :: Card -> Message -> EnvDatabaseDiscord NrApi ()
 embedCardImg card m = do
   api <- ask
-  case cardToImgEmbed api card of
-    Nothing -> throwBot $ NetrunnerException "Could not get card art"
-    Just embed -> sendEmbedMessage m "" embed
+  sendEmbedMessage m "" $ cardToImgEmbed api card
 
--- | @embedCardFlavour@ takes a card and embeds its image in a message, if able.
+-- | @embedCardFlavour@ embeds a card's flavour in a message, if able.
 embedCardFlavour :: Card -> Message -> EnvDatabaseDiscord NrApi ()
 embedCardFlavour card m = do
   api <- ask
-  embed <- cardToFlavourEmbed api card
-  case embed of
-    Nothing -> throwBot $ NetrunnerException "Card has no flavour text"
-    Just e -> sendEmbedMessage m "" e
+  let card' = case code card of
+        Just "07024" -> queryCard api "Déjà Vu"
+        Just "01002" -> queryCard api "The Twins"
+        _ -> card
+  cText <- toText card'
+  embed <- case code card' of
+    Just "12077" -> cardToEmbedWithText api card' cText
+    _ -> cardToFlavourEmbed api card'
+  sendEmbedMessage m "" embed
 
-netrunnerHelp :: HelpPage
-netrunnerHelp =
-  HelpPage
-    "netrunner"
-    ["nr"]
-    "finds and displays Netrunner cards"
-    [r|**Netrunner**
-Find and displays Netrunner cards
-Calling without arguments posts some introductory info about the game
+-- | @embedBanHistory@ embeds a card's banlist history.
+embedBanHistory :: Card -> Message -> EnvDatabaseDiscord NrApi ()
+embedBanHistory card m = do
+  api <- ask
+  embed <- cardToEmbedWithText api card $ listBanHistory api card
+  let colour = case toMwlStatus api (activeBanList api) card of
+        Banned -> Red
+        Legal -> Green
+        _ -> Yellow
+  sendEmbedMessage m "" $ addColour colour embed
 
-Can be used inline by enclosing a card search query inside curly braces (max five queries per message)
-Add additional syntax to the start of the query to fetch only the card's image or flavour text
+-- | @embedBanLists@ embeds all banlists in Netrunner history.
+embedBanLists :: Message -> EnvDatabaseDiscord NrApi ()
+embedBanLists m = do
+  api <- ask
+  let embed = embedTextWithUrl "Standard Banlists" "https://netrunnerdb.com/en/banlists" $ listBanLists api
+      colour = if latestBanListActive api then Red else Yellow
+  sendEmbedMessage m "" $ addColour colour embed
 
-*Usage:*
-  - `netrunner`
-  - `{{card name}}        ` -> finds the card with title closest matching "card name"
-  - `{{card 1}} {{card 2}}` -> searches for cards matching "card 1" and "card 2"
-  - `{{!card image}}      ` -> fetches the image of the card matching "card image"
-  - `{{|card flavour}}    ` -> fetches the flavour text of the card matching "card flavour" |]
-    [findHelp, findImgHelp, findFlavourHelp, searchHelp, customHelp]
-    None
-
-findHelp :: HelpPage
-findHelp =
-  HelpPage
-    "find"
-    []
-    "searches the NetrunnerDB database for cards"
-    [r|**Find Netrunner Cards**
-Searches the NetrunnerDB database for the card closest matching a given query
-Can be used inline by enclosing your query inside curly braces (max five queries per message)
-Add additional syntax to the start of the query to fetch only the card's image or flavour text
-
-*Usage:*
-  - `netrunner find card name` -> finds the card with title closest matching "card name"
-  - `{{card name}}           ` -> the inline version of the above command
-  - `{{card 1}} {{card 2}}   ` -> searches for cards matching "card 1" and "card 2"
-  - `{{!card image}}         ` -> fetches the image of the card matching "card image"
-  - `{{|card flavour}}       ` -> fetches the flavour text of the card matching "card flavour" |]
-    []
-    None
-
-findImgHelp :: HelpPage
-findImgHelp =
-  HelpPage
-    "image"
-    ["img"]
-    "searches the NetrunnerDB database for a card's image"
-    [r|**Find Netrunner Card Images**
-Searches the NetrunnerDB database for the card closest matching a given query and shows an image of it
-Can be used inline by enclosing your query inside curly braces with a `!` (max five queries per message)
-
-*Usage:*
-  - `netrunner image card name` -> fetches the image of the card matching "card name"
-  - `{{!card name}}           ` -> the inline version of the above command|]
-    []
-    None
-
-findFlavourHelp :: HelpPage
-findFlavourHelp =
-  HelpPage
-    "flavour"
-    []
-    "searches the NetrunnerDB database for a card's flavour text"
-    [r|**Find Netrunner Card Flavour Text**
-Searches the NetrunnerDB database for the card closest matching a given query and shows its flavour text
-Can be used inline by enclosing your query inside curly braces with a `|` (max five queries per message)
-
-*Usage:*
-  - `netrunner flavour card name` -> fetches the flavour text of the card matching "card name"
-  - `{{|card name}}             ` -> the inline version of the above command|]
-    []
-    None
-
-searchHelp :: HelpPage
-searchHelp =
-  HelpPage
-    "search"
-    []
-    "gets a list of all Netrunner cards matching a search query"
-    [r|**Search Netrunner Cards**
-Gets a list of all Netrunner cards matching a search query, where the search query uses NetrunnerDB's syntax:
-<https://netrunnerdb.com/en/syntax>
-If the list is excessively long, it will display a link to an equivalent search on NetrunnerDB
-Searches are case insensitive
-
-The following fields are not implemented:
-> `c` - cycle
-> `r` - release date
-> `b` - ban list
-> `z` - rotation
-
-*Usage:*
-- `netrunner search x:advanced ` -> all cards containing the text "advanced"
-- `netrunner search o:1 f:nbn" ` -> all 1-cost cards in NBN
-- `netrunner search a:"and the"` -> all cards with "and the" in their flavour text|]
-    []
-    None
-
-customHelp :: HelpPage
-customHelp =
-  HelpPage
-    "custom"
-    []
-    "generates custom Netrunner cards"
-    [r|**Create Custom Netrunner Cards**
-Generates custom Netrunner cards and formats them like existing cards
-The order of card parameters does not matter
-If you mispell a card parameter (e.g. "typ" instead of "type") it will attempt to correct it
-
-*Usage:*
-- `netrunner custom type:agenda                ` -> creates an agenda
-- `netrunner custom title:"Name" text:"Lorem." ` -> creates a card with a title and text
-- `netrunner custom faction:"nbn"              ` -> creates a card with a faction
-- `netrunner custom keywords:"AP - Hardware"   ` -> creates a card with subtypes
-- `netrunner custom advancement:5 points:3     ` -> creates a card with an advancement requirement and agenda points
-- `netrunner custom cost:3 trash:2             ` -> creates a card with play/rez cost and trash cost
-- `netrunner custom strength:4                 ` -> creates a card with strength
-- `netrunner custom minSize:40 maxInf:15 link:2` -> creates a card with a minimum deck size, maximum influence, and link
-- `netrunner custom flavour:"Raspberry & mint" ` -> creates a card with flavour text
-- `netrunner custom unique:true                ` -> creates a unique card|]
-    []
-    None
+-- | @embedBanList@ embeds the list of cards affected by a given banlist.
+embedBanList :: BanList -> Message -> EnvDatabaseDiscord NrApi ()
+embedBanList banList m = do
+  api <- ask
+  let (pre, cCards, rCards) = listAffectedCards api banList
+      header = BanList.name banList <> if active banList then " (active)" else ""
+      colour = if active banList then Red else Yellow
+  sendEmbedMessage m "" $ addColour colour $ embedColumns header pre [("Corp Cards", cCards), ("Runner Cards", rCards)]
 
 beginnerText :: EnvDatabaseDiscord NrApi Text
 beginnerText = do
@@ -320,6 +285,6 @@ netrunnerPlugin :: EnvPlugin NrApi
 netrunnerPlugin =
   (envPlug "netrunner" netrunnerStartUp)
     { commands = [netrunner, commandAlias "nr" netrunner],
-      inlineCommands = [nrFindInline],
-      helpPages = [netrunnerHelp]
+      inlineCommands = [nrInline],
+      helpPages = helpPageRoots
     }
