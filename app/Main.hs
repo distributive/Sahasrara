@@ -26,9 +26,9 @@ main = do
   whileM $ do
     _ <- swapMVar rFlag Reload
     loadEnv
+    dToken <- pack <$> getEnv "DISCORD_TOKEN"
     unless (encodeUtf8 dToken =~ ("^[A-Za-z0-9_-]{24}[.][A-Za-z0-9_-]{6}[.][A-Za-z0-9_-]{27}$" :: String)) $
       die "Invalid token format. Please check it is a bot token"
-    dToken <- pack <$> getEnv "DISCORD_TOKEN"
     prefix <- pack . fromMaybe "!" <$> lookupEnv "PREFIX"
     dbpath <- getEnv "SQLITE_FILENAME"
     runTablebot vInfo dToken prefix dbpath (plugins rFlag)
