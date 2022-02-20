@@ -15,17 +15,14 @@ module Tablebot.Internal.Administration
 where
 
 import Control.Monad.Cont (void, when)
-import Data.Maybe (fromMaybe)
+import Data.List.Extra (lower, trim)
 import Data.Text (Text, pack)
-import Data.Version (Version)
 import Database.Persist
 import Database.Persist.Sqlite (SqlPersistM)
 import Database.Persist.TH
-import Extra (lower, trim)
-import System.Environment (getEnv, lookupEnv)
+import System.Environment (lookupEnv)
 import System.Process
 import Tablebot.Internal.Types
-import Tablebot.Utility (debugPrint)
 import Text.Regex.PCRE
 
 share
