@@ -69,7 +69,7 @@ updateGit = do
   when enabled $ do
     status <- readProcess "git" ["status"] ""
     let pattern :: String
-        pattern = "(.*)working directory clean(.*)"
+        pattern = "(.*)working tree clean(.*)"
         clean :: Bool
         clean = status =~ pattern
     if clean
