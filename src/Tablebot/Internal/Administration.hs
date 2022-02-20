@@ -23,7 +23,6 @@ import Database.Persist.TH
 import System.Environment (lookupEnv)
 import System.Process
 import Tablebot.Internal.Types
-import Text.Regex.PCRE
 
 share
   [mkPersist sqlSettings, mkMigrate "adminMigration"]
