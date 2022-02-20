@@ -9,17 +9,21 @@
 -- Commands that manage the loading and reloading of plugins
 module Tablebot.Plugins.Administration (administrationPlugin) where
 
--- import from handler is unorthodox, but I don't want other plugins messing with that table...
+-- import from internal is unorthodox, but I don't want other plugins messing with that table...
 
+import Control.Concurrent.MVar (MVar, swapMVar)
 import Control.Monad (when)
+import Control.Monad.Cont (liftIO)
 import Control.Monad.Trans.Reader (ask)
 import Data.Text (Text, pack)
 import qualified Data.Text as T
+import Data.Version (showVersion)
 import Database.Persist (Entity, Filter, entityVal, (==.))
 import Discord (stopDiscord)
 import Discord.Types
 import Language.Haskell.Printf (s)
 import Tablebot.Internal.Administration
+import Tablebot.Internal.Cache (getVersionInfo)
 import Tablebot.Internal.Types (CompiledPlugin (compiledName))
 import Tablebot.Utility
 import Tablebot.Utility.Database
@@ -119,14 +123,95 @@ listBlacklist m = requirePermission Superuser m $ do
 ```|]
           (T.concat $ map (<> ("\n" :: Text)) l)
 
--- | @restart@ reloads the bot with any new configuration changes.
-reload :: EnvCommand SS
-reload = Command "reload" restartCommand []
+-- | @version@ identifies the .
+version :: EnvCommand SS
+version = Command "version" noCommand []
+  where
+    noCommand :: Parser (Message -> EnvDatabaseDiscord SS ())
+    noCommand = noArguments $ \m -> do
+      gVersion <- getVersionInfo
+      sendMessage m $ formatVersions gVersion
+    formatVersions :: VersionInfo -> Text
+    formatVersions vi = "Tablebot version " <> (pack $ showVersion $ procVersion vi) <> "\nGit Hash: `" <> (gitHash vi) <> "`"
+
+-- | @botcontrol@ reloads the bot with any new configuration changes.
+botControl :: MVar ShutdownReason -> EnvCommand SS
+botControl rFlag = Command "botcontrol" noCommand [reload rFlag, restart rFlag, halt rFlag, gitprompt rFlag]
+  where
+    noCommand :: Parser (Message -> EnvDatabaseDiscord SS ())
+    noCommand = noArguments $ \m -> requirePermission Superuser m $ do
+      sendMessage m "Please enter a subcommand"
+
+-- | @reload@ reloads the bot with any new configuration changes.
+reload :: MVar ShutdownReason -> EnvCommand SS
+reload rFlag = Command "reload" restartCommand []
   where
     restartCommand :: Parser (Message -> EnvDatabaseDiscord SS ())
     restartCommand = noArguments $ \m -> requirePermission Superuser m $ do
       sendMessage m "Reloading bot..."
+      _ <- liftIO $ swapMVar rFlag Reload
       liftDiscord $ stopDiscord
+
+-- | @reload@ reloads the bot with any new configuration changes.
+restart :: MVar ShutdownReason -> EnvCommand SS
+restart rFlag = Command "restart" restartCommand []
+  where
+    restartCommand :: Parser (Message -> EnvDatabaseDiscord SS ())
+    restartCommand = noArguments $ \m -> requirePermission Superuser m $ do
+      sendMessage m "Restarting bot... (this may take some time)"
+      _ <- liftIO $ swapMVar rFlag Restart
+      liftDiscord $ stopDiscord
+
+-- | @halt@ stops the bot.
+halt :: MVar ShutdownReason -> EnvCommand SS
+halt rFlag = Command "halt" restartCommand []
+  where
+    restartCommand :: Parser (Message -> EnvDatabaseDiscord SS ())
+    restartCommand = noArguments $ \m -> requirePermission Superuser m $ do
+      sendMessage m "Halting bot! (Goodnight, cruel world)"
+      _ <- liftIO $ swapMVar rFlag Halt
+      liftDiscord $ stopDiscord
+
+-- | @gitupdate@ pulls the latest version from the git.
+gitprompt :: MVar ShutdownReason -> EnvCommand SS
+gitprompt rFlag = Command "gitupdate" promptCommand [gitupdate rFlag]
+  where
+    promptCommand :: Parser (Message -> EnvDatabaseDiscord SS ())
+    promptCommand = noArguments $ \m -> requirePermission Superuser m $ do
+      sendMessage m "Please confirm you want to do this by appending the following to your command:\n`yes I'm sure I want to do this and understand it's potentially dangerous`"
+
+gitupdate :: MVar ShutdownReason -> EnvCommand SS
+gitupdate rFlag = Command "yes I'm sure I want to do this and understand it's potentially dangerous" restartCommand []
+  where
+    restartCommand :: Parser (Message -> EnvDatabaseDiscord SS ())
+    restartCommand = noArguments $ \m -> requirePermission Superuser m $ do
+      sendMessage m "Attempting to update bot from the git. Please wait"
+      _ <- liftIO $ swapMVar rFlag GitUpdate
+      liftDiscord $ stopDiscord
+
+versionHelp :: HelpPage
+versionHelp =
+  HelpPage
+    "version"
+    []
+    "print version information"
+    [r|**Version**
+Print the current bot version and git hash of the running bot.
+
+*Usage:* `version`|]
+    []
+    Superuser
+
+botControlHelp :: HelpPage
+botControlHelp =
+  HelpPage
+    "botcontrol"
+    []
+    "administrative commands"
+    [r|**Bot Control**
+General management commands for superuser use|]
+    [reloadHelp, restartHelp, haltHelp, gitupdateHelp]
+    Superuser
 
 reloadHelp :: HelpPage
 reloadHelp =
@@ -134,10 +219,53 @@ reloadHelp =
     "reload"
     []
     "reload the bot"
-    [r|**Restart**
-Restart the bot
+    [r|**Reload**
+Restart the bot without recompiling
 
-*Usage:* `reload`|]
+*Usage:* `botcontrol reload`|]
+    []
+    Superuser
+
+restartHelp :: HelpPage
+restartHelp =
+  HelpPage
+    "restart"
+    []
+    "recompile and restart the bot"
+    [r|**Restart**
+Recompile and restart the bot
+
+*Usage:* `botcontrol restart`|]
+    []
+    Superuser
+
+haltHelp :: HelpPage
+haltHelp =
+  HelpPage
+    "halt"
+    []
+    "stop the bot"
+    [r|**Halt**
+Stop the bot
+
+*Usage:* `botcontrol halt`|]
+    []
+    Superuser
+
+gitupdateHelp :: HelpPage
+gitupdateHelp =
+  HelpPage
+    "gitupdate"
+    []
+    "use git to update the bot"
+    [r|**Halt**
+Update the bot from git
+Will attempt to pull the latest version from origin.
+Requires that the working state is clean, and that it can be merged with the incoming without conflict.
+
+Requires `ALLOW_GIT_UPDATE` to be true. 
+
+*Usage:* `botcontrol gitupdate`|]
     []
     Superuser
 
@@ -146,7 +274,7 @@ blacklistAddHelp =
   HelpPage
     "add"
     []
-    "Disable a plugin"
+    "disable a plugin"
     "**Blacklist Add**\n\
     \Disable a plugin. This does **not** check that the entered plugin is currently avaliable. \
     \This allows you to upgrade without having a new plugin enabled breifly.\n\n\
@@ -173,7 +301,7 @@ blacklistListHelp =
   HelpPage
     "list"
     []
-    "List disabled plugins"
+    "list disabled plugins"
     [r|**Blacklist List**
 List the current plugins in the blacklist.
 
@@ -187,7 +315,7 @@ blacklistHelp =
   HelpPage
     "blacklist"
     []
-    "Enable and disable plugins"
+    "enable and disable plugins"
     [r|**Blacklist**
 Enable and disable plugins|]
     [blacklistListHelp, blacklistAddHelp, blacklistRemoveHelp]
@@ -200,5 +328,5 @@ adminStartup cps =
 
 -- | @administrationPlugin@ assembles the commands into a plugin.
 -- Note the use of an underscore in the name, this prevents the plugin being disabled.
-administrationPlugin :: [CompiledPlugin] -> EnvPlugin SS
-administrationPlugin cps = (envPlug "_admin" $ adminStartup cps) {commands = [reload, blacklist], helpPages = [reloadHelp, blacklistHelp]}
+administrationPlugin :: MVar ShutdownReason -> [CompiledPlugin] -> EnvPlugin SS
+administrationPlugin rFlag cps = (envPlug "_admin" $ adminStartup cps) {commands = [botControl rFlag, blacklist, version], helpPages = [versionHelp, botControlHelp, blacklistHelp]}

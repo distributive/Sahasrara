@@ -19,6 +19,7 @@ import Data.Char (toLower)
 import Data.Map (Map)
 import Data.Maybe (fromMaybe)
 import Data.Text (Text)
+import Data.Version.Extra (Version)
 import Data.Void (Void)
 import Database.Persist.Sqlite (Migration, SqlPersistM, SqlPersistT)
 import Discord (DiscordHandler)
@@ -51,9 +52,16 @@ type DatabaseDiscord = EnvDatabaseDiscord ()
 -- the just the database for startup actions.
 type Database d = SqlPersistM d
 
-newtype TablebotCache = TCache
-  { cacheKnownEmoji :: Map Text Emoji
+data TablebotCache = TCache
+  { cacheKnownEmoji :: Map Text Emoji,
+    cacheVersionInfo :: VersionInfo
   }
+
+data VersionInfo = VInfo
+  { gitHash :: Text,
+    procVersion :: Version
+  }
+  deriving (Show, Eq)
 
 -- * Parser
 

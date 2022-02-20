@@ -11,7 +11,9 @@
 -- are ever updated. You should always import this over "Tablebot.Plugin.Types".
 module Tablebot.Utility
   ( module Types,
+    module Utils,
   )
 where
 
 import Tablebot.Utility.Types as Types hiding (Pl)
+import Tablebot.Utility.Utils as Utils

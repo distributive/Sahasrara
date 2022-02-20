@@ -29,7 +29,7 @@ resolver:
 #   - auto-update
 #   - wai
 packages:
-- .
+  - .
 # Dependency packages to be pulled from upstream that are not in the resolver.
 # These entries can reference officially published versions as well as
 # forks / in-progress versions pinned to a git hash. For example:
@@ -42,32 +42,32 @@ packages:
 # allow-newer: true
 
 extra-deps:
-- discord-haskell-1.10.0
-- emoji-0.1.0.2
-- load-env-0.2.1.0
-- megaparsec-9.0.1
-- persistent-2.11.0.4
-- persistent-sqlite-2.11.1.0
-- persistent-template-2.9.1.0@rev:2
-- esqueleto-3.4.1.1
-- duckling-0.2.0.0
-- dependent-sum-0.7.1.0
-- constraints-extras-0.3.1.0
-- Chart-diagrams-1.9.3
-- SVGFonts-1.7.0.1
-- diagrams-core-1.5.0
-- diagrams-lib-1.4.5.1
-- diagrams-postscript-1.5.1
-- diagrams-svg-1.4.3.1
-- svg-builder-0.1.1
-- active-0.2.0.15
-- dual-tree-0.2.3.0
-- monoid-extras-0.6.1
-- statestack-0.3
-- diagrams-rasterific-1.4.2.2
-# - distribution-1.1.1.1
-- git: https://github.com/L0neGamer/haskell-distribution.git
-  commit: 569d6452e4bffedb2c0d3795885fccdb22a4d29d
+  - discord-haskell-1.10.0
+  - emoji-0.1.0.2
+  - load-env-0.2.1.0
+  - megaparsec-9.0.1
+  - persistent-2.11.0.4
+  - persistent-sqlite-2.11.1.0
+  - persistent-template-2.9.1.0@rev:2
+  - esqueleto-3.4.1.1
+  - duckling-0.2.0.0
+  - dependent-sum-0.7.1.0
+  - constraints-extras-0.3.1.0
+  - Chart-diagrams-1.9.3
+  - SVGFonts-1.7.0.1
+  - diagrams-core-1.5.0
+  - diagrams-lib-1.4.5.1
+  - diagrams-postscript-1.5.1
+  - diagrams-svg-1.4.3.1
+  - svg-builder-0.1.1
+  - active-0.2.0.15
+  - dual-tree-0.2.3.0
+  - monoid-extras-0.6.1
+  - statestack-0.3
+  - diagrams-rasterific-1.4.2.2
+  # - distribution-1.1.1.1
+  - git: https://github.com/L0neGamer/haskell-distribution.git
+    commit: 569d6452e4bffedb2c0d3795885fccdb22a4d29d
 
 # Override default flag values for local packages and extra-deps
 # flags: {}

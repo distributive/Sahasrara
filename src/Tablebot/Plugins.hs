@@ -14,6 +14,8 @@ module Tablebot.Plugins
   )
 where
 
+import Control.Concurrent.MVar (MVar)
+import Tablebot.Internal.Administration (ShutdownReason)
 import Tablebot.Internal.Plugins (compilePlugin)
 import Tablebot.Internal.Types (CompiledPlugin)
 import Tablebot.Plugins.Administration (administrationPlugin)
@@ -33,9 +35,10 @@ import Tablebot.Plugins.Suggest (suggestPlugin)
 import Tablebot.Plugins.Welcome (welcomePlugin)
 
 -- Use long list format to make additions and removals non-conflicting on git PRs
-plugins :: [CompiledPlugin]
-plugins =
+plugins :: MVar ShutdownReason -> [CompiledPlugin]
+plugins rFlag =
   addAdministrationPlugin
+    rFlag
     [ compilePlugin pingPlugin,
       compilePlugin basicPlugin,
       compilePlugin catPlugin,
@@ -53,5 +56,5 @@ plugins =
     ]
 
 -- | @addAdministrationPlugin@ is needed to allow the administration plugin to be aware of the list of current plugins
-addAdministrationPlugin :: [CompiledPlugin] -> [CompiledPlugin]
-addAdministrationPlugin cps = compilePlugin (administrationPlugin cps) : cps
+addAdministrationPlugin :: MVar ShutdownReason -> [CompiledPlugin] -> [CompiledPlugin]
+addAdministrationPlugin rFlag cps = compilePlugin (administrationPlugin rFlag cps) : cps

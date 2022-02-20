@@ -47,3 +47,8 @@ standardise x = filter (not . property Diacritic) normalizedText
 -- the empty Text.
 maybeEmptyPrepend :: Text -> Maybe Text -> Text
 maybeEmptyPrepend s = maybe "" (s <>)
+
+newtype DebugString = DStr String
+
+instance Show DebugString where
+  show (DStr a) = a

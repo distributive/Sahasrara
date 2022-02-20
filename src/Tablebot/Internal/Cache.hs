@@ -43,3 +43,9 @@ fillEmojiCache :: Guild -> EnvDatabaseDiscord s ()
 fillEmojiCache guild = do
   let emoji = guildEmojis guild
   mapM_ (addNewEmojiCache =<< emojiName) emoji
+
+getVersionInfo :: EnvDatabaseDiscord s VersionInfo
+getVersionInfo = do
+  mcache <- liftCache ask
+  cache <- liftIO $ readMVar mcache
+  pure $ cacheVersionInfo cache
