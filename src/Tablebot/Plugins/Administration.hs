@@ -210,7 +210,7 @@ botControlHelp =
     "administrative commands"
     [r|**Bot Control**
 General management commands for superuser use|]
-    [reloadHelp, restartHelp, haltHelp]
+    [reloadHelp, restartHelp, haltHelp, gitupdateHelp]
     Superuser
 
 reloadHelp :: HelpPage
@@ -249,6 +249,23 @@ haltHelp =
 Stop the bot
 
 *Usage:* `botcontrol halt`|]
+    []
+    Superuser
+
+gitupdateHelp :: HelpPage
+gitupdateHelp =
+  HelpPage
+    "gitupdate"
+    []
+    "use git to update the bot"
+    [r|**Halt**
+Update the bot from git
+Will attempt to pull the latest version from origin.
+Requires that the working state is clean, and that it can be merged with the incoming without conflict.
+
+Requires `ALLOW_GIT_UPDATE` to be true. 
+
+*Usage:* `botcontrol gitupdate`|]
     []
     Superuser
 
