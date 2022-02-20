@@ -35,7 +35,6 @@ import Tablebot.Utility.Database
 import Tablebot.Utility.Discord (getMessage, sendChannelMessage, sendCustomReplyMessage, sendMessage, toTimestamp)
 import Tablebot.Utility.Permission (requirePermission)
 import Tablebot.Utility.SmartParser (PComm (parseComm), Quoted (Qu), RestOfInput (ROI), WithError (..))
-import Tablebot.Utility.Utils (debugPrint)
 import Text.RawString.QQ (r)
 
 -- Our Reminder table in the database. This is fairly standard for Persistent,

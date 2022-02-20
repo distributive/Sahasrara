@@ -39,13 +39,12 @@ failure' s ss = failure (Just $ Tokens $ NE.fromList $ T.unpack s) (S.map (Token
 instance CanParse ListValues where
   pars =
     do
-      LVBase <$> pars
-      <|> functionParser listFunctions LVFunc
+      functionParser listFunctions LVFunc
       <|> ( do
-              nb <- pars
-              _ <- char '#'
+              nb <- try (pars <* char '#')
               MultipleValues nb <$> pars
           )
+      <|> LVBase <$> pars
 
 instance CanParse ListValuesBase where
   pars = do
