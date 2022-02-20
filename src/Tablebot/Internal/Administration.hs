@@ -15,7 +15,7 @@ module Tablebot.Internal.Administration
 where
 
 import Control.Monad.Cont (void, when)
-import Data.List.Extra (lower, trim)
+import Data.List.Extra (isInfixOf, lower, trim)
 import Data.Text (Text, pack)
 import Database.Persist
 import Database.Persist.Sqlite (SqlPersistM)
@@ -69,18 +69,19 @@ updateGit = do
   when enabled $ do
     status <- readProcess "git" ["status"] ""
     let pattern :: String
-        pattern = "(.*)working directory clean(.*)"
+        pattern = "working tree clean"
         clean :: Bool
-        clean = status =~ pattern
+        clean = isInfixOf pattern status
     if clean
       then do
         callProcess "git" ["pull", "--rebase"]
         pullStatus <- readProcess "git" ["status"] ""
         let pullClean :: Bool
-            pullClean = pullStatus =~ pattern
+            pullClean = isInfixOf pattern pullStatus
         if pullClean
-          then putStrLn "Git pull failed. Please do it manually"
+          then putStrLn "Git pulled successfully. Restarting"
           else do
+            putStrLn "Git pull failed. Please do it manually"
             callProcess "git" ["rebase", "--abort"]
       else putStrLn "Git directory not clean. Not updating"
 
