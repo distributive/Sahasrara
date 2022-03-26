@@ -4,19 +4,33 @@ An extendable Discord bot framework written on top of [`WarwickTabletop's Tableb
 
 ## Functionality
 
-Card searching:
+Card finding:
+
+![image](https://user-images.githubusercontent.com/26557961/160260122-5e30f950-bc22-42da-b19a-c7f5cd745678.png)
 
 Displaying card art:
 
+![image](https://user-images.githubusercontent.com/26557961/160260137-e8c79a0e-e730-477a-be71-9bd413b4f568.png)
+
 Displaying card flavour text:
+
+![image](https://user-images.githubusercontent.com/26557961/160260141-cdaf5a69-f51f-4a51-a588-eb8049705204.png)
 
 Searching cards using NetrunnerDB syntax:
 
+![image](https://user-images.githubusercontent.com/26557961/160260170-b0c9916e-6058-406f-b12d-24acf05589fc.png)
+
 Displaying the banlist history of cards:
+
+![image](https://user-images.githubusercontent.com/26557961/160260305-7c9b7b8a-c39c-48a2-b19f-86add0c4e62f.png)
 
 Displaying current and past banlists:
 
+![image](https://user-images.githubusercontent.com/26557961/160260324-4e4b05c5-6c34-4d24-8ea0-cfa0b3eb8ef2.png)
+
 Displaying Netrunner rules and timing structures:
+
+![image](https://user-images.githubusercontent.com/26557961/160260336-1aca682e-b194-452a-a21a-b7a9c3a399a8.png)
 
 ### Upcoming
 
