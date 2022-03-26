@@ -12,22 +12,23 @@ module Sahasrara.Utility.Help where
 import Data.Functor (($>))
 import Data.Text (Text)
 import qualified Data.Text as T
+import Discord.Types
 import Sahasrara.Internal.Permission (getSenderPermission, userHasPermission)
 import Sahasrara.Internal.Plugins (changeAction)
 import Sahasrara.Internal.Types
-import Sahasrara.Utility.Discord (Message, sendMessage)
+import Sahasrara.Utility.Discord (sendEmbedMessage)
+import Sahasrara.Utility.Embed (addColour)
 import Sahasrara.Utility.Parser (skipSpace)
 import Sahasrara.Utility.Permission (requirePermission)
 import Sahasrara.Utility.Types hiding (helpPages)
 import Text.Megaparsec (choice, chunk, eof, try, (<?>), (<|>))
+import Text.RawString.QQ (r)
 
 rootBody :: Text
-rootBody =
-  "**Sahasrara**\n\
-  \A Discord bot interface for Netrunner cards and more."
+rootBody = [r|"A Discord Netrunner bot."|]
 
 helpHelpPage :: HelpPage
-helpHelpPage = HelpPage "help" [] "show information about commands" "**Help**\nShows information about bot commands\n\n*Usage:* `help <page>`" [] None
+helpHelpPage = HelpPage "help" [] "show information about commands" "Shows information about bot commands\n\n*Usage:* `help <page>`" [] None
 
 generateHelp :: CombinedPlugin -> CombinedPlugin
 generateHelp p =
@@ -49,7 +50,10 @@ parseHelpPage hp = do
 displayHelp :: HelpPage -> Message -> CompiledDatabaseDiscord ()
 displayHelp hp m = changeAction () . requirePermission (helpPermission hp) m $ do
   uPerm <- getSenderPermission m
-  sendMessage m $ formatHelp uPerm hp
+  sendEmbedMessage m "" $ addColour Aqua $ createEmbed $ CreateEmbed "" "" Nothing (formatHelpTitle hp) "" Nothing (formatHelp uPerm hp) [] Nothing "" Nothing Nothing
+
+formatHelpTitle :: HelpPage -> Text
+formatHelpTitle hp = ":scroll:  " <> if helpName hp == "" then "Sahasrara" else "Help: `$" <> helpName hp <> "`"
 
 formatHelp :: UserPermission -> HelpPage -> Text
 formatHelp up hp = helpBody hp <> formatSubpages hp

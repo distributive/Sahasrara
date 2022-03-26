@@ -11,10 +11,10 @@ module Sahasrara.Internal.Permission where
 
 import Control.Monad.IO.Class (liftIO)
 import Discord.Types (GuildMember, Message, RoleId, memberRoles)
-import System.Environment (lookupEnv)
 import Sahasrara.Utility.Discord (getMessageMember)
 import Sahasrara.Utility.Types
 import Sahasrara.Utility.Utils (isDebug)
+import System.Environment (lookupEnv)
 import Text.Read (readMaybe)
 
 data KnownRoles = KnownRoles

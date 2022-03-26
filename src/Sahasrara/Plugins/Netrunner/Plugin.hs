@@ -29,13 +29,12 @@ import Sahasrara.Plugins.Netrunner.Utility.Card (toText)
 import Sahasrara.Plugins.Netrunner.Utility.Embed
 import Sahasrara.Plugins.Netrunner.Utility.NrApi (getNrApi)
 import Sahasrara.Utility
-import Sahasrara.Utility.Discord (formatFromEmojiName, sendEmbedMessage, sendMessage)
+import Sahasrara.Utility.Discord (sendEmbedMessage, sendMessage)
 import Sahasrara.Utility.Embed (addColour)
 import Sahasrara.Utility.Parser (inlineCommandHelper, keyValue, keyValuesSepOn)
 import Sahasrara.Utility.SmartParser (PComm (parseComm), Quoted (Qu), RestOfInput (ROI), RestOfInput1 (ROI1), WithError (WErr))
 import Sahasrara.Utility.Types ()
 import Text.Megaparsec (anySingleBut, some)
-import Text.RawString.QQ (r)
 
 -- | @nrFind@ finds the card with title most closely matching its input.
 nrFind :: EnvCommand NrApi
@@ -143,7 +142,7 @@ nrCustom = Command "custom" customPars []
 
 -- | @nrBanHistory@ is a command that lists a card's banlist history.
 nrBanHistory :: EnvCommand NrApi
-nrBanHistory = Command "banHistory" (parseComm banHistoryComm) []
+nrBanHistory = Command "banhistory" (parseComm banHistoryComm) []
   where
     banHistoryComm ::
       WithError "No card title given!" (RestOfInput1 Text) ->
@@ -157,7 +156,7 @@ nrBanHistory = Command "banHistory" (parseComm banHistoryComm) []
 
 -- | @nrBanList@ is a command listing all cards affected by a banlist.
 nrBanList :: EnvCommand NrApi
-nrBanList = Command "banList" (parseComm banListComm) []
+nrBanList = Command "banlist" (parseComm banListComm) []
   where
     banListComm ::
       Either () (RestOfInput Text) ->
@@ -256,8 +255,8 @@ netrunnerPlugin =
           -- nrFindFlavour,
           nrSearch,
           -- nrCustom,
-          nrBanHistory,
-          commandAlias "bh" nrBanHistory,
+          -- nrBanHistory,
+          -- commandAlias "bh" nrBanHistory,
           nrBanList,
           commandAlias "bl" nrBanList,
           commandAlias "mwl" nrBanList,

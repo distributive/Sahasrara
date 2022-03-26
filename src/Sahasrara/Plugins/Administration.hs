@@ -195,8 +195,7 @@ versionHelp =
     "version"
     []
     "print version information"
-    [r|**Version**
-Print the current bot version and git hash of the running bot.
+    [r|Print the current bot version and git hash of the running bot.
 
 *Usage:* `version`|]
     []
@@ -208,8 +207,7 @@ botControlHelp =
     "botcontrol"
     []
     "administrative commands"
-    [r|**Bot Control**
-General management commands for superuser use|]
+    [r|General management commands for superuser use|]
     [reloadHelp, restartHelp, haltHelp, gitupdateHelp]
     Superuser
 
@@ -219,8 +217,7 @@ reloadHelp =
     "reload"
     []
     "reload the bot"
-    [r|**Reload**
-Restart the bot without recompiling
+    [r|Restart the bot without recompiling
 
 *Usage:* `botcontrol reload`|]
     []
@@ -232,8 +229,7 @@ restartHelp =
     "restart"
     []
     "recompile and restart the bot"
-    [r|**Restart**
-Recompile and restart the bot
+    [r|Recompile and restart the bot
 
 *Usage:* `botcontrol restart`|]
     []
@@ -245,8 +241,7 @@ haltHelp =
     "halt"
     []
     "stop the bot"
-    [r|**Halt**
-Stop the bot
+    [r|Stop the bot
 
 *Usage:* `botcontrol halt`|]
     []
@@ -258,12 +253,11 @@ gitupdateHelp =
     "gitupdate"
     []
     "use git to update the bot"
-    [r|**Halt**
-Update the bot from git
+    [r|Update the bot from git
 Will attempt to pull the latest version from origin.
 Requires that the working state is clean, and that it can be merged with the incoming without conflict.
 
-Requires `ALLOW_GIT_UPDATE` to be true. 
+Requires `ALLOW_GIT_UPDATE` to be true.
 
 *Usage:* `botcontrol gitupdate`|]
     []
@@ -288,8 +282,7 @@ blacklistRemoveHelp =
     "remove"
     []
     "Enable a plugin"
-    [r|**Blacklist Remove**
-Re-enable a plugin.
+    [r|Re-enable a plugin.
 
 *Usage*: `blacklist remove <plugin>`
 |]
@@ -302,8 +295,7 @@ blacklistListHelp =
     "list"
     []
     "list disabled plugins"
-    [r|**Blacklist List**
-List the current plugins in the blacklist.
+    [r|List the current plugins in the blacklist.
 
 *Usage*: `blacklist list`
 |]
@@ -316,8 +308,7 @@ blacklistHelp =
     "blacklist"
     []
     "enable and disable plugins"
-    [r|**Blacklist**
-Enable and disable plugins|]
+    [r|Enable and disable plugins|]
     [blacklistListHelp, blacklistAddHelp, blacklistRemoveHelp]
     Superuser
 

@@ -19,7 +19,7 @@ import Text.Megaparsec
 import Text.RawString.QQ
 import Prelude hiding (flip)
 
--- | @flip@ picks one of its arguments at random, or one of "heads" and "tails"
+-- | @flip@ picks one of its arguments at random, or one of "Corp" and "Runner"
 -- if none are provided.
 flip :: Command
 flip = Command "flip" flipcomm []
@@ -29,7 +29,7 @@ flip = Command "flip" flipcomm []
       args <- (try quoted <|> nonSpaceWord) `sepBy` some space
       return $ \m -> do
         c <- case length args of
-          0 -> liftIO $ chooseOneWithDefault "" ["Heads", "Tails"]
+          0 -> liftIO $ chooseOneWithDefault "" ["Corp", "Runner"]
           _ -> liftIO $ chooseOneWithDefault (head args) args
         sendMessage m $ pack c
 
@@ -38,13 +38,12 @@ flipHelp =
   HelpPage
     "flip"
     []
-    "flip a coin, or randomly pick from a given list"
-    [r|**Flip**
-Randomly picks one element from its arguments or, if none are provided, picks from heads and tails.
+    "randomly picks either 'Corp' or 'Runner', or randomly pick from a given list"
+    [r|Randomly picks one element from its arguments or, if none are provided, picks from 'Corp' and 'Runner'.
 
 *Usage:*
 `flip`
-`flip first second third`|]
+`flip corp runner`|]
     []
     None
 

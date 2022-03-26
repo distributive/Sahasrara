@@ -41,15 +41,16 @@ type BasicCommand = (Text, Text, MiniHelpPage)
 -- | The basic commands.
 basicCommands :: [BasicCommand]
 basicCommands = []
-  -- [ ( "ping",
-  --     "Ping!",
-  --     Simple ("pings this bot", "Pings this bot")
-  --   ),
-  --   ( "pong",
-  --     "Pong!",
-  --     Simple ("pongs this bot", "Pongs this bot")
-  --   )
-  -- ]
+
+-- [ ( "ping",
+--     "Ping!",
+--     Simple ("pings this bot", "Pings this bot")
+--   ),
+--   ( "pong",
+--     "Pong!",
+--     Simple ("pongs this bot", "Pongs this bot")
+--   )
+-- ]
 
 -- | @echo@ pulled out to help resolve parser overlapping instances errors.
 -- Sends the provided text, regardless of received message.

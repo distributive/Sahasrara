@@ -20,9 +20,9 @@ import Data.Text (Text, pack)
 import Database.Persist
 import Database.Persist.Sqlite (SqlPersistM)
 import Database.Persist.TH
+import Sahasrara.Internal.Types
 import System.Environment (lookupEnv)
 import System.Process
-import Sahasrara.Internal.Types
 
 share
   [mkPersist sqlSettings, mkMigrate "adminMigration"]

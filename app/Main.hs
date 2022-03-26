@@ -8,12 +8,12 @@ import Data.Text (pack)
 import Data.Text.Encoding (encodeUtf8)
 import LoadEnv (loadEnv)
 import Paths_sahasrara (version)
-import System.Environment (getEnv, lookupEnv)
-import System.Exit (die)
 import Sahasrara (runSahasrara)
 import Sahasrara.Internal.Administration
 import Sahasrara.Plugins (plugins)
 import Sahasrara.Utility.Types
+import System.Environment (getEnv, lookupEnv)
+import System.Exit (die)
 import Text.Regex.PCRE
 
 -- @main@ runs forever. This allows bot reloading by fully shutting down the bot and letting it restart.

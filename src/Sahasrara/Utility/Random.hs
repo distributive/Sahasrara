@@ -12,8 +12,8 @@ module Sahasrara.Utility.Random (chooseOne, chooseOneWithDefault, chooseOneWeigh
 import Control.Monad.Exception (MonadException (throw))
 import Data.List (find)
 import Data.Maybe (fromJust)
-import System.Random (randomRIO)
 import Sahasrara.Utility.Exception (BotException (RandomException), catchBot)
+import System.Random (randomRIO)
 
 -- | @chooseOne@ chooses a single random element from a given list with uniform
 -- distribution.
