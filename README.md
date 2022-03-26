@@ -22,15 +22,15 @@ Searching cards using NetrunnerDB syntax:
 
 Displaying the banlist history of cards:
 
-![image](https://user-images.githubusercontent.com/26557961/160260305-7c9b7b8a-c39c-48a2-b19f-86add0c4e62f.png)
+![image](https://user-images.githubusercontent.com/26557961/160260369-94eb4248-2429-4aaf-b0af-3fdf80af2921.png)
 
 Displaying current and past banlists:
 
-![image](https://user-images.githubusercontent.com/26557961/160260324-4e4b05c5-6c34-4d24-8ea0-cfa0b3eb8ef2.png)
+![image](https://user-images.githubusercontent.com/26557961/160260392-60f218c4-125a-4071-8c11-485c4102dc2f.png)
 
 Displaying Netrunner rules and timing structures:
 
-![image](https://user-images.githubusercontent.com/26557961/160260336-1aca682e-b194-452a-a21a-b7a9c3a399a8.png)
+![image](https://user-images.githubusercontent.com/26557961/160260401-85888bcb-04dd-408d-b544-307b7ebb4139.png)
 
 ### Upcoming
 
