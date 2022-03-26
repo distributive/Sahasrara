@@ -273,19 +273,15 @@ hexToDiscordColour hex =
 -- @RequiredPermission@ models the permissions required to run a command.
 -- Note, superusers can run all commands
 -- -- None: Any user can run the command
--- -- Any: The user must be either an exec, moderator
--- -- Exec: The user must be an exec
 -- -- Moderator: The user must be a moderator
--- -- Both: The user must be both an exec and a moderator
 -- -- Superuser: The user must be a superuser
 data UserPermission = UserPerm
-  { permExec :: Bool,
-    permModerator :: Bool,
+  { permModerator :: Bool,
     permSuperuser :: Bool
   }
   deriving (Show, Eq)
 
-data RequiredPermission = None | Any | Exec | Moderator | Both | Superuser deriving (Show, Eq)
+data RequiredPermission = None | Moderator | Superuser deriving (Show, Eq)
 
 -- * Plugins
 

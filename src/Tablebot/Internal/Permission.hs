@@ -18,27 +18,22 @@ import Tablebot.Utility.Utils (isDebug)
 import Text.Read (readMaybe)
 
 data KnownRoles = KnownRoles
-  { krExec :: Maybe RoleId,
-    krModerator :: Maybe RoleId,
+  { krModerator :: Maybe RoleId,
     krSuperuser :: Maybe RoleId
   }
   deriving (Show)
 
 userHasPermission :: RequiredPermission -> UserPermission -> Bool
-userHasPermission _ (UserPerm _ _ True) = True -- Superuser always has perm
+userHasPermission _ (UserPerm _ True) = True -- Superuser always has perm
 userHasPermission None _ = True
-userHasPermission Any (UserPerm exec moderator _) = exec || moderator
-userHasPermission Exec (UserPerm exec _ _) = exec
-userHasPermission Moderator (UserPerm _ moderator _) = moderator
-userHasPermission Both (UserPerm exec moderator _) = exec && moderator
+userHasPermission Moderator (UserPerm moderator _) = moderator
 userHasPermission _ _ = False
 
 getKnownRoles :: IO KnownRoles
 getKnownRoles = do
-  exec <- lookupEnv "EXEC_GROUP"
   moderator <- lookupEnv "MODERATOR_GROUP"
   superuser <- lookupEnv "SUPERUSER_GROUP"
-  return $ KnownRoles (maybeRead exec) (maybeRead moderator) (maybeRead superuser)
+  return $ KnownRoles (maybeRead moderator) (maybeRead superuser)
   where
     maybeRead (Just a) = readMaybe a
     maybeRead Nothing = Nothing
@@ -50,7 +45,6 @@ getMemberGroups Nothing = []
 permsFromGroups :: Bool -> KnownRoles -> [RoleId] -> UserPermission
 permsFromGroups debug krls gps =
   UserPerm
-    (debug || krExec krls `elemish` gps)
     (debug || krModerator krls `elemish` gps)
     (debug || krSuperuser krls `elemish` gps)
   where

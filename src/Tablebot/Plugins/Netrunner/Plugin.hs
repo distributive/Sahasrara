@@ -11,7 +11,7 @@ module Tablebot.Plugins.Netrunner.Plugin (netrunnerPlugin) where
 
 import Control.Monad.IO.Class
 import Control.Monad.Trans.Reader (ask)
-import Data.Text (Text, pack, uncons)
+import Data.Text (Text, pack)
 import Discord.Types
 import Tablebot.Internal.Handler.Command ()
 import Tablebot.Plugins.Netrunner.Command.BanList
@@ -36,35 +36,6 @@ import Tablebot.Utility.SmartParser (PComm (parseComm), Quoted (Qu), RestOfInput
 import Tablebot.Utility.Types ()
 import Text.Megaparsec (anySingleBut, some)
 import Text.RawString.QQ (r)
-
--- | @netrunner@ is the user-facing command that searches for Netrunner cards.
-netrunner :: EnvCommand NrApi
-netrunner =
-  Command
-    "netrunner"
-    (parseComm nrComm)
-    [ nrFind,
-      nrFindImg,
-      commandAlias "img" nrFindImg,
-      nrFindFlavour,
-      nrSearch,
-      nrCustom,
-      nrBanHistory,
-      commandAlias "bh" nrBanHistory,
-      nrBanList,
-      commandAlias "bl" nrBanList,
-      commandAlias "mwl" nrBanList,
-      nrRules,
-      commandAlias "cr" nrRules
-    ]
-  where
-    nrComm ::
-      WithError
-        "Unknown Netrunner functionality"
-        () ->
-      Message ->
-      EnvDatabaseDiscord NrApi ()
-    nrComm _ m = sendMessage m =<< beginnerText
 
 -- | @nrFind@ finds the card with title most closely matching its input.
 nrFind :: EnvCommand NrApi
@@ -113,15 +84,29 @@ nrFindFlavour = Command "flavour" (parseComm findComm) []
       api <- ask
       embedCardFlavour (queryCard api query) m
 
--- | @nrInline@ is the inline version of the commands that find cards.
+-- | @nrInline@ is the inline version of @nrFind@.
 nrInline :: EnvInlineCommand NrApi
-nrInline = inlineCommandHelper "{{" "}}" (some $ anySingleBut '}') $ \query m -> do
+nrInline = inlineCommandHelper "[[" "]]" (some $ anySingleBut ']') $ \query m -> do
   api <- ask
-  case uncons $ pack query of
-    Just ('!', q) -> embedCardImg (queryCard api q) m
-    Just ('|', q) -> embedCardFlavour (queryCard api q) m
-    Just ('#', q) -> embedBanHistory (queryCard api q) m
-    _ -> embedCard (queryCard api $ pack query) m
+  embedCard (queryCard api $ pack query) m
+
+-- | @nrInlineImg@ is the inline version of @nrFindImg@.
+nrInlineImg :: EnvInlineCommand NrApi
+nrInlineImg = inlineCommandHelper "{{" "}}" (some $ anySingleBut '}') $ \query m -> do
+  api <- ask
+  embedCardImg (queryCard api $ pack query) m
+
+-- | @nrInlineFlavour@ is the inline version of @nrFindFlavour@.
+nrInlineFlavour :: EnvInlineCommand NrApi
+nrInlineFlavour = inlineCommandHelper "<<" ">>" (some $ anySingleBut '>') $ \query m -> do
+  api <- ask
+  embedCardFlavour (queryCard api $ pack query) m
+
+-- | @nrInlineBanHistory@ is the inline version of @nrBanHistory@.
+nrInlineBanHistory :: EnvInlineCommand NrApi
+nrInlineBanHistory = inlineCommandHelper "((" "))" (some $ anySingleBut ')') $ \query m -> do
+  api <- ask
+  embedBanHistory (queryCard api $ pack query) m
 
 -- | @nrSearch@ searches the card database with specific queries.
 nrSearch :: EnvCommand NrApi
@@ -256,27 +241,7 @@ embedBanList banList m = do
       colour = if active banList then Red else Yellow
   sendEmbedMessage m "" $ addColour colour $ embedColumns header pre [("Corp Cards", cCards), ("Runner Cards", rCards)]
 
-beginnerText :: EnvDatabaseDiscord NrApi Text
-beginnerText = do
-  subroutine <- formatFromEmojiName "subroutine"
-  agenda <- formatFromEmojiName "agenda"
-  rezCost <- formatFromEmojiName "rez_cost"
-  return $
-    agenda <> " **NETRUNNER** " <> rezCost
-      <> [r|
-Netrunner is an asymmetric collectable card game about hackers hacking corporations. It's run as a *free* community endeavour by NISEI:
-|]
-      <> subroutine
-      <> [r| <https://nisei.net/>
-
-**Learn to play**
-|]
-      <> subroutine
-      <> [r| <https://nisei.net/players/learn-to-play/>
-
-**Get involved here**
-There is a sizeable Netrunner community here of new and old society members. If you want to get into the game feel free to ask in #netrunner for some advice or a beginner game and someone will be happy to help you!|]
-
+-- | @netrunnerStartUp@ loads the NetrunnerDB api once at start up
 netrunnerStartUp :: StartUp NrApi
 netrunnerStartUp = StartUp $ liftIO getNrApi
 
@@ -284,7 +249,21 @@ netrunnerStartUp = StartUp $ liftIO getNrApi
 netrunnerPlugin :: EnvPlugin NrApi
 netrunnerPlugin =
   (envPlug "netrunner" netrunnerStartUp)
-    { commands = [netrunner, commandAlias "nr" netrunner],
-      inlineCommands = [nrInline],
+    { commands =
+        [ -- nrFind,
+          -- nrFindImg,
+          -- commandAlias "img" nrFindImg,
+          -- nrFindFlavour,
+          nrSearch,
+          -- nrCustom,
+          nrBanHistory,
+          commandAlias "bh" nrBanHistory,
+          nrBanList,
+          commandAlias "bl" nrBanList,
+          commandAlias "mwl" nrBanList,
+          nrRules,
+          commandAlias "cr" nrRules
+        ],
+      inlineCommands = [nrInline, nrInlineImg, nrInlineFlavour, nrInlineBanHistory],
       helpPages = helpPageRoots
     }

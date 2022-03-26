@@ -29,8 +29,6 @@ import Tablebot.Utility.Types
 import Text.Megaparsec (anySingle, skipManyTill)
 import Text.Megaparsec.Char (string')
 
--- * Some types to help clarify what's going on
-
 -- | @MiniHelpPage@ simplifies creating the help pages. You can either provide just the short and long help text and let
 -- it autogenerate the formatting, or you can provide a full help page if you want more control
 data MiniHelpPage = Simple (Text, Text) | Advanced HelpPage
@@ -42,28 +40,16 @@ type BasicCommand = (Text, Text, MiniHelpPage)
 
 -- | The basic commands.
 basicCommands :: [BasicCommand]
-basicCommands =
-  [ ( "pr",
-      "You can make a pull request for that!",
-      Simple ("you know what to do", "You know what to do")
-    ),
-    ( "issue",
-      "You can submit an issue for that!",
-      Simple ("you know what you want someone else to do", "You know what you want someone else to do")
-    ),
-    ( "benji",
-      "<:benji_sit:920000993721196654>",
-      Simple ("the almost mascot", "Though he may sit, when put to test, the gender cube proved it was best")
-    ),
-    ( "about",
-      "This bot was created by finnbar to replace a couple of other bots in Tabletop. It's written in Haskell, and you can find the github here: <https://github.com/WarwickTabletop/tablebot>. There are setup guides and a contributor's guide to help you get started.",
-      Simple ("some information about the bot", "Some information about the bot, including how you can get involved")
-    ),
-    ( "inventory",
-      "Here's the board games we possess! -> https://www.warwicktabletop.co.uk/inventory/boardgames/",
-      Simple ("our board games inventory", "Our board games inventory, with a link to the actual inventory")
-    )
-  ]
+basicCommands = []
+  -- [ ( "ping",
+  --     "Ping!",
+  --     Simple ("pings this bot", "Pings this bot")
+  --   ),
+  --   ( "pong",
+  --     "Pong!",
+  --     Simple ("pongs this bot", "Pongs this bot")
+  --   )
+  -- ]
 
 -- | @echo@ pulled out to help resolve parser overlapping instances errors.
 -- Sends the provided text, regardless of received message.
@@ -85,9 +71,7 @@ baseHelp (a, _, Simple (short, long)) = HelpPage a [] short ("**" <> toTitle a <
 type BasicInlineCommand = (Text, Text)
 
 basicInlineCommands :: [BasicInlineCommand]
-basicInlineCommands =
-  [ ("thank you tablebot", "You're welcome!")
-  ]
+basicInlineCommands = [] -- Example: [("thank you", "You're welcome!")]
 
 baseInlineCommand :: BasicInlineCommand -> InlineCommand
 baseInlineCommand (t, rs) = InlineCommand (skipManyTill anySingle (string' t) >> return (`sendMessage` rs))
