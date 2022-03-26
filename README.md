@@ -1,6 +1,6 @@
-# tablebot
+# sahasrara
 
-[![CI](https://github.com/WarwickTabletop/tablebot/actions/workflows/main.yml/badge.svg)](https://github.com/WarwickTabletop/tablebot/actions/workflows/main.yml)
+[![CI](https://github.com/WarwickTabletop/sahasrara/actions/workflows/main.yml/badge.svg)](https://github.com/WarwickTabletop/sahasrara/actions/workflows/main.yml)
 
 An extendable Discord bot framework written on top of [`discord-haskell`](https://github.com/aquarial/discord-haskell).
 

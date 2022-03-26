@@ -57,7 +57,7 @@ That's it! (With thanks to Sam Coy for explaining this process)
 
 ## What can I work on?
 
-We're happy to accept any contribution, big or small. You can find our list of issues [here](https://github.com/WarwickTabletop/tablebot/issues). If you think of a feature you'd like added or a bug in the current implementation please do create a new ticket! There's no obligation to implement the issue. If you don't have any ideas but do want to get involved with programming you can check the issues page for new features and fixes to work on. If you're not too familiar with Haskell or our codebase, look out for the "good first issue" label. We put this on issues that we think would be good for newcomers to the language/project to get started on.
+We're happy to accept any contribution, big or small. You can find our list of issues [here](https://github.com/WarwickTabletop/sahasrara/issues). If you think of a feature you'd like added or a bug in the current implementation please do create a new ticket! There's no obligation to implement the issue. If you don't have any ideas but do want to get involved with programming you can check the issues page for new features and fixes to work on. If you're not too familiar with Haskell or our codebase, look out for the "good first issue" label. We put this on issues that we think would be good for newcomers to the language/project to get started on.
 
 If you have trouble at any time, please do ask for help in an issue thread or on our Discord. You can also check out the [tutorials](tutorials) in the repository and pre-existing solutions in the code for guidance.
 
@@ -68,7 +68,7 @@ If at any point something doesn't work, restart your computer first and try it a
 1. git, wsl, and vscode setup
     1. github
         1. Create a GitHub account
-        2. Go to <https://github.com/WarwickTabletop/tablebot>
+        2. Go to <https://github.com/WarwickTabletop/sahasrara>
         3. Click fork on the repo (should be top right) (this creates your own version of the repo)
         4. Take note of the url that your forked repo is on
     2. wsl and git (Windows)
@@ -101,6 +101,6 @@ If at any point something doesn't work, restart your computer first and try it a
     3. To run the bot, type `stack run` into the terminal, and the bot will start to run
     4. Make sure to invite the bot to a server so you can test it out!
 
-Congratulations, you now know the very basics needed to set up your own tablebot!
+Congratulations, you now know the very basics needed to set up your own sahasrara!
 
 To learn more about git, you should look up a tutorial or watch this video: <https://youtu.be/HOIC804Berc>

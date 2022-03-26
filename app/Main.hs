@@ -7,13 +7,13 @@ import Data.Maybe (fromMaybe)
 import Data.Text (pack)
 import Data.Text.Encoding (encodeUtf8)
 import LoadEnv (loadEnv)
-import Paths_tablebot (version)
+import Paths_sahasrara (version)
 import System.Environment (getEnv, lookupEnv)
 import System.Exit (die)
-import Tablebot (runTablebot)
-import Tablebot.Internal.Administration
-import Tablebot.Plugins (plugins)
-import Tablebot.Utility.Types
+import Sahasrara (runSahasrara)
+import Sahasrara.Internal.Administration
+import Sahasrara.Plugins (plugins)
+import Sahasrara.Utility.Types
 import Text.Regex.PCRE
 
 -- @main@ runs forever. This allows bot reloading by fully shutting down the bot and letting it restart.
@@ -31,8 +31,8 @@ main = do
       die "Invalid token format. Please check it is a bot token"
     prefix <- pack . fromMaybe "!" <$> lookupEnv "PREFIX"
     dbpath <- getEnv "SQLITE_FILENAME"
-    runTablebot vInfo dToken prefix dbpath (plugins rFlag)
+    runSahasrara vInfo dToken prefix dbpath (plugins rFlag)
     exit <- swapMVar rFlag Reload
     restartAction exit
     pure $ not (restartIsTerminal exit)
-  putStrLn "Tablebot closed"
+  putStrLn "Sahasrara closed"

@@ -1,10 +1,10 @@
-name: tablebot
-version: 0.3.3
-github: "WarwickTabletop/tablebot"
+name: sahasrara
+version: 1.0.0
+github: "distributive/sahasrara"
 license: MIT
-author: "Warwick Tabletop"
-maintainer: "tagarople@gmail.com"
-copyright: "2021 Warwick Tabletop"
+author: "distributive"
+maintainer: "github.com/distributive"
+copyright: "2022 distributive"
 
 extra-source-files:
   - README.md
@@ -17,7 +17,7 @@ extra-source-files:
 # To avoid duplicated efforts in documentation and dealing with the
 # complications of embedding Haddock markup inside cabal files, it is
 # common to point users to the README.md file.
-description: Please see the README on GitHub at <https://github.com/tagarople/tablebot#readme>
+description: Please see the README on GitHub at <https://github.com/distributive/sahasrara#readme>
 
 dependencies:
   - base >= 4.7 && < 5
@@ -69,7 +69,6 @@ dependencies:
   - regex-pcre
   - distribution
 
-
 library:
   source-dirs: src
   default-extensions:
@@ -101,9 +100,8 @@ library:
   ghc-options:
     - -Wall
 
-
 executables:
-  tablebot-exe:
+  sahasrara-exe:
     main: Main.hs
     source-dirs: app
     ghc-options:
@@ -111,10 +109,10 @@ executables:
       - -rtsopts
       - -with-rtsopts=-N
     dependencies:
-      - tablebot
+      - sahasrara
 
 tests:
-  tablebot-test:
+  sahasrara-test:
     main: Spec.hs
     source-dirs: test
     ghc-options:
@@ -122,4 +120,4 @@ tests:
       - -rtsopts
       - -with-rtsopts=-N
     dependencies:
-      - tablebot
+      - sahasrara

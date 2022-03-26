@@ -1,3 +1,3 @@
-# Changelog for tablebot
+# Changelog for sahasrara
 
 ## Unreleased changes
