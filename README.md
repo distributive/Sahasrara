@@ -1,6 +1,6 @@
 # Sahasrara
 
-An extendable Discord bot framework written on top of [`WarwickTabletop's Tablebot`](https://github.com/WarwickTabletop/tablebot), built on top of [`discord-haskell`](https://github.com/aquarial/discord-haskell). Note that a lot of commands were stripped from the original version of this bot, but the underlying code remains. If you find code that seems to be unused, it probably is.
+An extendable Discord bot framework written on top of [WarwickTabletop's Tablebot](https://github.com/WarwickTabletop/tablebot), built on top of [discord-haskell](https://github.com/aquarial/discord-haskell). Note that a lot of commands were stripped from the original version of this bot, but the underlying code remains. If you find code that seems to be unused, it probably is.
 
 ## Functionality
 
