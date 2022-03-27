@@ -28,7 +28,7 @@ rootBody :: Text
 rootBody = [r|"A Discord Netrunner bot."|]
 
 helpHelpPage :: HelpPage
-helpHelpPage = HelpPage "help" [] "show information about commands" "Shows information about bot commands\n\n*Usage:* `help <page>`" [] None
+helpHelpPage = HelpPage "help" [] "show information about commands" "Shows information about bot commands\n\n**Usage** `help <page>`" [] None
 
 generateHelp :: CombinedPlugin -> CombinedPlugin
 generateHelp p =
@@ -60,7 +60,7 @@ formatHelp up hp = helpBody hp <> formatSubpages hp
   where
     formatSubpages :: HelpPage -> Text
     formatSubpages (HelpPage _ _ _ _ [] _) = ""
-    formatSubpages hp' = if T.null sp then "" else "\n\n*Subcommands*" <> sp
+    formatSubpages hp' = if T.null sp then "" else "\n\n**Subcommands**" <> sp
       where
         sp = T.concat (map formatSubpage (helpSubpages hp'))
     formatSubpage :: HelpPage -> Text

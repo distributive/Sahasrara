@@ -67,7 +67,7 @@ baseCommand (a, b, _) =
 
 baseHelp :: BasicCommand -> HelpPage
 baseHelp (_, _, Advanced help) = help
-baseHelp (a, _, Simple (short, long)) = HelpPage a [] short ("**" <> toTitle a <> "**\n" <> long <> "\n\n*Usage:* `" <> a <> "`") [] None
+baseHelp (a, _, Simple (short, long)) = HelpPage a [] short ("**" <> toTitle a <> "**\n" <> long <> "\n\n**Usage** `" <> a <> "`") [] None
 
 type BasicInlineCommand = (Text, Text)
 

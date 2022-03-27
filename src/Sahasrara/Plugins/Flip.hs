@@ -41,7 +41,7 @@ flipHelp =
     "randomly picks either 'Corp' or 'Runner', or randomly pick from a given list"
     [r|Randomly picks one element from its arguments or, if none are provided, picks from 'Corp' and 'Runner'.
 
-*Usage:*
+**Usage**
 `flip`
 `flip corp runner`|]
     []

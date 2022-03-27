@@ -197,7 +197,7 @@ versionHelp =
     "print version information"
     [r|Print the current bot version and git hash of the running bot.
 
-*Usage:* `version`|]
+**Usage** `version`|]
     []
     Superuser
 
@@ -219,7 +219,7 @@ reloadHelp =
     "reload the bot"
     [r|Restart the bot without recompiling
 
-*Usage:* `botcontrol reload`|]
+**Usage** `botcontrol reload`|]
     []
     Superuser
 
@@ -231,7 +231,7 @@ restartHelp =
     "recompile and restart the bot"
     [r|Recompile and restart the bot
 
-*Usage:* `botcontrol restart`|]
+**Usage** `botcontrol restart`|]
     []
     Superuser
 
@@ -243,7 +243,7 @@ haltHelp =
     "stop the bot"
     [r|Stop the bot
 
-*Usage:* `botcontrol halt`|]
+**Usage** `botcontrol halt`|]
     []
     Superuser
 
@@ -259,7 +259,7 @@ Requires that the working state is clean, and that it can be merged with the inc
 
 Requires `ALLOW_GIT_UPDATE` to be true.
 
-*Usage:* `botcontrol gitupdate`|]
+**Usage** `botcontrol gitupdate`|]
     []
     Superuser
 

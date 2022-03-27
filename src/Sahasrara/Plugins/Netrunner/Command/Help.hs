@@ -35,7 +35,7 @@ The following fields are not implemented:
 > `r` - release date
 > `z` - rotation
 
-*Usage:*
+**Usage**
 - `search x:advanced ` -> all cards containing the text "advanced"
 - `search o:1 f:nbn" ` -> all 1-cost cards in NBN
 - `search a:"and the"` -> all cards with "and the" in their flavour text|]
@@ -51,7 +51,7 @@ customHelp =
     [r|Generates custom Netrunner cards and formats them like existing cards.
 The order of card parameters does not matter, and if you mispell a card parameter (e.g. "typ" instead of "type") it will attempt to correct it.
 
-*Usage:*
+**Usage**
 - `custom type:agenda                ` -> creates an agenda
 - `custom title:"Name" text:"Lorem." ` -> creates a card with a title and text
 - `custom faction:"nbn"              ` -> creates a card with a faction
@@ -74,8 +74,8 @@ banListHelp =
     [r|Shows the list of cards affected by the given banlist.
 `latest` and `active` will provide their respective banlists (they differ only when the latest banlist has not yet been made active). If no argument is given it will instead list all banlists from Netrunner history.
 
-*Usage:*
-- `netrunner banlist name` -> displays the history of the banlist version matching "name"|]
+**Usage**
+- `banlist name` -> displays the history of the banlist version matching "name"|]
     []
     None
 
@@ -87,7 +87,7 @@ rulesHelp =
     "provides official Netrunner rulings (CR v1.5)"
     [r|Provides the official rulings on certain aspects of the game. Rulings are from the NISEI Comprehensive Rules v1.5.
 
-*Usage:*
+**Usage**
 - `rules access` -> Shows the steps of accessing a card
 - `rules breach` -> Shows the steps of breaching a server
 - `rules run` -> Shows the timing structure of a run
