@@ -12,8 +12,6 @@ module Sahasrara.Plugins.Netrunner.Utility.Alias where
 import Data.Text (Text)
 
 fromAlias :: Text -> Text
-
--- | Abbreviations
 fromAlias "andy" = "Andromeda: Dispossessed Ristie"
 fromAlias "aot" = "Haas-Bioroid: Architects of Tomorrow"
 fromAlias "babw" = "Weyland Consortium: Building a Better World"
@@ -65,8 +63,6 @@ fromAlias "public trial" = "Public Trail"
 fromAlias "spinny" = "Spin Doctor"
 fromAlias "gotay" = "Government Takeover"
 fromAlias "gotek" = "Government Takeover"
-
--- | Misc
 fromAlias "baby" = "Symmetrical Visage"
 fromAlias "bitcoin" = "TGTBT"
 fromAlias "boxer girl" = "Leela Patel: Trained Pragmatist"
@@ -108,38 +104,24 @@ fromAlias "unlearn what you have learned" = "Reeducation"
 fromAlias "unsure gamble" = "Falsified Credentials"
 fromAlias "yoghurt" = "Economic Warfare"
 fromAlias "yogurt" = "Economic Warfare"
-
--- | Mr Phones
 fromAlias "cell phones" = "Underworld Contracts" --"02069"
 fromAlias "cell phone man" = "Underworld Contracts" --"02069"
 fromAlias "mister phones" = "Underworld Contracts" --"02069"
 fromAlias "mr phones" = "Underworld Contracts" --"02069"
-
--- | Cars
 fromAlias "nice car" = "Sports Hopper"
 fromAlias "sweet car" = "Advanced Concept Hopper"
-
--- | Jinteki IDs associated with plants
 fromAlias "potatoes" = "Jinteki: Potential Unleashed"
 fromAlias "black tree" = "Jinteki: Personal Evolution"
 fromAlias "white tree" = "Jinteki: Replicating Perfection"
 fromAlias "red tree" = "Mti Mwekundu: Life Improved"
 fromAlias "red black tree" = "Mti Mwekundu: Life Improved"
-
--- | Edward Kim
 fromAlias "full metal hacktivist" = "Edward Kim: Humanity's Hammer"
 fromAlias "captain hammer" = "Edward Kim: Humanity's Hammer"
-
--- | Hoshiko Shiro
 fromAlias "magical girl" = "Hoshiko Shiro: Untold Protagonist"
 fromAlias "mahou shoujo" = "Hoshiko Shiro: Untold Protagonist"
-
--- | Hayley Kaplan
 fromAlias "honor student" = "Hayley Kaplan: Universal Scholar"
 fromAlias "honour student" = "Hayley Kaplan: Universal Scholar"
 fromAlias "ivy league" = "Hayley Kaplan: Universal Scholar"
-
--- | Bioroids
 fromAlias "alix talbot" = "Alix T4LB07"
 fromAlias "talbot" = "Alix T4LB07"
 fromAlias "bass chiriboga" = "Bass CH1R180G4"
@@ -150,6 +132,4 @@ fromAlias "kuwinda kahiue" = "Kuwinda K4H1U3"
 fromAlias "kahiue" = "Kuwinda K4H1U3"
 fromAlias "malia zoloka" = "Malia Z0L0K4"
 fromAlias "zoloka" = "Malia Z0L0K4"
-
--- | No match
 fromAlias t = t
