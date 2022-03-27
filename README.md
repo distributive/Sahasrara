@@ -36,7 +36,7 @@ Displaying Netrunner rules and timing structures:
 
 Some features that are not yet present but I would like to add soon(ish):
 
-- Card aliases
+- The ability to search for specific card printings
 - More rulings in the `rules` command and with better formatting
 
 ## Contributing
