@@ -2,7 +2,7 @@
 *~
 .env
 db.*
-database*
+*.db*
 *.cabal
 stack.yaml.lock
 .gitattributes
