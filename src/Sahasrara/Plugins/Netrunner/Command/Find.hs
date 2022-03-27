@@ -16,14 +16,18 @@ import Data.Maybe (fromMaybe)
 import Data.Text (Text, isInfixOf, unpack)
 import Sahasrara.Plugins.Netrunner.Type.Card as Card (Card (..))
 import Sahasrara.Plugins.Netrunner.Type.NrApi (NrApi (..))
+import Sahasrara.Plugins.Netrunner.Utility.Alias (fromAlias)
 import Sahasrara.Utility.Search (FuzzyCosts (..), closestValueWithCosts)
 import Sahasrara.Utility.Utils (standardise)
 
 -- | @queryCard@ searches the given library of cards by title, first checking if
 -- the search query is a substring of any cards, then performing a fuzzy search on
 -- the cards given, or all of the cards if no cards are found
+-- If the given query matches an alias, it will first dereference that alias
 queryCard :: NrApi -> Text -> Card
-queryCard NrApi {cards = cards} txt = findCard (substringSearch pairs txt) txt pairs
+queryCard NrApi {cards = cards} txt =
+  let q = fromAlias txt
+   in findCard (substringSearch pairs q) q pairs
   where
     pairs = zip (map (standardise . fromMaybe "" . Card.title) cards) cards
     substringSearch pairs' searchTxt = filter (isInfixOf (standardise searchTxt) . fst) pairs'
