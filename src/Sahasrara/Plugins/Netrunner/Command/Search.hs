@@ -107,6 +107,7 @@ fixSearch api = mapMaybe fix
     packValues :: (String, QueryComp, [String]) -> (String, QueryComp, [Text])
     packValues (k, sep, v) = (k, sep, map pack v)
     format :: (String, QueryComp, [Text]) -> Maybe (Query)
+    format ("_", sep, v) = Just $ QText "_" sep strippedTitle v
     format ("x", sep, v) = Just $ QText "x" sep strippedText v
     format ("a", sep, v) = Just $ QText "a" sep flavour v
     format ("e", sep, v) = Just $ QText "e" sep packCode v
@@ -199,7 +200,9 @@ fixSearch api = mapMaybe fix
 -- | @pairsToQuery@ takes a set of search query pairs ands turns it into a link
 -- to an equivalent search on NetrunnerDB.
 pairsToQuery :: [Query] -> Text
-pairsToQuery pairs = "<https://netrunnerdb.com/find/?q=" <> replace " " "+" (pairsToNrdb pairs) <> ">"
+pairsToQuery pairs =
+  let query = replace "_" "\\_" $ replace " " "+" $ pairsToNrdb pairs
+   in "<https://netrunnerdb.com/find/?q=" <> query <> ">"
 
 -- | @pairsToNrdb@ takes a set of search query pairs and formats it into a valid
 -- plaintext search query for NetrunnerDB.
