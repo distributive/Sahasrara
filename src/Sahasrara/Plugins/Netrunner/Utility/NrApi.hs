@@ -16,7 +16,7 @@ import GHC.Generics (Generic)
 import Network.HTTP.Conduit (Response (responseBody), parseRequest)
 import Network.HTTP.Simple (httpLBS)
 import Sahasrara.Plugins.Netrunner.Type.BanList (BanList)
-import Sahasrara.Plugins.Netrunner.Type.Card (Card)
+import Sahasrara.Plugins.Netrunner.Type.Card (Card, packCode)
 import Sahasrara.Plugins.Netrunner.Type.Cycle (Cycle)
 import Sahasrara.Plugins.Netrunner.Type.Faction (Faction)
 import Sahasrara.Plugins.Netrunner.Type.NrApi (NrApi (..))
@@ -31,7 +31,9 @@ getNrApi = do
   cardReq <- parseRequest "https://netrunnerdb.com/api/2.0/public/cards"
   cardRes <- httpLBS cardReq
   let cardData = fromRight defaultCards ((eitherDecode $ responseBody cardRes) :: Either String Cards)
-      cards = reverse $ cardContent cardData -- Reversing the list of cards prioritises newer cards in the search
+      -- Reversing the list of cards prioritises newer cards in the search
+      -- Filtering out cards from System Core 19 fixes some legality oddities
+      cards = reverse $ filter (\c -> packCode c /= Just "sc19") $ cardContent cardData
       imageTemplate = imageUrlTemplate cardData
   cycleReq <- parseRequest "https://netrunnerdb.com/api/2.0/public/cycles"
   cycleRes <- httpLBS cycleReq
