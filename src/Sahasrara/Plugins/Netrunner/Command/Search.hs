@@ -112,7 +112,7 @@ fixSearch api = mapMaybe fix
     format ("e", sep, v) = Just $ QText "e" sep packCode v
     format ("c", sep, v) = Just $ QInt "c" sep cycleIndex $ map fixCycle v
     format ("t", sep, v) = Just $ QText "t" sep typeCode $ map fixType v
-    format ("f", sep, v) = Just $ QText "f" sep keywords $ map fixFaction v
+    format ("f", sep, v) = Just $ QText "f" sep factionCode $ concat $ map fixFaction v
     format ("s", sep, v) = Just $ QText "s" sep keywords v
     format ("d", sep, v) = Just $ QText "d" sep sideCode $ map fixSide v
     format ("i", sep, v) = Just $ QText "i" sep illustrator v
@@ -145,10 +145,20 @@ fixSearch api = mapMaybe fix
               Left _ -> case autocomplete (map toLower cNames) $ toLower c of
                 Just c' -> fromMaybe 0 $ findIndex (== c') (map toLower cNames)
                 Nothing -> closestValue (names ++ codes) $ unpack c
-    fixFaction :: Text -> Text
+    fixFaction :: Text -> [Text] -- Turns certain aliases into multiple queries
+    fixFaction "a" = ["anarch"]
+    fixFaction "hb" = ["haas-bioroid"]
+    fixFaction "mini" = ["adam", "apex", "sunny-lebeau"]
+    fixFaction "d" = ["adam"]
+    fixFaction "p" = ["apex"]
+    fixFaction "u" = ["sunny-lebeau"]
+    fixFaction "neutral" = ["neutral-corp", "neutral-runner"]
+    fixFaction "-" = ["neutral-corp", "neutral-runner"]
+    fixFaction "nc" = ["neutral-corp"]
+    fixFaction "nr" = ["neutral-runner"]
     fixFaction f = case autocomplete fNames f of
-      Just f' -> f'
-      Nothing -> pack $ closestMatch (map unpack fNames) $ unpack f
+      Just f' -> [f']
+      Nothing -> [pack $ closestMatch (map unpack fNames) $ unpack f]
     fixType :: Text -> Text
     fixType t = case autocomplete tNames t of
       Just t' -> t'
