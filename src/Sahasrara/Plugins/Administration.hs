@@ -95,8 +95,8 @@ listBlacklist m = requirePermission Superuser m $ do
 %Q
 ```
 %Q|]
-        (T.concat $ map (formatPluginState len' bl) (filter (disableable . T.uncons) p))
-        (formatUnknownDisabledPlugins (filter (`notElem` p) bl))
+          (T.concat $ map (formatPluginState len' bl) (filter (disableable . T.uncons) p))
+          (formatUnknownDisabledPlugins (filter (`notElem` p) bl))
       where
         len' :: Int
         len' = maximum $ map T.length p
@@ -111,8 +111,8 @@ listBlacklist m = requirePermission Superuser m $ do
       pack $
         [s|%Q : %Q
 |]
-        (T.justifyLeft width ' ' a)
-        (if a `elem` bl then "DISABLED" else "ENABLED")
+          (T.justifyLeft width ' ' a)
+          (if a `elem` bl then "DISABLED" else "ENABLED")
     formatUnknownDisabledPlugins :: [Text] -> Text
     formatUnknownDisabledPlugins [] = ""
     formatUnknownDisabledPlugins l =
@@ -121,7 +121,7 @@ listBlacklist m = requirePermission Superuser m $ do
 ```
 %Q
 ```|]
-        (T.concat $ map (<> ("\n" :: Text)) l)
+          (T.concat $ map (<> ("\n" :: Text)) l)
 
 -- | @version@ identifies the .
 version :: EnvCommand SS
