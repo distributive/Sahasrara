@@ -28,7 +28,7 @@ rootBody :: Text
 rootBody = [r|"A Discord Netrunner bot."|]
 
 helpHelpPage :: HelpPage
-helpHelpPage = HelpPage "help" [] "show information about commands" "Shows information about bot commands\n\n**Usage** `help <page>`" [] None
+helpHelpPage = HelpPage "help" [] "show information about commands" "Shows information about bot commands\n\n**Usage**\n`help <page>`" [] None
 
 generateHelp :: CombinedPlugin -> CombinedPlugin
 generateHelp p =
