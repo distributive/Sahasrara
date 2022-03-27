@@ -57,12 +57,12 @@ cardToEmbedWithText api card text = do
   return $ addColour eColour $ createEmbed $ CreateEmbed "" "" Nothing eTitle eURL eImg text [] Nothing "" Nothing Nothing
 
 -- | @cardsToEmbed@ takes a list of cards and embeds their names with links.
-cardsToEmbed :: NrApi -> Text -> [Card] -> Text -> EnvDatabaseDiscord NrApi Embed
-cardsToEmbed api pre cards err = do
+cardsToEmbed :: NrApi -> Text -> [Card] -> Text -> Text -> EnvDatabaseDiscord NrApi Embed
+cardsToEmbed api pre cards post err = do
   formatted <- mapM formatCard $ take 10 cards
   let cards' = "**" <> intercalate "\n" formatted <> "**"
       eTitle = "**" <> pack (show $ length cards) <> " results**"
-      eText = pre <> "\n" <> cards' <> if length cards > 10 then "\n" <> err else ""
+      eText = pre <> "\n" <> cards' <> "\n" <> if length cards > 10 then err else post
   return $ createEmbed $ CreateEmbed "" "" Nothing eTitle "" Nothing eText [] Nothing "" Nothing Nothing
   where
     formatCard :: Card -> EnvDatabaseDiscord NrApi Text

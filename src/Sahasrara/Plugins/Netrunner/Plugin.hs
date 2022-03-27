@@ -125,6 +125,7 @@ nrSearch = Command "search" searchPars []
             embedCards
               ("Query: `" <> pairsToNrdb pairs <> "`\n")
               res
+              ("_[...view on NRDB](" <> pairsToQuery pairs <> ")_")
               ("_[..." <> pack (show $ length res - 10) <> " more](" <> pairsToQuery pairs <> ")_")
               m
 
@@ -187,10 +188,10 @@ embedCard card m = do
   sendEmbedMessage m "" =<< cardToEmbed api card
 
 -- | @embedCards@ takes a list of cards and embeds their names.
-embedCards :: Text -> [Card] -> Text -> Message -> EnvDatabaseDiscord NrApi ()
-embedCards pre cards err m = do
+embedCards :: Text -> [Card] -> Text -> Text -> Message -> EnvDatabaseDiscord NrApi ()
+embedCards pre cards post err m = do
   api <- ask
-  sendEmbedMessage m "" =<< cardsToEmbed api pre cards err
+  sendEmbedMessage m "" =<< cardsToEmbed api pre cards post err
 
 -- | @embedCardImg@ embeds a card's image in a message, if able.
 embedCardImg :: Card -> Message -> EnvDatabaseDiscord NrApi ()
