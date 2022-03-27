@@ -14,6 +14,7 @@ module Sahasrara.Plugins.Netrunner.Command.Find (queryCard) where
 import Data.Bifunctor (first)
 import Data.Maybe (fromMaybe)
 import Data.Text (Text, isInfixOf, unpack)
+import qualified Data.Text as T
 import Sahasrara.Plugins.Netrunner.Type.Card as Card (Card (..))
 import Sahasrara.Plugins.Netrunner.Type.NrApi (NrApi (..))
 import Sahasrara.Plugins.Netrunner.Utility.Alias (fromAlias)
@@ -21,8 +22,9 @@ import Sahasrara.Utility.Search (FuzzyCosts (..), closestValueWithCosts)
 import Sahasrara.Utility.Utils (standardise)
 
 -- | @queryCard@ searches the given library of cards by title, first checking if
--- the search query is a substring of any cards, then performing a fuzzy search on
--- the cards given, or all of the cards if no cards are found
+-- the search query is a substring of any cards (prioritising cards it matches
+-- the start of), then performing a fuzzy search on the cards given, or all of
+-- the cards if no cards are found
 -- If the given query matches an alias, it will first dereference that alias
 queryCard :: NrApi -> Text -> Card
 queryCard NrApi {cards = cards} txt =
@@ -30,7 +32,14 @@ queryCard NrApi {cards = cards} txt =
    in findCard (substringSearch pairs q) q pairs
   where
     pairs = zip (map (standardise . fromMaybe "" . Card.title) cards) cards
-    substringSearch pairs' searchTxt = filter (isInfixOf (standardise searchTxt) . fst) pairs'
+    substringSearch pairs' searchTxt =
+      let pres = filter (isPrefixOf (standardise searchTxt) . fst) pairs'
+          subs = filter (isInfixOf (standardise searchTxt) . fst) pairs'
+       in case length pres of
+            0 -> subs
+            _ -> pres
+    isPrefixOf :: Text -> Text -> Bool
+    isPrefixOf short long = short == T.take (T.length short) long
 
 -- | @findCard@ finds a card from the given list of pairs that is some subset of a
 -- full list. If the sublist is empty, it will fuzzy search the full list. If the sublist
