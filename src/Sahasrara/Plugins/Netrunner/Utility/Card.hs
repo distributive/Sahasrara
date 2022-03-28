@@ -177,10 +177,10 @@ toReleaseData api card = fromMaybe "" helper
 toColour :: NrApi -> Card -> DiscordColour
 toColour api card = maybe Default (hexToDiscordColour . unpack . Faction.colour) (toFaction api card)
 
--- | @toFlavour@ gets a cards flavour text (and makes it italic).
+-- | @toFlavour@ gets a cards flavour text.
 toFlavour :: Card -> EnvDatabaseDiscord NrApi (Maybe Text)
 toFlavour Card {flavour = flavour} = case flavour of
   Nothing -> return Nothing
   Just f -> do
     f' <- formatNr f
-    return $ Just $ "*" <> f' <> "*"
+    return $ Just f'
