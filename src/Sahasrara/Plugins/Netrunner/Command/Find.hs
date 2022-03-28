@@ -28,13 +28,13 @@ import Sahasrara.Utility.Utils (standardise)
 -- If the given query matches an alias, it will first dereference that alias
 queryCard :: NrApi -> Text -> Card
 queryCard NrApi {cards = cards} txt =
-  let q = fromAlias txt
+  let q = fromAlias $ standardise txt
    in findCard (substringSearch pairs q) q pairs
   where
     pairs = zip (map (standardise . fromMaybe "" . Card.title) cards) cards
     substringSearch pairs' searchTxt =
-      let pres = filter (isPrefixOf (standardise searchTxt) . fst) pairs'
-          subs = filter (isInfixOf (standardise searchTxt) . fst) pairs'
+      let pres = filter (isPrefixOf searchTxt . fst) pairs'
+          subs = filter (isInfixOf searchTxt . fst) pairs'
        in case length pres of
             0 -> subs
             _ -> pres
