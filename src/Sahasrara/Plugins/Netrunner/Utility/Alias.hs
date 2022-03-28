@@ -168,4 +168,7 @@ fromAlias "wizard" = "Whizzard: Master Gamer"
 fromAlias "wiz" = "Whizzard: Master Gamer"
 fromAlias "wu" = "Kabonesa Wu: Netspace Thrillseeker"
 fromAlias "shark" = "Hakarl 1.0"
+fromAlias "smc" = "Self-modifying Code"
+fromAlias "glc" = "Green Level Clearance"
+fromAlias "vlc" = "Violet Level Clearance"
 fromAlias t = t
