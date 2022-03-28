@@ -11,6 +11,7 @@ module Sahasrara.Plugins.Netrunner.Plugin (netrunnerPlugin) where
 
 import Control.Monad.IO.Class
 import Control.Monad.Trans.Reader (ask)
+import Data.Maybe (fromMaybe)
 import Data.Text (Text, pack)
 import Discord.Types
 import Sahasrara.Internal.Handler.Command ()
@@ -22,11 +23,11 @@ import Sahasrara.Plugins.Netrunner.Command.Rules
 import Sahasrara.Plugins.Netrunner.Command.Search
 import Sahasrara.Plugins.Netrunner.Type.BanList (BanList (active), CardBan (..))
 import qualified Sahasrara.Plugins.Netrunner.Type.BanList as BanList
-import Sahasrara.Plugins.Netrunner.Type.Card (Card (code))
+import Sahasrara.Plugins.Netrunner.Type.Card (Card (code, text))
 import Sahasrara.Plugins.Netrunner.Type.NrApi (NrApi (..))
 import Sahasrara.Plugins.Netrunner.Utility.BanList (activeBanList, latestBanListActive, toMwlStatus)
-import Sahasrara.Plugins.Netrunner.Utility.Card (toText)
 import Sahasrara.Plugins.Netrunner.Utility.Embed
+import Sahasrara.Plugins.Netrunner.Utility.Misc (formatNr)
 import Sahasrara.Plugins.Netrunner.Utility.NrApi (getNrApi)
 import Sahasrara.Utility
 import Sahasrara.Utility.Discord (sendEmbedMessage, sendMessage)
@@ -207,7 +208,7 @@ embedCardFlavour card m = do
         Just "07024" -> queryCard api "Déjà Vu"
         Just "01002" -> queryCard api "The Twins"
         _ -> card
-  cText <- toText card'
+  cText <- formatNr $ fromMaybe "" $ text card'
   embed <- case code card' of
     Just "12077" -> cardToEmbedWithText api card' cText
     _ -> cardToFlavourEmbed api card'
