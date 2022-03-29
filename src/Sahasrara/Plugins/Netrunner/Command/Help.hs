@@ -27,9 +27,8 @@ searchHelp =
     "search"
     []
     "gets a list of all Netrunner cards matching a search query"
-    [r|Gets a list of all Netrunner cards matching a search query, where the search query uses NetrunnerDB's syntax:
-<https://netrunnerdb.com/en/syntax>.
-If the list is excessively long, it will display a link to an equivalent search on NetrunnerDB. Searches are case insensitive.
+    [r|Gets a list of all Netrunner cards matching a search query, matching NetrunnerDB's [syntax](<https://netrunnerdb.com/en/syntax>).
+Searches are case insensitive and show a maximum of 10 results.
 
 The following fields are not implemented:
 > `r` - release date
