@@ -171,4 +171,6 @@ fromAlias "shark" = "Hakarl 1.0"
 fromAlias "smc" = "Self-modifying Code"
 fromAlias "glc" = "Green Level Clearance"
 fromAlias "vlc" = "Violet Level Clearance"
+fromAlias "dbs" = "Daily Business Show"
+fromAlias "cvs" = "Cyberdex Virus Suite"
 fromAlias t = t
