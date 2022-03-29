@@ -25,7 +25,13 @@ import Text.Megaparsec (choice, chunk, eof, try, (<?>), (<|>))
 import Text.RawString.QQ (r)
 
 rootBody :: Text
-rootBody = [r|A Discord Netrunner bot.|]
+rootBody =
+  [r|A Discord Netrunner bot.
+
+`[[card]]` to view a card
+`{{card}}` to view its art
+`<<card>>` to view its flavour text
+`((card))` to view its legality history|]
 
 helpHelpPage :: HelpPage
 helpHelpPage = HelpPage "help" [] "show information about commands" "Shows information about bot commands\n\n**Usage**\n`help <page>`" [] None
