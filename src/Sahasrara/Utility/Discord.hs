@@ -56,10 +56,10 @@ import qualified Discord.Requests as R
 import Discord.Types
 import GHC.Word (Word64)
 import System.Environment (lookupEnv)
-import Tablebot.Internal.Cache
-import Tablebot.Internal.Embed
-import Tablebot.Utility (EnvDatabaseDiscord, liftDiscord)
-import Tablebot.Utility.Exception (BotException (..))
+import Sahasrara.Internal.Cache
+import Sahasrara.Internal.Embed
+import Sahasrara.Utility (EnvDatabaseDiscord, liftDiscord)
+import Sahasrara.Utility.Exception (BotException (..))
 
 -- | @sendMessage@ sends the input message @t@ in the same channel as message
 -- @m@. This returns an @Either RestCallErrorCode Message@ to denote failure or
