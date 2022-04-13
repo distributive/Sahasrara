@@ -16,6 +16,7 @@ import Text.RawString.QQ (r)
 helpPageRoots :: [HelpPage]
 helpPageRoots =
   [ searchHelp,
+    randomHelp,
     -- customHelp,
     banListHelp,
     rulesHelp
@@ -28,7 +29,7 @@ searchHelp =
     []
     "gets a list of all Netrunner cards matching a search query"
     [r|Gets a list of all Netrunner cards matching a search query, matching NetrunnerDB's [syntax](<https://netrunnerdb.com/en/syntax>).
-Searches are case insensitive and show a maximum of 10 results.
+Queries are case insensitive and show a maximum of 10 results.
 
 The following fields are not implemented:
 > `r` - release date
@@ -38,6 +39,27 @@ The following fields are not implemented:
 `search x:advanced ` all cards containing the text "advanced"
 `search o:1 f:nbn" ` all 1-cost cards in NBN
 `search a:"and the"` all cards with "and the" in their flavour text|]
+    []
+    None
+
+randomHelp :: HelpPage
+randomHelp =
+  HelpPage
+    "random"
+    []
+    "randomly selects a card with optional conditions"
+    [r|Displays a random card from throughout Netrunner's history. NetrunnerDB syntax may be added to restrict the selection of cards.
+Queries are case insensitive.
+
+The following fields are not implemented:
+> `r` - release date
+> `z` - rotation
+
+**Usage**
+`random` displays a random Netrunner card
+`random t:agenda` displays a random agenda
+`random o:5 f:-` displays a random 5-cost neutral card from either faction
+`random _:"green level clearance"` displays Green Level Clearance|]
     []
     None
 
