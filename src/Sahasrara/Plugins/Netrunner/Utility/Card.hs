@@ -38,7 +38,6 @@ import Sahasrara.Plugins.Netrunner.Utility.BanList (activeBanList, isBanned, isR
 import Sahasrara.Plugins.Netrunner.Utility.Misc (formatNr)
 import Sahasrara.Utility
 import Sahasrara.Utility.Types ()
-import Sahasrara.Utility.Utils (intToText, maybeEmptyPrepend)
 
 -- | @toLink@ takes a card and generates a link to its NetrunnerDB page.
 toLink :: Card -> Text
