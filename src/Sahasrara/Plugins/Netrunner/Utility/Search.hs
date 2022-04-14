@@ -10,7 +10,6 @@
 module Sahasrara.Plugins.Netrunner.Utility.Search
   ( Query,
     QueryComp,
-    queryParser,
     searchCards,
     fixSearch,
     pairsToQuery,
@@ -18,12 +17,10 @@ module Sahasrara.Plugins.Netrunner.Utility.Search
   )
 where
 
-import Control.Monad.Trans.Reader (ask)
 import Data.List (findIndex, nubBy)
 import Data.Maybe (fromMaybe, mapMaybe)
 import Data.Text (Text, intercalate, isInfixOf, pack, replace, toLower, unpack, unwords)
 import Data.Text.Read (decimal)
-import Discord.Internal.Rest (Message)
 import Sahasrara.Plugins.Netrunner.Type.BanList (BanList)
 import qualified Sahasrara.Plugins.Netrunner.Type.BanList as BanList
 import Sahasrara.Plugins.Netrunner.Type.Card as Card
@@ -33,33 +30,10 @@ import Sahasrara.Plugins.Netrunner.Type.NrApi (NrApi (..))
 import qualified Sahasrara.Plugins.Netrunner.Type.Type as Type
 import Sahasrara.Plugins.Netrunner.Utility.BanList (activeBanList, isBanned, latestBanList)
 import Sahasrara.Plugins.Netrunner.Utility.Card (toCycle)
-import Sahasrara.Utility (EnvDatabaseDiscord, Parser)
-import Sahasrara.Utility.Parser (keyValuesSepOn)
 import Sahasrara.Utility.Search (autocomplete, closestMatch, closestPair, closestValue)
 import Sahasrara.Utility.Utils (standardise)
 import Text.Read (readMaybe)
 import Prelude hiding (unwords)
-
--- | @QueryAction@ represents a response to a given set of queries.
-type QueryAction = [Query] -> Message -> EnvDatabaseDiscord NrApi ()
-
--- | @queryParser@ extracts search queries from plaintext.
-queryParser ::
-  QueryAction ->
-  QueryAction ->
-  (Card -> QueryAction) ->
-  ([Card] -> QueryAction) ->
-  Parser (Message -> EnvDatabaseDiscord NrApi ())
-queryParser onNoQuery onNoResults onOneResult onManyResults = do
-  ps <- keyValuesSepOn [':', '<', '>', '!'] ['|']
-  return $ \m -> do
-    api <- ask
-    let pairs = fixSearch api ps
-    case searchCards api pairs of
-      Nothing -> onNoQuery pairs m
-      Just [] -> onNoResults pairs m
-      Just [res] -> onOneResult res pairs m
-      Just res -> onManyResults res pairs m
 
 -- | @Query@ represents a single search query with its arguments.
 data Query

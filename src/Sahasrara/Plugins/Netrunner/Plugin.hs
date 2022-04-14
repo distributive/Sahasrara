@@ -20,6 +20,7 @@ import Sahasrara.Plugins.Netrunner.Command.Custom
 import Sahasrara.Plugins.Netrunner.Command.Find
 import Sahasrara.Plugins.Netrunner.Command.Help (helpPageRoots)
 import Sahasrara.Plugins.Netrunner.Command.Rules
+import Sahasrara.Plugins.Netrunner.Command.Search
 import Sahasrara.Plugins.Netrunner.Type.BanList (BanList (active), CardBan (..))
 import qualified Sahasrara.Plugins.Netrunner.Type.BanList as BanList
 import Sahasrara.Plugins.Netrunner.Type.Card (Card (code, text))
@@ -32,7 +33,7 @@ import Sahasrara.Plugins.Netrunner.Utility.Search
 import Sahasrara.Utility
 import Sahasrara.Utility.Discord (sendEmbedMessage, sendMessage)
 import Sahasrara.Utility.Embed (addColour)
-import Sahasrara.Utility.Parser (inlineCommandHelper, keyValue, keyValuesSepOn)
+import Sahasrara.Utility.Parser (inlineCommandHelper, keyValue)
 import Sahasrara.Utility.Random (chooseOne)
 import Sahasrara.Utility.SmartParser (PComm (parseComm), Quoted (Qu), RestOfInput (ROI), RestOfInput1 (ROI1), WithError (WErr))
 import Sahasrara.Utility.Types ()
@@ -114,17 +115,18 @@ nrSearch :: EnvCommand NrApi
 nrSearch = Command "search" searchPars []
   where
     searchPars :: Parser (Message -> EnvDatabaseDiscord NrApi ())
-    searchPars = queryParser onNoQuery onNoResults onOneResult onManyResults
-    onNoQuery _ m = sendMessage m "No criteria provided!"
-    onNoResults pairs m = sendMessage m $ "No cards found for `" <> pairsToNrdb pairs <> "`"
-    onOneResult card _ m = embedCard card m
-    onManyResults res pairs m =
-      embedCards
-        ("Query: `" <> pairsToNrdb pairs <> "`\n")
-        res
-        ("_[...view on NRDB](" <> pairsToQuery pairs <> ")_")
-        ("_[..." <> pack (show $ length res - 10) <> " more](" <> pairsToQuery pairs <> ")_")
-        m
+    searchPars = queryParser $ \cs pairs m -> do
+      case cs of
+        Nothing -> sendMessage m "No criteria provided!"
+        Just [] -> sendMessage m $ "No cards found for `" <> pairsToNrdb pairs <> "`"
+        Just [card] -> embedCard card m
+        Just cards ->
+          embedCards
+            ("Query: `" <> pairsToNrdb pairs <> "`\n")
+            cards
+            ("_[...view on NRDB](" <> pairsToQuery pairs <> ")_")
+            ("_[..." <> pack (show $ length cards - 10) <> " more](" <> pairsToQuery pairs <> ")_")
+            m
 
 -- | @nrRandom@ searches the card database with specific queries and outputs a
 -- single result at random.
@@ -132,16 +134,16 @@ nrRandom :: EnvCommand NrApi
 nrRandom = Command "random" randomPars []
   where
     randomPars :: Parser (Message -> EnvDatabaseDiscord NrApi ())
-    randomPars = queryParser onNoQuery onNoResults onOneResult onManyResults
-    onNoQuery _ m = do
-      api <- ask
-      card <- liftIO $ chooseOne $ cards api
-      embedCard card m
-    onNoResults pairs m = sendMessage m $ "No cards found for `" <> pairsToNrdb pairs <> "`"
-    onOneResult card _ m = embedCard card m
-    onManyResults res _ m = do
-      card <- liftIO $ chooseOne res
-      embedCard card m
+    randomPars = queryParser $ \cs pairs m -> do
+      case cs of
+        Nothing -> do
+          api <- ask
+          card <- liftIO $ chooseOne $ cards api
+          embedCard card m
+        Just [] -> sendMessage m $ "No cards found for `" <> pairsToNrdb pairs <> "`"
+        Just cards -> do
+          card <- liftIO $ chooseOne cards
+          embedCard card m
 
 -- | @nrCustom@ is a command that lets users generate a card embed out of custom
 -- data, for the purpose of creating custom cards.
