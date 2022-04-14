@@ -9,17 +9,17 @@
 -- Backend for the custom command.
 module Sahasrara.Plugins.Netrunner.Command.Search (queryParser) where
 
-import Text.Megaparsec
-import Sahasrara.Utility.Parser
+import Control.Monad.Trans.Reader (ask)
 import Data.Char (isSpace)
 import Data.Map (Map, fromList, lookup)
-import Sahasrara.Plugins.Netrunner.Type.Card as Card
 import Discord.Internal.Rest (Message)
-import Sahasrara.Utility (EnvDatabaseDiscord, Parser)
-import Prelude hiding (lookup, unwords)
-import Sahasrara.Plugins.Netrunner.Utility.Search
+import Sahasrara.Plugins.Netrunner.Type.Card as Card
 import Sahasrara.Plugins.Netrunner.Type.NrApi (NrApi (..))
-import Control.Monad.Trans.Reader (ask)
+import Sahasrara.Plugins.Netrunner.Utility.Search
+import Sahasrara.Utility (EnvDatabaseDiscord, Parser)
+import Sahasrara.Utility.Parser
+import Text.Megaparsec
+import Prelude hiding (lookup, unwords)
 
 -- | @queryParser@ extracts search queries from plaintext.
 queryParser ::
