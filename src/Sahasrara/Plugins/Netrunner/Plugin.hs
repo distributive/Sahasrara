@@ -16,7 +16,6 @@ import Data.Text (Text, pack)
 import Discord.Types
 import Sahasrara.Internal.Handler.Command ()
 import Sahasrara.Plugins.Netrunner.Command.BanList
-import Sahasrara.Plugins.Netrunner.Command.Custom
 import Sahasrara.Plugins.Netrunner.Command.Find
 import Sahasrara.Plugins.Netrunner.Command.Help (helpPageRoots)
 import Sahasrara.Plugins.Netrunner.Command.Rules
@@ -33,78 +32,31 @@ import Sahasrara.Plugins.Netrunner.Utility.Search
 import Sahasrara.Utility
 import Sahasrara.Utility.Discord (sendEmbedMessage, sendMessage)
 import Sahasrara.Utility.Embed (addColour)
-import Sahasrara.Utility.Parser (inlineCommandHelper, keyValue)
+import Sahasrara.Utility.Parser (inlineCommandHelper)
 import Sahasrara.Utility.Random (chooseOne)
-import Sahasrara.Utility.SmartParser (PComm (parseComm), Quoted (Qu), RestOfInput (ROI), RestOfInput1 (ROI1), WithError (WErr))
+import Sahasrara.Utility.SmartParser (PComm (parseComm), RestOfInput (ROI))
 import Sahasrara.Utility.Types ()
 import Text.Megaparsec (anySingleBut, some)
 
--- | @nrFind@ finds the card with title most closely matching its input.
-nrFind :: EnvCommand NrApi
-nrFind = Command "find" (parseComm findComm) []
-  where
-    findComm ::
-      WithError "No card title given!" (Either (Quoted Text) (RestOfInput1 Text)) ->
-      Message ->
-      EnvDatabaseDiscord NrApi ()
-    findComm (WErr (Left (Qu q))) = sendEmbed q
-    findComm (WErr (Right (ROI1 q))) = sendEmbed q
-    sendEmbed :: Text -> Message -> EnvDatabaseDiscord NrApi ()
-    sendEmbed query m = do
-      api <- ask
-      embedCard (queryCard api query) m
-
--- | @nrFindImg@ finds the card with title most closely matching its input and
--- posts a picture of it, if there is one.
-nrFindImg :: EnvCommand NrApi
-nrFindImg = Command "image" (parseComm findComm) []
-  where
-    findComm ::
-      WithError "No card title given!" (Either (Quoted Text) (RestOfInput1 Text)) ->
-      Message ->
-      EnvDatabaseDiscord NrApi ()
-    findComm (WErr (Left (Qu q))) = sendEmbed q
-    findComm (WErr (Right (ROI1 q))) = sendEmbed q
-    sendEmbed :: Text -> Message -> EnvDatabaseDiscord NrApi ()
-    sendEmbed query m = do
-      api <- ask
-      embedCardImg (queryCard api query) m
-
--- | @nrFindFlavour@ finds the card with title most closely matching its input and
--- posts a picture of it, if there is one.
-nrFindFlavour :: EnvCommand NrApi
-nrFindFlavour = Command "flavour" (parseComm findComm) []
-  where
-    findComm ::
-      WithError "No card title given!" (Either (Quoted Text) (RestOfInput1 Text)) ->
-      Message ->
-      EnvDatabaseDiscord NrApi ()
-    findComm (WErr (Left (Qu q))) = sendEmbed q
-    findComm (WErr (Right (ROI1 q))) = sendEmbed q
-    sendEmbed :: Text -> Message -> EnvDatabaseDiscord NrApi ()
-    sendEmbed query m = do
-      api <- ask
-      embedCardFlavour (queryCard api query) m
-
--- | @nrInline@ is the inline version of @nrFind@.
+-- | @nrInline@ searches for cards by name.
 nrInline :: EnvInlineCommand NrApi
 nrInline = inlineCommandHelper "[[" "]]" (some $ anySingleBut ']') $ \query m -> do
   api <- ask
   embedCard (queryCard api $ pack query) m
 
--- | @nrInlineImg@ is the inline version of @nrFindImg@.
+-- | @nrInlineImg@ searches for a card and outputs an image of it.
 nrInlineImg :: EnvInlineCommand NrApi
 nrInlineImg = inlineCommandHelper "{{" "}}" (some $ anySingleBut '}') $ \query m -> do
   api <- ask
   embedCardImg (queryCard api $ pack query) m
 
--- | @nrInlineFlavour@ is the inline version of @nrFindFlavour@.
+-- | @nrInlineFlavour@ searches for a card and outputs its flavour.
 nrInlineFlavour :: EnvInlineCommand NrApi
 nrInlineFlavour = inlineCommandHelper "<<" ">>" (some $ anySingleBut '>') $ \query m -> do
   api <- ask
   embedCardFlavour (queryCard api $ pack query) m
 
--- | @nrInlineBanHistory@ is the inline version of @nrBanHistory@.
+-- | @nrInlineBanHistory@ searches for a card and outputs its legality history.
 nrInlineBanHistory :: EnvInlineCommand NrApi
 nrInlineBanHistory = inlineCommandHelper "((" "))" (some $ anySingleBut ')') $ \query m -> do
   api <- ask
@@ -144,32 +96,6 @@ nrRandom = Command "random" randomPars []
         Just cards -> do
           card <- liftIO $ chooseOne cards
           embedCard card m
-
--- | @nrCustom@ is a command that lets users generate a card embed out of custom
--- data, for the purpose of creating custom cards.
-nrCustom :: EnvCommand NrApi
-nrCustom = Command "custom" customPars []
-  where
-    customPars :: Parser (Message -> EnvDatabaseDiscord NrApi ())
-    customPars = do
-      pairs <- keyValue
-      return $ \m -> do
-        api <- ask
-        embedCard (customCard api pairs) m
-
--- | @nrBanHistory@ is a command that lists a card's banlist history.
-nrBanHistory :: EnvCommand NrApi
-nrBanHistory = Command "banhistory" (parseComm banHistoryComm) []
-  where
-    banHistoryComm ::
-      WithError "No card title given!" (RestOfInput1 Text) ->
-      Message ->
-      EnvDatabaseDiscord NrApi ()
-    banHistoryComm (WErr (ROI1 q)) = sendEmbed q
-    sendEmbed :: Text -> Message -> EnvDatabaseDiscord NrApi ()
-    sendEmbed query m = do
-      api <- ask
-      embedBanHistory (queryCard api query) m
 
 -- | @nrBanList@ is a command listing all cards affected by a banlist.
 nrBanList :: EnvCommand NrApi
@@ -266,15 +192,8 @@ netrunnerPlugin :: EnvPlugin NrApi
 netrunnerPlugin =
   (envPlug "netrunner" netrunnerStartUp)
     { commands =
-        [ -- nrFind,
-          -- nrFindImg,
-          -- commandAlias "img" nrFindImg,
-          -- nrFindFlavour,
-          nrSearch,
+        [ nrSearch,
           nrRandom,
-          -- nrCustom,
-          -- nrBanHistory,
-          -- commandAlias "bh" nrBanHistory,
           nrBanList,
           commandAlias "bl" nrBanList,
           commandAlias "mwl" nrBanList,

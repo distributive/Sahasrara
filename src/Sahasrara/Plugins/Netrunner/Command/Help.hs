@@ -17,7 +17,6 @@ helpPageRoots :: [HelpPage]
 helpPageRoots =
   [ searchHelp,
     randomHelp,
-    -- customHelp,
     banListHelp,
     rulesHelp
   ]
@@ -60,29 +59,6 @@ The following fields are not implemented:
 `random t:agenda` displays a random agenda
 `random o:5 f:-` displays a random 5-cost neutral card from either faction
 `random _:"green level clearance"` displays Green Level Clearance|]
-    []
-    None
-
-customHelp :: HelpPage
-customHelp =
-  HelpPage
-    "custom"
-    []
-    "generates custom Netrunner cards"
-    [r|Generates custom Netrunner cards and formats them like existing cards.
-The order of card parameters does not matter, and if you mispell a card parameter (e.g. "typ" instead of "type") it will attempt to correct it.
-
-**Usage**
-`custom type:agenda                ` creates an agenda
-`custom title:"Name" text:"Lorem." ` creates a card with a title and text
-`custom faction:"nbn"              ` creates a card with a faction
-`custom keywords:"AP - Hardware"   ` creates a card with subtypes
-`custom advancement:5 points:3     ` creates a card with an advancement requirement and agenda points
-`custom cost:3 trash:2             ` creates a card with play/rez cost and trash cost
-`custom strength:4                 ` creates a card with strength
-`custom minSize:40 maxInf:15 link:2` creates a card with a minimum deck size, maximum influence, and link
-`custom flavour:"Raspberry & mint" ` creates a card with flavour text
-`custom unique:true                ` creates a unique card|]
     []
     None
 
