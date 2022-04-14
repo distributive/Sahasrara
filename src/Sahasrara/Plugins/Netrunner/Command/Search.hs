@@ -6,7 +6,7 @@
 -- Stability   : experimental
 -- Portability : POSIX
 --
--- Backend for the custom command.
+-- Backend for commands that search the card database.
 module Sahasrara.Plugins.Netrunner.Command.Search (queryParser) where
 
 import Control.Monad.Trans.Reader (ask)
