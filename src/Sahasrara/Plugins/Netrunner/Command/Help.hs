@@ -9,11 +9,11 @@
 -- Commands for interfacing with NetrunnerDB.
 module Sahasrara.Plugins.Netrunner.Command.Help (helpPageRoots) where
 
-import Sahasrara.Utility
-import Sahasrara.Plugins.Netrunner.Utility.Search (shorthands)
-import Text.RawString.QQ (r)
-import Data.Text (Text, intercalate, pack)
 import Data.Map (keys)
+import Data.Text (Text, intercalate, pack)
+import Sahasrara.Plugins.Netrunner.Utility.Search (shorthands)
+import Sahasrara.Utility
+import Text.RawString.QQ (r)
 
 -- | @helpPageRoots@ encapsulates the help page forest for all Netrunner commands.
 helpPageRoots :: [HelpPage]
@@ -33,7 +33,7 @@ searchHelp =
     "search"
     []
     "gets a list of all Netrunner cards matching a search query"
-    ([r|Gets a list of all Netrunner cards matching a search query, matching NetrunnerDB's [syntax](<https://netrunnerdb.com/en/syntax>).
+    ( [r|Gets a list of all Netrunner cards matching a search query, matching NetrunnerDB's [syntax](<https://netrunnerdb.com/en/syntax>).
 Queries are case insensitive and show a maximum of 10 results. There is some shorthand you can use to simplify searches.
 
 The following fields are not implemented:
@@ -47,7 +47,9 @@ The following fields are not implemented:
 `search premium jinteki ice` all non-zero-cost Jinteki ice
 
 **Accepted shorthand queries**
-|] <> shortcutsList)
+|]
+        <> shortcutsList
+    )
     []
     None
 
@@ -57,7 +59,7 @@ randomHelp =
     "random"
     []
     "randomly selects a card with optional conditions"
-    ([r|Displays a random card from throughout Netrunner's history. NetrunnerDB [syntax](<https://netrunnerdb.com/en/syntax>) may be added to restrict the selection of cards.
+    ( [r|Displays a random card from throughout Netrunner's history. NetrunnerDB [syntax](<https://netrunnerdb.com/en/syntax>) may be added to restrict the selection of cards.
 Queries are case insensitive, and there is some shorthand you can use to simplify commands.
 
 The following fields are not implemented:
@@ -72,7 +74,9 @@ The following fields are not implemented:
 `random free event` all 0-cost events
 
 **Accepted shorthand queries**
-|] <> shortcutsList)
+|]
+        <> shortcutsList
+    )
     []
     None
 
