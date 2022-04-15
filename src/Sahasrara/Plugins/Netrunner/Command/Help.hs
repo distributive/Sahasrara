@@ -21,7 +21,8 @@ helpPageRoots =
   [ searchHelp,
     randomHelp,
     banListHelp,
-    rulesHelp
+    rulesHelp,
+    horoscopeHelp
   ]
 
 shortcutsList :: Text
@@ -109,5 +110,17 @@ rulesHelp =
 `rules turn` shows the timing structure of a turn
 `rules corp` shows the timing structure of a Corp's turn
 `rules runner` shows the timing structure of a Runner's turn|]
+    []
+    None
+
+horoscopeHelp :: HelpPage
+horoscopeHelp =
+  HelpPage
+    "horoscope"
+    []
+    "daily nuggets of inspiration"
+    [r|Each day provides a new inspirational* quote, saying, or proverb from the wonderful world of Netrunner.
+
+_*levels of inspiration may vary_|]
     []
     None

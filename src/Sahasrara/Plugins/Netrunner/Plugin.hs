@@ -11,8 +11,11 @@ module Sahasrara.Plugins.Netrunner.Plugin (netrunnerPlugin) where
 
 import Control.Monad.IO.Class
 import Control.Monad.Trans.Reader (ask)
-import Data.Maybe (fromMaybe)
-import Data.Text (Text, pack)
+import Data.Maybe (fromMaybe, mapMaybe)
+import Data.Text (Text, isInfixOf, pack)
+import Data.Text.ICU.Replace (replaceAll)
+import Data.Time.Clock
+import Data.Time.Calendar
 import Discord.Types
 import Sahasrara.Internal.Handler.Command ()
 import Sahasrara.Plugins.Netrunner.Command.BanList
@@ -22,7 +25,7 @@ import Sahasrara.Plugins.Netrunner.Command.Rules
 import Sahasrara.Plugins.Netrunner.Command.Search
 import Sahasrara.Plugins.Netrunner.Type.BanList (BanList (active), CardBan (..))
 import qualified Sahasrara.Plugins.Netrunner.Type.BanList as BanList
-import Sahasrara.Plugins.Netrunner.Type.Card (Card (code, text))
+import Sahasrara.Plugins.Netrunner.Type.Card (Card (code, flavour, text))
 import Sahasrara.Plugins.Netrunner.Type.NrApi (NrApi (..))
 import Sahasrara.Plugins.Netrunner.Utility.BanList (activeBanList, latestBanListActive, toMwlStatus)
 import Sahasrara.Plugins.Netrunner.Utility.Embed
@@ -33,10 +36,11 @@ import Sahasrara.Utility
 import Sahasrara.Utility.Discord (sendEmbedMessage, sendMessage)
 import Sahasrara.Utility.Embed (addColour)
 import Sahasrara.Utility.Parser (inlineCommandHelper)
-import Sahasrara.Utility.Random (chooseOne)
+import Sahasrara.Utility.Random (chooseOne, chooseOneSeeded)
 import Sahasrara.Utility.SmartParser (PComm (parseComm), RestOfInput (ROI))
 import Sahasrara.Utility.Types ()
 import Text.Megaparsec (anySingleBut, some)
+import Text.RawString.QQ (r)
 
 -- | @nrInline@ searches for cards by name.
 nrInline :: EnvInlineCommand NrApi
@@ -96,6 +100,21 @@ nrRandom = Command "random" randomPars []
         Just cards -> do
           card <- liftIO $ chooseOne cards
           embedCard card m
+
+-- | @nrHoroscope@ gets a random piece of flavour text from the card pool,
+-- seeded by the current date.
+nrHoroscope :: EnvCommand NrApi
+nrHoroscope = Command "horoscope" horoscopePars []
+  where
+    horoscopePars :: Parser (Message -> EnvDatabaseDiscord NrApi ())
+    horoscopePars = return $ \m -> do
+      api <- ask
+      let blacklist = ["terroris", "cripple", "dads argue", "criminal", "crazy", "deranged"] -- TODO: unhardcode this
+          fs = filter (\c -> not $ any (`isInfixOf` c) blacklist) $ mapMaybe flavour $ cards api
+      seed <- liftIO $ getCurrentTime >>= return . fromIntegral . toModifiedJulianDay . utctDay
+      f <- liftIO $ chooseOneSeeded seed fs
+      f' <- formatNr f
+      sendEmbedMessage m "" $ addColour DiscordGreen $ embedText ":crystal_ball: Horoscope :crystal_ball:" $ replaceAll [r|"(.*?)"[.\S\s]*|] "$1" f'
 
 -- | @nrBanList@ is a command listing all cards affected by a banlist.
 nrBanList :: EnvCommand NrApi
@@ -198,7 +217,8 @@ netrunnerPlugin =
           commandAlias "bl" nrBanList,
           commandAlias "mwl" nrBanList,
           nrRules,
-          commandAlias "cr" nrRules
+          commandAlias "cr" nrRules,
+          nrHoroscope
         ],
       inlineCommands = [nrInline, nrInlineImg, nrInlineFlavour, nrInlineBanHistory],
       helpPages = helpPageRoots

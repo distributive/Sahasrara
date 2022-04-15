@@ -7,13 +7,19 @@
 -- Portability : POSIX
 --
 -- A collection of utility functions for generating randomness.
-module Sahasrara.Utility.Random (chooseOne, chooseOneWithDefault, chooseOneWeighted, chooseOneWeightedWithDefault) where
+module Sahasrara.Utility.Random
+  ( chooseOne,
+    chooseOneWithDefault,
+    chooseOneSeeded,
+    chooseOneWeighted,
+    chooseOneWeightedWithDefault
+  ) where
 
 import Control.Monad.Exception (MonadException (throw))
 import Data.List (find)
 import Data.Maybe (fromJust)
 import Sahasrara.Utility.Exception (BotException (RandomException), catchBot)
-import System.Random (randomRIO)
+import System.Random (mkStdGen, randomR, randomRIO)
 
 -- | @chooseOne@ chooses a single random element from a given list with uniform
 -- distribution.
@@ -25,6 +31,12 @@ chooseOne xs = (xs !!) <$> randomRIO (0, length xs - 1 :: Int)
 -- with uniform distribution, or a given default value if the list is empty.
 chooseOneWithDefault :: a -> [a] -> IO a
 chooseOneWithDefault x xs = chooseOne xs `catchBot` \_ -> return x
+
+-- | @chooseOneSeeded@ chooses a single random element from a given list
+-- with uniform distribution, based on a single seed.
+chooseOneSeeded :: Int -> [a] -> IO a
+chooseOneSeeded _ [] = throw $ RandomException "Cannot choose from empty list."
+chooseOneSeeded seed xs = return $ xs !! (fst $ randomR (0, length xs - 1 :: Int) $ mkStdGen seed)
 
 -- | @chooseOneWeighted@ chooses a single random element from a given list with
 -- weighted distribution as defined by a given weighting function.
