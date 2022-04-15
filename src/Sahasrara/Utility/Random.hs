@@ -12,8 +12,9 @@ module Sahasrara.Utility.Random
     chooseOneWithDefault,
     chooseOneSeeded,
     chooseOneWeighted,
-    chooseOneWeightedWithDefault
-  ) where
+    chooseOneWeightedWithDefault,
+  )
+where
 
 import Control.Monad.Exception (MonadException (throw))
 import Data.List (find)
