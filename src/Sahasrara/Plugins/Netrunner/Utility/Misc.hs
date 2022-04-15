@@ -41,9 +41,7 @@ formatNr raw = do
     foldr
       (uncurry replace)
       raw
-      [ ("*", "\\*"),
-        ("_", "\\_"),
-        ("<strong>", "**"),
+      [ ("<strong>", "**"),
         ("</strong>", "**"),
         ("<em>", "*"),
         ("</em>", "*"),
@@ -74,5 +72,7 @@ formatNr raw = do
         ("[shaper]", shaper),
         ("[apex]", apex),
         ("[adam]", adam),
-        ("[sunny-lebeau]", sunny)
+        ("[sunny-lebeau]", sunny),
+        ("*", "\\*"),
+        ("_", "\\_")
       ]
