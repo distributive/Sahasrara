@@ -24,20 +24,11 @@ Displaying the banlist history of cards:
 
 ![image](https://user-images.githubusercontent.com/26557961/160260369-94eb4248-2429-4aaf-b0af-3fdf80af2921.png)
 
-Displaying current and past banlists:
-
-![image](https://user-images.githubusercontent.com/26557961/160260392-60f218c4-125a-4071-8c11-485c4102dc2f.png)
-
-Displaying Netrunner rules and timing structures:
-
-![image](https://user-images.githubusercontent.com/26557961/160260401-85888bcb-04dd-408d-b544-307b7ebb4139.png)
-
-### Upcoming
-
-Some features that are not yet present but I would like to add soon(ish):
-
-- The ability to search for specific card printings
-- More rulings in the `rules` command and with better formatting
+Other functionality:
+- Displaying current and past banlists
+- Displaying Netrunner rules and timing structures
+- Showing random cards with optional constraints
+- Horoscope
 
 ## Contributing
 
