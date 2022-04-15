@@ -10,7 +10,10 @@
 module Sahasrara.Plugins.Netrunner.Command.Help (helpPageRoots) where
 
 import Sahasrara.Utility
+import Sahasrara.Plugins.Netrunner.Utility.Search (shorthands)
 import Text.RawString.QQ (r)
+import Data.Text (Text, intercalate, pack)
+import Data.Map (keys)
 
 -- | @helpPageRoots@ encapsulates the help page forest for all Netrunner commands.
 helpPageRoots :: [HelpPage]
@@ -21,23 +24,30 @@ helpPageRoots =
     rulesHelp
   ]
 
+shortcutsList :: Text
+shortcutsList = intercalate ", " $ map pack $ keys shorthands
+
 searchHelp :: HelpPage
 searchHelp =
   HelpPage
     "search"
     []
     "gets a list of all Netrunner cards matching a search query"
-    [r|Gets a list of all Netrunner cards matching a search query, matching NetrunnerDB's [syntax](<https://netrunnerdb.com/en/syntax>).
-Queries are case insensitive and show a maximum of 10 results.
+    ([r|Gets a list of all Netrunner cards matching a search query, matching NetrunnerDB's [syntax](<https://netrunnerdb.com/en/syntax>).
+Queries are case insensitive and show a maximum of 10 results. There is some shorthand you can use to simplify searches.
 
 The following fields are not implemented:
 > `r` - release date
 > `z` - rotation
 
 **Usage**
-`search x:advanced ` all cards containing the text "advanced"
-`search o:1 f:nbn" ` all 1-cost cards in NBN
-`search a:"and the"` all cards with "and the" in their flavour text|]
+`search x:advanced` all cards containing the text "advanced"
+`search o:1 f:nbn"` all 1-cost cards in NBN
+`search a:"and the"` all cards with "and the" in their flavour text
+`search premium jinteki ice` all non-zero-cost Jinteki ice
+
+**Accepted shorthand queries**
+|] <> shortcutsList)
     []
     None
 
@@ -47,8 +57,8 @@ randomHelp =
     "random"
     []
     "randomly selects a card with optional conditions"
-    [r|Displays a random card from throughout Netrunner's history. NetrunnerDB syntax may be added to restrict the selection of cards.
-Queries are case insensitive.
+    ([r|Displays a random card from throughout Netrunner's history. NetrunnerDB [syntax](<https://netrunnerdb.com/en/syntax>) may be added to restrict the selection of cards.
+Queries are case insensitive, and there is some shorthand you can use to simplify commands.
 
 The following fields are not implemented:
 > `r` - release date
@@ -57,8 +67,12 @@ The following fields are not implemented:
 **Usage**
 `random` displays a random Netrunner card
 `random t:agenda` displays a random agenda
-`random o:5 f:-` displays a random 5-cost neutral card from either faction
-`random _:"green level clearance"` displays Green Level Clearance|]
+`random o:5 f:-` displays a random 5-cost neutral card from either side
+`random _:"green level clearance"` displays Green Level Clearance
+`random free event` all 0-cost events
+
+**Accepted shorthand queries**
+|] <> shortcutsList)
     []
     None
 
