@@ -41,7 +41,9 @@ formatNr raw = do
     foldr
       (uncurry replace)
       raw
-      [ ("<strong>", "**"),
+      [ ("*", "\\*"),
+        ("_", "\\_"),
+        ("<strong>", "**"),
         ("</strong>", "**"),
         ("<em>", "*"),
         ("</em>", "*"),
