@@ -12,6 +12,7 @@ module Sahasrara.Plugins.Netrunner.Utility.Alias where
 import Data.Text (Text)
 
 fromAlias :: Text -> Text
+
 fromAlias "andy" = "Andromeda: Dispossessed Ristie"
 fromAlias "aot" = "Haas-Bioroid: Architects of Tomorrow"
 fromAlias "babw" = "Weyland Consortium: Building a Better World"
@@ -180,4 +181,8 @@ fromAlias "h1" = "Cerberus \"Lady\" H1"
 fromAlias "rex" = "Cerberus \"Rex\" H2"
 fromAlias "cuj0" = "Cerberus \"Cuj.0\" H3"
 fromAlias "cujo" = "Cerberus \"Cuj.0\" H3"
+fromAlias "rosalind" = "Crick"
+fromAlias "franklin" = "Crick"
+fromAlias "rosalind franklin" = "Crick"
+fromAlias "ihw" = "I've Had Worse"
 fromAlias t = t
