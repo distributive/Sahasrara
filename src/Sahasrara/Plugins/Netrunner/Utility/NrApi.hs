@@ -22,6 +22,9 @@ import Sahasrara.Plugins.Netrunner.Type.Faction (Faction)
 import Sahasrara.Plugins.Netrunner.Type.NrApi (NrApi (..))
 import Sahasrara.Plugins.Netrunner.Type.Pack (Pack)
 import Sahasrara.Plugins.Netrunner.Type.Type (Type)
+import Sahasrara.Plugins.Netrunner.Type.Glossary (Glossary)
+import Data.Yaml.Internal (ParseException)
+import Data.Yaml (decodeFileEither)
 
 -- | @getNrApi@ is a function that attempts to get the JSON objects containing
 -- all required Netrunner data (cards, cycles, and packs) as provided by
@@ -55,6 +58,7 @@ getNrApi = do
   banRes <- httpLBS banReq
   let banData = fromRight defaultBanLists ((eitherDecode $ responseBody banRes) :: Either String BanLists)
       banLists = banContent banData
+  glossary <- getGlossary
   return NrApi {..}
 
 -- | @Cards@ represents the full library of cards in Netrunner.
@@ -140,3 +144,19 @@ instance FromJSON BanLists where
 
 defaultBanLists :: BanLists
 defaultBanLists = BanLists {banContent = []}
+
+-- | @GlossaryFile@ represents the raw glossary data.
+data GlossaryFile = File {defs :: Glossary} deriving (Show, Generic)
+
+instance FromJSON GlossaryFile
+
+-- | @getGlossary@ reads the glossary file and loads it into the Glossary type.
+getGlossary :: IO Glossary
+getGlossary = do
+  glossary <- decodeFileEither yamlFile :: IO (Either ParseException GlossaryFile)
+  return $ case glossary of
+    Left _ -> []
+    Right out -> defs out
+  where
+    yamlFile :: FilePath
+    yamlFile = "resources/glossary.yaml"

@@ -21,6 +21,9 @@ import Sahasrara.Utility.Types (DiscordColour)
 simpleEmbed :: Text -> Embed
 simpleEmbed t = createEmbed $ CreateEmbed "" "" Nothing "" "" Nothing t [] Nothing "" Nothing Nothing
 
+basicEmbed :: Text -> Text -> Embed
+basicEmbed title body = createEmbed $ CreateEmbed "" "" Nothing title "" Nothing body [] Nothing "" Nothing Nothing
+
 addTitle :: Embeddable e => Text -> e -> Embed
 addTitle t e =
   (asEmbed e)

@@ -17,6 +17,7 @@ import Sahasrara.Plugins.Netrunner.Type.Cycle (Cycle)
 import Sahasrara.Plugins.Netrunner.Type.Faction (Faction)
 import Sahasrara.Plugins.Netrunner.Type.Pack (Pack)
 import Sahasrara.Plugins.Netrunner.Type.Type (Type)
+import Sahasrara.Plugins.Netrunner.Type.Glossary (Glossary)
 
 -- | @NrApi@ represents all required Netrunner data collected in one record.
 data NrApi = NrApi
@@ -26,6 +27,7 @@ data NrApi = NrApi
     factions :: [Faction],
     cycles :: [Cycle],
     packs :: [Pack],
-    banLists :: [BanList]
+    banLists :: [BanList],
+    glossary :: Glossary
   }
   deriving (Show, Generic)

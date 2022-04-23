@@ -23,6 +23,7 @@ import Sahasrara.Plugins.Netrunner.Command.Find
 import Sahasrara.Plugins.Netrunner.Command.Help (helpPageRoots)
 import Sahasrara.Plugins.Netrunner.Command.Rules
 import Sahasrara.Plugins.Netrunner.Command.Search
+import Sahasrara.Plugins.Netrunner.Command.Glossary (nrGlossary)
 import Sahasrara.Plugins.Netrunner.Type.BanList (BanList (active), CardBan (..))
 import qualified Sahasrara.Plugins.Netrunner.Type.BanList as BanList
 import Sahasrara.Plugins.Netrunner.Type.Card (Card (code, flavour, text))
@@ -218,6 +219,7 @@ netrunnerPlugin =
           commandAlias "mwl" nrBanList,
           nrRules,
           commandAlias "cr" nrRules,
+          nrGlossary,
           nrHoroscope
         ],
       inlineCommands = [nrInline, nrInlineImg, nrInlineFlavour, nrInlineBanHistory],

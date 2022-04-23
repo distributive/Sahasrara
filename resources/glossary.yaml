@@ -1,0 +1,33 @@
+defs:
+  - name: "credit"
+    aliases:
+      - "c"
+    short: "the currency of Netrunner"
+    long: "Credits are the standard currency of Netrunner. Most cards require a cost to be paid in credits to be played, and both sides can spend a click to gain a credit as a basic action."
+    isOfficial: true
+    isObsolete: false
+    related:
+      - "basic action"
+  - name: "basic action"
+    aliases: []
+    short: "the implicit abilities each player has access to at all times"
+    long: "Basic actions are the implicit abilities each player has access to at all times."
+    isOfficial: true
+    isObsolete: false
+    related: []
+  - name: "paid ability"
+    aliases: []
+    short: "a printed ability with a cost and an effect"
+    long: "Paid abilities exist in the form `cost: effect`. While a paid ability is in play, the player controlling that paid ability may pay its cost, then resolve its effect. Paid abilities cannot be used if their effect would not cause a change in game state (even if paying the cost would then allow the effect to cause a change in game state)."
+    isOfficial: true
+    isObsolete: false
+    related:
+      - "paid ability window"
+  - name: "paid ability window"
+    aliases: []
+    short: "the timing window when paid abilities may be used"
+    long: "the timing window when paid abilities (whose cost can be met) may be used"
+    isOfficial: true
+    isObsolete: false
+    related:
+      - "paid ability"

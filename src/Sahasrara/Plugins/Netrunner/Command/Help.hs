@@ -22,6 +22,7 @@ helpPageRoots =
     randomHelp,
     banListHelp,
     rulesHelp,
+    glossaryHelp,
     horoscopeHelp
   ]
 
@@ -110,6 +111,20 @@ rulesHelp =
 `rules turn` shows the timing structure of a turn
 `rules corp` shows the timing structure of a Corp's turn
 `rules runner` shows the timing structure of a Runner's turn|]
+    []
+    None
+
+glossaryHelp :: HelpPage
+glossaryHelp =
+  HelpPage
+    "glossary"
+    []
+    "looks up Netrunner definitions"
+    [r|Looks up Netrunner terminology. This is a curated list, so please suggest any definitions you'd like to see added or amended on the [GitHub](https://github.com/distributive/Sahasrara/issues).
+
+**Usage**
+`glossary faction` gets the definition of a faction
+`glossary` gets the full list of terminology|]
     []
     None
 
