@@ -19,17 +19,17 @@ import Data.Time.Clock
 import Discord.Types
 import Sahasrara.Internal.Handler.Command ()
 import Sahasrara.Plugins.Netrunner.Command.BanList
-import Sahasrara.Plugins.Netrunner.Utility.Find
+import Sahasrara.Plugins.Netrunner.Command.Glossary (nrGlossary)
 import Sahasrara.Plugins.Netrunner.Command.Help (helpPageRoots)
 import Sahasrara.Plugins.Netrunner.Command.Rules
 import Sahasrara.Plugins.Netrunner.Command.Search
-import Sahasrara.Plugins.Netrunner.Command.Glossary (nrGlossary)
 import Sahasrara.Plugins.Netrunner.Type.BanList (BanList (active), CardBan (..))
 import qualified Sahasrara.Plugins.Netrunner.Type.BanList as BanList
 import Sahasrara.Plugins.Netrunner.Type.Card (Card (code, flavour, text))
 import Sahasrara.Plugins.Netrunner.Type.NrApi (NrApi (..))
 import Sahasrara.Plugins.Netrunner.Utility.BanList (activeBanList, latestBanListActive, toMwlStatus)
 import Sahasrara.Plugins.Netrunner.Utility.Embed
+import Sahasrara.Plugins.Netrunner.Utility.Find
 import Sahasrara.Plugins.Netrunner.Utility.Misc (formatNr)
 import Sahasrara.Plugins.Netrunner.Utility.NrApi (getNrApi)
 import Sahasrara.Plugins.Netrunner.Utility.Search

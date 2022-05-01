@@ -12,6 +12,8 @@ module Sahasrara.Plugins.Netrunner.Utility.NrApi (getNrApi) where
 import Data.Aeson (FromJSON, Value (Object), eitherDecode, parseJSON, (.:))
 import Data.Either (fromRight)
 import Data.Text (Text)
+import Data.Yaml (decodeFileEither)
+import Data.Yaml.Internal (ParseException)
 import GHC.Generics (Generic)
 import Network.HTTP.Conduit (Response (responseBody), parseRequest)
 import Network.HTTP.Simple (httpLBS)
@@ -19,12 +21,10 @@ import Sahasrara.Plugins.Netrunner.Type.BanList (BanList)
 import Sahasrara.Plugins.Netrunner.Type.Card (Card, packCode)
 import Sahasrara.Plugins.Netrunner.Type.Cycle (Cycle)
 import Sahasrara.Plugins.Netrunner.Type.Faction (Faction)
+import Sahasrara.Plugins.Netrunner.Type.Glossary (Glossary)
 import Sahasrara.Plugins.Netrunner.Type.NrApi (NrApi (..))
 import Sahasrara.Plugins.Netrunner.Type.Pack (Pack)
 import Sahasrara.Plugins.Netrunner.Type.Type (Type)
-import Sahasrara.Plugins.Netrunner.Type.Glossary (Glossary)
-import Data.Yaml.Internal (ParseException)
-import Data.Yaml (decodeFileEither)
 
 -- | @getNrApi@ is a function that attempts to get the JSON objects containing
 -- all required Netrunner data (cards, cycles, and packs) as provided by
