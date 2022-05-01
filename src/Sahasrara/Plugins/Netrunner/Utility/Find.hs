@@ -27,8 +27,8 @@ import Sahasrara.Utility.Utils (standardise)
 -- the cards if no cards are found
 -- If the given query matches an alias, it will first dereference that alias
 queryCard :: NrApi -> Text -> Card
-queryCard NrApi {cards = cards} txt =
-  let q = fromAlias $ standardise txt
+queryCard NrApi {cards = cards, cardAliases = cardAliases} txt =
+  let q = fromAlias cardAliases $ standardise txt
    in findCard (substringSearch pairs q) q pairs
   where
     pairs = zip (map (standardise . fromMaybe "" . Card.title) cards) cards

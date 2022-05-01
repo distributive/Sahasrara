@@ -75,10 +75,10 @@ printDef term m = do
             _ -> "**See also**\n`" <> intercalate "`, `" related <> "`"
        in long <> "\n\n" <> suffix
     failText :: NrApi -> Text
-    failText NrApi {cards = cards, glossary = glossary} =
+    failText NrApi {cards = cards, glossary = glossary, cardAliases = cardAliases} =
       let suggestion = pack $ closestMatchWithCosts editCosts (map (unpack . name) glossary) $ unpack term
-       in if fromAlias term /= term
-            then "That's the alias of a card; try: `[[" <> (fromAlias term) <> "]]`"
+       in if fromAlias cardAliases term /= term
+            then "That's the alias of a card; try: `[[" <> (fromAlias cardAliases term) <> "]]`"
             else case filter ((== Just term) . title) cards of
               [] -> "Did you mean: `" <> suggestion <> "`?"
               c : _ -> "That's a card; try: `" <> (fromMaybe "" $ title c) <> "`"

@@ -11,6 +11,7 @@ module Sahasrara.Plugins.Netrunner.Utility.NrApi (getNrApi) where
 
 import Data.Aeson (FromJSON, Value (Object), eitherDecode, parseJSON, (.:))
 import Data.Either (fromRight)
+import Data.Map (Map, empty)
 import Data.Text (Text)
 import Data.Yaml (decodeFileEither)
 import Data.Yaml.Internal (ParseException)
@@ -58,6 +59,8 @@ getNrApi = do
   banRes <- httpLBS banReq
   let banData = fromRight defaultBanLists ((eitherDecode $ responseBody banRes) :: Either String BanLists)
       banLists = banContent banData
+  cardAliases <- getAliases
+  putStrLn $ show cardAliases
   glossary <- getGlossary
   return NrApi {..}
 
@@ -145,12 +148,28 @@ instance FromJSON BanLists where
 defaultBanLists :: BanLists
 defaultBanLists = BanLists {banContent = []}
 
+-- | @AliasFile@ represents the raw alias data.
+data AliasFile = AliasFile {aliases :: Map Text Text} deriving (Show, Generic)
+
+instance FromJSON AliasFile
+
+-- | @getAliases@ loads the alias file.
+getAliases :: IO (Map Text Text)
+getAliases = do
+  as <- decodeFileEither yamlFile :: IO (Either ParseException AliasFile)
+  return $ case as of
+    Left _ -> empty
+    Right out -> aliases out
+  where
+    yamlFile :: FilePath
+    yamlFile = "resources/aliases.yaml"
+
 -- | @GlossaryFile@ represents the raw glossary data.
-data GlossaryFile = File {defs :: Glossary} deriving (Show, Generic)
+data GlossaryFile = GlossaryFile {defs :: Glossary} deriving (Show, Generic)
 
 instance FromJSON GlossaryFile
 
--- | @getGlossary@ reads the glossary file and loads it into the Glossary type.
+-- | @getGlossary@ loads the glossary file.
 getGlossary :: IO Glossary
 getGlossary = do
   glossary <- decodeFileEither yamlFile :: IO (Either ParseException GlossaryFile)

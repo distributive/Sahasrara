@@ -9,6 +9,7 @@
 -- The NrApi type.
 module Sahasrara.Plugins.Netrunner.Type.NrApi where
 
+import Data.Map (Map)
 import Data.Text (Text)
 import GHC.Generics (Generic)
 import Sahasrara.Plugins.Netrunner.Type.BanList (BanList)
@@ -28,6 +29,7 @@ data NrApi = NrApi
     cycles :: [Cycle],
     packs :: [Pack],
     banLists :: [BanList],
+    cardAliases :: Map Text Text,
     glossary :: Glossary
   }
   deriving (Show, Generic)
