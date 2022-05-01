@@ -19,6 +19,7 @@ import GHC.Generics (Generic)
 import Network.HTTP.Conduit (Response (responseBody), parseRequest)
 import Network.HTTP.Simple (httpLBS)
 import Sahasrara.Plugins.Netrunner.Type.BanList (BanList)
+import Sahasrara.Plugins.Netrunner.Type.Blacklist (Blacklist, defaultBlacklist)
 import Sahasrara.Plugins.Netrunner.Type.Card (Card, packCode)
 import Sahasrara.Plugins.Netrunner.Type.Cycle (Cycle)
 import Sahasrara.Plugins.Netrunner.Type.Faction (Faction)
@@ -60,7 +61,7 @@ getNrApi = do
   let banData = fromRight defaultBanLists ((eitherDecode $ responseBody banRes) :: Either String BanLists)
       banLists = banContent banData
   cardAliases <- getAliases
-  putStrLn $ show cardAliases
+  blacklist <- getBlacklist
   glossary <- getGlossary
   return NrApi {..}
 
@@ -163,6 +164,17 @@ getAliases = do
   where
     yamlFile :: FilePath
     yamlFile = "resources/aliases.yaml"
+
+-- | @getBlacklist@ loads the blacklist file.
+getBlacklist :: IO Blacklist
+getBlacklist = do
+  bl <- decodeFileEither yamlFile :: IO (Either ParseException Blacklist)
+  return $ case bl of
+    Left _ -> defaultBlacklist
+    Right out -> out
+  where
+    yamlFile :: FilePath
+    yamlFile = "resources/horoscopeBlacklist.yaml"
 
 -- | @GlossaryFile@ represents the raw glossary data.
 data GlossaryFile = GlossaryFile {defs :: Glossary} deriving (Show, Generic)

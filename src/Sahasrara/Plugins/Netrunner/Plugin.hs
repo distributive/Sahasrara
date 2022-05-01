@@ -21,11 +21,12 @@ import Sahasrara.Internal.Handler.Command ()
 import Sahasrara.Plugins.Netrunner.Command.BanList
 import Sahasrara.Plugins.Netrunner.Command.Glossary (nrGlossary)
 import Sahasrara.Plugins.Netrunner.Command.Help (helpPageRoots)
-import Sahasrara.Plugins.Netrunner.Command.Rules
+import Sahasrara.Plugins.Netrunner.Command.Rules hiding (title)
 import Sahasrara.Plugins.Netrunner.Command.Search
 import Sahasrara.Plugins.Netrunner.Type.BanList (BanList (active), CardBan (..))
 import qualified Sahasrara.Plugins.Netrunner.Type.BanList as BanList
-import Sahasrara.Plugins.Netrunner.Type.Card (Card (code, flavour, text))
+import Sahasrara.Plugins.Netrunner.Type.Blacklist (Blacklist (..))
+import Sahasrara.Plugins.Netrunner.Type.Card (Card (code, flavour, text, title))
 import Sahasrara.Plugins.Netrunner.Type.NrApi (NrApi (..))
 import Sahasrara.Plugins.Netrunner.Utility.BanList (activeBanList, latestBanListActive, toMwlStatus)
 import Sahasrara.Plugins.Netrunner.Utility.Embed
@@ -110,12 +111,16 @@ nrHoroscope = Command "horoscope" horoscopePars []
     horoscopePars :: Parser (Message -> EnvDatabaseDiscord NrApi ())
     horoscopePars = return $ \m -> do
       api <- ask
-      let blacklist = ["terroris", "cripple", "dads argue", "criminal", "crazy", "deranged"] -- TODO: unhardcode this
-          fs = filter (\c -> not $ any (`isInfixOf` c) blacklist) $ mapMaybe flavour $ cards api
+      let fs = filterFlavours (blacklist api) (cards api)
       seed <- liftIO $ getCurrentTime >>= return . fromIntegral . toModifiedJulianDay . utctDay
       f <- liftIO $ chooseOneSeeded seed fs
       f' <- formatNr f
       sendEmbedMessage m "" $ addColour DiscordGreen $ embedText ":crystal_ball: Horoscope :crystal_ball:" $ replaceAll [r|"(.*?)"[.\S\s]*|] "$1" f'
+    filterFlavours :: Blacklist -> [Card] -> [Text]
+    filterFlavours Blacklist {badSubstrings = badSubstrings, badCards = badCards} cards =
+      let flavoured = filter ((Nothing /=) . flavour) cards
+          withoutBadCards = filter (\c -> all (\b -> Just b /= title c) badCards) flavoured
+       in filter (\c -> not $ any (`isInfixOf` c) badSubstrings) $ mapMaybe flavour withoutBadCards -- Without bad substrings
 
 -- | @nrBanList@ is a command listing all cards affected by a banlist.
 nrBanList :: EnvCommand NrApi

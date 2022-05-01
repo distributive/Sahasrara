@@ -13,6 +13,7 @@ import Data.Map (Map)
 import Data.Text (Text)
 import GHC.Generics (Generic)
 import Sahasrara.Plugins.Netrunner.Type.BanList (BanList)
+import Sahasrara.Plugins.Netrunner.Type.Blacklist (Blacklist)
 import Sahasrara.Plugins.Netrunner.Type.Card (Card)
 import Sahasrara.Plugins.Netrunner.Type.Cycle (Cycle)
 import Sahasrara.Plugins.Netrunner.Type.Faction (Faction)
@@ -30,6 +31,7 @@ data NrApi = NrApi
     packs :: [Pack],
     banLists :: [BanList],
     cardAliases :: Map Text Text,
+    blacklist :: Blacklist,
     glossary :: Glossary
   }
   deriving (Show, Generic)

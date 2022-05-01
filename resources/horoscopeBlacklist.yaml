@@ -1,0 +1,8 @@
+badSubstrings:
+  - "terroris"
+  - "cripple"
+  - "criminal"
+  - "crazy"
+  - "deranged"
+badCards:
+  - "Financial Collapse"
