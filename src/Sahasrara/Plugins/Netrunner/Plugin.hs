@@ -19,7 +19,7 @@ import Data.Time.Clock
 import Discord.Types
 import Sahasrara.Internal.Handler.Command ()
 import Sahasrara.Plugins.Netrunner.Command.BanList
-import Sahasrara.Plugins.Netrunner.Command.Find
+import Sahasrara.Plugins.Netrunner.Utility.Find
 import Sahasrara.Plugins.Netrunner.Command.Help (helpPageRoots)
 import Sahasrara.Plugins.Netrunner.Command.Rules
 import Sahasrara.Plugins.Netrunner.Command.Search
@@ -219,7 +219,7 @@ netrunnerPlugin =
           commandAlias "mwl" nrBanList,
           nrRules,
           commandAlias "cr" nrRules,
-          nrGlossary,
+          -- nrGlossary,
           nrHoroscope
         ],
       inlineCommands = [nrInline, nrInlineImg, nrInlineFlavour, nrInlineBanHistory],

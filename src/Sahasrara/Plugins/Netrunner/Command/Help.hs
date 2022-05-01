@@ -22,7 +22,7 @@ helpPageRoots =
     randomHelp,
     banListHelp,
     rulesHelp,
-    glossaryHelp,
+    -- glossaryHelp,
     horoscopeHelp
   ]
 

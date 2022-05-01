@@ -13,7 +13,6 @@ import Data.Text (Text, intercalate, unpack, pack)
 import Sahasrara.Utility hiding (name)
 import Sahasrara.Utility.Discord (Message, sendEmbedMessage)
 import Sahasrara.Utility.SmartParser (PComm (parseComm), RestOfInput (ROI))
-import Text.RawString.QQ
 import Sahasrara.Utility.Embed (basicEmbed)
 import Sahasrara.Plugins.Netrunner.Type.Glossary (Definition (..))
 import Data.Map (fromList, lookup)
@@ -21,6 +20,10 @@ import Prelude hiding (lookup)
 import Control.Monad.Reader (ask)
 import Sahasrara.Utility.Search (FuzzyCosts (..), closestMatchWithCosts)
 import Sahasrara.Plugins.Netrunner.Type.NrApi
+import Sahasrara.Plugins.Netrunner.Type.Card (title)
+import Sahasrara.Plugins.Netrunner.Utility.Find
+import Sahasrara.Plugins.Netrunner.Utility.Alias (fromAlias)
+import Data.Maybe (fromMaybe)
 
 -- | @glossary@ looks up a given term, or shows the full list if none are
 -- provided.
@@ -52,11 +55,9 @@ printDef :: Text -> Message -> EnvDatabaseDiscord NrApi ()
 printDef term m = do
   api <- ask
   let defMap = fromList $ concatMap (\def -> (name def, def) : [(a,def) | a <- aliases def]) $ glossary api
-      suggestion = pack $ closestMatchWithCosts editCosts (map (unpack . name) $ glossary api) $ unpack term
-      failText = "Did you mean: `" <> suggestion <> "`?"
   case lookup term defMap of
-    Nothing -> sendEmbedMessage m "" $ basicEmbed ":pencil2: Term not found" failText
     Just def -> sendEmbedMessage m "" $ basicEmbed (":pencil: " <> name def) $ format def
+    Nothing -> sendEmbedMessage m "" $ basicEmbed ":pencil2: Term not found" $ failText api
   where
     editCosts :: FuzzyCosts
     editCosts = FuzzyCosts
@@ -71,3 +72,11 @@ printDef term m = do
                      [] -> ""
                      _ -> "**See also**\n`" <> intercalate "`, `" related <> "`"
        in long <> "\n\n" <> suffix
+    failText :: NrApi -> Text
+    failText NrApi {cards = cards, glossary = glossary} =
+      let suggestion = pack $ closestMatchWithCosts editCosts (map (unpack . name) glossary) $ unpack term
+       in if fromAlias term /= term then
+            "That's the alias of a card; try: `[[" <> (fromAlias term) <> "]]`"
+          else case filter ((== Just term) . title) cards of
+            [] -> "Did you mean: `" <> suggestion <> "`?"
+            c:_ -> "That's a card; try: `" <> (fromMaybe "" $ title c) <> "`"

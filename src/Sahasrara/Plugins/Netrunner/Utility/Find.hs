@@ -8,8 +8,8 @@
 -- Stability   : experimental
 -- Portability : POSIX
 --
--- Backend for the find command.
-module Sahasrara.Plugins.Netrunner.Command.Find (queryCard) where
+-- Functions for finding cards in the api.
+module Sahasrara.Plugins.Netrunner.Utility.Find (queryCard) where
 
 import Data.Bifunctor (first)
 import Data.Maybe (fromMaybe)
