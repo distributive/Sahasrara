@@ -22,6 +22,7 @@ import Sahasrara.Plugins.Administration (administrationPlugin)
 import Sahasrara.Plugins.Basic (basicPlugin)
 import Sahasrara.Plugins.Flip (flipPlugin)
 import Sahasrara.Plugins.Netrunner (netrunnerPlugin)
+import Sahasrara.Plugins.ONR (onrPlugin)
 
 -- Use long list format to make additions and removals non-conflicting on git PRs
 plugins :: MVar ShutdownReason -> [CompiledPlugin]
@@ -30,7 +31,8 @@ plugins rFlag =
     rFlag
     [ compilePlugin basicPlugin,
       compilePlugin flipPlugin,
-      compilePlugin netrunnerPlugin
+      compilePlugin netrunnerPlugin,
+      compilePlugin onrPlugin
     ]
 
 -- | @addAdministrationPlugin@ is needed to allow the administration plugin to be aware of the list of current plugins

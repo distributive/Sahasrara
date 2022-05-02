@@ -62,7 +62,7 @@ dependencies:
   - split
   - regex-pcre
   - distribution
-  - unordered-containers
+  - scientific >= 0.3.7.0
 
 library:
   source-dirs: src
