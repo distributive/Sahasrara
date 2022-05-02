@@ -73,12 +73,11 @@ toSubtitle Card {..} =
             Nothing -> ""
             Just (Var var) -> var
             Just (Val val) -> intToText val
-       in case (c, typeCode) of
-            ("", _) -> ""
-            (c, Just "node") -> rezText <> c
-            (c, Just "ice") -> rezText <> c
-            (c, Just "upgrade") -> rezText <> c
-            (c, _) -> " • Cost: " <> c
+       in case typeCode of
+            Just "node" -> rezText <> c
+            Just "ice" -> rezText <> c
+            Just "upgrade" -> rezText <> c
+            _ -> " • Cost: " <> c
     mu = maybeEmptyPrependI " • MU: " memoryCost
     strength' = case strength of
       Nothing -> ""
