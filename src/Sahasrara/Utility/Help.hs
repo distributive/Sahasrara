@@ -22,16 +22,22 @@ import Sahasrara.Utility.Parser (skipSpace)
 import Sahasrara.Utility.Permission (requirePermission)
 import Sahasrara.Utility.Types hiding (helpPages)
 import Text.Megaparsec (choice, chunk, eof, try, (<?>), (<|>))
-import Text.RawString.QQ (r)
+import Text.RawString.QQ (rQ)
 
 rootBody :: Text
 rootBody =
-  [r|A Discord Netrunner bot.
+  [rQ|A Discord Netrunner bot.
 
+**Searching for [Netrunner](https://netrunnerdb.com) cards**
 `[[card]]` to view a card
 `{{card}}` to view its art
 `<<card>>` to view its flavour text
-`((card))` to view its legality history|]
+`((card))` to view its legality history
+
+**Searching for [Original Netrunner](https://www.emergencyshutdown.net/webminster) cards**
+`[|card|~]` to view an ONR card
+`{|card|}` to view its art
+`<|card|>` to view its flavour text|]
 
 helpHelpPage :: HelpPage
 helpHelpPage = HelpPage "help" [] "show information about commands" "Shows information about bot commands\n\n**Usage**\n`help <page>`" [] None
