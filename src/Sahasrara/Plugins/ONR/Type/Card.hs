@@ -44,7 +44,7 @@ instance FromJSON Card where
       <*> o .:? "code"
       <*> o .:? "cost"
       <*> o .:? "difficulty"
-      <*> o .:? "flavour"
+      <*> o .:? "flavor"
       <*> o .:? "illustrator"
       <*> o .:? "memory_cost"
       <*> o .:? "rarity"
