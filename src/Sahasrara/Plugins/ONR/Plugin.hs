@@ -24,7 +24,6 @@ import Sahasrara.Utility.Discord (sendEmbedMessage)
 import Sahasrara.Utility.Parser (inlineCommandHelper)
 import Sahasrara.Utility.Types ()
 import Text.Megaparsec (anySingleBut, some)
-import Text.RawString.QQ (r)
 
 -- | @nrInline@ searches for cards by name.
 nrInline :: EnvInlineCommand OnrApi
