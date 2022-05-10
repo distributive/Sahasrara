@@ -264,7 +264,7 @@ embedCardSets card m = do
       sets = mapMaybe (toPack api) printings
       entries = map (\s -> "`" <> P.code s <> "` - " <> P.name s) sets
   embed <- cardToEmbedWithText api card $ intercalate "\n" entries
-  sendEmbedMessage m "" $ addColour Purple embed
+  sendEmbedMessage m "" embed
 
 -- | @embedBanHistory@ embeds a card's banlist history.
 embedBanHistory :: Card -> Message -> EnvDatabaseDiscord NrApi ()
