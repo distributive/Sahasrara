@@ -30,6 +30,7 @@ rootBody =
 
 **Searching for [Netrunner](https://netrunnerdb.com) cards**
 `[[card]]` to view a card
+`[[card|set]]` to view the printing of that card from a specific set
 `{{card}}` to view its art
 `<<card>>` to view its flavour text
 `((card))` to view its legality history

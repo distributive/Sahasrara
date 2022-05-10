@@ -11,8 +11,9 @@ module Sahasrara.Plugins.Netrunner.Plugin (netrunnerPlugin) where
 
 import Control.Monad.IO.Class
 import Control.Monad.Trans.Reader (ask)
+import Data.List (find)
 import Data.Maybe (fromMaybe, mapMaybe)
-import Data.Text (Text, isInfixOf, pack)
+import Data.Text (Text, isInfixOf, pack, unpack)
 import Data.Text.ICU.Replace (replaceAll)
 import Data.Time.Calendar
 import Data.Time.Clock
@@ -26,8 +27,12 @@ import Sahasrara.Plugins.Netrunner.Command.Search
 import Sahasrara.Plugins.Netrunner.Type.BanList (BanList (active), CardBan (..))
 import qualified Sahasrara.Plugins.Netrunner.Type.BanList as BanList
 import Sahasrara.Plugins.Netrunner.Type.Blacklist (Blacklist (..))
-import Sahasrara.Plugins.Netrunner.Type.Card (Card (code, flavour, text, title))
+import Sahasrara.Plugins.Netrunner.Type.Card (Card (code, flavour, packCode, text, title))
+import Sahasrara.Plugins.Netrunner.Type.Cycle (Cycle)
+import qualified Sahasrara.Plugins.Netrunner.Type.Cycle as C
 import Sahasrara.Plugins.Netrunner.Type.NrApi (NrApi (..))
+import Sahasrara.Plugins.Netrunner.Type.Pack (Pack)
+import qualified Sahasrara.Plugins.Netrunner.Type.Pack as P
 import Sahasrara.Plugins.Netrunner.Utility.BanList (activeBanList, latestBanListActive, toMwlStatus)
 import Sahasrara.Plugins.Netrunner.Utility.Embed
 import Sahasrara.Plugins.Netrunner.Utility.Find
@@ -37,36 +42,95 @@ import Sahasrara.Plugins.Netrunner.Utility.Search
 import Sahasrara.Utility
 import Sahasrara.Utility.Discord (sendEmbedMessage, sendMessage)
 import Sahasrara.Utility.Embed (addColour)
+import Sahasrara.Utility.Exception (BotException (GenericException), embedError)
 import Sahasrara.Utility.Parser (inlineCommandHelper)
 import Sahasrara.Utility.Random (chooseOne, chooseOneSeeded)
+import Sahasrara.Utility.Search (FuzzyCosts (..), closestValueWithCosts)
 import Sahasrara.Utility.SmartParser (PComm (parseComm), RestOfInput (ROI))
 import Sahasrara.Utility.Types ()
-import Text.Megaparsec (anySingleBut, some)
+import Text.Megaparsec (anySingleBut, single, some, try, (<|>))
 import Text.RawString.QQ (r)
 
 -- | @nrInline@ searches for cards by name.
 nrInline :: EnvInlineCommand NrApi
-nrInline = inlineCommandHelper "[[" "]]" (some $ anySingleBut ']') $ \query m -> do
-  api <- ask
-  embedCard (queryCard api $ pack query) m
+nrInline = inlineCommandHelper "[[" "]]" (cardParser ']') $ outputCard embedCard
 
 -- | @nrInlineImg@ searches for a card and outputs an image of it.
 nrInlineImg :: EnvInlineCommand NrApi
-nrInlineImg = inlineCommandHelper "{{" "}}" (some $ anySingleBut '}') $ \query m -> do
-  api <- ask
-  embedCardImg (queryCard api $ pack query) m
+nrInlineImg = inlineCommandHelper "{{" "}}" (cardParser '}') $ outputCard embedCardImg
 
 -- | @nrInlineFlavour@ searches for a card and outputs its flavour.
 nrInlineFlavour :: EnvInlineCommand NrApi
-nrInlineFlavour = inlineCommandHelper "<<" ">>" (some $ anySingleBut '>') $ \query m -> do
-  api <- ask
-  embedCardFlavour (queryCard api $ pack query) m
+nrInlineFlavour = inlineCommandHelper "<<" ">>" (cardParser '>') $ outputCard embedCardFlavour
 
 -- | @nrInlineBanHistory@ searches for a card and outputs its legality history.
 nrInlineBanHistory :: EnvInlineCommand NrApi
-nrInlineBanHistory = inlineCommandHelper "((" "))" (some $ anySingleBut ')') $ \query m -> do
+nrInlineBanHistory = inlineCommandHelper "((" "))" (cardParser ')') $ outputCard embedBanHistory
+
+-- | @cardParser@ parses a card and an optional specified set.
+cardParser :: Char -> Parser (Text, Maybe Text)
+cardParser c = try withSet <|> withoutSet
+  where
+    withSet :: Parser (Text, Maybe Text)
+    withSet = do
+      card <- some $ anySingleBut '|'
+      _ <- single '|'
+      set <- some $ anySingleBut c
+      return (pack card, Just $ pack set)
+    withoutSet :: Parser (Text, Maybe Text)
+    withoutSet = do
+      card <- some $ anySingleBut c
+      return (pack card, Nothing)
+
+-- | @outputCard@ takes a function that displays a card in some form (e.g. by
+-- displaying its text or art) and generates a function that applies the display
+-- function to a given search query and outputs the result or errors if the
+-- query is invalid.
+-- Errors are embedded manually as errors thrown in inline commands are hidden.
+outputCard :: (Card -> Message -> EnvDatabaseDiscord NrApi ()) -> ((Text, Maybe Text) -> Message -> EnvDatabaseDiscord NrApi ())
+outputCard outf = \(card, set) m -> do
   api <- ask
-  embedBanHistory (queryCard api $ pack query) m
+  let result = queryCard api card
+  case set of
+    Nothing -> outf result m
+    Just set' ->
+      let printings = filter (\c -> title c == title result) $ cards api
+          mSet = matchedSet api set'
+       in case find (setFilter mSet) printings of
+            Just card' -> outf card' m
+            Nothing -> case mSet of
+              Left p -> sendEmbedMessage m "" $ errorNotFound (P.name p) $ fromMaybe "?" $ title result
+              Right c -> sendEmbedMessage m "" $ errorNotFound (C.name c) $ fromMaybe "?" $ title result
+  where
+    setFilter :: Either Pack Cycle -> (Card -> Bool)
+    setFilter (Left p) = (\card -> packCode card == (Just $ P.code p))
+    setFilter (Right c) = (\card -> packCode card == (Just $ C.code c))
+    matchedSet :: NrApi -> Text -> Either Pack Cycle
+    matchedSet api set =
+      case (matchedPack, matchedCycle, closestSet) of
+        (Just p, _, _) -> Left p
+        (_, Just c, _) -> Right c
+        (_, _, fuzzyMatch) -> fuzzyMatch
+      where
+        matchedPack :: Maybe Pack
+        matchedPack = find (\p -> standardise (P.code p) == standardise set) $ packs api
+        matchedCycle :: Maybe Cycle
+        matchedCycle = find (\c -> standardise (C.code c) == standardise set) $ cycles api
+        closestSet :: Either Pack Cycle
+        closestSet =
+          let ls = zip (unpack <$> P.name <$> packs api) (Left <$> packs api)
+              rs = zip (unpack <$> C.name <$> cycles api) (Right <$> cycles api)
+           in closestValueWithCosts editCosts (ls ++ rs) $ unpack $ standardise set
+        editCosts :: FuzzyCosts
+        editCosts =
+          FuzzyCosts
+            { deletion = 1,
+              insertion = 0,
+              substitution = 1,
+              transposition = 1
+            }
+    errorNotFound :: Text -> Text -> Embed
+    errorNotFound set card = embedError $ GenericException "Set does not contain card" $ "`" <> (unpack set) <> "` does not contain *" <> (unpack card) <> "*."
 
 -- | @nrSearch@ searches the card database with specific queries.
 nrSearch :: EnvCommand NrApi
