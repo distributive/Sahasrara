@@ -13,7 +13,7 @@ import Control.Monad.IO.Class
 import Control.Monad.Trans.Reader (ask)
 import Data.List (find)
 import Data.Maybe (fromMaybe, mapMaybe)
-import Data.Text (Text, isInfixOf, pack, unpack)
+import Data.Text (Text, intercalate, isInfixOf, pack, strip, unpack)
 import Data.Text.ICU.Replace (replaceAll)
 import Data.Time.Calendar
 import Data.Time.Clock
@@ -34,6 +34,7 @@ import Sahasrara.Plugins.Netrunner.Type.NrApi (NrApi (..))
 import Sahasrara.Plugins.Netrunner.Type.Pack (Pack)
 import qualified Sahasrara.Plugins.Netrunner.Type.Pack as P
 import Sahasrara.Plugins.Netrunner.Utility.BanList (activeBanList, latestBanListActive, toMwlStatus)
+import Sahasrara.Plugins.Netrunner.Utility.Card (toPack)
 import Sahasrara.Plugins.Netrunner.Utility.Embed
 import Sahasrara.Plugins.Netrunner.Utility.Find
 import Sahasrara.Plugins.Netrunner.Utility.Misc (formatNr)
@@ -42,7 +43,7 @@ import Sahasrara.Plugins.Netrunner.Utility.Search
 import Sahasrara.Utility
 import Sahasrara.Utility.Discord (sendEmbedMessage, sendMessage)
 import Sahasrara.Utility.Embed (addColour)
-import Sahasrara.Utility.Exception (BotException (GenericException), embedError)
+import Sahasrara.Utility.Exception (BotException (GenericException), embedError, throwBot)
 import Sahasrara.Utility.Parser (inlineCommandHelper)
 import Sahasrara.Utility.Random (chooseOne, chooseOneSeeded)
 import Sahasrara.Utility.Search (FuzzyCosts (..), closestValueWithCosts)
@@ -212,6 +213,17 @@ nrRules = Command "rules" (parseComm rulesComm) []
             Right (Ruling t b) -> (t, b, Blue)
       sendEmbedMessage m "" $ addColour colour $ embedText rTitle rBody
 
+-- | @nrSets@ is a command that lists all packs a card was printed in.
+nrSets :: EnvCommand NrApi
+nrSets = Command "sets" (parseComm setsComm) []
+  where
+    setsComm :: RestOfInput Text -> Message -> EnvDatabaseDiscord NrApi ()
+    setsComm (ROI card) m = case strip card of
+      "" -> throwBot $ GenericException "No Card Specified" "Please provide a card name."
+      c -> do
+        api <- ask
+        embedCardSets (queryCard api c) m
+
 -- | @embedCard@ takes a card and embeds it in a message.
 embedCard :: Card -> Message -> EnvDatabaseDiscord NrApi ()
 embedCard card m = do
@@ -243,6 +255,16 @@ embedCardFlavour card m = do
     Just "12077" -> cardToEmbedWithText api card' cText
     _ -> cardToFlavourEmbed api card'
   sendEmbedMessage m "" embed
+
+-- | @embedCardSets@ embeds a list of packs a card was printed in.
+embedCardSets :: Card -> Message -> EnvDatabaseDiscord NrApi ()
+embedCardSets card m = do
+  api <- ask
+  let printings = filter (\c -> title card == title c) $ cards api
+      sets = mapMaybe (toPack api) printings
+      entries = map (\s -> "`" <> P.code s <> "` - " <> P.name s) sets
+  embed <- cardToEmbedWithText api card $ intercalate "\n" entries
+  sendEmbedMessage m "" $ addColour Purple embed
 
 -- | @embedBanHistory@ embeds a card's banlist history.
 embedBanHistory :: Card -> Message -> EnvDatabaseDiscord NrApi ()
@@ -283,6 +305,7 @@ netrunnerPlugin =
     { commands =
         [ nrSearch,
           nrRandom,
+          nrSets,
           nrBanList,
           commandAlias "bl" nrBanList,
           commandAlias "mwl" nrBanList,

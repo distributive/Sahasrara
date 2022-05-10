@@ -20,6 +20,7 @@ helpPageRoots :: [HelpPage]
 helpPageRoots =
   [ searchHelp,
     randomHelp,
+    setsHelp,
     banListHelp,
     rulesHelp,
     -- glossaryHelp,
@@ -111,6 +112,19 @@ rulesHelp =
 `rules turn` shows the timing structure of a turn
 `rules corp` shows the timing structure of a Corp's turn
 `rules runner` shows the timing structure of a Runner's turn|]
+    []
+    None
+
+setsHelp :: HelpPage
+setsHelp =
+  HelpPage
+    "sets"
+    []
+    "lists which sets a card was released in"
+    [r|Lists all sets a card was released in, excluding System Core 19.
+
+**Usage**
+`sets Hedge Fund` shows the sets *Hedge Fund* was printed in|]
     []
     None
 
