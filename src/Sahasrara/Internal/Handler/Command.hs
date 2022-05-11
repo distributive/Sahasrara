@@ -68,7 +68,7 @@ parseCommands cs m prefix = case parse (parser cs) "" (messageText m) of
     parser cs' =
       do
         _ <- chunk prefix
-        choice (map toErroringParser cs') <?> "No command with that name was found!"
+        choice (map toErroringParser cs') <|> pure (const (pure ()))
     toErroringParser :: CompiledCommand -> Parser (Message -> CompiledDatabaseDiscord ())
     toErroringParser c = try (chunk $ commandName c) *> (skipSpace1 <|> eof) *> (try (choice $ map toErroringParser $ commandSubcommands c) <|> commandParser c)
 
