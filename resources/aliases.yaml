@@ -335,7 +335,7 @@ aliases:
   tentacled orb: "Demara"
   philotic orb: "Philotic Entanglement"
   yellow orbs: "Bellona"
-  premium orbs: "Bellona"
+  premium orb: "Bellona"
 
   # n-orbs
   orb: "Rezeki"
@@ -343,5 +343,6 @@ aliases:
   orb orb orb: "Chetana"
   orb orb orb orb orb: "Cradle"
   orb orb orb orb orb orb: "False Echo"
+  orb orb orb orb orb orb orb: "Emergency Shutdown"
   orb orb orb orb orb orb orb orb orb: "Philotic Entanglement"
   orb orb orb orb orb orb orb orb orb orb: "Bellona"
