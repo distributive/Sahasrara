@@ -26,16 +26,19 @@ import Sahasrara.Utility.Utils (standardise)
 -- If the given query matches an alias, it will first dereference that alias
 queryCard :: NrApi -> Text -> Card
 queryCard NrApi {cards = cards, cardAliases = cardAliases} query =
-  let q = fromAlias cardAliases $ standardise query
+  let q = standardise $ fromAlias cardAliases $ standardise query
    in case filter (isInfixOf (standardise q) . fst) pairs of
-        [] -> fuzzyQueryCard pairs query
+        [] -> fuzzyQueryCard pairs q
         [res] -> snd res
-        res -> fuzzyQueryCard res query
+        res -> fuzzyQueryCard res q
   where
+    pairs :: [(Text, Card)]
     pairs = zip (map (standardise . fromMaybe "" . Card.title) cards) cards
+    fuzzyQueryCard :: [(Text, Card)] -> Text -> Card
     fuzzyQueryCard pairs' =
       let unpackedPairs = fmap (\(x, y) -> (unpack x, y)) pairs'
        in closestValueWithCosts editCosts unpackedPairs . unpack
+    editCosts :: FuzzyCosts
     editCosts =
       FuzzyCosts
         { deletion = 10,
