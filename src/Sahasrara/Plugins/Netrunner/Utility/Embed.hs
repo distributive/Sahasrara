@@ -61,7 +61,7 @@ cardsToEmbed :: NrApi -> Text -> [Card] -> Text -> Text -> EnvDatabaseDiscord Nr
 cardsToEmbed api pre cards post err = do
   formatted <- mapM formatCard $ take 10 cards
   let cards' = "**" <> intercalate "\n" formatted <> "**"
-      eTitle = ":mag: **" <> pack (show $ length cards) <> " results**"
+      eTitle = ":mag_right: **" <> pack (show $ length cards) <> " results**"
       eText = pre <> "\n" <> cards' <> "\n" <> if length cards > 10 then err else post
   return $ createEmbed $ CreateEmbed "" "" Nothing eTitle "" Nothing eText [] Nothing "" Nothing Nothing
   where
