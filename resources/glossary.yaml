@@ -243,7 +243,7 @@ defs:
   - name: "Archives"
     aliases: []
     short: "the Corp's discard pile"
-    long: "Archives is a central servrer representing the Corp's discard pile. After a Corp card is played or trashed, it goes to Archives unless a card effect states otherwise. Cards that are trashed by the Corp go into Archives facedown, unless they were rezzed when trashed. Cards that the Runner trashes while accessing go into Archives faceup. When the Runner breaches Archives, they turn all cards in Archives faceup, and access all of them simultaneously."
+    long: "Archives is a central server representing the Corp's discard pile. After a Corp card is played or trashed, it goes to Archives unless a card effect states otherwise. Cards that are trashed by the Corp go into Archives facedown, unless they were rezzed when trashed. Cards that the Runner trashes while accessing go into Archives faceup. When the Runner breaches Archives, they turn all cards in Archives faceup, and access all of them simultaneously."
     isOfficial: true
     isObsolete: false
     related:
@@ -2202,7 +2202,7 @@ defs:
   - name: "grinder"
     aliases: []
     short: "an archetype where the Corp does lots of small amounts of damage"
-    long: "The goal of grinder decks is to do enough damage throughout the game that the Runner eventually runs out of cards and can be flatlined by just a bit more damage, or that the damage hits enough key cards such as their icebreakers so that they are eventually locked out of servers by ice. Jinteki is the most common faction for grinder decks due to their number of damage-dealing cards, but the archetype does exist in other factions too (see *Weyland Consortium: Builder of Nations*)."
+    long: "The goal of grinder decks is to do enough damage throughout the game that the Runner eventually runs out of cards and can be flatlined by just a bit more damage, or that the damage hits enough key cards such as their icebreakers so that they are eventually locked out of servers by ice. Jinteki is the most common faction for grinder decks due to their number of damage-dealing cards, but the archetype does exist in other factions too (see [[Weyland Consortium: Builder of Nations]])."
     isOfficial: false
     isObsolete: false
     related:
