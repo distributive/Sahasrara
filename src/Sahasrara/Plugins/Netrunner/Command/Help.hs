@@ -23,7 +23,7 @@ helpPageRoots =
     setsHelp,
     banListHelp,
     rulesHelp,
-    -- glossaryHelp,
+    glossaryHelp,
     horoscopeHelp
   ]
 
@@ -132,13 +132,13 @@ glossaryHelp :: HelpPage
 glossaryHelp =
   HelpPage
     "glossary"
-    []
+    ["g"]
     "looks up Netrunner definitions"
-    [r|Looks up Netrunner terminology. This is a curated list, so please suggest any definitions you'd like to see added or amended on the [GitHub](https://github.com/distributive/Sahasrara/issues).
+    [r|Looks up Netrunner terminology. This is a curated list, so please suggest any definitions you'd like to see added or amended.
 
 **Usage**
-`glossary faction` gets the definition of a faction
-`glossary` gets the full list of terminology|]
+`glossary <term>` gets the definition of a given term
+`glossary` lists contributors to the glossary|]
     []
     None
 

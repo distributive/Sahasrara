@@ -11,18 +11,22 @@ module Sahasrara.Utility.Search
   ( FuzzyCosts (..),
     closestMatch,
     closestMatchWithCosts,
+    sortMatchesWithCosts,
     closestPair,
     closestPairWithCosts,
+    sortPairsWithCosts,
     closestValue,
     closestValueWithCosts,
+    sortValuesWithCosts,
     shortestSuperString,
     autocomplete,
   )
 where
 
 import Data.Char (toLower)
-import Data.List (minimumBy)
-import Data.Text (Text, isInfixOf, length, take)
+import Data.List (minimumBy, sortBy)
+import Data.Text (Text, isInfixOf, length)
+import qualified Data.Text (take)
 import Text.EditDistance
 
 -- | @compareOn@ is a helper function for comparing types that aren't ord.
@@ -72,6 +76,14 @@ closestMatchWithCosts editCosts strings query = minimumBy (compareOn score) stri
     score :: String -> Int
     score = levenshteinDistance (convertCosts editCosts) (map toLower query)
 
+-- | @sortMatchesWithCosts@ sorts a list of strings based on how well they match
+-- the query under the given costs.
+sortMatchesWithCosts :: FuzzyCosts -> [String] -> String -> [String]
+sortMatchesWithCosts editCosts strings query = sortBy (compareOn score) strings
+  where
+    score :: String -> Int
+    score = levenshteinDistance (convertCosts editCosts) (map toLower query)
+
 -- | @closestPair@ takes a set of pairs and a query and finds the pair whose key
 -- most closely matches the query.
 closestPair :: [(String, a)] -> String -> (String, a)
@@ -84,14 +96,28 @@ closestPairWithCosts editCosts pairs query = minimumBy (compareOn $ score . fst)
     score :: String -> Int
     score = levenshteinDistance (convertCosts editCosts) (map toLower query)
 
+-- | @sortPairsWithCosts@ sorts the a list of pairs based on how well their keys
+-- match the query under the given costs.
+sortPairsWithCosts :: FuzzyCosts -> [(String, a)] -> String -> [(String, a)]
+sortPairsWithCosts editCosts pairs query = sortBy (compareOn $ score . fst) pairs
+  where
+    score :: String -> Int
+    score = levenshteinDistance (convertCosts editCosts) (map toLower query)
+
 -- | @closestValue@ is @closestPair@ but it only returns the value of the
 -- matched pair.
 closestValue :: [(String, a)] -> String -> a
 closestValue = closestValueWithCosts defaultFuzzyCosts
 
--- | @closestValueWithCosts@ is @closestValue@ with customisable edit costs.
+-- | @closestMatchesWithCosts@ finds the n-closest matches with customisable
+-- edit costs.
 closestValueWithCosts :: FuzzyCosts -> [(String, a)] -> String -> a
 closestValueWithCosts editCosts pairs query = snd $ closestPairWithCosts editCosts pairs query
+
+-- | @sortValuesWithCosts@ sorts the values of a list of pairs based on how well
+-- they match the query under the given costs.
+sortValuesWithCosts :: FuzzyCosts -> [(String, a)] -> String -> [a]
+sortValuesWithCosts editCosts pairs query = map snd $ sortPairsWithCosts editCosts pairs query
 
 -- | @shortestSuperString@ takes a list of strings and matches the shortest one
 -- that contains the given query as a strict substring.

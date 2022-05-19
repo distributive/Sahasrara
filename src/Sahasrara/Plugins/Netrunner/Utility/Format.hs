@@ -7,7 +7,7 @@
 -- Portability : POSIX
 --
 -- General purpose Netrunner functions.
-module Sahasrara.Plugins.Netrunner.Utility.Misc where
+module Sahasrara.Plugins.Netrunner.Utility.Format where
 
 import Data.Text (Text, replace)
 import Sahasrara.Plugins.Netrunner.Type.NrApi (NrApi)
@@ -15,8 +15,8 @@ import Sahasrara.Utility
 import Sahasrara.Utility.Discord (formatFromEmojiName)
 import Sahasrara.Utility.Types ()
 
--- | @formatNr@ takes a card's raw description and replaces the html formatting
--- tags with Discord formatting.
+-- | @formatNr@ replaces the Netrunner symbols in a given text with Discord
+-- emoji.
 formatNr :: Text -> EnvDatabaseDiscord NrApi Text
 formatNr raw = do
   credit <- formatFromEmojiName "s_credit"
@@ -41,21 +41,7 @@ formatNr raw = do
     foldr
       (uncurry replace)
       raw
-      [ ("<strong>", "**"),
-        ("</strong>", "**"),
-        ("<em>", "*"),
-        ("</em>", "*"),
-        ("<trace>", "**"),
-        ("</trace>", "**"),
-        ("<errata>", "_**Errata:** "),
-        ("</errata>", "_"),
-        ("<champion>", "**"),
-        ("</champion>", "**"),
-        ("<ul>", "\n"),
-        ("</ul>", ""),
-        ("<li>", "• "),
-        ("</li>", "\n"),
-        ("[credit]", credit),
+      [ ("[credit]", credit),
         ("[click]", click),
         ("[interrupt]", interrupt),
         ("[link]", link),
@@ -72,7 +58,64 @@ formatNr raw = do
         ("[shaper]", shaper),
         ("[apex]", apex),
         ("[adam]", adam),
-        ("[sunny-lebeau]", sunny),
-        ("*", "\\*"),
-        ("_", "\\_")
+        ("[sunny-lebeau]", sunny)
       ]
+
+-- | @formatDiscord@ replaces the html formatting in a given text with Discord
+-- formatting.
+formatDiscord :: Text -> Text
+formatDiscord raw =
+  foldr
+    (uncurry replace)
+    raw
+    [ ("<strong>", "**"),
+      ("</strong>", "**"),
+      ("<em>", "*"),
+      ("</em>", "*"),
+      ("<trace>", "**"),
+      ("</trace>", "**"),
+      ("<errata>", "_**Errata:** "),
+      ("</errata>", "_"),
+      ("<champion>", "**"),
+      ("</champion>", "**"),
+      ("<ul>", "\n"),
+      ("</ul>", ""),
+      ("<li>", "• "),
+      ("</li>", "\n"),
+      ("<br>", "\n"),
+      ("*", "\\*"),
+      ("_", "\\_")
+    ]
+
+-- | @formatDiscord'@ replaces the html formatting in a given text with Discord
+-- formatting. but does not escape existing Discord formatting.
+formatDiscord' :: Text -> Text
+formatDiscord' raw =
+  foldr
+    (uncurry replace)
+    raw
+    [ ("<strong>", "**"),
+      ("</strong>", "**"),
+      ("<em>", "*"),
+      ("</em>", "*"),
+      ("<trace>", "**"),
+      ("</trace>", "**"),
+      ("<errata>", "_**Errata:** "),
+      ("</errata>", "_"),
+      ("<champion>", "**"),
+      ("</champion>", "**"),
+      ("<ul>", "\n"),
+      ("</ul>", ""),
+      ("<li>", "• "),
+      ("</li>", "\n"),
+      ("<br>", "\n")
+    ]
+
+-- | @formatText@ reformats Netrunner symbols and html tags.
+formatText :: Text -> EnvDatabaseDiscord NrApi Text
+formatText raw = formatNr $ formatDiscord raw
+
+-- | @formatText@ reformats Netrunner symbols and html tags without escaping
+-- existing Discord formatting.
+formatText' :: Text -> EnvDatabaseDiscord NrApi Text
+formatText' raw = formatNr $ formatDiscord' raw

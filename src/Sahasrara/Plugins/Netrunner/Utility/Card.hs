@@ -35,7 +35,7 @@ import Sahasrara.Plugins.Netrunner.Type.NrApi (NrApi (..))
 import Sahasrara.Plugins.Netrunner.Type.Pack (Pack (cycleCode))
 import qualified Sahasrara.Plugins.Netrunner.Type.Pack as Pack
 import Sahasrara.Plugins.Netrunner.Utility.BanList (activeBanList, isBanned, isRestricted, toGlobalPenalty, toUniversalInfluence)
-import Sahasrara.Plugins.Netrunner.Utility.Misc (formatNr)
+import Sahasrara.Plugins.Netrunner.Utility.Format (formatText)
 import Sahasrara.Utility
 import Sahasrara.Utility.Types ()
 
@@ -62,7 +62,7 @@ toTitle card =
 toText :: Card -> EnvDatabaseDiscord NrApi Text
 toText card = do
   let subtitle = toSubtitle card
-  body <- formatNr (fromMaybe "" $ text card)
+  body <- formatText (fromMaybe "" $ text card)
   return $ subtitle <> body
 
 -- | @toSubtitle@ generates the first line of a card's embed text listing
@@ -181,5 +181,5 @@ toFlavour :: Card -> EnvDatabaseDiscord NrApi (Maybe Text)
 toFlavour Card {flavour = flavour} = case flavour of
   Nothing -> return Nothing
   Just f -> do
-    f' <- formatNr f
+    f' <- formatText f
     return $ Just f'

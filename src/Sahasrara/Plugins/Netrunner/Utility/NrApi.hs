@@ -23,7 +23,7 @@ import Sahasrara.Plugins.Netrunner.Type.Blacklist (Blacklist, defaultBlacklist)
 import Sahasrara.Plugins.Netrunner.Type.Card (Card, packCode)
 import Sahasrara.Plugins.Netrunner.Type.Cycle (Cycle)
 import Sahasrara.Plugins.Netrunner.Type.Faction (Faction)
-import Sahasrara.Plugins.Netrunner.Type.Glossary (Glossary)
+import Sahasrara.Plugins.Netrunner.Type.Glossary (Glossary, defaultGlossary)
 import Sahasrara.Plugins.Netrunner.Type.NrApi (NrApi (..))
 import Sahasrara.Plugins.Netrunner.Type.Pack (Pack)
 import Sahasrara.Plugins.Netrunner.Type.Type (Type)
@@ -176,18 +176,13 @@ getBlacklist = do
     yamlFile :: FilePath
     yamlFile = "resources/horoscopeBlacklist.yaml"
 
--- | @GlossaryFile@ represents the raw glossary data.
-data GlossaryFile = GlossaryFile {defs :: Glossary} deriving (Show, Generic)
-
-instance FromJSON GlossaryFile
-
 -- | @getGlossary@ loads the glossary file.
 getGlossary :: IO Glossary
 getGlossary = do
-  glossary <- decodeFileEither yamlFile :: IO (Either ParseException GlossaryFile)
+  glossary <- decodeFileEither yamlFile :: IO (Either ParseException Glossary)
   return $ case glossary of
-    Left _ -> []
-    Right out -> defs out
+    Left _ -> defaultGlossary
+    Right out -> out
   where
     yamlFile :: FilePath
     yamlFile = "resources/glossary.yaml"

@@ -37,7 +37,7 @@ import Sahasrara.Plugins.Netrunner.Utility.BanList (activeBanList, latestBanList
 import Sahasrara.Plugins.Netrunner.Utility.Card (toPack)
 import Sahasrara.Plugins.Netrunner.Utility.Embed
 import Sahasrara.Plugins.Netrunner.Utility.Find
-import Sahasrara.Plugins.Netrunner.Utility.Misc (formatNr)
+import Sahasrara.Plugins.Netrunner.Utility.Format (formatText)
 import Sahasrara.Plugins.Netrunner.Utility.NrApi (getNrApi)
 import Sahasrara.Plugins.Netrunner.Utility.Search
 import Sahasrara.Utility
@@ -179,7 +179,7 @@ nrHoroscope = Command "horoscope" horoscopePars []
       let fs = filterFlavours (blacklist api) (cards api)
       seed <- liftIO $ getCurrentTime >>= return . fromIntegral . toModifiedJulianDay . utctDay
       f <- liftIO $ chooseOneSeeded seed fs
-      f' <- formatNr f
+      f' <- formatText f
       sendEmbedMessage m "" $ addColour (RGB 170 141 216) $ embedText ":crystal_ball: Horoscope :crystal_ball:" $ replaceAll [r|"(.*?)"[.\S\s]*|] "$1" f'
     filterFlavours :: Blacklist -> [Card] -> [Text]
     filterFlavours Blacklist {badSubstrings = badSubstrings, badCards = badCards} cards =
@@ -250,7 +250,7 @@ embedCardFlavour card m = do
         Just "07024" -> queryCard api "Déjà Vu"
         Just "01002" -> queryCard api "The Twins"
         _ -> card
-  cText <- formatNr $ fromMaybe "" $ text card'
+  cText <- formatText $ fromMaybe "" $ text card'
   embed <- case code card' of
     Just "12077" -> cardToEmbedWithText api card' cText
     _ -> cardToFlavourEmbed api card'
@@ -311,7 +311,8 @@ netrunnerPlugin =
           commandAlias "mwl" nrBanList,
           nrRules,
           commandAlias "cr" nrRules,
-          -- nrGlossary,
+          nrGlossary,
+          commandAlias "g" nrGlossary,
           nrHoroscope
         ],
       inlineCommands = [nrInline, nrInlineImg, nrInlineFlavour, nrInlineBanHistory],

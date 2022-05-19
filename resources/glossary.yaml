@@ -1,33 +1,2345 @@
+source: "https://github.com/distributive/Sahasrara/issues"
 defs:
+  - name: "Netrunner"
+    aliases:
+      - "nr"
+    short: "Netrunner is a collectible card game!"
+    long: "Netrunner is a two-player asymmetric card game set in a dystopian future where four megaCorporations control almost every aspect of daily life. Legendary hackers known as “Runners” aim to fight the Corps’ influence by hacking into their servers and preventing them from advancing their sinister agendas."
+    isOfficial: true
+    isObsolete: false
+    related:
+      - "nisei"
+      - "netRunnerdb"
+      - "jinteki.net"
+      - "collectable card game"
+      - "living card game"
+    sources:
+      - "[nisei.net](https://nisei.net)"
   - name: "credit"
     aliases:
       - "c"
+      - "cr"
     short: "the currency of Netrunner"
-    long: "Credits are the standard currency of Netrunner. Most cards require a cost to be paid in credits to be played, and both sides can spend a click to gain a credit as a basic action."
+    long: "The currency used to play, install, and rez cards. You can gain credits by playing cards like [[Hedge Fund]] or [[Rezeki]]. Both players have a basic action that allows them to spend one click to gain one credit."
+    isOfficial: true
+    isObsolete: false
+    related:
+      - "click"
+      - "basic action"
+    citations:
+      - "Larrea"
+  - name: "click"
+    aliases: []
+    short: "the basic unit of work in Netrunner"
+    long: "Clicks are spent to play/install cards and take actions. At the beginning of the Corp's turn, they draw a card then gain 3 clicks. At the beginning of the Runner's turn, they gain 4 clicks. Players must spend all clicks available to them before ending their turn."
+    isOfficial: true
+    isObsolete: false
+    related:
+      - "credit"
+      - "paid ability"
+      - "basic action"
+    citations:
+      - "Larrea"
+  - name: "draw"
+    aliases:
+      - "drawing"
+    short: "the act of removing the top card of your deck and adding it to your hand"
+    long: "One of the basic actions available to both players is \"**[click]:** Draw 1 card.\". You can use cards like [[Diesel]] or [[Green Level Clearance]] to draw cards more efficiently, or in conjuction with other abilities. Corps always draw at the beginning of their turn, before they gain their alloted clicks."
     isOfficial: true
     isObsolete: false
     related:
       - "basic action"
-  - name: "basic action"
+    citations:
+      - "Ams"
+  - name: "deck"
+    aliases:
+      - "decklist"
+    short: "a set of cards a player brings to a game | a player's draw pile"
+    long: "1. a deck or decklist is the set of cards a player brings to a game. At the start of the game, they place their deck in the appropriate place and draw their starting hand.<br><br>2. each player's draw pile is their deck."
+    isOfficial: true
+    isObsolete: false
+    related:
+      - "draw pile"
+    citations:
+      - "Ams"
+  - name: "draw pile"
     aliases: []
-    short: "the implicit abilities each player has access to at all times"
-    long: "Basic actions are the implicit abilities each player has access to at all times."
+    short: "the deck you draw cards from"
+    long: "The draw pile for the Runner is the stack. The draw pile for the Corp is the central server R&D."
+    isOfficial: false
+    isObsolete: false
+    related:
+      - "stack"
+      - "R&D"
+    citations:
+      - "Ams"
+  - name: "starting hand"
+    aliases: []
+    short: "the hand of 5 cards you start each game with"
+    long: "At the start of each game, each player draws 5 cards from their deck, and then may either mulligan or keep that hand. The Corp always chooses whether to mulligan before the Runner. Players may only mulligan once."
+    isOfficial: true
+    isObsolete: false
+    related:
+      - "mulligan"
+    citations:
+      - "Ams"
+  - name: "mulligan"
+    aliases: []
+    short: "the act of discarding your starting hand and drawing a new one"
+    long: "At the start of each game, each player draws their starting hand of 5 cards, then (starting with the Corp) may choose whether to mulligan that hand or keep it. If they mulligan, they shuffle their original hand into their deck and draw a new one. Each player may only mulligan once."
+    isOfficial: true
+    isObsolete: false
+    related:
+      - "starting hand"
+    citations:
+      - "Ams"
+  - name: "discard"
+    aliases: []
+    short: "the act of putting cards from your hand into your discard pile"
+    long: "At the end of your turn, if you have more cards than your max handsize, you discard cards until you're at handsize. Discarding cards is not random, and is different from trashing cards and taking damage."
+    isOfficial: true
+    isObsolete: false
+    related:
+      - "hand size"
+      - "damage"
+    citations:
+      - "Ams"
+  - name: "hand size"
+    aliases:
+      - "maximum hand size"
+    short: "the max. number of cards you can have in hand without discarding"
+    long: "Each player has a maximum hand size. At the end of a player's turn, if they have more cards in hand than their hand size, they discard cards until they are at their hand size limit. Both players start the game with a maximum hand size of 5, unless an ID ability says otherwise. Some card effects increase or decrease one or both players' hand sizes. When the Runner suffers brain damage, their hand size is permanently reduced by the amount of damage they took for the rest of the game."
+    isOfficial: true
+    isObsolete: false
+    related:
+      - "discarding"
+      - "brain damage"
+    citations:
+      - "Ams"
+  - name: "trash"
+    aliases: []
+    short: "to send a card to its respective discard pile"
+    long: "To trash a card is to place it into Archives (for Corp cards) or the Heap (for Runner Cards). This may happen because of a card effect, as part of paying a cost, or to maintain a legal game state. Events and Operations are trashed after they finish resolving."
+    isOfficial: true
+    isObsolete: false
+    related:
+      - "trash cost"
+    citations:
+      - "monde"
+  - name: "trash cost"
+    aliases: []
+    short: "the number of credits the Runner must spend to trash a Corp card"
+    long: "Certain Corp cards (all assets and upgrades, and a select few ice and operations) have a trash cost, depicted as a number within a trash can icon. While accessing that card, the Runner may spend that many credits to trash the card, placing it face-up into Archives. This is known as the basic trash ability."
     isOfficial: true
     isObsolete: false
     related: []
-  - name: "paid ability"
+    citations:
+      - "monde"
+  - name: "basic action"
     aliases: []
-    short: "a printed ability with a cost and an effect"
-    long: "Paid abilities exist in the form `cost: effect`. While a paid ability is in play, the player controlling that paid ability may pay its cost, then resolve its effect. Paid abilities cannot be used if their effect would not cause a change in game state (even if paying the cost would then allow the effect to cause a change in game state)."
+    short: "an action that is available by default"
+    long: "Certain actions that are always available to a player.<br><br>**Corp basic actions**<br>- **[click]:** Gain 1[credit].<br>- **[click]:** Draw 1 card (from R&D).<br>- **[click]:** Play 1 operation from HQ.<br>- **[click]:** Install 1 agenda/asset/upgrade/ice from HQ.<br>- **[click], 1[credit]:** Advance 1 installed card (that can be advanced).<br>- **[click], 2[credit]:** Trash 1 installed resource. Take this action only if the Runner is tagged.<br>- **[click][click][click]:** Purge virus counters.<br><br>**Runner basic actions**<br>- **[click]:** Gain 1[credit].<br>- **[click]:** Draw 1 card (from the stack).<br>- **[click]:** Play 1 event from your grip.<br>- **[click]:** Install 1 program/resource/hardware from your grip.<br>- **[click]:** Run any server.<br>- **[click], 2[credit]:** Remove a tag."
+    isOfficial: true
+    isObsolete: false
+    related:
+      - "basic action card"
+    citations:
+      - "monde"
+  - name: "basic action card"
+    aliases: []
+    short: "a supplementary card that lists the basic actions of each player"
+    long: "A card that lists the basic actions a player may take. This card is not in the play area, and serves only as a reminder as to which actions are allowed to players by default.<br><br>**Corp basic actions**<br>- **[click]:** Gain 1[credit].<br>- **[click]:** Draw 1 card (from R&D).<br>- **[click]:** Play 1 operation from HQ.<br>- **[click]:** Install 1 agenda/asset/upgrade/ice from HQ.<br>- **[click], 1[credit]:** Advance 1 installed card (that can be advanced).<br>- **[click], 2[credit]:** Trash 1 installed resource. Take this action only if the Runner is tagged.<br>- **[click][click][click]:** Purge virus counters.<br><br>**Runner basic actions**<br>- **[click]:** Gain 1[credit].<br>- **[click]:** Draw 1 card (from the stack).<br>- **[click]:** Play 1 event from your grip.<br>- **[click]:** Install 1 program/resource/hardware from your grip.<br>- **[click]:** Run any server.<br>- **[click], 2[credit]:** Remove a tag."
+    isOfficial: true
+    isObsolete: false
+    related:
+      - "basic action"
+    citations:
+      - "monde"
+  - name: "side"
+    aliases: []
+    short: "\"Corp\" and \"Runner\""
+    long: "Each game of Netrunner is comprised of two sides: the Corp and the Runner. The Corp builds servers and attempts to win by scoring agendas or flatlining the Runner, and the Runner runs on the Corp's servers and attempts to win by stealing agendas or decking out the Corp."
+    isOfficial: true
+    isObsolete: false
+    related:
+      - "Corp"
+      - "Runner"
+  - name: "Corp"
+    aliases: []
+    short: "one of the two sides in Netrunner"
+    long: "Corps are one of the two sides in Netrunner. They play agendas, ice, operations, upgrades and assets. The Corp Factions are Haas-Bioroid, Jinteki, NBN and Weyland. Corps always take the first turn each game."
+    isOfficial: true
+    isObsolete: false
+    related:
+      - "Runner"
+    citations:
+      - "Larrea"
+      - "Ams"
+  - name: "Runner"
+    aliases: []
+    short: "one of the two sides in Netrunner"
+    long: "Runners are one of the two sides in Netrunner. They play events; install programs, hardware and resources; and run on the Corp's servers. The main Runner factions are Criminal, Shaper and Anarch. Runners always take their first turn after the Corp's first turn.<br><br>Thematically, Runners are hackers, and running is the act of hacking into a Corporation's servers."
+    isOfficial: true
+    isObsolete: false
+    related:
+      - "Corp"
+    citations:
+      - "Larrea"
+      - "Ams"
+  - name: "stack"
+    aliases: []
+    short: "the Runner's draw pile"
+    long: "The stack is the Runner's draw pile."
+    isOfficial: true
+    isObsolete: false
+    related:
+      - "Runner"
+    citations:
+      - "Ams"
+  - name: "grip"
+    aliases: []
+    short: "the Runner's hand"
+    long: "The grip is the Runner's hand. They may play/install cards from the grip (paying their play/install cost) and if they end their turn with more cards in the grip than their maximum hand size, they must discard cards until they hit their hand size. Damage removes cards from the grip at random, and brain damage permanently reduces the Runner's maximum hand size."
+    isOfficial: true
+    isObsolete: false
+    related:
+      - "Runner"
+      - "maximum hand size"
+      - "damage"
+    citations:
+      - "Ams"
+  - name: "heap"
+    aliases: []
+    short: "the Runner's discard pile"
+    long: "The Heap is the Runner's discard pile. After a Runner card is played or trashed, it goes to the heap unless a card effect states otherwise."
+    isOfficial: true
+    isObsolete: false
+    related:
+      - "Runner"
+    citations:
+      - "Ams"
+  - name: "HQ"
+    aliases: []
+    short: "the Corp's hand"
+    long: "HQ is a central server representing the Corp's hand. They may play/install cards from the grip (paying their play/install cost) and if they end their turn with more cards in the grip than their maximum hand size, they must discard cards until they hit their hand size. Whenever the Runner breaches HQ, they access one card at random. If any effects increase the number of cards accessed from HQ, they access that many additional cards one at a time. If an accessed card can be trashed, or can be stolen with an additional cost, the Runner must choose whether to trash or steal it before accessing the next card."
+    isOfficial: true
+    isObsolete: false
+    related:
+      - "Corp"
+      - "central server"
+    citations:
+      - "Ams"
+  - name: "R&D"
+    aliases: []
+    short: "the Corp's draw pile"
+    long: "R&D (short for _Research and Development_) is a central server representing the Corp's deck. At the start of their turn the Corp has a mandatory draw, forcing them to draw a card from R&D. When the Runner breaches R&D, they access the top card without revealing it to the Corp (unless a card effect states otherwise). If an effect increases the number of cards accessed from R&D, the Runner accesses that many cards from the top of R&D one at a time, starting at the top. Any cards that are not stolen or trashed during access are returned to R&D in their original order. If the Runner breaches R&D and accesses the top card without removing it, then breaches R&D again, they will access the same card."
+    isOfficial: true
+    isObsolete: false
+    related:
+      - "Corp"
+      - "central server"
+    citations:
+      - "Ams"
+  - name: "Archives"
+    aliases: []
+    short: "the Corp's discard pile"
+    long: "Archives is a central servrer representing the Corp's discard pile. After a Corp card is played or trashed, it goes to Archives unless a card effect states otherwise. Cards that are trashed by the Corp go into Archives facedown, unless they were rezzed when trashed. Cards that the Runner trashes while accessing go into Archives faceup. When the Runner breaches Archives, they turn all cards in Archives faceup, and access all of them simultaneously."
+    isOfficial: true
+    isObsolete: false
+    related:
+      - "Corp"
+      - "central server"
+    citations:
+      - "Ams"
+  - name: "RFG"
+    aliases:
+      - "remove from game"
+    short: "remove(d) from the game"
+    long: "RFG means *remove* or *removed from the game*. A card that is removed from the game is not trashed, and cannot return to play. Many powerful cards remove themselves from the game instead of being trashed (see: Spin Doctor), and some cards remove other cards from the game as a cost or as a punishment (see: Bloo Moose, Ark Lockdown)."
+    isOfficial: true
+    isObsolete: false
+    related: []
+    citations:
+      - "Ams"
+  - name: "server"
+    aliases: []
+    short: "the play areas where the Corp installs their cards"
+    long: "Servers are where the Corp installs their cards. Servers are made of two parts: a root, and a sequence of ice protecting it. Central servers contain one of the Corp's hand, draw pile, and discard pile alongside their root. The Runner can run servers, in which they encounter all the ice protecting the chosen server from the outermost position to the innermost. If they successfully pass all ice without the run ending (either due to an ETR subroutine or because the Runner jacked out) then they breach the server.<br><br>The three central servers are always in play: HQ (representing their hand), R&D (representing their draw pile), and Archives (representing their discard pile). The Corp can create remote servers by installing an asset, upgrade, or agenda in the root of a new remote, or by installing a piece of ice protecting a new remote. Assets and agendas can only be installed in the root of remotes, with a limit of one asset or agenda per remote server. Any number of upgrades can be installed in the root of any server."
+    isOfficial: true
+    isObsolete: false
+    related:
+      - "central server"
+      - "remote server"
+      - "ice"
+      - "asset"
+      - "agenda"
+      - "upgrade"
+      - "run"
+    citations:
+      - "Ams"
+  - name: "central server"
+    aliases:
+      - "central"
+    short: "the servers R&D, Archives and HQ"
+    long: "The Corp has three servers which are always in play: HQ (representing their hand), R&D (representing their draw pile), and Archives (representing their discard pile).<br><br>Like remote servers, the centrals have roots. However, only upgrades can be installed in the root of a central server.<br><br>When the Runner breaches HQ, they access cards from the Corp's hand at random, one at a time. Unless card effects say otherwise, the Runner only accesses one card per breach.<br><br>When the Runner breaches R&D, they access cards from the Corp's draw pile, starting from the top and working down. Unless card effects say otherwise, the Runner only accesses one card per breach.<br><br>When the Runner breaches Archives, they access all cards in the Corp's discard pile simultaneously, turning any facedown cards faceup.<br><br>If there are any upgrades installed in the root of a central when the Runner breaches it, they must also access those cards. They choose which order to access cards."
+    isOfficial: true
+    isObsolete: false
+    related:
+      - "hq"
+      - "r&d"
+      - "archives"
+    citations:
+      - "Ams"
+  - name: "remote server"
+    aliases:
+      - "remote"
+    short: "servers that are not central"
+    long: "Remote servers are the only place assets and agendas can be installed. The roots of remote servers can only contain one card that is either an asset or agenda at a time. If the Corp installs an asset or upgrade in a server already containing such an asset or upgrade, they must trash the original card in the process. Any number of upgrades can be installed in a remote server. Remote servers can be created by installing an asset, upgrade, or agenda in a new remote, or by installing a piece of ice protecting a new empty remote.<br><br>When the Runner breaches a remote server, they access all cards installed in its root, in the order of their choice."
+    isOfficial: true
+    isObsolete: false
+    related:
+      - "central server"
+      - ""
+    citations:
+      - "Ams"
+  - name: "run"
+    aliases:
+      - "running"
+    short: "the act of passing the ice protecting a server then breaching it"
+    long: "Runs are the main mechanic through which the Runner interacts with the Corp. A basic action of the Runner is to spend a click to run a server. They may choose any server from the three centrals to any remote servers that are installed. Some cards enable the Runner to make runs without using their basic action. Events that make runs usually have the \"run\" subtype.<br><br>When a run is initiated on a server protected by ice, the Runner immediately approaches the outermost piece of ice. If it isn't rezzed, the Corp may rez it. If the ice is (or already was) rezzed then the Runner encounters it. There is a paid ability window during encounters in which the Runner may use icebreakers or any other paid abilities to break subroutines on the ice. When the paid ability window ends, any unbroken subroutines fire. If the run has not ended after the encounter, the Runner may continue to the next ice or jack out (willingly ending the run).<br><br>Once the Runner has passed all ice protecting a server, there is a final paid ability window, after which the run is declared successful. The Runner then breaches the server, which allows them to access all cards installed in the root and any additional accesses granted by running a central server. Note that if there is an ability in play that *replaces* the breach, the breach does not happen and the Runner does not access cards (see [[Security Testing]]). A breach can only be replaced once, so two replacement effects cannot both happen on the same run. If the Runner runs on a server not protected by ice, there is still a paid ability window before the run is considered successful (see [[NGO Front]]).<br><br>If a remote server stops existing for any reason during a run on it (i.e. all cards installed in its root and all ice protecting it are uninstalled) then the run immediately ends after the current paid ability window and, unless the run has already been declared successful or unsuccessful, is considered neither."
+    isOfficial: true
+    isObsolete: false
+    related:
+      - "ice"
+      - "icebreaker"
+      - "breach"
+      - "basic action"
+    citations:
+      - "Ams"
+  - name: "jack out"
+    aliases:
+      - "jo"
+      - "jacking out"
+      - "jacked out"
+    short: "the Runner's ability to choose to end a run"
+    long: "After the Runner has passed at least one ice during a run, they have a window during which they can choose to end the run before encountering each subsequent ice protecting the attacked server. This act is called \"jacking out\". Some mechanics on both Runner and Corp cards interact with jacking out or affect when the Runner is allowed to jack out."
+    isOfficial: true
+    isObsolete: false
+    related:
+      - "run"
+      - "ice"
+    citations:
+      - "Ams"
+  - name: "approach"
+    aliases: []
+    short: "the timing window when ice can normally be rezzed"
+    long: "During runs, the Runner \"approaches\" ice before encountering it. The only time Corps can normally rez an installed ice is while the Runner is appraoching it. The Runner may choose to jack out before approaching any ice after the first during a run."
+    isOfficial: true
+    isObsolete: false
+    related:
+      - "run"
+      - "ice"
+      - "jack out"
+    citations:
+      - "Ams"
+  - name: "encounter"
+    aliases: []
+    short: "the Runner act of interacting with a piece of ice "
+    long: "Encounters with ice are when the Runner has an opportunity to break subroutines. Icebreakers may only be used to break subroutines on the piece of ice currently being encountered. The strength of icebreakers returns to their base strength at the end of each encounter unless stated otherwise (see [[Gordian Blade]]). The Runner does not encounter unrezzed ice that the Corp doesn't rez on approach; they just pass it.<br><br>When the paid ability window during an encounter ends, all unbroken subroutines fire. If none of the subroutines end the run, the Runner passes that piece of ice. If the Runner uses a bypass abiltiy during the encounter, they pass the ice immediately and any subroutines or other \"on encounter\" effects do not fire (see [[Tollbooth]])."
+    isOfficial: true
+    isObsolete: false
+    related:
+      - "run"
+      - "ice"
+      - "icebreaker"
+      - "pass"
+    citations:
+      - "Ams"
+  - name: "pass"
+    aliases: []
+    short: "the act of ending an encounter with a piece of ice"
+    long: "Passing ice is the act of ending an encounter with an ice and continuing to approach the next piece of ice (if there is one). Bypassing is a special type of passing that skips the remainder of the encounter."
+    isOfficial: true
+    isObsolete: false
+    related:
+      - "run"
+      - "ice"
+      - "bypass"
+    citations:
+      - "Ams"
+  - name: "bypass"
+    aliases: []
+    short: "the act of passing an ice without letting its subroutines fire"
+    long: "Bypassing ice is the act of passing a piece of ice being encountered, immediately ending the encounter without resolving any unbroken subroutines. Cards like [[Inside Job]] and [[Femme Fatale]] enable the Runner to bypass ice. Bypassing an ice still counts as passing it (see [[Kakugo]])."
+    isOfficial: true
+    isObsolete: false
+    related:
+      - "ice"
+      - "pass"
+    citations:
+      - "Ams"
+  - name: "breach"
+    aliases: []
+    short: "the result of a successful run on a server"
+    long: "Breaching a server is the result of a successful run on it. During a breach, the Runner accesses all cards in the root of the attacked server (in any order). If it was a run on a central server, they also access cards from that central as dictated by the type of central it is.<br><br>Some card effects change the number of accesses on breach (see [[Docklands Pass]]). This modifier takes place even if the Runner breaches the relevant server outside of a run (see [[Gang Sign]]). Some effects replace the breach step of runs (see [[Security Testing]]). Replacing the breach step prevents the Runner from accessing any cards and cannot be done twice per run, meaning two breach replacement effects cannot both trigger at the end of a single run."
+    isOfficial: true
+    isObsolete: false
+    related:
+      - "access"
+    citations:
+      - "Ams"
+  - name: "access"
+    aliases: []
+    short: "the Runner act of looking at a card, possibly stealing or trashing it"
+    long: "1. the Runner act of looking at a card (even if it was facedown or in R&D or HQ). If the card has a trash cost, the Runner may then pay it to trash the card from whever it is, unless it is already in Archives. If the card is an agenda, the Runner must steal it. There are two exceptions. If there is an additional cost to steal the agenda (see [[SDS Drone Deployment]] and [[NAPD Corden]]) then the Runner may choose not to steal even if they can pay the cost. If the agenda is uninstalled during the access for any reason, the Runner stops accessing it (see [[Imp]] and [[Film Critic]]).<br><br>2. a keyword used to specify that an action is to be taken while accessing a card (see [[Imp]])."
+    isOfficial: true
+    isObsolete: false
+    related:
+      - "breach"
+      - "trash cost"
+    citations:
+      - "Ams"
+  - name: "tag"
+    aliases:
+      - "tagged"
+    short: "a negative property of Runners that is required to play some cards"
+    long: "Tags are a type of counter the Runner can possess. If they have have at least one tag they are considered \"tagged\". Many cards can only be played if the Runner is tagged (see [[Retribution]]) or if the Runner has a certain number of tags (see [[BOOM!]]). Some cards scale in effect with the number of tags the Runner has (see [[High-Profile Target]]). Cards that benefit the Corp or negatively affect the Runner while they're tagged are called tag punishment cards.<br><br>While the Runner is tagged, the Corp may spend a click and 2 credits to trash any installed resource as one of their basic actions. The Runner may remove tags by spending a click and 2 credits as one of their basic actions.<br><br>Corp cards that tag the Runner usually require the Runner to have made a run of some sort on their previous turn, and normally have an interactive element allowing the Runner to avoid taking the tag (see [[Public Trail]] and [[Hard-Hitting News]])."
+    isOfficial: true
+    isObsolete: false
+    related:
+      - "tag punishment"
+    citations:
+      - "Ams"
+  - name: "bad publicity"
+    aliases:
+      - "bp"
+      - "bad pub"
+    short: "a property of Corps that gives Runners extra credits each run"
+    long: "Bad publicity is a type of counter the Corp can possess. At the start of each run, the Runner gains an extra credit for each bad publicity the Corp has (if the Corp gains additional bad publicity during the run, the Runner does not gain additional credits for that run). At the end of the run, any unspent credits are returned to the bank.<br><br>The Corp doesn't have an ability to remove bad publicity by default, but some cards allow them to (see [[Roughneck Repair Squad]])."
+    isOfficial: true
+    isObsolete: false
+    related:
+      - "run"
+      - "credit"
+    citations:
+      - "Ams"
+  - name: "tutor"
+    aliases:
+      - "tutoring"
+      - "search"
+      - "searching"
+    short: "the act of searching for a specific card from your deck"
+    long: "Tutoring is the act of searching for a specific card from your deck, and adding it to your hand, installing it, or otherwise putting it somewhere more accessible than an unknown position in your deck. Some tutors in Netrunner can find any type of card without restriction (see [[Watchtower]] and [[Logos]]), however most have some kind of limitation, be that based on type or subtype (see [[Digital Rights Management]], [[Self-Modifying Code]], and [[Gachapon]]).<br><br>After you search for a card from your deck as either player, you must shuffle it, even if the card effect does not specify that you must.<br><br>The term was coined after the Magic the Gathering card *Demonic Tutor*, which allows players to search their deck for any one card and add it to their hand."
+    isOfficial: false
+    isObsolete: false
+    related:
+      - "draw"
+    citations:
+      - "Ams"
+  - name: "recursion"
+    aliases: []
+    short: "returning trashed or discarded cards into play"
+    long: "Recursion is the process of returning cards from either player's discard pile into their hands, decks, or board.<br><br>Cards that have been removed from the game cannot be returned into play."
+    isOfficial: false
+    isObsolete: false
+    related:
+      - "trash"
+      - "Archives"
+      - "heap"
+    citations:
+      - "Ams"
+  - name: "credit pool"
+    aliases: []
+    short: "the number of credits a player has"
+    long: "The number of credits each player has is referred to as their credit pool."
+    isOfficial: true
+    isObsolete: false
+    related:
+      - "credit"
+    citations:
+      - "Ams"
+  - name: "bank"
+    aliases: []
+    short: "the collection of credit tokens available for players to take from"
+    long: "The bank is just the theoretical pile of credits players take from when they gain credits. During in-person play, the bank will be the physical pile of credit tokens players bring to the game. There is no gameplay limitation on the size of the bank though, and players can legally take credits from it indefinitely regardless of physical constraints. Some cards refer to taking credits from the bank (see [[Miss Bones]])."
+    isOfficial: true
+    isObsolete: false
+    related:
+      - "credit"
+    citations:
+      - "Ams"
+  - name: "load"
+    aliases: []
+    short: "the act of placing credits from the bank on a card"
+    long: "Loading is a specific act of hosting some kind of counter on a card with an effect that triggers when the card becomes \"empty\". This effect always includes trashing the card hosting the credits. Cards that \"load\" credits on them always come with an empty trigger (see [[Nico Campaign]])."
+    isOfficial: true
+    isObsolete: false
+    related:
+      - "empty"
+    citations:
+      - "Ams"
+  - name: "empty"
+    aliases: []
+    short: "the state of a card that previously had loaded credits on it"
+    long: "When a card \"loads\" itself with counters, it also specifies an empty trigger. This is an effect that triggers when all loaded counters are removed from the card (see [[Nico Campaign]])."
+    isOfficial: true
+    isObsolete: false
+    related:
+      - "load"
+    citations:
+      - "Ams"
+  - name: "interupt"
+    aliases: []
+    short: "an effect that has a different timing window to regular abilities"
+    long: "The [interrupt] symbol (\"interrupt\") declares that the effect or ability following it has a different timing window to the normal timing windows provided by the game's rules. These cards will specify when the effect can be triggered (see [[Project Vacheron]], [[Flip Switch]], and [[Zaibatsu Loyalty]])."
     isOfficial: true
     isObsolete: false
     related:
       - "paid ability window"
-  - name: "paid ability window"
+    citations:
+      - "Ams"
+  - name: "paid ability"
     aliases: []
-    short: "the timing window when paid abilities may be used"
-    long: "the timing window when paid abilities (whose cost can be met) may be used"
+    short: "an ability that's formatted as **<cost>:** <effect>"
+    long: "A paid ability is any card ability that has a \"**<cost>:** <effect>\" format. If the cost begins with a click, it is an action and may be activated during action windows on your turn. Otherwise, it may be activated during appropriate paid ability windows."
+    isOfficial: true
+    isObsolete: false
+    related:
+      - "paid ability window"
+    citations:
+      - "monde"
+  - name: "NISEI"
+    aliases: []
+    short: "a volunteer organisation continuing the development of Netrunner"
+    long: "NISEI is a fan-run nonprofit volunteer collective. Our mission is to keep the game of Netrunner alive and thriving after the end of the official FFG era. We do this through several different initiatives.<br><br>First and foremost, we design, playtest, and release our own sets of cards for the wider Netrunner community to enjoy. NISEI cards are fully compatible with classic Android: Netrunner cards. Our products include our introductory set, System Gateway, and our first full cycle, the Ashes Cycle, consisting of Downfall and Uprising.<br><br>NISEI also provides support to organized play. We arrange prize kits for casual game nights (known as GNKs) and Store and Regional Championship competitive events. Our Organized Play team also coordinates our annual tournaments at the National, Continental and World Championship levels.<br><br>In addition to cultivating the card pool through new releases, we also manage the rotation of older cards to keep the competitive environment fresh. Since we strive for a competitive scene that supports a robust diversity of decks, our teams monitor trends in the meta and use the NISEI Ban List (formerly known as the Most Wanted List, or MWL) to ban cards that lead to an unhealthy environment.<br><br>Finally, our rules team maintains the ever-evolving rules documents that make the game possible."
+    isOfficial: true
+    isObsolete: false
+    related:
+      - "netRunnerdb"
+    sources:
+      - "[nisei.net](https://nisei.net)"
+  - name: "netRunnerdb"
+    aliases:
+      - "netRunnerdb.com"
+      - "nrdb"
+    short: "a website for viewing ANR cards and building decks"
+    long: "NetrunnerDB ([netRunnerdb.com](netRunnerdb.com)) is a website containing a list of all Android Netrunner cards ever printed, as well as information on banlists, and a deckbuilder. Users of the site can build and publish their decklists.<br><br>The site was originally built by a member of the community Alsciende, and responsibility for maintaining the site has since been passed to NISEI."
+    isOfficial: true
+    isObsolete: false
+    related:
+      - "nisei"
+      - "deckbuilding"
+      - "jinteki.net"
+    citations:
+      - "Ams"
+  - name: "jinteki.net"
+    aliases:
+      - "jnet"
+    short: "a free, online Netrunner emulator"
+    long: "Jinteki ([jinteki.net](jinteki.net) or jnet) is a online Netrunner emulator that supports both casual and competitive play. It has been used to host high-level tournaments when in-person events were unfeasible.<br><br>Jinteki supports most official formats, as well as casual play without any deckbuilding limitations, as well as all official printings of each card, including alt arts. Most gameplay is automated, but it allows players to manipulate the game state for when cards aren't fully implemented or players make misclicks. It is an open source project maintained by members of the community."
+    isOfficial: false
+    isObsolete: false
+    related:
+      - "netRunnerdb"
+    citations:
+      - "Ams"
+  - name: "Android Netrunner"
+    aliases:
+      - "ANR"
+      - "bioroid and clone Netrunner"
+      - "clone and bioroid Netrunner"
+    short: "the version of Netrunner created by FFG and continued by NISEI"
+    long: "Android Netrunner is the modern reimagining of Richard Garfield's original Netrunner, released in 1996 by Wizards of the Coast. The game was originally designed and released by Fantasy Flight Games until 2018, when they lost the license to the game. Development was then picked up by NISEI: a community-led project to continue releasing new cards and organising tournaments."
+    isOfficial: true
+    isObsolete: false
+    related:
+      - "Android"
+      - "FFG"
+      - "NISEI"
+      - "Original Netrunner"
+    citations:
+      - "Ams"
+  - name: "Android"
+    aliases:
+      - "Android Universe"
+    short: "the setting of modern Netrunner; owned by FFG"
+    long: "1. The Android Universe is the cyberpunk setting of Android Netrunner and other games released by FFG. It is set in a future of advanced artificial intelligence, biotechnology, and interplanetary exploration.<br><br>2. Androids are artificial human-like beings, primarily used as sources of labor. There are two types of android: bioroids and clones, manufactured by Haas-Bioroid and Jinteki respectively."
+    isOfficial: true
+    isObsolete: false
+    related:
+      - "FFG"
+      - "Android Netrunner"
+      - "bioroid"
+      - "clone"
+      - "New Angeles"
+      - "the Beanstalk"
+    citations:
+      - "Ams"
+  - name: "bioroid"
+    aliases: []
+    short: "androids with artificial intelligence, designed by HB; a subtype"
+    long: "Thematically, bioroids are the product of Haas-Bioroid: human minds mapped onto robotic bodies for use as workers with fewer rights than humans. Mechanically, \"bioroid\" is a subtype of Haas-Bioroid cards (and [[Adam]]). Ice with the bioroid subtype almost always have a printed ability that allows the Runner to spend clicks during encounters to break subroutines (see [[Fairchild 1.0]], [[Fairchild 2.0]], and [[Fairchild 3.0]]). A select few unique bioroids don't have this ability, but come with other alternative costs to get around subroutines (see [[Fairchild]])."
+    isOfficial: true
+    isObsolete: false
+    related:
+      - "subtype"
+      - "Android"
+      - "Haas-Bioroid"
+      - "Adam"
+    citations:
+      - "Ams"
+  - name: "clone"
+    aliases: []
+    short: "genetically engineered androids, designed by Jinteki; a subtype"
+    long: "Thematically, clones are the product of Jinteki: genetically designed beings used as workers with fewer rights than humans. Jinteki would have you believe that [[\"Clones are not People\"]]. Mechanically, \"clone\" is a subtype on some Jinteki cards, as well as a few Runner identities (see [[Ken \"Express\" Tenma: Disappeared Clone]])."
+    isOfficial: true
+    isObsolete: false
+    related:
+      - "subtype"
+      - "Android"
+      - "Jinteki"
+    citations:
+      - "Ams"
+  - name: "New Angeles"
+    aliases: []
+    short: "the largest city on Earth in the Android setting"
+    long: "New Angeles is the site of the Beanstalk in the Android Universe. Due to the infrastructure the Beanstalk provides, it has become one of the largest cities on the planet.<br><br>New Angeles is also the name of a colaborative, hidden-information board game set in the city of New Angeles, released by FFG in 2016."
+    isOfficial: true
+    isObsolete: false
+    related:
+      - "Android"
+      - "the Beanstalk"
+    citations:
+      - "Ams"
+  - name: "the Beanstalk"
+    aliases:
+      - "Beanstalk"
+    short: "the space elevator built by Weyland Consortium in New Angeles"
+    long: "In the Android setting, the Beanstalk is a space elevator built by Weyland Consortium in New Angeles, bringing a lot of income to both the Corporation and the city."
+    isOfficial: true
+    isObsolete: false
+    related:
+      - "Android"
+      - "New Angeles"
+    citations:
+      - "Ams"
+  - name: "Original Netrunner"
+    aliases:
+      - "ONR"
+    short: "the original version of Netrunner created by Richard Garfield"
+    long: "The original version of Netrunner was designed by Richard Garfield and published in 1996 by Wizards of the Coast. It lasted for three sets: *Base*, *Classic*, and *Proteus*. The game differs from Android Netrunner (the modern version of the game) in several ways. In terms of flavour, ONR was set in the Cyberpunk universe, while Android Netrunner is set in FFG's Android setting. In terms of mechanics:<br>- there were no factions or identities<br>- you could include as many copies of a card in a deck as you liked<br>- assets were called *nodes*<br>- events were called *preps*<br>- credits were called *bits*<br>- clicks were called *actions*<br>- actions you lost weren't spent, but forfeit; if you forfeit more actions than were left in your turn you would lose actions from your next turn to make up for it<br>- purging required the Corp to lose three actions, rather than spend them<br>- traces had both players secretly spend bits in secret<br>- bad publicity did not give the Runner temporary credits during runs, but as soon as the Corp had 7 they lost the game<br>- a lot of card effects involved rolling dice<br>- regions had to be rezzed on install<br>- unqiueness was defined as a subtype rather than a core feature of cards"
+    isOfficial: false
+    isObsolete: true
+    related:
+      - "WotC"
+    citations:
+      - "Ams"
+  - name: "Fantasy Flight Games"
+    aliases:
+      - "ffg"
+    short: "the company that originally developed Android: Netrunner"
+    long: "Fantasy Flight Games is a US-based company that develops multiple tabletop games from many franchises, including Marvel and Star Wars. In 2012, they released Android Netrunner: a reimagining of Richard Garfield's 1996 original version of the game. In 2018, their licensing agreement with Wizards of the Coast ended, forcing them to end their development of the game."
+    isOfficial: true
+    isObsolete: true
+    related:
+      - "Android Netrunner"
+    citations:
+      - "Ams"
+  - name: "collectable card game"
+    aliases:
+      - "CCG"
+      - "trading card game"
+      - "TCG"
+    short: "collectable card games"
+    long: "Collectable Card Games are games centred around a pool of cards that players can collect and then combine into decks to play the game."
+    isOfficial: true
+    isObsolete: false
+    related:
+      - "LCG"
+      - "ANR"
+      - "ONG"
+    citations:
+      - "Ams"
+  - name: "Living Card Game"
+    aliases:
+      - "LCG"
+    short: "FFG's registered collectable card game distribution model"
+    long: "LCG is a registered distribution model FFG uses in its collectable card games. LCGs are made up of a core set (a self-contained pool of cards) and a series of expansions, each with a complete playset of a fixed set of cards. This differs from the distribution models of games like Magic the Gathering where card packs contain random selections of cards, and players must buy multiple packs to slowly build up their card pool."
+    isOfficial: true
+    isObsolete: false
+    related:
+      - "FFG"
+      - "CCG"
+    citations:
+      - "Ams"
+  - name: "Wizards of the Coast"
+    aliases:
+      - "WotC"
+    short: "the games publisher that released the original version of Netrunner"
+    long: "Wizards of the Coast is the publisher of Magic the Gathering and Dungeons and Dragons. In 1996 they released Richard Garfield's original version of Netrunner, spanning a total of three sets. In 2012, they licensed the game to Fantasy Flight Games, who redesigned and rereleased the concept under their Android setting as *Android Netrunner*. In 2018, the agreement between FFG and WotC ended, forcing FFG to end their development of the game."
+    isOfficial: true
+    isObsolete: true
+    related:
+      - "ONR"
+      - "Richard Garfield"
+    citations:
+      - "Ams"
+  - name: "Richard Garfield"
+    aliases: []
+    short: "the designer of the original version of Netrunner"
+    long: "Richard Garfield is a game designer most famous for creating Magic the Gathering in 1993, but who has also developed a large number of other tabletop games. In 1996, he designed the original version of Netrunner for Wizards of the Coast. In 2012, he starred as the titular role of Sony Picture's *The Amazing Spiderman*."
+    isOfficial: true
+    isObsolete: true
+    related:
+      - "ONR"
+      - "WotC"
+    citations:
+      - "Ams"
+  - name: "deckbuilding"
+    aliases: []
+    short: "the act of constructing a deck from a pool of cards"
+    long: "Netrunner is a collectable card game, and as such is centred around players constructing decks from the card pool available to them."
+    isOfficial: true
+    isObsolete: false
+    related:
+      - "card pool"
+    citations:
+      - "Ams"
+  - name: "card pool"
+    aliases: []
+    short: "a selection of cards available for deckbuilding"
+    long: "A card pool refers to the selection of cards available for play in any given format. Some formats, like Startup, have small card pools whereas others, like Eternal, have increasingly large card pools. Players may also use the term to refer to cards their opponent has available to them and may have included in their deck."
+    isOfficial: true
+    isObsolete: false
+    related:
+      - "deckbuilding"
+    citations:
+      - "Ams"
+  - name: "cycle"
+    aliases: []
+    short: "a full expansion comprised of data packs of cards"
+    long: "The regular process by which cards are released in Netrunner is that of cycles, each comprised of some number of data packs. Cycles as released by FFG were comprised of 6 data packs, released one at a time. NISEI cycles are comprised of two data packs, and a booster pack containing reprints of cards from the cycle for an earlier release.<br><br>As of the Kitara cycle's release in 2017, the release of a new cycle triggers rotation in the Standard format, rotating out the older cycles are deluxe expansions.<br><br>For a list of all released sets, see [NetrunnerDB](https://netRunnerdb.com/en/sets)."
+    isOfficial: true
+    isObsolete: false
+    related:
+      - "card pool"
+      - "deckbuilding"
+      - "data pack"
+    citations:
+      - "Ams"
+  - name: "data pack"
+    aliases: []
+    short: "a single pack of cards; a single component of a full cycle"
+    long: "Data packs are single packs of cards, which combine with other data packs to form a complete cycle.<br><br>For a list of all released sets, see [NetrunnerDB](https://netRunnerdb.com/en/sets)."
+    isOfficial: true
+    isObsolete: false
+    related:
+      - "card pool"
+      - "deckbuilding"
+      - "cycle"
+    citations:
+      - "Ams"
+  - name: "core set"
+    aliases:
+      - "revised core set"
+      - "gateway"
+      - "system update"
+      - "update"
+      - "system core"
+    short: "a standalone set of cards; the base for further expansions"
+    long: "A core set is a base set of cards which can be played as a standalone set, but can also be expanded upon with other expansions. The first set of Android Netrunner was the original Core Set. This was replaced in 2017 by FFG with the Revised Core Set, which removed 40 cards from the original set and added 59 new ones from the rotated Netrunner expansions.<br><br>When NISEI took over the game, they initially implemented a rotating core set in the form of System Core 2019. This was later replaced by System Gateway and System Update 2021. Gateway is the latest core set expansion for Netrunner, while Update is a selection of existing cards reprinted for modern Standard play.<br><br>For a list of all released sets, see [NetrunnerDB](https://netRunnerdb.com/en/sets)."
+    isOfficial: true
+    isObsolete: false
+    related:
+      - "card pool"
+      - "deckbuilding"
+    citations:
+      - "Ams"
+  - name: "deluxe expansion"
+    aliases: []
+    short: "a larger expansion of cards"
+    long: "Deluxe expansions for singular set of cards to be added to a card pool, as opposed to cycles, which are made up of multiple data packs each. FFG released six deluxe expansions:<br>- Creation and Control *(rotated)*<br>- Honor and Profit *(rotated)*<br>- Order and Chaos<br>- Data and Destiny<br>- Terminal Directive *(rotated)*<br>- Reign and Reverie<br><br>For a list of all released sets, see [NetrunnerDB](https://netRunnerdb.com/en/sets)."
+    isOfficial: true
+    isObsolete: false
+    related:
+      - "card pool"
+      - "deckbuilding"
+    citations:
+      - "Ams"
+  - name: "campaign"
+    aliases:
+      - "terminal directive"
+      - "td"
+    short: "a standalone story-based experience comprised of multiple games"
+    long: "In 2017, FFG released the deluxe expansion Terminal Directive. It came with a set of Weyland, HB, Criminal, Shaper, and neutral cards to be added to the Standard format (now rotated), but additionally came with a set of specialised cards not for constructed play. These cards told a story, which two players could explore by playing multiple games against each other using the Terminal Directive and original core set card pool. Terminal Directive is the only campaign expansion released for Netrunner."
+    isOfficial: true
+    isObsolete: true
+    related:
+      - "card pool"
+      - "deluxe expansion"
+    citations:
+      - "Ams"
+  - name: "faction"
+    aliases: []
+    short: "a card attribute that determines deckbuilding restrictions"
+    long: "Most cards belong to a faction. The faction of a deck's identity may include any cards from the same faction at no cost, as well as neutral cards that have no influence cost. Agendas from other factions may not be included, and the number of other cards from that faction that can be included are determined by the identity's influence limit and the included cards' influence costs."
+    isOfficial: true
+    isObsolete: false
+    related:
+      - "influence"
+    citations:
+      - "monde"
+  - name: "Haas-Bioroid"
+    aliases:
+      - "HB"
+      - "Haas Bioroid"
+    short: "one of the four Corp factions"
+    long: "Haas-Bioroid (HB) is one of the four Corp factions. Mechanically they are themed around bioroids, installing cards, gaining clicks, brain damage, and recursion. Thematically they are producer of bioroids: artificially intelligent androids used for labor. As the other of the two Corps manurfacturing androids, their main competitor is Jinteki."
+    isOfficial: true
+    isObsolete: false
+    related:
+      - "faction"
+      - "Corp"
+      - "android"
+      - "bioroid"
+    citations:
+      - "Ams"
+  - name: "Jinteki"
+    aliases: []
+    short: "one of the four Corp factions"
+    long: "Jinteki is one of the four Corp factions. Mechanically they are themed around clones, bluffing, psi games, and net damage. Thematically they are the leading Corporation for medical technology, and the producer of clones: genetically-designed humanlike androids used for labor. As the other of the two Corps manurfacturing androids, their main competitor is Haas-Bioroid."
+    isOfficial: true
+    isObsolete: false
+    related:
+      - "faction"
+      - "Corp"
+      - "android"
+      - "clone"
+    citations:
+      - "Ams"
+  - name: "NBN"
+    aliases: []
+    short: "one of the four Corp factions"
+    long: "NBN is one of the four Corp factions. Mechanically they are themed around tags, and guessing/revealing what's in the Runner's grip. Thematically they are the main media conglomerate in the Android Universe."
+    isOfficial: true
+    isObsolete: false
+    related:
+      - "faction"
+      - "Corp"
+    citations:
+      - "Ams"
+  - name: "Weyland Consortium"
+    aliases:
+      - "Weyland"
+    short: "one of the four Corp factions"
+    long: "Weyland is one of the four Corp factions. Mechanically they are themed around meat damage, card tutoring, economic warfare, and advancing cards. Thematically they are a conglomerate of many other Corporations, and are responsible for many construction projects; most notably the Beanstalk: the space elevator in New Angeles."
+    isOfficial: true
+    isObsolete: false
+    related:
+      - "faction"
+      - "Corp"
+    citations:
+      - "Ams"
+  - name: "Anarch"
+    aliases: []
+    short: "one of the three main Runner factions"
+    long: "Anarchs are one of the three main Runner factions. Mechanically they are themed around trashing Corp cards, dealing damage to themselves, running Archives, and having good value cards with a downside. Thematically they are people who oppose some aspect of the way Corporations control life in the Android Universe. Some anarchs are ideological and fight for or against peoples' rights, while others just want to watch the whole world burn."
+    isOfficial: true
+    isObsolete: false
+    related:
+      - "faction"
+      - "Runner"
+    citations:
+      - "Ams"
+  - name: "Criminal"
+    aliases: []
+    short: "one of the three main Runner factions"
+    long: "Criminals are one of the three main Runner factions. Mechanically they are themed around economic warefare, getting passed or around ice without ice breakers, derezzing Corp cards, and running HQ. Thematically they are people who run for financial gain."
+    isOfficial: true
+    isObsolete: false
+    related:
+      - "faction"
+      - "Runner"
+    citations:
+      - "Ams"
+  - name: "Shaper"
+    aliases: []
+    short: "one of the three main Runner factions"
+    long: "Shapers are one of the three main Runner factions. Mechanically they are themed around installing cards, using instant speed abilities during runs or the Corp's turn, drawing cards, and running R&D. Thematically they are people who run for fun or notoriety, rather than objective personal gain or ideological beliefs. They run because they can, and they want people to know it."
+    isOfficial: true
+    isObsolete: false
+    related:
+      - "faction"
+      - "Runner"
+    citations:
+      - "Ams"
+  - name: "mini factions"
+    aliases:
+      - "mini"
+    short: "factions outside the main 7 with smaller card pools"
+    long: "The deluxe expansion Data and Destiny introduced three new Runner factions, each with one identity: Adam, Apex, and Sunny Lebeau. Each of these function as a normal faction for deckbuilding purposes, though the IDs all have a higher influence limit of 25 to account for their limited in-faction card pool."
+    isOfficial: true
+    isObsolete: false
+    related:
+      - "faction"
+      - "Runner"
+      - "Adam"
+      - "Apex"
+      - "Sunny"
+    citations:
+      - "monde"
+  - name: "Adam"
+    aliases: []
+    short: "one of the three mini factions introduced in Data and Destiny"
+    long: "Adam is one of the three Data and Destiny mini factions. He starts each game with three of four available directives already installed: resources with both a strong upside and downside. Adam players choose which directives to have installed after they have seen their opponents ID, but before either player has drawn their starting hand. Thematically Adam is an escaped bioroid who is still controlled by his core directives (as represented by his starting directives) but with the means to break free from his programming (see [[Independent Thinking]])."
+    isOfficial: true
+    isObsolete: false
+    related:
+      - "faction"
+      - "Runner"
+    citations:
+      - "Ams"
+  - name: "Apex"
+    aliases: []
+    short: "one of the three mini factions introduced in Data and Destiny"
+    long: "Apex is one of the three Data and Destiny mini factions. Thematically Apex is a rogue AI. As such, its mechanic is that players cannot install non-virtual resources as Apex. Its other mechanic theme is facedown cards, having the ID ability to install a card from the grip facedown at the start of their turn, and having multiple cards that trash installed cards for some benefit. Apex has always performed poorly competitively, but its event [[Apocalypse]] has shaped the meta since it was printed and sees lots of play out of faction."
+    isOfficial: true
+    isObsolete: false
+    related:
+      - "faction"
+      - "Runner"
+    citations:
+      - "Ams"
+  - name: "Sunny Lebeau"
+    aliases:
+      - "Sunny"
+    short: "one of the three mini factions introduced in Data and Destiny"
+    long: "Sunny Lebeau is one of the three Data and Destiny mini factions. Mechanically she is themed around link, being the only ID to have a starting base link strength of 2. Her breaker suite is also comprised entirely of cloud breakers: a type of ice breaker that doesn't cost any MU if you have 2 or more link. Her console [[Security Nexus]] allows her to bypass one piece of ice a turn by winning a trace, which her ID and supporting cards make a serious threat in the late game. Thematically she is a security specialist employed by GlobalSec, performing acts of \"ethical\" hacking against her employer's clients."
+    isOfficial: true
+    isObsolete: false
+    related:
+      - "faction"
+      - "Runner"
+    citations:
+      - "Ams"
+  - name: "neutral"
+    aliases: []
+    short: "a card without a faction"
+    long: "If a card is not assigned to one of the factions, it is considered neutral. If there is no influence cost on the card, it may be freely included in any deck. If there is an influence cost, it must be spent for each copy included in the deck, regardless of the faction of the deck's identity."
+    isOfficial: true
+    isObsolete: false
+    related:
+      - "faction"
+    citations:
+      - "monde"
+  - name: "format"
+    aliases: []
+    short: "a term used to determine which cards are legal in a given game"
+    long: "Applying to card games in general, formats determine which cards are available for players to include in their deck. Constructed formats are defined by which sets are legal and which cards from legal sets are banned (as well as any other stipulations such as Eternal's points system)."
+    isOfficial: true
+    isObsolete: false
+    related: []
+    citations:
+      - "monde"
+  - name: "rotation"
+    aliases: []
+    short: "the removal of older sets from constructed formats"
+    long: "With the release of new sets, certain formats will remove or \"rotate\" older sets to maintain a more consisted average number of legal cards. "
+    isOfficial: true
+    isObsolete: false
+    related:
+      - "format"
+      - "Standard"
+      - "Eternal"
+      - "Startup"
+    citations:
+      - "monde"
+  - name: "Standard"
+    aliases: []
+    short: "the main format of Netunner; with a rotating card pool"
+    long: "Standard is the main format for organised play. It contains System Gateway, System Update 2021, the five most-recent cycles, and the expansions _Order and Chaos, Data and Destiny,_ and _Magnum Opus Reprint._ Whenever a new cycle is released, the oldest cycle from Standard rotates. Next rotation the Mumbad Cycle will rotate with Order and Chaos. Standard is restricted by the Standard Ban List, which bans a selection of cards that are either overpowered in of themselves, or when combined with other Standard-legal cards."
+    isOfficial: true
+    isObsolete: false
+    related:
+      - "format"
+      - "Standard Banlist"
+    citations:
+      - "Ams"
+  - name: "Eternal"
+    aliases: []
+    short: "the non-rotating format of all cards that were ever Standard-legal"
+    long: "Eternal is a format containing all sets that were ever legal in Standard. The power level in Eternal is much more inconsistent than Standard due to the game's varied history of design. Eternal has its own ban list in the form of the Eternal Points List, which bans only a few key cards, and gives others a point cost for including any number of them in a deck."
+    isOfficial: true
+    isObsolete: false
+    related:
+      - "format"
+      - "eternal points list"
+    citations:
+      - "Ams"
+  - name: "Startup"
+    aliases: []
+    short: "a format containing only the most recent sets"
+    long: "Startup is a much smaller format than Standard, only containing System Gateway, System Update 2021, and the most recent cycle (currently Ashes, but it also includes the Midnight Sun Booster Pack). Startup is a good format for beginners due to its smaller card pool. Startup has no ban list."
+    isOfficial: true
+    isObsolete: false
+    related:
+      - "format"
+    citations:
+      - "Ams"
+  - name: "Snapshot"
+    aliases: []
+    short: "the state of the game when FFG ended support for Netrunner"
+    long: "Snapshot is a format containing the cards that were legal when FFG stopped making Netrunner, along with the ban list that was in place at that time. This format contains only FFG cards, and will not see any modifications in the future."
+    isOfficial: true
+    isObsolete: false
+    related:
+      - "format"
+      - "FFG"
+      - "snapshot+"
+    citations:
+      - "Ams"
+  - name: "Snapshot+"
+    aliases:
+      - "snapshot plus"
+    short: "the same format as Snapshot but including the Magnum Opus set"
+    long: "Snapshot+ is a format mirroring the state of the game when FFG stopped supporting Netrunner, just like Snapshot, except it includes Magnum Opus: the last set FFG printed."
+    isOfficial: true
+    isObsolete: false
+    related:
+      - "format"
+      - "FFG. snapshot"
+    citations:
+      - "Ams"
+  - name: "Random Access Memories"
+    aliases:
+      - "ram"
+    short: "a format of Netrunner where included sets are randomly selected"
+    long: "Random Access Memories (RAM) is a currently discontinued format where the card pool is comprised of randomly selected sets. Each version of RAM contains 2 large released (deluxe expansions and core sets) and 12 data packs. The format has no ban list, but some card sets are excluded from the selection process due to containing exclusively reprints, or too many overpowered cards."
+    isOfficial: true
+    isObsolete: false
+    related:
+      - "format"
+    citations:
+      - "Ams"
+  - name: "draft"
+    aliases:
+      - "drafting"
+    short: "a type of format where you construct a deck from drafted cards"
+    long: "Drafting is the process of building a card pool from a larger card pool, and then building a deck from the drafted cards. There are several different methods used to draft cards, but the unifying feature is that players have to build the best card pool they can from a randomised subset of cards, and then construct a deck from that card pool as best they can.<br><br>A common set of rules used in draft formats is a reduced minimum deck size of 30, an infinite influence limit, and a changed win condition of requiring 7 points of scored/stolen agenda points to 6 points.<br><br>FFG released a set of draft identities, including one with a printed ID ability for each (non-mini) faction, as well a blank neutral identity for both Corp and Runner."
+    isOfficial: true
+    isObsolete: false
+    related:
+      - "format"
+      - "card pool"
+      - "deckbuilding"
+    citations:
+      - "Ams"
+  - name: "casual"
+    aliases: []
+    short: "a format without rules"
+    long: "Casual formats are any formats without official support. There is no obligation to play under any format supported by NISEI or anyone else. All it requires is a mutual agreement between players on what cards they wish to play with and any restrictions they wish to impose on themselves."
+    isOfficial: false
+    isObsolete: false
+    related:
+      - "format"
+    citations:
+      - "Ams"
+  - name: "unset"
+    aliases:
+      - "unglued"
+      - "unstable"
+    short: "a format comprised of uncards"
+    long: "Unsets are formats comprised of cards (uncards) that were never printed for official play, which often have weird abilities unconstrained by such trivialties as *\"balance\"* or *\"good game design\"*. NISEI, FFG, nor Wizards of the Coast have ever released an unset, although some members of the community have made and released unsets for both constructed and draft play."
+    isOfficial: false
+    isObsolete: false
+    related:
+      - "format"
+      - "card pool"
+    citations:
+      - "Ams"
+  - name: "type"
+    aliases: []
+    short: "the different kinds of card in Netrunner"
+    long: "The main defining qualifier as to how a card can be played. The Corp card types are identities, agendas, assets, ice, operations, and upgrades. The Runner card types are identities, events, hardware, programs, and resources. The only card type both sides share is identities, which define deckbuilding constraints and an ID ability. All card types other than identities, events, and operations are installable. "
+    isOfficial: true
+    isObsolete: false
+    related:
+      - "identity"
+      - "agenda"
+      - "asset"
+      - "ice"
+      - "operation"
+      - "upgrade"
+      - "event"
+      - "hardware"
+      - "program"
+      - "resource"
+    citations:
+      - "monde"
+  - name: "Identity"
+    aliases:
+      - "ID"
+    short: "a card type defining deckbuilding constraints and an ability"
+    long: "Each deck has one identity card that defines minimum deck size, influence limit, and which faction's cards may be included without considering influence. Runner identities also define their starting MU (4 by default, added to NISEI cards as a reminder) and base link. Identities are not part of the deck, are always active, and usually have additional activated or passive abilities."
+    isOfficial: true
+    isObsolete: false
+    related:
+      - "type"
+      - "Corp"
+      - "Runner"
+    citations:
+      - "monde"
+  - name: "agenda"
+    aliases:
+      - "gendi"
+    short: "a Corp card type and the usual source for points for both players"
+    long: "Agendas are an installable type of Corp card. Unlike other Corp installables they have no rez or trash cost, and cannot be rezzed. They instead have a number of agenda points and an advancement requirement. They can only be installed in the root of remote servers, and cannot share a server with an asset or another agenda. If you install an agenda in a server which already contains such a card in its root, you must first trash that asset or agenda.<br><br>Agendas have no additional install cost, unlike ice. Like all Corp installables, assets are installed facedown and inactive. Agendas Once installed, agendas can be advanced. During the Corp's turn, installed agendas with hosted advancement counters matching or exceeding their advancement requirement can be scored, removing all hosted counters and adding them to the Corp's score area.<br><br>When the Runner accesses agendas they must steal them, adding them to the Runner's score area. An exception to this is if the agenda has an additional cost to steal (see [[Obokata Protocol]]) in which case the Runner can choose not to pay the cost, even if they are able to. If the agenda is removed from the root of the server during access, the Runner can also avoid stealing it (see [[Imp]] and [[Film Critic]]).<br><br>Corp decks are required to include a certain number of agenda points across all agendas in them, going up in bands of 5 cards (e.g. a 45-49 card deck needs 20 to 21 total points on agendas, a 40-44 card deck needs 18-19 total points)."
+    isOfficial: true
+    isObsolete: false
+    related:
+      - "type"
+      - "Corp"
+      - "agenda density"
+      - "deckbuilding"
+    citations:
+      - "114141"
+      - "Ams"
+  - name: "asset"
+    aliases: []
+    short: "a Corp card type that gets installed in the root of remote servers"
+    long: "Assets are an installable type of Corp card. They can only be installed in the root of remote servers, and cannot share a server with an agenda or another asset. If you install an asset in a server which already contains such a card in its root, you must first trash that asset or agenda. Assets have no additional install cost, unlike ice. Like all Corp installables, assets are installed facedown and inactive. You may rez them during any paid ability window by paying their rez cost, after which their text immediately becomes active.<br><br>All assets have a trash cost, which the Runner can pay on access to trash them."
+    isOfficial: true
+    isObsolete: false
+    related:
+      - "type"
+      - "Corp"
+    citations:
+      - "Ams"
+  - name: "ice"
+    aliases: []
+    short: "a Corp card type that is installed in front of servers to protect them"
+    long: "Ice are an installable type of Corp card. They are installed sideways in front of servers, protecting them. When running on a server protected by ice, the Runner must first approach and pass all ice protecting a server, from the outermost position to the innermost position. Like all installable Corp cards, ice are installed facedown and inactive. Normally ice can only be rezzed when the Runner is approaching it during a run, after which its text immediately becomes active and the Runner encounters it. The Corp must install ice in the outermost position of the chosen server, and pay credits equal to the number of ice already installed protecting that server (e.g. the first ice protecting any server is free to install, the second costs 1[credit], and so on). Before installing the ice, the Corp may trash any number of ice already installed protecting that server. The cost of installing ice is not determined until after the Corp has trashed those ice.<br><br>Ice doesn't usually have a trash cost, but some do, which the Runner can pay on access to trash them. Encountering ice during a run is not the same as accessing the ice."
+    isOfficial: true
+    isObsolete: false
+    related:
+      - "type"
+      - "Corp"
+    citations:
+      - "Ams"
+  - name: "operation"
+    aliases: []
+    short: "a Corp card type that is played from HQ then trashed"
+    long: "Operations are a type of Corp card that is played from HQ, then trashed after resolving. It is the analogue to the Runner's events. They have a play cost which must be played before resolving their effect.<br><br>Operations do not normally have a trash cost, but some powerful cards do, which the Runner can pay on access to trash them."
+    isOfficial: true
+    isObsolete: false
+    related:
+      - "type"
+      - "Corp"
+    citations:
+      - "Ams"
+  - name: "upgrade"
+    aliases: []
+    short: "a Corp card type that is installed in the root of servers"
+    long: "Upgrades are an installable type of Corp card. They can be installed in the root of any server, central or remote, and can share a server with an agenda or asset, and any number of other upgrades. Upgrades have no additional install cost, unlike ice. Like all Corp installables, upgrades are installed facedown and inactive. You may rez them during any paid ability window by paying their rez cost, after which their text immediately becomes active.<br><br>All upgrades have a trash cost, which the Runner can pay on access to trash them."
+    isOfficial: true
+    isObsolete: false
+    related:
+      - "type"
+      - "Corp"
+    citations:
+      - "Ams"
+  - name: "rezzed"
+    aliases: []
+    short: "the state of an installed asset, upgrade, or ice that is faceup"
+    long: "All installable Corp cards except from agendas (i.e. assets, upgrades, and ice) are either rezzed or unrezzed while installed. Rezzed cards are faceup and derezzed cards are facedown. They are installed derezzed and can be rezzed during an appriorite timing window by the Corp by paying their rez cost. Rezzed cards are active and their text is in effect. Some effects can only target rezzed cards (e.g. derez effects can only derez rezzed cards; see [[Divert Power]])."
+    isOfficial: true
+    isObsolete: false
+    related:
+      - "unrezzed"
+      - "rez"
+      - "derez"
+      - "Corp"
+      - "asset"
+      - "ice"
+      - "upgrade"
+    citations:
+      - "Ams"
+  - name: "unrezzed"
+    aliases: []
+    short: "the state of an installed asset, upgrade, or ice that is facedown"
+    long: "All installable Corp cards except from agendas (i.e. assets, upgrades, and ice) are either rezzed or unrezzed while installed. Rezzed cards are faceup and derezzed cards are facedown. They are installed derezzed and can be rezzed during an appriorite timing window by the Corp by paying their rez cost. Unrezzed cards are inactive and their text is not in effect. Cards with effects that trigger on access ignore this rule (see ambushes like [[Snare!]] and [[Urtica Cipher]]). Some effects can only target unrezzed cards (e.g. the expose mechanic can only target unrezzed cards; see [[Infiltration]])."
+    isOfficial: true
+    isObsolete: false
+    related:
+      - "rezzed"
+      - "rez"
+      - "derez"
+      - "Corp"
+      - "asset"
+      - "ice"
+      - "upgrade"
+    citations:
+      - "Ams"
+  - name: "rez"
+    aliases:
+      - "rezzing"
+    short: "the act of rezzing a facedown Corp card (not agenda)"
+    long: "Rezzing is the Corp act of turning an installed facedown non-agenda Corp card faceup, paying its rez cost (unless a card effect says otherwise). Assets and upgrades can be rezzed during any paid ability window, while ice can only be rezzed on encounter. The Runner cannot rez cards, but some Runner cards force the Corp to rez a card (see [[Forged Activation Orders]])."
+    isOfficial: true
+    isObsolete: false
+    related:
+      - "derez"
+      - "rezzed"
+      - "derezzed"
+      - "Corp"
+      - "asset"
+      - "ice"
+      - "upgrade"
+    citations:
+      - "Ams"
+  - name: "derez"
+    aliases:
+      - "derezzing"
+    short: "the act of turning a rezzed Corp card facedown"
+    long: "Derezzing is the Corp act of turning an installed faceup non-agenda Corp card facedown, changing it from being rezzed to unrezzed. The now-unrezzed can still be rezzed whenever it normally could, but the rez cost must be paid again. Derezzing is not a action either player can normally make, but some cards allow players to derez cards (see [[Divert Power]] and [[Emergency Shutdown]])."
+    isOfficial: true
+    isObsolete: false
+    related:
+      - "rez"
+      - "rezzed"
+      - "unrezzed"
+      - "Corp"
+      - "asset"
+      - "ice"
+      - "upgrade"
+    citations:
+      - "Ams"
+  - name: "etr"
+    aliases:
+      - "end the run"
+    short: "a subroutine that ends the run"
+    long: "End the run subroutines are the simplest kind of subroutine: they end the run. Some ETR subroutines have additional or conditional effects (see [[Tithonium]] and [[Endless EULA]] respectively), while some ice just end the run and do nothing else (see [[Ice Wall]]). Ice that ends the run is a good gear check, as it forces the Runner to find their breakers (or another means of getting around the ice) before they can contest the server."
+    isOfficial: false
+    isObsolete: false
+    related:
+      - "ice"
+      - "gearcheck"
+    citations:
+      - "Ams"
+  - name: "facecheck"
+    aliases:
+      - "face check"
+      - "facechecking"
+    short: "running on unrezzed ice without the means to break them"
+    long: "Facechecking is the Runner act of running on a server protected by unrezzed ice without the means to necessarily break any subroutines. While facechecking some ice (notably sentries) can have negative side effects, if you know the card pool decently well you can work out what the worst thing the Corp could likely rez given their current credit pool. Note that there is a paid ability window during approach, meaning that if the Corp can gain credits at instant speed (see [[NGO Front]]) then they may be able to rez more expensive ice than you thought.<br><br>Even if face checking sets your board state back or trashes important cards from your grip, it also forces the Corp to spend credits and reveal which breaker you need to get past the ice that's currently installed. The earlier in the game you are, the less control the Corp has over which ice they have in hand to install."
+    isOfficial: false
+    isObsolete: false
+    related:
+      - "run"
+      - "icebreaker"
+    citations:
+      - "Ams"
+  - name: "gearcheck ice"
+    aliases:
+      - "gearcheck"
+      - "gear check"
+      - "binary"
+      - "binary ice"
+    short: "a type of ice that requires a direct answer for the Runner to pass"
+    long: "Gearcheck or \"binary\" ice are ice that prevent the Runner from passing them (normally via ETR subroutines), but that become very cheap to break once the Runner has the appropriate breaker out. Gearcheck ice are normally cheap to rez; a perfect example is [[Vanilla]].<br><br>Gearcheck ice are good for Corps that want to rush out agendas behind cheap ice before the Runner has had a chance to get their breakers and economy set up."
+    isOfficial: false
+    isObsolete: false
+    related:
+      - "run"
+      - "icebreaker"
+      - "rush"
+    citations:
+      - "Ams"
+  - name: "taxing ice"
+    aliases: []
+    short: "a type of ice that is costly to pass"
+    long: "Taxing ice is ice that doesn't necessarily end the run, but is costly to break or let its subroutines fire (see [[Slot machine]] and [[Fairchild]]). Taxing ice is often enough to protect a remote long enough to score, even if the Runner could technically pass through the ice by letting it fire, as doing so would set the Runner back far enough to give the Corp an even larger scoring window, or be able to force a negative effect on the Runner (see [[Hard-Hitting News]])."
+    isOfficial: false
+    isObsolete: false
+    related:
+      - "ice"
+      - "glacier"
+    citations:
+      - "Ams"
+  - name: "taxing server"
+    aliases: []
+    short: "a server that is costly to run through the ice of"
+    long: "A taxing server is a server protected by taxing ice, or just enough ice altogether, that the cost for the Runner is too much to pass through. Sometimes a Runner will be able to successfully run a taxing server, but doing so might set their economy back for the rest of the game, or allow the Corp to force a negative effect on them (see [[Hard-Hitting News]])."
+    isOfficial: false
+    isObsolete: false
+    related:
+      - "taxing ice"
+      - "glacier"
+    citations:
+      - "Ams"
+  - name: "scoring"
+    aliases:
+      - "score"
+      - "scored"
+    short: "the act of adding a fully-advanced agenda to the Corp's score area"
+    long: "All agendas have an advancement requirement. During the Corp's turn, If their advancement requirement is met (i.e. they are installed with at least as many hosted advancement counters) then the Corp can \"score\" them. Scored agendas are added to the Corp's score area, triggering any \"when scored\" effects. If the Corp then has 7 agenda points worth of agendas in their score area, they win the game."
+    isOfficial: true
+    isObsolete: false
+    related:
+      - "stealing"
+      - "agenda"
+      - "win condition"
+    citations:
+      - "Ams"
+  - name: "stealing"
+    aliases:
+      - "steal"
+      - "stolen"
+    short: "the act of adding an accessed agenda to the Runner's score area"
+    long: "When the Runner accesses an agenda, they must steal it (unless the agenda has an additional cost to be stolen). Stolen agendas are added to the Runner's score area, triggering any \"when stolen\" effects. If the Runner then has 7 agenda points worth of agendas in their score area, they win the game."
+    isOfficial: true
+    isObsolete: false
+    related:
+      - "scoring"
+      - "agenda"
+      - "win condition"
+    citations:
+      - "Ams"
+  - name: "scoring window"
+    aliases: []
+    short: "an opportunity when the Runner cannot reliably steal an agenda"
+    long: "A scoring window is an opportunity lasting at least one Runner's turn when the Corp can safely install and advance an agenda in a remote over several turns while the Runner lacks the necessary economy or cards to steal it. Scoring windows can occur in several ways:<br>- The Corp rushes out an agenda behind an ice with an ETR subroutine before the Runner has their breakers installed.<br>- The Corp trashes a key icebreaker, or uses economic denial like [[Economic Warfare]] to force the Runner into a situation where they can't afford to run.<br>- The Corp installs an agenda then plays a tagging card like [[Hard-Hitting News]], threatening the Runner with tag punishment if they run the agenda instead of removing the tags.<br>- The Runner runs on a taxing remote, like one in a glacier deck, and is then left with little-to-no credits left on their next turn to be able to run it again."
+    isOfficial: true
+    isObsolete: false
+    related:
+      - "agenda"
+    citations:
+      - "Ams"
+  - name: "event"
+    aliases: []
+    short: "a Runner card type that, when played, is resolved, then trashed"
+    long: "Event is a Runner card type that generally, when played, resolved its effects and is trashed afterwards. Events have a play cost in the top-left of the card that is the number of credits the Runner must spend to play it."
+    isOfficial: true
+    isObsolete: false
+    related:
+      - "type"
+      - "Runner"
+    citations:
+      - "monde"
+  - name: "hardware"
+    aliases: []
+    short: "a Runner card type that is installed"
+    long: "Hardware is a Runner card type that is installed and remains active until it is uninstalled. It may provide useful passive or active abilities."
+    isOfficial: true
+    isObsolete: false
+    related:
+      - "type"
+      - "Runner"
+    citations:
+      - "monde"
+  - name: "program"
+    aliases: []
+    short: "a Runner card type that is installed and subject to MU limits"
+    long: "Program is a Runner card type that is installed and remains active until it is uninstalled. It may provide useful passive or active abilities. The Runner may have any number of Programs installed, provided that their combined MU costs do not exceed their MU limit."
+    isOfficial: true
+    isObsolete: false
+    related:
+      - "type"
+      - "Runner"
+      - "memory"
+      - "MU"
+    citations:
+      - "monde"
+  - name: "resource"
+    aliases: []
+    short: "a Runner card type that is installed, but trashable when tagged"
+    long: "Resource is a Runner card type that is installed and remains active until it is uninstalled. It may provide useful passive or active abilities. When the Runner is tagged, the Corp may trash an installed Resource as a basic action."
+    isOfficial: true
+    isObsolete: false
+    related:
+      - "type"
+      - "Runner"
+      - "tag"
+    citations:
+      - "monde"
+  - name: "subtype"
+    aliases: []
+    short: "a set of identifier keywords found after the card's type"
+    long: "Subtypes are keywords found following the type of a card. Cards may have any number of subtypes, including zero. A subtype has no inherent effect on how a card is played, though they may convey common text, such as the additional clicks required to play \"double\" or \"triple\" events and operations (see [[Lucky Find]] and [[Success]]), or \"public\" agendas that are installed faceup (see [[Oaktown Renovation]]). Card effects may specify subtypes they can or can't target."
+    isOfficial: true
+    isObsolete: false
+    related: []
+    citations:
+      - "monde"
+  - name: "ambush"
+    aliases: []
+    short: "a Corp card that has a negative effect for the Runner on access"
+    long: "Ambush is a subtype given to Corp cards that do some downside to the Runner when they access it. This downside often includes some form of damage or rigshooting (see [[Urtica Cipher]] and [[Aggressive Secretary]]), but can also include other negative effects for the Runner (see [[Neurostasis]]) or a positive upside for the Corp (see [[Space Camp]]).<br><br>Some ambushes trigger whenever the Runner accesses them, from any server (see [[Breached Dome]]), while some require advancing to take effect (see [[Cerebral Overwriter]]), or only take effect when accessed from certain servers (see [[Snare!]]). Some ambushes require the Corp to pay a cost on access, while others trigger automatically. Ambushes are most commonly assets or upgrades, but can also be agendas (see [[Obokata Protocol]]) or ice (see [[Archangel]])."
+    isOfficial: true
+    isObsolete: false
+    related:
+      - "subtype"
+      - "Corp"
+    citations:
+      - "Ams"
+  - name: "directive"
+    aliases: []
+    short: "an Adam-exclusive resource subtype"
+    long: "[[Adam]] is a mini faction identity that starts each game with three directives already installed. Directives are a small set of Adam-exclusive resources with the \"directive\" subtype. Each directive comes with a significant upside and downside, greatly influencing the way Adam decks are able to play the game.<br><br>The directives currently printed are:<br>- [[Always Be Running]]<br>- [[Neutralize All Threats]]<br>- [[Safety First]]<br>- [[Find the Truth]]"
+    isOfficial: true
+    isObsolete: false
+    related:
+      - "subtype"
+      - "resource"
+      - "Adam"
+    citations:
+      - "Ams"
+  - name: "current"
+    aliases: []
+    short: "an obsolete subtype of events and operations that remain in play"
+    long: "Currents were a subtype of both events and operations, introduced by FFG and removed from Standard by NISEI.<br><br>Currents remain in the play area indefinitely after being played, instead of being trashed. There can only be one current in play at a time, and if either player plays a current while there is one in play, the old current is trashed. Corp currents (operations) also trash themselves whenever the Runner steals an agenda, and Runner currents (events) trash themselves whenever the Corp scores an agenda.<br><br>In formats where currents are legal, it is common for players to include at least one current, even if they don't need its effect, just to have in case their opponent plays a current they want to trash.<br><br>NISEI implemented a similar type of card in the form of *lockdowns*, which are a Corp-exclusive subtype of operations that are not trashed until the start of the next Corp turn after they are played."
+    isOfficial: true
+    isObsolete: true
+    related:
+      - "subtype"
+      - "event"
+      - "operation"
+      - "lockdown"
+    citations:
+      - "Ams"
+  - name: "lockdown"
+    aliases: []
+    short: "a subtype of operations that stay in play until the Corp's next turn"
+    long: "Lockdowns are a subtype exclusive to operations and therefore only available to Corps. Unlike most operations, they remain in the play area until the start of the Corp's next turn after being played."
+    isOfficial: true
+    isObsolete: false
+    related:
+      - "subtype"
+      - "operation"
+      - "current"
+    citations:
+      - "Ams"
+  - name: "stealth"
+    aliases:
+      - "stealth credit"
+      - "stealth breaker"
+    short: "a subtype for cards that host stealth credits"
+    long: "\"Stealth\" is a subtype used on some cards that host credits (see [[Trickster Taka]] and [[Mantle]]). Stealth credits have no additional gameplay mechanics in of themselves. However, some cards have abilities that can only be paid for with stealth credits (see [[Afterimage]] and [[Mu Safecracker]])."
+    isOfficial: true
+    isObsolete: false
+    related:
+      - "subtype"
+      - "credit"
+      - "hosted credit"
+      - "recurring credit"
+    citations:
+      - "Ams"
+  - name: "psi game"
+    aliases:
+      - "psi"
+    short: "a card with an effect involving a psi game"
+    long: "Psi games are a mechanic in which both players secretly spend 0, 1, or 2 credits and then reveal those credits. Normally, the Corp spending a different number of credits as the Runner lets the Corp use an ability that benefits them or hinders the Runner. Psi games are a Jinteki mechanic. The only exception is [[Akiko Nisei: Head Case]], who can invoke psi games as part of their ID ability.<br><br>Corp cards that use psi games have the \"psi\" subtype."
+    isOfficial: true
+    isObsolete: false
+    related:
+      - "subtype"
+      - "Jinteki"
+    citations:
+      - "Ams"
+  - name: "icebreaker"
+    aliases:
+      - "breaker"
+    short: "a subtype of program that breakers the subroutines on ice"
+    long: "Icebreakers are a subtype of program that are able to break subroutines on ice. Icebreakers have an additional property to other programs: strength. Icebreakers can only use \"interface\" abilities (notably their subroutine-breaking abilities) if that strength matches or exceeds the strength of a piece of ice being encountered. Most icebreakers come with an ability to boost their strength (see [[Corroder]]) but some don't (see [[Mimic]]). By default, icebreakers return to their base strength (printed in the bottom corner of the card) at the end of each encounter, unless otherwise specified (see [[Gordian Blade]] and [[Gebrselassie]]).<br><br>There are four main kinds of icebreaker, each with its own subtype and associated subtype of ice it can interact with:<br>- Fracters (barrier breakers)<br>- Decoders (code gate breakers)<br>- Killers (sentry breakers)<br>- AIs (break ice regardless of subtype)<br><br>Not all icebreakers have one of these subtypes (see [[Sharp Shooter]] and [[Chameleon]]), and not all programs that interact with ice or subroutines are icebreakers (see [[D4V1D]])."
+    isOfficial: false
+    isObsolete: false
+    related:
+      - "fracter"
+      - "decoder"
+      - "killer"
+      - "AI"
+      - "subtype"
+      - "program"
+      - "interface"
+      - "ice"
+    citations:
+      - "Ams"
+  - name: "fracter"
+    aliases:
+      - "barrier breaker"
+    short: "a kind of icebreaker that targets barriers"
+    long: "\"Fracter\" is a subtype exclusive to icebreakers that interact with barrier ice. Notable examples include [[Corroder]] and [[Paperclip]].<br><br>The faction associated with good-value fracters is Anarch, and the faction associated with bad-value fracters is Shaper."
+    isOfficial: false
+    isObsolete: false
+    related:
+      - "barrier"
+      - "subtype"
+      - "icebreaker"
+      - "program"
+      - "Anarch"
+      - "Shaper"
+    citations:
+      - "Ams"
+  - name: "decoder"
+    aliases:
+      - "code gate breaker"
+    short: "a kind of icebreaker that targets code gates"
+    long: "\"Decoder\" is a subtype exclusive to icebreakers that interact with code gate ice. Notable examples include [[Unity]] and [[Engolo]].<br><br>The faction associated with good-value decoders is Shaper, and the faction associated with bad-value decoders is Criminal."
+    isOfficial: false
+    isObsolete: false
+    related:
+      - "code gate"
+      - "subtype"
+      - "icebreaker"
+      - "program"
+      - "Shaper"
+      - "Criminal"
+    citations:
+      - "Ams"
+  - name: "killer"
+    aliases:
+      - "sentry breaker"
+    short: "a kind of icebreaker that targets sentries"
+    long: "\"Killer\" is a subtype exclusive to icebreakers that interact with sentry ice. Notable examples include [[Bukhgalter]] and [[Femme Fatale]]. Killers often come with some kind of downside, be it high cost to install/use or some effect associated with using it (see [[Faerie]]).<br><br>The faction associated with good-value killers is Criminal, and the faction associated with bad-value killers is Anarch."
+    isOfficial: false
+    isObsolete: false
+    related:
+      - "sentry"
+      - "subtype"
+      - "icebreaker"
+      - "program"
+      - "Criminal"
+      - "Anarch"
+    citations:
+      - "Ams"
+  - name: "AI"
+    aliases:
+      - "artifical intelligence"
+    short: "a kind of icebreaker that can target any ice"
+    long: "\"AI\" is a subtype exclusive to icebreakers that can interact with all ice, unless otherwise specified. Due to this versatility, AIs always come with a limitation or downside (see [[Mayfly]] and [[Atman]]). All neutral icebreakers are AIs.<br><br>Some ice cannot be broken by AIs (see [[Swordsman]] and [[Hortum]]), while others are more expensive to break with AIs (see [[Wraparound]] and [[Chiyashi]]). The \"AI hate\" cards are often used as tech when AIs are prominent in the meta."
+    isOfficial: false
+    isObsolete: false
+    related:
+      - "ice"
+      - "subtype"
+      - "icebreaker"
+      - "program"
+      - "AI hate"
+    citations:
+      - "Ams"
+  - name: "AI hate"
+    aliases: []
+    short: "a tech card that counters AI icebreakers"
+    long: "AI hate refers to ice that either cannot be broken by AI icebreakers (see [[Swordsman]] and [[Hortum]]), or is more expensive to breaker with an AI (see [[Hagen]], [[Wraparound]], and [[Chiyashi]]). AI hate cards tend to be less effecient in general, and are usually only played when AI icebreakers are prominent in the meta."
+    isOfficial: false
+    isObsolete: false
+    related:
+      - "ice"
+      - "AI"
+      - "icebreaker"
+      - "tech card"
+    citations:
+      - "Ams"
+  - name: "barrier"
+    aliases:
+      - "wall"
+    short: "a subtype of ice that usually ends the run"
+    long: "\"Barrier\" is an ice subtype used on ice that normally end the run in some way. Notable examples include [[Ice Wall]] and [[Palisade]]. Not all barriers have subroutines that end the run unconditionally (see [[Resistor]]), and some barriers have additional effects (see [[Tithonium]]).<br><br>Barrier subroutines can be broken by fracters and AIs."
+    isOfficial: false
+    isObsolete: false
+    related:
+      - "fracter"
+      - "AI"
+      - "subtype"
+      - "ice"
+    citations:
+      - "Ams"
+  - name: "code gate"
+    aliases: []
+    short: "a subtype of ice that does strange things"
+    long: "\"Code gate\" is an ice subtype used on ice that normally does something strange. Sometimes code gates just end the run (see [[Magnet]] and [[Tollbooth]]) but some of the weirder subroutines in the game are reserved for code gates (see [[TL;DR]] and [[Little Engine]]).<br><br>Code gate subroutines can be broken by decoders and AIs."
+    isOfficial: false
+    isObsolete: false
+    related:
+      - "decoder"
+      - "AI"
+      - "subtype"
+      - "ice"
+    citations:
+      - "Ams"
+  - name: "sentry"
+    aliases: []
+    short: "a subtype of ice that usually does damage or trashes cards"
+    long: "\"Sentry\" is an ice subtype used on ice that normally has harmful effects on the Runner. This could mean doing damage (see [[Karunā]]), giving tags (see [[Surveyor]]), or rigshooting (see [[Archer]]). Most sentries don't end the run, at least not without some condition (see [[Hydra]]), but there are execptions (see [[Rototurret]]). The value in sentries instead comes from the significant cost they can pose to the Runner's board state or hand if they are not able to break their subroutines.<br><br>Sentry subroutines can be broken by killers and AIs."
+    isOfficial: false
+    isObsolete: false
+    related:
+      - "killer"
+      - "AI"
+      - "subtype"
+      - "ice"
+      - "damage"
+      - "tag"
+      - "rigshooter"
+    citations:
+      - "Ams"
+  - name: "console"
+    aliases: []
+    short: "a subtype of hardware with a limit 1 limitation on installation"
+    long: "Consoles are a subtype of hardware, exclusive to Runners. Consoles differ from other hardware by having a \"limit 1 console per player\" clause, meaning that you can only have one copy of one console installed at any one time. Consoles work the same as unique cards, in that if the Runner attempts to install a second console at any time, including a copy of their current console, they must trash the original in the process.<br><br>Most consoles tend to grant the Runner additional MU, and usually have some significant effect that supports or requires a specific style of play from the Runner."
+    isOfficial: true
+    isObsolete: false
+    related:
+      - "subtype"
+      - "hardware"
+      - "uniqueness"
+    citations:
+      - "Ams"
+  - name: "uniqueness"
+    aliases:
+      - "unique"
+    short: "a quality of cards, limiting them to only one active copy at a time"
+    long: "Some cards are \"unique\". You can tell if a card is unique if it has a small diamond printed before its title. Two unique cards with the same name cannot be active at the same time. Active refers to all rezzed Corp cards, and all faceup installed Runner cards. If the Runner attempts to install a unique card while there is already another copy installed, they must trash the original as part of the installation process. The Corp may install any number of copies of a unique card, however, if they attempt to rez one while another copy is already rezzed, they must trash the original.<br><br>Unique cards tend to be cards with powerful abilities that would scale too much if multiple copies were allowed in play simultaneously. They are often also themed as specific people or characters within the world of the game."
+    isOfficial: true
+    isObsolete: false
+    related: []
+    citations:
+      - "Ams"
+  - name: "host"
+    aliases:
+      - "hosted"
+      - "hosting"
+    short: "a card that carries other cards or counters on it"
+    long: "Cards can have other cards or counters placed on them. A card that has either is a \"host\" card. The cards or counters are \"hosted\". If a card does not specify when a card can be hosted on it, then you can install a card hosted on it using the normal basic action click ability (see [[Flame Out]]). Cards hosted this way are installed. Cards that are hosted using a specific ability are not installed unless specified (see [[Personal Workshop]])."
+    isOfficial: true
+    isObsolete: false
+    related:
+      - "counter"
+      - "recurring credit"
+    citations:
+      - "Ams"
+  - name: "counter"
+    aliases:
+      - "token"
+    short: "a small token used to denote value in a game state"
+    long: "1. a small token used to denote some mechanical value in a game, sometimes hosted on a card.<br><br>2. a card, combination of cards, or playstyle that \"counters\" another deck by preventing its win condition."
+    isOfficial: true
+    isObsolete: false
+    related:
+      - "advancement counter"
+      - "agenda counter"
+      - "power counter"
+      - "virus counter"
+      - "condition counter"
+      - "brain damage counter"
+      - "click tracker"
+      - "hosted credit"
+      - "recurring credit"
+      - "tag"
+      - "bad publicity"
+    citations:
+      - "Ams"
+  - name: "advancement counter"
+    aliases:
+      - "advancement token"
+    short: "a counter that is placed on cards when they are advanced"
+    long: "Advancement counters determine when the Corp may score an agenda - if the number of hosted advancement counters meets or exceeds agenda's advancement requirement, the Corp may score it. If the Corp Advances (usually through the basic action), an advancement counter is placed on either an agenda or a card that specifies it can be advanced. If an effect says to \"place\" advancement counters, it is not considered advancing, and it may go onto any installed Corp card, regardless of type, unless the effect requirements prevent it."
+    isOfficial: true
+    isObsolete: false
+    related:
+      - "counter"
+    citations:
+      - "monde"
+  - name: "agenda counter"
+    aliases: []
+    short: "a counter that may be placed on agendas while in a score area"
+    long: "Certain agendas will instruct the player to host agenda counters on them, usually when scored. Agenda counters have no inherent effect, but may grant an agenda a passive ability, or may be spent for an ability, if the host agenda says as such."
+    isOfficial: true
+    isObsolete: false
+    related:
+      - "counter"
+    citations:
+      - "monde"
+  - name: "power counter"
+    aliases: []
+    short: "a common type of counter"
+    long: "Power counters may be placed on certain cards when installed or through other effects. A power counter has no inherent effect, but cards that use them define their effects."
+    isOfficial: true
+    isObsolete: false
+    related:
+      - "counter"
+    citations:
+      - "monde"
+  - name: "virus counter"
+    aliases: []
+    short: "a common type of counter; susceptible to purge"
+    long: "Virus counters are a type of counter, commonly found on Virus cards in Runner decks. A virus counter has no inherent effect, but cards that use them define their effect. If the Corp purges virus counters, either through a basic action or card effect, all virus counters are removed from their host cards, even from Corp cards (e.g. [[Sandstone]])"
+    isOfficial: true
+    isObsolete: false
+    related:
+      - "counter"
+      - "purge"
+    citations:
+      - "monde"
+  - name: "purge"
+    aliases: []
+    short: "a Corp ability which removes all currently-hosted virus counters"
+    long: "Purging is the act of removing all hosted virus counters currently hosted on any card. Some cards also trigger off purges, either giving some benefit or downside. Many virus programs that don't host virus counters trash themselves when the Corp purges (see [[Tapwrm]]).<br><br>A basic action of the Corp is to spend three clicks to purge, however there are some card effects that let them purge without spending as many clicks. The basic action of purging is explicitly excluded from the No Change in Game State rule, meaning the Corp can always spend three clicks to purge, even if there are no virus counters or cards that trigger off purging in play."
+    isOfficial: true
+    isObsolete: false
+    related:
+      - "virus counter"
+      - "basic action card"
+      - "Corp"
+    citations:
+      - "Ams"
+  - name: "condition counter"
+    aliases:
+      - "hosted condition counter"
+    short: "a counter that modifies a host card's text"
+    long: "Some events and operations are installed onto cards as \"hosted condition counters\" when played, instead of being trashed after resolving. While a condition counter is hosted on a card, the host card has additional text specified by the hosted card."
+    isOfficial: true
+    isObsolete: false
+    related:
+      - "counter"
+      - "event"
+      - "operation"
+    citations:
+      - "monde"
+  - name: "brain damage counter"
+    aliases: []
+    short: "a counter used to denote how much brain damage a Runner has"
+    long: "Whenever the Runner suffers brain damage, their hand size is reduced by 1 for each brain damage taken. Players often use brain damage tokens as a reminder for how much brain damage they are currently on."
+    isOfficial: false
+    isObsolete: false
+    related:
+      - "counter"
+      - "brain damage"
+    citations:
+      - "Ams"
+  - name: "click tracker"
+    aliases:
+      - "click counter"
+    short: "a counter used to count how many clicks a player has"
+    long: "Some players use a set of counters to keep track of how many clicks they have left each turn. These are not required for play, but are a good way to avoid forgetting how many actions you've taken in a turn so far."
+    isOfficial: true
+    isObsolete: false
+    related:
+      - "counter"
+      - "click"
+    citations:
+      - "Ams"
+  - name: "hosted credit"
+    aliases: []
+    short: "a credit that is hosted on a card instead of in a player's credit pool"
+    long: "Some cards can host credits (see [[Miss Bones]]). These cards will specify when credits are added, when they can be used, and any limitations of their use. Cards that \"load\" credits on them will be trashed when the hosted credits run out."
+    isOfficial: true
+    isObsolete: false
+    related:
+      - "counter"
+      - "credit load"
+      - "host"
+      - "recurring credit"
+    citations:
+      - "Ams"
+  - name: "recurring credit"
+    aliases: []
+    short: "a type of hosted credit that refreshes itself each turn"
+    long: "Recurring credits are a special kind of hosted credit that are refreshed at the start of their player's turn. Notable examples include [[Prepaid VoicePAD]] and [[Ele \"Smoke\" Scovak: Cynosure of the Net]]. When cards with recurring credits enter play, they enter with their hosted credits available."
+    isOfficial: true
+    isObsolete: false
+    related:
+      - "credit"
+      - "hosted credit"
+    citations:
+      - "Ams"
+  - name: "advance"
+    aliases:
+      - "advancing"
+    short: "the basic Corp action of placing an advancement counter on a card"
+    long: "A basic action of the Corp is to spend a click and a credit to place an advancement counter on an installed card. By default, only agendas can be advanced. However, some cards of other types (see [[Ice Wall]] and [[Reversed Accounts]]) explicitly allow the Corp to advance them. Some cards allow the Corp to place or move advancement counters on cards (see [[Shipment from Tennin]] and [[Trick of Light]] respectively). Note that these actions are not the same as \"advancing\" a card, and effects that trigger on advancing a card (see [[Weyland Consortium: Built to Last]]) will not be triggered. An exception to this is the card [[Success]], which explictly advances a card instead of just placing advancement counters on it."
+    isOfficial: true
+    isObsolete: false
+    related:
+      - "Corp"
+      - "agenda"
+      - "basic action"
+    citations:
+      - "Ams"
+  - name: "banlist"
+    aliases:
+      - "most wanted list"
+      - "mwl"
+      - "global penalty"
+      - "universal influence"
+      - "NAPD Most Wanted List"
+      - "NAPD MWL"
+      - "banned"
+      - "restricted"
+    short: "a list of cards banned from a given format"
+    long: "A banlist is a list of cards that are either banned in a given format, or are in some way restricted in deckbuilding. Currently there are only two active banlists: the Standard Banlist, and the Eternal Points List. The Standard Banlist only bans cards, while the Eternal Points List bans a small number of cards, and applies a 1-3 point cost to some overpowered cards. Including any cards with an associated number of points costs that many points. Including more than one copy does not cost additional points. Decks on both sides are limited to 7 points.<br><br>When FFG developed the game, they first implemented banlists as the \"Most Wanted List\" or MWL. This initially listed cards with either a 1 or 3 point global penalty. Each copy of a card with a penalty reduced the influence limit of the deck's identity by that penalty. The final iteration of the MWL replaced this with universal influence, which instead added an additional influence cost to affected cards. This system was then replaced by the NAPD MWL, which specified a list of banned and restricted cards, making it the first banlist to actually ban cards. Cards that were banned could not be included in Standard decks. Decks that contained at least one copy of a card on the restricted list could not include any other cards on the restricted list. When NISEI took over the game, they removed the restricted list for simplicity, meaning cards are now either banned or completely unrestricted for Standard play."
+    isOfficial: true
+    isObsolete: false
+    related:
+      - "Standard Banlist"
+      - "Eternal Points List"
+    citations:
+      - "Ams"
+  - name: "Standard Banlist"
+    aliases:
+      - "SBL"
+    short: "the list of cards banned in the Standard format"
+    long: "Standard decklists are restricted by the Standard Banlist: a list of cards which cannot be included in Standard-legal decks.<br><br>For the most recent version, see the [NISEI site](https://nisei.net/players/supported-formats/#standard)."
+    isOfficial: true
+    isObsolete: false
+    related:
+      - "banlist"
+      - "Standard"
+    citations:
+      - "Ams"
+  - name: "Eternal Points List"
+    aliases:
+      - "EPL"
+      - "points list"
+    short: "the list of cards banned or limited in the Eternal format"
+    long: "Eternal decklists are restricted by the Eternal Points List: a list of cards which are either banned outright, or cost 1-3 points to have any number of them included in a deck. Including any cards with an associated number of points costs that many points. Including more than one copy does not cost additional points. Decks on both sides are limited to 7 points.<br><br>For the most recent version, see the [NISEI site](https://nisei.net/players/supported-formats/#eternal)."
+    isOfficial: true
+    isObsolete: false
+    related:
+      - "banlist"
+      - "Eternal"
+    citations:
+      - "Ams"
+  - name: "damage"
+    aliases: []
+    short: "a mechanic that makes the Runner trash cards from grip at random"
+    long: "Damage is a means of causing the Runner to trash cards from the grip. When taking X damage, the Runner trashes X cards at random. If the Runner must trash more cards than they have in hand, they are flatlined and lose the game."
+    isOfficial: true
+    isObsolete: false
+    related:
+      - "flatlining"
+    citations:
+      - "monde"
+  - name: "meat damage"
+    aliases: []
+    short: "a type of damage"
+    long: "A specific type of damage. There is no inherent difference between net damage and meat damage, though some cards may interact with certain damage types. Thematically, this is damage the Runner takes in meatspace to their physical body, their infrastructure, or their personal connections."
+    isOfficial: true
+    isObsolete: false
+    related:
+      - "damage"
+      - "flatlining"
+      - "net damage"
+      - "brain damage"
+    citations:
+      - "monde"
+  - name: "net damage"
+    aliases: []
+    short: "a type of damage"
+    long: "A specific type of damage. There is no inherent difference between net damage and meat damage, though some cards may interact with certain damage types. Thematically, this is damage the Runner takes from being jacked into the net."
+    isOfficial: true
+    isObsolete: false
+    related:
+      - "damage"
+      - "flatlining"
+      - "meat damage"
+      - "brain damage"
+    citations:
+      - "monde"
+  - name: "brain damage"
+    aliases: []
+    short: "a type of damage permanently reducing the Runner's hand size"
+    long: "Brain damage is a special type of damage that the Runner may take. When resolving \"take X brain damage\", the Runner trashes X cards at random from their grip and receives that many brain damage tokens. Each token reduces the Runner's maximum hand size by 1. If the Runner has to trash more cards than they have in hand, or reaches the discard phase at the end of their turn with a negative hand size, they flatline and lose the game."
+    isOfficial: true
+    isObsolete: false
+    related:
+      - "damage"
+      - "flatlining"
+      - "meat damage"
+      - "net damage"
+    citations:
+      - "monde"
+  - name: "flatlining"
+    aliases:
+      - "flatline"
+    short: "the Runner losing the game to taking too much damage"
+    long: "If the Runner takes more damage than cards in hand, or ends their turn with a negative hand size, they are \"flatlined\" and instantly lose the game. Notably, if they were about to win (e.g. by stealing Obokata Protocol with less than 4 cards in hand) but would be flatlined before stealing the agenda, they are flatlined and do not win. However, if they were about to win (e.g. by stealing an agenda from Jinteki: Personal Evolution with no cards in hand) but would be flatlined as a result of stealing the agenda, they win before they are flatlined."
+    isOfficial: true
+    isObsolete: false
+    related:
+      - "damage"
+    citations:
+      - "Ams"
+  - name: "meatspace"
+    aliases:
+      - "meirl"
+    short: "the physical world"
+    long: "Meatspace refers to the physical world we live in, as opposed to the virtual netspace where servers, programs exist."
+    isOfficial: false
+    isObsolete: false
+    related:
+      - "meat damage"
+      - "netspace"
+    citations:
+      - "Ams"
+  - name: "netspace"
+    aliases: []
+    short: "the virtual world"
+    long: "Netspace refers to the virtual space where runs take place, as opposed to the physical world where people exist."
+    isOfficial: false
+    isObsolete: false
+    related:
+      - "meatspace"
+      - "run"
+    citations:
+      - "Ams"
+  - name: "decking out"
+    aliases: []
+    short: "the Corp losing the game to drawing from an empty R&D"
+    long: "If the Corp attempts to draw while R&D is empty, they immediately lose the game. This is an alternative win condition for the Runner. Decking out as the Runner (attempting to draw from an empty stack) does nothing."
+    isOfficial: false
+    isObsolete: false
+    related: []
+    citations:
+      - "Ams"
+  - name: "archetype"
+    aliases: []
+    short: "a type of Netrunner deck, describing its general playstyle"
+    long: "Archetypes describe the way decks are built and played. They have different win conditions and wildly different playstyles."
+    isOfficial: false
+    isObsolete: false
+    related: []
+    citations:
+      - "Ams"
+  - name: "glacier"
+    aliases: []
+    short: "an archtype where the Corp creates a large and taxing server"
+    long: "Glacier decks stack large amounts of ice on one or more servers in an attempt to make them too taxing for the Runner to run consistently."
+    isOfficial: false
+    isObsolete: false
+    related:
+      - "archetype"
+    citations:
+      - "Ams"
+  - name: "rush"
+    aliases: []
+    short: "an archetype that aims to win as fast as possible"
+    long: "This entry has not yet been written."
+    isOfficial: false
+    isObsolete: false
+    related:
+      - "archetype"
+  - name: "combo"
+    aliases: []
+    short: "an archetype that has a specific combination of cards that win"
+    long: "This entry has not yet been written."
+    isOfficial: false
+    isObsolete: false
+    related:
+      - "archetype"
+  - name: "fast advance"
+    aliases: []
+    short: "an archtype where the Corp scores agendas from hand in one turn"
+    long: "This entry has not yet been written."
+    isOfficial: false
+    isObsolete: false
+    related:
+      - "archetype"
+      - "never advance"
+  - name: "never advance"
+    aliases:
+      - "no advance"
+    short: "an archetype where the Corp leaves agendas unadvanced"
+    long: "This entry has not yet been written."
+    isOfficial: false
+    isObsolete: false
+    related:
+      - "archetype"
+      - "fast advance"
+  - name: "rigshooter"
+    aliases:
+      - "rigshoot"
+      - "rigshooting"
+    short: "an archetype where the Corp trashes the Runner's installed cards"
+    long: "This entry has not yet been written."
+    isOfficial: false
+    isObsolete: false
+    related: []
+  - name: "tagstorm"
+    aliases: []
+    short: "an archetype where the Corp tags the Runner multiple times"
+    long: "This entry has not yet been written."
+    isOfficial: false
+    isObsolete: false
+    related:
+      - "archetype"
+  - name: "tag'n'bag"
+    aliases:
+      - "tagnbag"
+    short: "an archetype where the Corp tags the Runner then flatlines them"
+    long: "This entry has not yet been written."
+    isOfficial: false
+    isObsolete: false
+    related:
+      - "archetype"
+  - name: "butchershop"
+    aliases: []
+    short: "a subset of tag'n'bag"
+    long: "This entry has not yet been written."
+    isOfficial: false
+    isObsolete: false
+    related:
+      - "archetype"
+      - "tag'n'bag"
+  - name: "nexus"
+    aliases: []
+    short: "a Runner archetype revolving around [[Security Nexus]]"
+    long: "This entry has not yet been written."
+    isOfficial: false
+    isObsolete: false
+    related:
+      - "archetype"
+      - "Sunny Lebeau"
+  - name: "hyperdriver"
+    aliases:
+      - "dyper"
+    short: "a Runner archetype utilising [[Hyperdriver]]"
+    long: "This entry has not yet been written."
+    isOfficial: false
+    isObsolete: true
+    related:
+      - "archetype"
+  - name: "tempo"
+    aliases: []
+    short: "how fast a game is progressing"
+    long: "This entry has not yet been written."
+    isOfficial: false
+    isObsolete: false
+    related:
+      - "archetype"
+  - name: "no change in game state"
+    aliases:
+      - "NCIGS"
+    short: "a rule requiring effects to change the game state to be invoked"
+    long: "*No Change in Game State* is a rule which states that a player can only trigger an action or ability if its effect has the potential to change the game state. This rule ignores all effects of paying for an abilities cost, so even if paying a cost would allow its effect to change the game state, if resolving the effect without paying the cost could not change the game state, the ability cannot be trigged.<br><br>For example: on the Runner's basic action card, they have the ability *\"**[click], 2[credit]:** Remove a tag.\"*. Even if the Runner has a click and two credits to spend, if they don't have at least one tag they cannot use this ability as it would not change the game state."
     isOfficial: true
     isObsolete: false
     related:
       - "paid ability"
+  - name: "priority"
+    aliases: []
+    short: "which player is currently allowed to take actions"
+    long: "This entry has not yet been written."
+    isOfficial: true
+    isObsolete: false
+    related: []
+  - name: "priority window"
+    aliases: []
+    short: "this entry has not yet been written"
+    long: "This entry has not yet been written."
+    isOfficial: true
+    isObsolete: false
+    related: []
+  - name: "action window"
+    aliases: []
+    short: "this entry has not yet been written"
+    long: "This entry has not yet been written."
+    isOfficial: true
+    isObsolete: false
+    related: []
+  - name: "paid ability window"
+    aliases:
+      - "PAW"
+    short: "points in the game where players may take certain actions"
+    long: "During paid ability windows (PAWs) each player may activate as many paid abilities as they're able to before passing to the other player. The player who is currently able to take actions is said to have \"priority\". The paid ability window only ends once both players pass priority without taking any actions."
+    isOfficial: true
+    isObsolete: false
+    related:
+      - "priority"
+  - name: "active player"
+    aliases: []
+    short: "the player whose turn it is"
+    long: "The active player is the player whose turn it currently is. They gain clicks at the start of their turn and can spend them to play/install cards or on paid abilities with a click cost."
+    isOfficial: true
+    isObsolete: false
+    related:
+      - "inactive player"
+      - "priority"
+      - "paid ability"
+    citations:
+      - "Ams"
+  - name: "inactive player"
+    aliases: []
+    short: "the player whose turn it isn't"
+    long: "The inactive player is the player who isn't the active player. They cannot spend clicks to play/install cards or pay any click costs on paid abilities."
+    isOfficial: true
+    isObsolete: false
+    related:
+      - "active player"
+      - "priority"
+      - "paid ability"
+    citations:
+      - "Ams"
+  - name: "agenda density"
+    aliases: []
+    short: "the ratio of agendas to non-agenda cards in a Corp deck"
+    long: "The number of agenda cards or the amount of agenda points they are worth in comparison to the number of cards in a Corp deck. When Corp deckbuilding it is optimal to minimise the agenda density of the deck to reduce the chance of agendas being accessed from R&D. This is why Corp decks often have one card less than a multiple of five, as the deckbuilding restrictions on agendas are in bands of fives (decks with 40-44 cards require 18 or 19 agenda points worth of agendas, 45-49 cards require 20 or 21 agenda points, and so on)."
+    isOfficial: false
+    isObsolete: false
+    related:
+      - "deckbuilding"
+      - "agenda suite"
+    citations:
+      - "Ams"
+      - "[chaosof99](https://docs.google.com/document/d/1FxxXpUAkmRMLiSpX0D4myC_4jWP0_CnEyKxv7xBUC8A)"
+  - name: "agenda suite"
+    aliases: []
+    short: "the collection of agendas in a Corp deck"
+    long: "The selection of agenda cards in a Corp deck. When Corp deckbuilding it is optimal to minimise the agenda density of the deck to reduce the chance of agendas being accessed from R&D. This is why Corp decks often have one card less than a multiple of five, as the deckbuilding restrictions on agendas are in bands of fives (decks with 40-44 cards require 18 or 19 agenda points worth of agendas, 45-49 cards require 20 or 21 agenda points, and so on).<br><br>Some agenda suites are built around the abilities printed on agendas, while some suites are built around maximising or minimising the number of agendas in the deck (see decks with [[Jinteki: Personal Evolution]] and [[Punitive Counterstrike]] respectively)."
+    isOfficial: false
+    isObsolete: false
+    related:
+      - "agenda density"
+    citations:
+      - "Ams"
+      - "[chaosof99](https://docs.google.com/document/d/1FxxXpUAkmRMLiSpX0D4myC_4jWP0_CnEyKxv7xBUC8A)"
+  - name: "agenda flood"
+    aliases:
+      - "flood"
+    short: "when HQ fills with agendas the Corp can't safely play"
+    long: "Getting \"flooded\" is when HQ fills with agendas and the Corp has little-or-no way to effectively play the game or defend the agendas."
+    isOfficial: false
+    isObsolete: false
+    related:
+      - "agenda"
+      - "HQ"
+    citations:
+      - "Ams"
+  - name: "conspiracy breakers"
+    aliases:
+      - "bin breakers"
+    short: "the cycle of self-recurring anarch icebreakers from Flashpoint"
+    long: "[[Paperclip]], [[Black Orchestra]], and [[MKUltra]] are respectively an Anarch fracter, decoder, and killer released in the Flashpoint cycle. They are related in all being named after famous conspiracies, and in that they all have the ability to be installed from the heap whenever the Runner encounters a piece of ice the icebreaker is able to break. Paperclip is particularly controversial for having good stats even without its recurring ability."
+    isOfficial: false
+    isObsolete: false
+    related: []
+    citations:
+      - "Ams"
+  - name: "burst economy"
+    aliases: []
+    short: "gaining a large number of credits at once"
+    long: "Burst economy is a source of credits that gives you a large amount of credits all at once. Notable examples include [[Sure Gamble]], [[Hedge Fund]], [[Bravador]], and [[Mass Commercialization]]."
+    isOfficial: false
+    isObsolete: false
+    related: []
+    citations:
+      - "Ams"
+      - "[chaosof99](https://docs.google.com/document/d/1FxxXpUAkmRMLiSpX0D4myC_4jWP0_CnEyKxv7xBUC8A)"
+  - name: "drip economy"
+    aliases: []
+    short: "gaining small amounts of credits over a period of time"
+    long: "Drip economy is a source of credits that gives you small amounts of credits over some period of time, sometimes indefinitely. Notable examples include [[Rezeki]] and [[Pad Campaign]]."
+    isOfficial: false
+    isObsolete: false
+    related: []
+    citations:
+      - "Ams"
+      - "[chaosof99](https://docs.google.com/document/d/1FxxXpUAkmRMLiSpX0D4myC_4jWP0_CnEyKxv7xBUC8A)"
+  - name: "influence"
+    aliases:
+      - "inf"
+    short: "a deckbuilding cost on cards when included in out-of-faction decks"
+    long: "All cards that are neither identities nor non-neutral agendas have an influence cost, represented by a group of 5 circles. Neutral and out-of-faction cards may be included in a deck if their total influence costs do not exceed the your deck's identity's influence limit. Cards without influence costs (i.e. faction agendas) cannot be included in out-of-faction decks."
+    isOfficial: true
+    isObsolete: false
+    related:
+      - "faction"
+      - "deckbuilding"
+    citations:
+      - "monde"
+  - name: "IAA"
+    aliases: []
+    short: "\"install advance advance\""
+    long: "IAA describes the Corp play pattern of using the basic action of installing a card and then taking two advancement actions on that card. This play pattern is most common when trying to score 5/3 agendas, as the Corp will be able to spend their three clicks next turn to finish advancing and score it. This knowledge can be exploited by using the same play pattern on ambushes or other advanceable assets in order to bait the Runner into running and using their resources. It can also be used to pretend agendas with different statlines are 5/3s."
+    isOfficial: false
+    isObsolete: false
+    related:
+      - "agenda"
+      - "ambush"
+  - name: "reg"
+    aliases:
+      - "regular"
+    short: "an archetype based around individual card value over synergies"
+    long: "Reg decks are built around including cards based on their standalone value, rather than any potential value they may have in combination with other cards. Where other decks might include economic support for a specific playstyle or cards that specifically work well with each other, reg decks just include the best cards available in-faction or within their influence limit with perhaps a few extra slots for tech cards or specific win conditions."
+    isOfficial: false
+    isObsolete: false
+    related:
+      - "archetype"
+    citations:
+      - "Ams"
+  - name: "asset spam"
+    aliases:
+      - "wide"
+      - "horizontal"
+    short: "an archetype where the Corp plays assets to out-tempo the Runner"
+    long: "In this deck archetype the Corp's main playstyle is to install cards in remotes at such a rate the Runner is unable to check all of them for agendas or trash powerful assets before the Corp can leverage them to win. Asset spam decks tend to run very little ice, as the combined trash cost of their assets is usually enough to stop them all being trashed. They also tend to run some form of punishment for running (see [[Hard-Hitting News]]), making it very hard for the Runner to run safely without managing their economy properly.<br><br>Some Corp IDs lend themselves particularly to asset spam:<br>- [[NBN: Controlling the Message]]<br>- [[Near-Earth Hub: Broadcast Center]]<br>- [[Gagarin Deep Space: Expanding the Horizon]]<br>- [[Industrial Genomics: Growing Solutions]]"
+    isOfficial: false
+    isObsolete: false
+    related:
+      - "archetype"
+    citations:
+      - "Ams"
+  - name: "shell game"
+    aliases: []
+    short: "an archetype where the Corp bluffs agendas with ambushes"
+    long: "Shell games are when the Corp plays cards facedown and bluffs whether they are agendas or ambushes. Any Corp deck that runs assets or upgrades is able to bluff them as agendas to some extent, but some decks are built to include as many advanceable ambushes (see [[Urtica Cipher]] and [[Cerebral Overwriter]]) as possible to catch the Runner out as a win condition."
+    isOfficial: false
+    isObsolete: false
+    related:
+      - "archetype"
+    citations:
+      - "Ams"
+  - name: "grinder"
+    aliases: []
+    short: "an archetype where the Corp does lots of small amounts of damage"
+    long: "The goal of grinder decks is to do enough damage throughout the game that the Runner eventually runs out of cards and can be flatlined by just a bit more damage, or that the damage hits enough key cards such as their icebreakers so that they are eventually locked out of servers by ice. Jinteki is the most common faction for grinder decks due to their number of damage-dealing cards, but the archetype does exist in other factions too (see *Weyland Consortium: Builder of Nations*)."
+    isOfficial: false
+    isObsolete: false
+    related:
+      - "archetype"
+  - name: "win condition"
+    aliases:
+      - "win con"
+    short: "the means of a deck to win the game"
+    long: "Win conditions refer to either the gamestates required for a player to win, or the strategy or combination of cards a specific deck needs to win.<br><br>There are three fundamental win conditions in Netrunner:<br>- acquiring 7 agenda points (valid for both sides)<br>- flatlining the Runner (a Corp-exclusive win condition)<br>- decking out the Corp (a Runner-exclusive win condition)<br><br>The win condition of a specific deck refers to a strategy or combination of cards that is the main way the deck intends to win. Some decks with a specific card combination lose if they are unable to play that combo while other decks may have mutliple win conditions or be able to win by just playing good value cards."
+    isOfficial: false
+    isObsolete: false
+    related:
+      - "agenda"
+      - "flatlining"
+      - "decking out"
+    citations:
+      - "Ams"
+  - name: "psychobeale"
+    aliases: []
+    short: "a fast advance archetype using *Psychographics* and *Project Beale*"
+    long: "Psychobeale is a specific combo often used as a win condition in decks that tag the Runner. If the Runner ends their turn with floating tags it allows the Corp to fast advance a [[Project Beale]] with [[Psychographics]] to score lots of points at once."
+    isOfficial: false
+    isObsolete: false
+    related:
+      - "archetype"
+      - "fast advance"
+      - "floating tags"
+  - name: "floating tags"
+    aliases: []
+    short: "when the Runner leaves themself tagged during the Corp's turn"
+    long: "Floating tags is when the Runner takes tags but doesn't clear them during their turn, either due to a lack of resources (credits, clicks, cards, etc.), lack of tempo, or because their deck is built to either survive being tagged (see [[Jarogniew Mercs]]), or wants to be tagged for its win condition (e.g. [[Counter Surveillance]] decks)."
+    isOfficial: false
+    isObsolete: false
+    related:
+      - "tag punishment"
+      - "tagme"
+  - name: "tagme"
+    aliases:
+      - "tag me"
+    short: "when the Runner stops removing tags"
+    long: "\"TagMe\" is a style of play where the Runner either doesn't care about accumulating tags (or can't keep up with removing tags and just hopes they can win before the Corp finds their tag punishment) so they can continue to take their turns without using resources to remove them."
+    isOfficial: false
+    isObsolete: false
+    related:
+      - "floating tags"
+      - "tag punishment"
+  - name: "tag punishment"
+    aliases: []
+    short: "a card which swings the game against the Runner if they're tagged"
+    long: "Tag punishment is a type of card which either has a benefit for the Corp or a downside for the Runner depending on whether the Runner is tagged. Some cards only care if the Runner is tagged or not (see [[Retribution]]) while others scale with the number of tags (see [[Pschographics]]) and others have a minimum requirement (see [[BOOM!]])."
+    isOfficial: false
+    isObsolete: false
+    related: []
+  - name: "subroutine"
+    aliases:
+      - "sub"
+    short: "an instruction on a piece of ice, marked with an arrow"
+    long: "Most ice have one or more subroutines, each of which is prefaced by an arrow symbol. During encounters with a piece of ice, the Runner has a paid ability window to use icebreakers to break the subroutines on that ice. Each subroutine that the Runner hasn't broken at the end of the enounter resolves from top to bottom. If a subroutine ends the run, any subroutines after that are not resolved."
+    isOfficial: true
+    isObsolete: false
+    related:
+      - "ice"
+      - "encounter"
+      - "icebreaker"
+    citations:
+      - "monde"
+  - name: "interface"
+    aliases: []
+    short: "an icebreaker keyword requiring it match an ice's strength"
+    long: "If a paid ability on an Icebreaker is prefaced by \"Interface\", that ability may not be activated unless the Icebreaker's strength meets or exceeds that of the ice being encountered."
+    isOfficial: true
+    isObsolete: false
+    related:
+      - "ice"
+      - "icebreaker"
+    citations:
+      - "monde"
+  - name: "strength"
+    aliases: []
+    short: "a stat on ice and icebreakers that defines when they can interact"
+    long: "Strength is found on the Corp's ice cards and the Runner's Icebreaker cards. To use an Interface ability on an Icebreaker, the Icebreaker's strength must meet or exceed that of the encountered ice. Most Icebreakers have an ability to increase its strength for the encounter (or run, if specified), though ice strength can also be lowered through card effects, such as [[Ice Carver]]."
+    isOfficial: true
+    isObsolete: false
+    related:
+      - "interface"
+      - "ice"
+      - "icebreaker"
+    citations:
+      - "monde"
+  - name: "tech"
+    aliases:
+      - "tech card"
+    short: "a card that combos a specific card or playstyle in the current meta"
+    long: "A tech card is a card included in a deck only to counter a card or playstyle on the opposing side which you expect to see in a meta. Alternatively if there's a specific deck archetype that counters your deck, rather than changing decks, you could include a tech card that gives you a chance against that deck. While it was still legal, [[Employee Strike]] was a good example of a tech card that countered many Corp decks which relied on their ID ability (see [[Industrial Genomics]] and [[Skorpios]])."
+    isOfficial: false
+    isObsolete: false
+    related:
+      - "deckbuilding"
+      - "meta"
+      - "archetype"
+    citations:
+      - "Ams"
+  - name: "meta"
+    aliases:
+      - "metagame"
+      - "meta game"
+    short: "a set of playstyles or decks that are prominent in a format"
+    long: "A meta is a set of playstyles or specific decks that are particularly powerful under a given format or card pool. A healthy meta is one with lots of viable such styles or decks, whereas one with a very small number is likely to be hit with a banlist to keep the game fresh. A meta will often have a rock-paper-scissors-style aspect where some decks are good against some meta decks, while being particularly vulnerable to others. The meta is likely to change every time a format rotates, or a new banlist is introduced."
+    isOfficial: false
+    isObsolete: false
+    related:
+      - "card pool"
+      - "meta call"
+    citations:
+      - "Ams"
+  - name: "meta call"
+    aliases: []
+    short: "making a judgment about the meta for an upcoming tournament"
+    long: "Making a meta call about an upcoming tournament is making a prediction about the kind of decks you expect to see and building your deck around them. This might just mean including some tech cards, or it may decide which archetype you play. Due to the nature of high-level tournaments (in which you cannot change decklists between matchups) making a bad meta call can cost you the tournament, while making a good meta call could get you first place."
+    isOfficial: false
+    isObsolete: false
+    related:
+      - "meta"
+      - "tech card"
+      - "archetype"
+    citations:
+      - "Ams"
+  - name: "net decking"
+    aliases:
+      - "net deck"
+    short: "a deck that was copied from another player"
+    long: "Netdecking is the act of copying a decklist from someone else, often from the list of published decklists on NetrunnerDB. There's nothing wrong with netdecking, and it's often a very good way to get into the game or into a new meta."
+    isOfficial: false
+    isObsolete: false
+    related:
+      - "netRunnerdb"
+      - "deck"
+      - "deckbuilding"
+    citations:
+      - "Ams"

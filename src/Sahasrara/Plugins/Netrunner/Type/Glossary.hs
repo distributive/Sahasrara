@@ -20,10 +20,21 @@ data Definition = Definition
     long :: Text,
     isOfficial :: Bool,
     isObsolete :: Bool,
-    related :: [Text]
+    related :: [Text],
+    citations :: Maybe [Text],
+    sources :: Maybe [Text]
   }
   deriving (Eq, Show, Generic)
 
-type Glossary = [Definition]
+data Glossary = Glossary
+  { defs :: [Definition],
+    source :: Text
+  }
+  deriving (Show, Generic)
 
 instance FromJSON Definition
+
+instance FromJSON Glossary
+
+defaultGlossary :: Glossary
+defaultGlossary = Glossary {defs = [], source = ""}
