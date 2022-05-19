@@ -9,7 +9,7 @@ defs:
     isObsolete: false
     related:
       - "nisei"
-      - "netRunnerdb"
+      - "Netrunnerdb"
       - "jinteki.net"
       - "collectable card game"
       - "living card game"
@@ -515,15 +515,15 @@ defs:
     isOfficial: true
     isObsolete: false
     related:
-      - "netRunnerdb"
+      - "NetrunnerDB"
     sources:
       - "[nisei.net](https://nisei.net)"
-  - name: "netRunnerdb"
+  - name: "NetrunnerDB"
     aliases:
-      - "netRunnerdb.com"
+      - "netrunnerdb.com"
       - "nrdb"
     short: "a website for viewing ANR cards and building decks"
-    long: "NetrunnerDB ([netRunnerdb.com](netRunnerdb.com)) is a website containing a list of all Android Netrunner cards ever printed, as well as information on banlists, and a deckbuilder. Users of the site can build and publish their decklists.<br><br>The site was originally built by a member of the community Alsciende, and responsibility for maintaining the site has since been passed to NISEI."
+    long: "NetrunnerDB ([netrunnerdb.com](https://netrunnerdb.com)) is a website containing a list of all Android Netrunner cards ever printed, as well as information on banlists, and a deckbuilder. Users of the site can build and publish their decklists.<br><br>The site was originally built by a member of the community *Alsciende*, and responsibility for maintaining the site has since been passed to NISEI."
     isOfficial: true
     isObsolete: false
     related:
@@ -536,11 +536,11 @@ defs:
     aliases:
       - "jnet"
     short: "a free, online Netrunner emulator"
-    long: "Jinteki ([jinteki.net](jinteki.net) or jnet) is a online Netrunner emulator that supports both casual and competitive play. It has been used to host high-level tournaments when in-person events were unfeasible.<br><br>Jinteki supports most official formats, as well as casual play without any deckbuilding limitations, as well as all official printings of each card, including alt arts. Most gameplay is automated, but it allows players to manipulate the game state for when cards aren't fully implemented or players make misclicks. It is an open source project maintained by members of the community."
+    long: "Jinteki ([jinteki.net](https://jinteki.net) or jnet) is a online Netrunner emulator that supports both casual and competitive play. It has been used to host high-level tournaments when in-person events were unfeasible.<br><br>Jinteki supports most official formats, as well as casual play without any deckbuilding limitations, as well as all official printings of each card, including alt arts. Most gameplay is automated, but it allows players to manipulate the game state for when cards aren't fully implemented or players make misclicks. It is an open source project maintained by members of the community."
     isOfficial: false
     isObsolete: false
     related:
-      - "netRunnerdb"
+      - "NetrunnerDB"
     citations:
       - "Ams"
   - name: "Android Netrunner"
@@ -563,7 +563,7 @@ defs:
     aliases:
       - "Android Universe"
     short: "the setting of modern Netrunner; owned by FFG"
-    long: "1. The Android Universe is the cyberpunk setting of Android Netrunner and other games released by FFG. It is set in a future of advanced artificial intelligence, biotechnology, and interplanetary exploration.<br><br>2. Androids are artificial human-like beings, primarily used as sources of labor. There are two types of android: bioroids and clones, manufactured by Haas-Bioroid and Jinteki respectively."
+    long: "1. the Android Universe is the cyberpunk setting of Android Netrunner and other games released by FFG. It is set in a future of advanced artificial intelligence, biotechnology, and interplanetary exploration.<br><br>2. androids are artificial human-like beings, primarily used as sources of labor. There are two types of android: bioroids and clones, manufactured by Haas-Bioroid and Jinteki respectively."
     isOfficial: true
     isObsolete: false
     related:
@@ -603,7 +603,7 @@ defs:
   - name: "New Angeles"
     aliases: []
     short: "the largest city on Earth in the Android setting"
-    long: "New Angeles is the site of the Beanstalk in the Android Universe. Due to the infrastructure the Beanstalk provides, it has become one of the largest cities on the planet.<br><br>New Angeles is also the name of a colaborative, hidden-information board game set in the city of New Angeles, released by FFG in 2016."
+    long: "1. New Angeles is the site of the Beanstalk in the Android Universe. Due to the infrastructure the Beanstalk provides, it has become one of the largest cities on the planet.<br><br>2. New Angeles is also the name of a colaborative, hidden-information board game set in the city of New Angeles, released by FFG in 2016."
     isOfficial: true
     isObsolete: false
     related:
@@ -657,7 +657,7 @@ defs:
     related:
       - "LCG"
       - "ANR"
-      - "ONG"
+      - "ONR"
     citations:
       - "Ams"
   - name: "Living Card Game"
@@ -718,7 +718,7 @@ defs:
   - name: "cycle"
     aliases: []
     short: "a full expansion comprised of data packs of cards"
-    long: "The regular process by which cards are released in Netrunner is that of cycles, each comprised of some number of data packs. Cycles as released by FFG were comprised of 6 data packs, released one at a time. NISEI cycles are comprised of two data packs, and a booster pack containing reprints of cards from the cycle for an earlier release.<br><br>As of the Kitara cycle's release in 2017, the release of a new cycle triggers rotation in the Standard format, rotating out the older cycles are deluxe expansions.<br><br>For a list of all released sets, see [NetrunnerDB](https://netRunnerdb.com/en/sets)."
+    long: "The regular process by which cards are released in Netrunner is that of cycles, each comprised of some number of data packs. Cycles as released by FFG were comprised of 6 data packs, released one at a time. NISEI cycles are comprised of two data packs, and a booster pack containing reprints of cards from the cycle for an earlier release.<br><br>As of the Kitara cycle's release in 2017, the release of a new cycle triggers rotation in the Standard format, rotating out the older cycles are deluxe expansions.<br><br>For a list of all released sets, see [NetrunnerDB](https://NetrunnerDB.com/en/sets)."
     isOfficial: true
     isObsolete: false
     related:
@@ -730,7 +730,7 @@ defs:
   - name: "data pack"
     aliases: []
     short: "a single pack of cards; a single component of a full cycle"
-    long: "Data packs are single packs of cards, which combine with other data packs to form a complete cycle.<br><br>For a list of all released sets, see [NetrunnerDB](https://netRunnerdb.com/en/sets)."
+    long: "Data packs are single packs of cards, which combine with other data packs to form a complete cycle.<br><br>For a list of all released sets, see [NetrunnerDB](https://NetrunnerDB.com/en/sets)."
     isOfficial: true
     isObsolete: false
     related:
@@ -747,7 +747,7 @@ defs:
       - "update"
       - "system core"
     short: "a standalone set of cards; the base for further expansions"
-    long: "A core set is a base set of cards which can be played as a standalone set, but can also be expanded upon with other expansions. The first set of Android Netrunner was the original Core Set. This was replaced in 2017 by FFG with the Revised Core Set, which removed 40 cards from the original set and added 59 new ones from the rotated Netrunner expansions.<br><br>When NISEI took over the game, they initially implemented a rotating core set in the form of System Core 2019. This was later replaced by System Gateway and System Update 2021. Gateway is the latest core set expansion for Netrunner, while Update is a selection of existing cards reprinted for modern Standard play.<br><br>For a list of all released sets, see [NetrunnerDB](https://netRunnerdb.com/en/sets)."
+    long: "A core set is a base set of cards which can be played as a standalone set, but can also be expanded upon with other expansions. The first set of Android Netrunner was the original Core Set. This was replaced in 2017 by FFG with the Revised Core Set, which removed 40 cards from the original set and added 59 new ones from the rotated Netrunner expansions.<br><br>When NISEI took over the game, they initially implemented a rotating core set in the form of System Core 2019. This was later replaced by System Gateway and System Update 2021. Gateway is the latest core set expansion for Netrunner, while Update is a selection of existing cards reprinted for modern Standard play.<br><br>For a list of all released sets, see [NetrunnerDB](https://NetrunnerDB.com/en/sets)."
     isOfficial: true
     isObsolete: false
     related:
@@ -758,7 +758,7 @@ defs:
   - name: "deluxe expansion"
     aliases: []
     short: "a larger expansion of cards"
-    long: "Deluxe expansions for singular set of cards to be added to a card pool, as opposed to cycles, which are made up of multiple data packs each. FFG released six deluxe expansions:<br>- Creation and Control *(rotated)*<br>- Honor and Profit *(rotated)*<br>- Order and Chaos<br>- Data and Destiny<br>- Terminal Directive *(rotated)*<br>- Reign and Reverie<br><br>For a list of all released sets, see [NetrunnerDB](https://netRunnerdb.com/en/sets)."
+    long: "Deluxe expansions for singular set of cards to be added to a card pool, as opposed to cycles, which are made up of multiple data packs each. FFG released six deluxe expansions:<br>- Creation and Control *(rotated)*<br>- Honor and Profit *(rotated)*<br>- Order and Chaos<br>- Data and Destiny<br>- Terminal Directive *(rotated)*<br>- Reign and Reverie<br><br>For a list of all released sets, see [NetrunnerDB](https://NetrunnerDB.com/en/sets)."
     isOfficial: true
     isObsolete: false
     related:
@@ -2338,7 +2338,7 @@ defs:
     isOfficial: false
     isObsolete: false
     related:
-      - "netRunnerdb"
+      - "NetrunnerDB"
       - "deck"
       - "deckbuilding"
     citations:
