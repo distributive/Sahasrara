@@ -90,6 +90,7 @@ aliases:
   smc: "Self-modifying Code"
   glc: "Green Level Clearance"
   vlc: "Violet Level Clearance"
+  uvc: "Ultraviolet Clearance"
   dbs: "Daily Business Show"
   cvs: "Cyberdex Virus Suite"
   etf: "Haas-Bioroid: Engineering the Future"
@@ -99,6 +100,7 @@ aliases:
   sscg: "SanSan City Grid"
   mcaap: "MCA Austerity Policy"
   mca ap: "MCA Austerity Policy"
+  hpt: "High-Profile Target"
 
   # Misc.
   baby: "Symmetrical Visage"
