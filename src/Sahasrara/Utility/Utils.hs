@@ -37,7 +37,7 @@ debugPrint a = do
 intToText :: Integral a => a -> Text
 intToText = toStrict . toLazyText . decimal
 
--- | @standardise@ takes converts text to lowercase and removes diacritics
+-- | @standardise@ converts text to lowercase and removes diacritics
 standardise :: Text -> Text
 standardise x = filter (not . property Diacritic) normalizedText
   where
