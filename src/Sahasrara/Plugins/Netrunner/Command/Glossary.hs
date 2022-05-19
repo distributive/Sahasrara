@@ -13,7 +13,7 @@ import Control.Monad.Reader (ask, liftIO)
 import Data.List (nub)
 import Data.Map (fromList, lookup)
 import Data.Maybe (catMaybes, fromMaybe)
-import Data.Text (Text, intercalate, toLower, unpack)
+import Data.Text (Text, intercalate, unpack)
 import Sahasrara.Plugins.Netrunner.Type.Card (title)
 import Sahasrara.Plugins.Netrunner.Type.Glossary (Definition (..), Glossary (..))
 import Sahasrara.Plugins.Netrunner.Type.NrApi
@@ -59,7 +59,7 @@ printDef :: Text -> Message -> EnvDatabaseDiscord NrApi ()
 printDef term m = do
   api <- ask
   let g = glossary api
-  case lookup (toLower term) $ fromList $ defMap $ defs g of
+  case lookup (standardise term) $ fromList $ defMap $ defs g of
     Nothing -> sendEmbedMessage m "" $ addColour Red $ basicEmbed ":pencil2: Term not found" $ failText api
     Just def -> do
       let citation = case citations def of
@@ -73,7 +73,7 @@ printDef term m = do
       sendEmbedMessage m "" $ addColour Blue $ basicEmbed (":pencil: " <> name def) $ format defText (related def) citation bib (source g)
   where
     defMap :: [Definition] -> [(Text, Definition)]
-    defMap definitions = concatMap (\def -> (toLower $ name def, def) : [(toLower $ a, def) | a <- aliases def]) definitions
+    defMap definitions = concatMap (\def -> (standardise $ name def, def) : [(standardise $ a, def) | a <- aliases def]) definitions
     format :: Text -> [Text] -> Text -> Text -> Text -> Text
     format defText related citation bib source =
       let suffix = case related of
@@ -85,10 +85,11 @@ printDef term m = do
     failText NrApi {cards = cards, glossary = glossary, cardAliases = cardAliases} =
       let definitions = map (\(s, d) -> (unpack s, d)) $ defMap $ defs $ glossary
           suggestions = map formatDef $ take 3 $ nub $ sortValuesWithCosts editCosts definitions $ unpack term
+          footnote = "\n\n*Can't find a definition you think should be here? [Let me know!](" <> source glossary <> ")*"
        in if fromAlias cardAliases term /= term
             then "That's the alias of a card; try: `[[" <> (fromAlias cardAliases term) <> "]]`"
             else case filter ((== Just term) . title) cards of
-              [] -> "Maybe you meant:\n " <> intercalate "\n " suggestions
+              [] -> "Maybe you meant:\n " <> intercalate "\n " suggestions <> footnote
               c : _ -> "That's a card; try: `[[" <> (fromMaybe "" $ title c) <> "]]`"
     formatDef :: Definition -> Text
     formatDef Definition {name = name, short = short} = "`" <> name <> "`: *" <> short <> "*"
