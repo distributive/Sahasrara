@@ -62,25 +62,22 @@ printDef term m = do
   case lookup (standardise term) $ fromList $ defMap $ defs g of
     Nothing -> sendEmbedMessage m "" $ addColour Red $ basicEmbed ":pencil2: Term not found" $ failText api
     Just def -> do
-      let citation = case citations def of
-            Just (x : xs) -> "\n\n***Written by:** " <> intercalate ", " (x : xs) <> "*"
-            _ -> ""
-          bib = case sources def of
+      let defSource = case sources def of
             Just [x] -> "\n\n***Source:** " <> x <> "*"
             Just xs -> "\n\n***Sources:** " <> intercalate ", " xs <> "*"
             Nothing -> ""
       defText <- formatText' $ long def
-      sendEmbedMessage m "" $ addColour Blue $ basicEmbed (":pencil: " <> name def) $ format defText (related def) citation bib (source g)
+      sendEmbedMessage m "" $ addColour Blue $ basicEmbed (":pencil: " <> name def) $ format defText (related def) defSource (source g)
   where
     defMap :: [Definition] -> [(Text, Definition)]
     defMap definitions = concatMap (\def -> (standardise $ name def, def) : [(standardise $ a, def) | a <- aliases def]) definitions
-    format :: Text -> [Text] -> Text -> Text -> Text -> Text
-    format defText related citation bib source =
+    format :: Text -> [Text] -> Text -> Text -> Text
+    format defText related defSource source =
       let suffix = case related of
             [] -> ""
             _ -> "\n\n**See also**\n`" <> intercalate "`, `" related <> "`"
           footnote = "\n\n*Is this definition inaccurate, incomplete, or misleading? [Let me know!](" <> source <> ")*"
-       in defText <> citation <> bib <> footnote <> suffix
+       in defText <> defSource <> footnote <> suffix
     failText :: NrApi -> Text
     failText NrApi {cards = cards, glossary = glossary, cardAliases = cardAliases} =
       let definitions = map (\(s, d) -> (unpack s, d)) $ defMap $ defs $ glossary
