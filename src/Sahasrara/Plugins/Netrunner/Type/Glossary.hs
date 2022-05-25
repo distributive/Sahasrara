@@ -30,7 +30,7 @@ data Glossary = Glossary
   { defs :: [Definition],
     source :: Text
   }
-  deriving (Show, Generic)
+  deriving (Eq, Show, Generic)
 
 instance FromJSON Definition
 
