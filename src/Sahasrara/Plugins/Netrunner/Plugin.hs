@@ -13,7 +13,7 @@ import Control.Monad.IO.Class
 import Control.Monad.Trans.Reader (ask)
 import Data.List (find)
 import Data.Maybe (fromMaybe, mapMaybe)
-import Data.Text (Text, intercalate, isInfixOf, pack, strip, unpack)
+import Data.Text (Text, intercalate, isInfixOf, pack, unpack)
 import Data.Text.ICU.Replace (replaceAll)
 import Data.Time.Calendar
 import Data.Time.Clock
@@ -218,7 +218,7 @@ nrSets :: EnvCommand NrApi
 nrSets = Command "sets" (parseComm setsComm) []
   where
     setsComm :: RestOfInput Text -> Message -> EnvDatabaseDiscord NrApi ()
-    setsComm (ROI card) m = case strip card of
+    setsComm (ROI card) m = case card of
       "" -> embedSets m
       c -> do
         api <- ask
@@ -273,9 +273,10 @@ embedSets m = do
   sep <- formatFromEmojiName "s_subroutine"
   let title = ":card_box: All Netrunner sets :card_box:"
       url = "https://netrunnerdb.com/en/sets"
+      pre = ":white_check_mark: legal | :repeat: rotated | :no_entry_sign: never legal in standard"
       cols = mapMaybe (formatCycle api $ sep <> " ") $ cycles api
       ordered = filter isCycle cols ++ filter (not . isCycle) cols
-  sendEmbedMessage m "" $ addColour Yellow $ embedColumnsWithUrl title url "_ _" ordered
+  sendEmbedMessage m "" $ addColour Yellow $ embedColumnsWithUrl title url pre ordered
   where
     formatCycle :: NrApi -> Text -> Cycle -> Maybe (Text, [Text])
     formatCycle NrApi {packs = packs} sep c =
