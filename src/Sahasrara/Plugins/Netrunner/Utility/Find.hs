@@ -9,7 +9,7 @@
 -- Portability : POSIX
 --
 -- Functions for finding cards in the api.
-module Sahasrara.Plugins.Netrunner.Utility.Find (queryCard) where
+module Sahasrara.Plugins.Netrunner.Utility.Find (queryCard, queryPrintings) where
 
 import Data.Maybe (fromMaybe)
 import Data.Text (Text, isInfixOf, unpack)
@@ -46,3 +46,9 @@ queryCard NrApi {cards = cards, cardAliases = cardAliases} query =
           substitution = 10,
           transposition = 1
         }
+
+-- | @queryPrintings@ finds all printings of a card that matches the query.
+queryPrintings :: NrApi -> Text -> [Card]
+queryPrintings api query =
+  let card = queryCard api query
+   in filter (\c -> title card == title c) $ cards api

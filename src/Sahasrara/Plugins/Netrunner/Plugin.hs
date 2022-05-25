@@ -44,7 +44,7 @@ import Sahasrara.Utility
 import Sahasrara.Utility.Discord (formatFromEmojiName, sendEmbedMessage, sendMessage)
 import Sahasrara.Utility.Embed (addColour)
 import Sahasrara.Utility.Exception (BotException (GenericException), embedError)
-import Sahasrara.Utility.Parser (inlineCommandHelper)
+import Sahasrara.Utility.Parser (inlineCommandHelper, integer)
 import Sahasrara.Utility.Random (chooseOne, chooseOneSeeded)
 import Sahasrara.Utility.Search (FuzzyCosts (..), closestValue, closestValueWithCosts)
 import Sahasrara.Utility.SmartParser (PComm (parseComm), RestOfInput (ROI))
@@ -69,39 +69,49 @@ nrInlineBanHistory :: EnvInlineCommand NrApi
 nrInlineBanHistory = inlineCommandHelper "((" "))" (cardParser ')') $ outputCard embedBanHistory
 
 -- | @cardParser@ parses a card and an optional specified set.
-cardParser :: Char -> Parser (Text, Maybe Text)
-cardParser c = try withSet <|> withoutSet
+cardParser :: Char -> Parser (Text, Either Int Text)
+cardParser c = try withSetIndex <|> try withSet <|> withoutSet
   where
-    withSet :: Parser (Text, Maybe Text)
+    withSetIndex :: Parser (Text, Either Int Text)
+    withSetIndex = do
+      card <- some $ anySingleBut '|'
+      _ <- single '|'
+      index <- integer
+      return (pack card, Left index)
+    withSet :: Parser (Text, Either Int Text)
     withSet = do
       card <- some $ anySingleBut '|'
       _ <- single '|'
       set <- some $ anySingleBut c
-      return (pack card, Just $ pack set)
-    withoutSet :: Parser (Text, Maybe Text)
+      return (pack card, Right $ pack set)
+    withoutSet :: Parser (Text, Either Int Text)
     withoutSet = do
       card <- some $ anySingleBut c
-      return (pack card, Nothing)
+      return (pack card, Left (-1))
 
 -- | @outputCard@ takes a function that displays a card in some form (e.g. by
 -- displaying its text or art) and generates a function that applies the display
 -- function to a given search query and outputs the result or errors if the
 -- query is invalid.
 -- Errors are embedded manually as errors thrown in inline commands are hidden.
-outputCard :: (Card -> Message -> EnvDatabaseDiscord NrApi ()) -> ((Text, Maybe Text) -> Message -> EnvDatabaseDiscord NrApi ())
+outputCard :: (Card -> Message -> EnvDatabaseDiscord NrApi ()) -> ((Text, Either Int Text) -> Message -> EnvDatabaseDiscord NrApi ())
 outputCard outf = \(card, set) m -> do
   api <- ask
-  let result = queryCard api card
+  let printings = queryPrintings api card
   case set of
-    Nothing -> outf result m
-    Just set' ->
-      let printings = filter (\c -> title c == title result) $ cards api
-          mSet = matchedSet api set'
+    Left 0 -> outf (queryCard api card) m
+    Left index ->
+      let i = if index < 0 then length printings + index else index
+       in if i < 0 || i >= length printings
+            then sendEmbedMessage m "" $ errorIndex index $ fromMaybe "?" $ title $ head printings
+            else outf (printings !! i) m
+    Right set' ->
+      let mSet = matchedSet api set'
        in case find (setFilter mSet) printings of
             Just card' -> outf card' m
             Nothing -> case mSet of
-              Left p -> sendEmbedMessage m "" $ errorNotFound (P.name p) $ fromMaybe "?" $ title result
-              Right c -> sendEmbedMessage m "" $ errorNotFound (C.name c) $ fromMaybe "?" $ title result
+              Left p -> sendEmbedMessage m "" $ errorNotFound (P.name p) $ fromMaybe "?" $ title $ head printings
+              Right c -> sendEmbedMessage m "" $ errorNotFound (C.name c) $ fromMaybe "?" $ title $ head printings
   where
     setFilter :: Either Pack Cycle -> (Card -> Bool)
     setFilter (Left p) = (\card -> packCode card == (Just $ P.code p))
@@ -131,7 +141,9 @@ outputCard outf = \(card, set) m -> do
               transposition = 1
             }
     errorNotFound :: Text -> Text -> Embed
-    errorNotFound set card = embedError $ GenericException "Set does not contain card" $ "`" <> (unpack set) <> "` does not contain *" <> (unpack card) <> "*."
+    errorNotFound set card = embedError $ GenericException "Set does not contain card" $ "`" <> (unpack set) <> "` does not contain *" <> unpack card <> "*."
+    errorIndex :: Int -> Text -> Embed
+    errorIndex index card = embedError $ GenericException "Invalid index" $ "`" <> show index <> "` is out of range.\nTry `sets " <> unpack card <> "` to see how many sets it was printed in."
 
 -- | @nrSearch@ searches the card database with specific queries.
 nrSearch :: EnvCommand NrApi
@@ -220,9 +232,7 @@ nrSets = Command "sets" (parseComm setsComm) []
     setsComm :: RestOfInput Text -> Message -> EnvDatabaseDiscord NrApi ()
     setsComm (ROI card) m = case card of
       "" -> embedSets m
-      c -> do
-        api <- ask
-        embedCardSets (queryCard api c) m
+      _ -> embedCardSets card m
 
 -- | @nrCycles@ is a command that lists the packs in a cycle
 nrCycles :: EnvCommand NrApi
@@ -273,13 +283,13 @@ embedCardFlavour card m = do
   sendEmbedMessage m "" embed
 
 -- | @embedCardSets@ embeds a list of packs a card was printed in.
-embedCardSets :: Card -> Message -> EnvDatabaseDiscord NrApi ()
+embedCardSets :: Text -> Message -> EnvDatabaseDiscord NrApi ()
 embedCardSets card m = do
   api <- ask
-  let printings = filter (\c -> title card == title c) $ cards api
+  let printings = queryPrintings api card
       sets = mapMaybe (toPack api) printings
       entries = map (\s -> "`" <> P.code s <> "` - " <> P.name s) sets
-  embed <- cardToEmbedWithText api card $ intercalate "\n" entries
+  embed <- cardToEmbedWithText api (head printings) $ intercalate "\n" entries
   sendEmbedMessage m "" embed
 
 -- | @embedSets@ embeds all sets from Netrunner history.

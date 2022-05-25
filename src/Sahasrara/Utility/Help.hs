@@ -30,10 +30,13 @@ rootBody =
 
 **Searching for [Netrunner](https://netrunnerdb.com) cards**
 `[[card]]` to view a card
-`[[card|set]]` to view the printing of that card from a specific set
 `{{card}}` to view its art
 `<<card>>` to view its flavour text
 `((card))` to view its legality history
+
+**Additional parameters**
+`[[card|set]]` to view the printing of that card from a named set
+`[[card|n]]` to view the nth printing of a card (0 is the first, -1 is the last)
 
 **Searching for [Original Netrunner](https://www.emergencyshutdown.net/webminster) cards**
 `[|card|~]` to view an ONR card
