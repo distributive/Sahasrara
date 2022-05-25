@@ -46,7 +46,7 @@ import Sahasrara.Utility.Embed (addColour)
 import Sahasrara.Utility.Exception (BotException (GenericException), embedError)
 import Sahasrara.Utility.Parser (inlineCommandHelper)
 import Sahasrara.Utility.Random (chooseOne, chooseOneSeeded)
-import Sahasrara.Utility.Search (FuzzyCosts (..), closestValueWithCosts)
+import Sahasrara.Utility.Search (FuzzyCosts (..), closestValue, closestValueWithCosts)
 import Sahasrara.Utility.SmartParser (PComm (parseComm), RestOfInput (ROI))
 import Sahasrara.Utility.Types ()
 import Text.Megaparsec (anySingleBut, single, some, try, (<|>))
@@ -224,6 +224,19 @@ nrSets = Command "sets" (parseComm setsComm) []
         api <- ask
         embedCardSets (queryCard api c) m
 
+-- | @nrCycles@ is a command that lists the packs in a cycle
+nrCycles :: EnvCommand NrApi
+nrCycles = Command "cycles" (parseComm cyclesComm) []
+  where
+    cyclesComm :: RestOfInput Text -> Message -> EnvDatabaseDiscord NrApi ()
+    cyclesComm (ROI cy) m = case cy of
+      "" -> embedCycles m
+      c -> do
+        api <- ask
+        let pairs = zip (map (standardise . C.name) $ cycles api) (cycles api)
+            closestCycle = closestValue pairs $ standardise c
+        embedSetsOn (\c' -> C.name c' == c) m
+
 -- | @embedCard@ takes a card and embeds it in a message.
 embedCard :: Card -> Message -> EnvDatabaseDiscord NrApi ()
 embedCard card m = do
@@ -268,15 +281,19 @@ embedCardSets card m = do
 
 -- | @embedSets@ embeds all sets from Netrunner history.
 embedSets :: Message -> EnvDatabaseDiscord NrApi ()
-embedSets m = do
+embedSets = embedSetsOn (\_ -> True)
+
+-- | @embedSetsOn@ embeds all sets from Netrunner history that fulfil a predicate.
+embedSetsOn :: (Cycle -> Bool) -> Message -> EnvDatabaseDiscord NrApi ()
+embedSetsOn predicate m = do
   api <- ask
   sep <- formatFromEmojiName "s_subroutine"
   let title = ":card_box: All Netrunner sets :card_box:"
       url = "https://netrunnerdb.com/en/sets"
       pre = ":white_check_mark: legal | :repeat: rotated | :no_entry_sign: never legal in standard"
-      cols = mapMaybe (formatCycle api $ sep <> " ") $ cycles api
+      cols = mapMaybe (formatCycle api $ sep <> " ") $ filter predicate $ cycles api
       ordered = filter isCycle cols ++ filter (not . isCycle) cols
-  sendEmbedMessage m "" $ addColour Yellow $ embedColumnsWithUrl title url pre ordered
+  sendEmbedMessage m "" $ addColour Blue $ embedColumnsWithUrl title url pre ordered
   where
     formatCycle :: NrApi -> Text -> Cycle -> Maybe (Text, [Text])
     formatCycle NrApi {packs = packs} sep c =
@@ -285,8 +302,7 @@ embedSets m = do
         ps -> Just (cycleName c, map ((sep <>) . P.name) ps)
     cycleName :: Cycle -> Text
     cycleName c =
-      (if isSpecial c then ":no_entry_sign:" else if C.rotated c then ":repeat:" else ":white_check_mark:")
-        <> " "
+      (if isSpecial c then ":no_entry_sign: " else if C.rotated c then ":repeat: " else ":white_check_mark: ")
         <> C.name c
     isSpecial :: Cycle -> Bool
     isSpecial c = case C.code c of
@@ -295,6 +311,24 @@ embedSets m = do
       _ -> False
     isCycle :: (Text, [Text]) -> Bool
     isCycle (_, xs) = length xs > 2
+
+-- | @embedCycles@ embeds the name of each Netrunner cycle.
+embedCycles :: Message -> EnvDatabaseDiscord NrApi ()
+embedCycles m = do
+  api <- ask
+  let title = ":recycle: All Netrunner cycles :recycle:"
+      url = "https://netrunnerdb.com/en/sets"
+      pre = ":white_check_mark: legal | :repeat: rotated"
+      list = intercalate "\n" $ map formatCycle $ filter (isCycle api) $ cycles api
+      text = pre <> "\n\n" <> list
+  sendEmbedMessage m "" $ addColour Blue $ embedTextWithUrl title url text
+  where
+    formatCycle :: Cycle -> Text
+    formatCycle c = (if C.rotated c then ":repeat: " else ":white_check_mark: ") <> C.name c
+    isCycle :: NrApi -> Cycle -> Bool
+    isCycle NrApi {packs = packs} c =
+      let count = length $ filter (\p -> P.cycleCode p == C.code c) packs
+       in count > 2
 
 -- | @embedBanHistory@ embeds a card's banlist history.
 embedBanHistory :: Card -> Message -> EnvDatabaseDiscord NrApi ()
@@ -336,6 +370,7 @@ netrunnerPlugin =
         [ nrSearch,
           nrRandom,
           nrSets,
+          nrCycles,
           nrBanList,
           commandAlias "bl" nrBanList,
           commandAlias "mwl" nrBanList,

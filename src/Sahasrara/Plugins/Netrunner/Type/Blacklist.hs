@@ -18,7 +18,7 @@ data Blacklist = Blacklist
   { badSubstrings :: ![Text],
     badCards :: ![Text]
   }
-  deriving (Show, Generic)
+  deriving (Eq, Show, Generic)
 
 instance FromJSON Blacklist
 

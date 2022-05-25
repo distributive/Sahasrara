@@ -21,7 +21,7 @@ data Type = Type
     is_subtype :: !Bool,
     side_code :: !(Maybe Text)
   }
-  deriving (Show, Generic)
+  deriving (Eq, Show, Generic)
 
 instance FromJSON Type where
   parseJSON = withObject "Type" $ \o ->

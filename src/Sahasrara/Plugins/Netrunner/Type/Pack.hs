@@ -20,7 +20,7 @@ data Pack = Pack
     name :: !Text,
     position :: !Int
   }
-  deriving (Show, Generic)
+  deriving (Eq, Show, Generic)
 
 instance FromJSON Pack where
   parseJSON = withObject "Pack" $ \o ->

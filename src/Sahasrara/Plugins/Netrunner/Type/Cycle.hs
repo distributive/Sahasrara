@@ -21,7 +21,7 @@ data Cycle = Cycle
     size :: !Int,
     rotated :: !Bool
   }
-  deriving (Show, Generic)
+  deriving (Eq, Show, Generic)
 
 instance FromJSON Cycle where
   parseJSON = withObject "Cycle" $ \o ->

@@ -21,7 +21,7 @@ data Faction = Faction
     name :: !Text,
     sideCode :: !Text
   }
-  deriving (Show, Generic)
+  deriving (Eq, Show, Generic)
 
 instance FromJSON Faction where
   parseJSON = withObject "Faction" $ \o ->

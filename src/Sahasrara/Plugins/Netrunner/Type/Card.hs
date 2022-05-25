@@ -42,7 +42,7 @@ data Card = Card
     typeCode :: !(Maybe Text),
     uniqueness :: !(Maybe Bool)
   }
-  deriving (Show, Generic)
+  deriving (Eq, Show, Generic)
 
 instance FromJSON Card where
   parseJSON = withObject "Card" $ \o ->

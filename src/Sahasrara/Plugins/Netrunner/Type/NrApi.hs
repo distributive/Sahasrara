@@ -34,4 +34,4 @@ data NrApi = NrApi
     blacklist :: Blacklist,
     glossary :: Glossary
   }
-  deriving (Show, Generic)
+  deriving (Eq, Show, Generic)
