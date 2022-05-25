@@ -233,9 +233,12 @@ nrCycles = Command "cycles" (parseComm cyclesComm) []
       "" -> embedCycles m
       c -> do
         api <- ask
-        let pairs = zip (map (standardise . C.name) $ cycles api) (cycles api)
-            closestCycle = closestValue pairs $ standardise c
-        embedSetsOn (\c' -> C.name c' == c) m
+        let pairs = zip (map (unpack . standardise . C.name) $ cycles api) (cycles api)
+            closestCycle = closestValue pairs $ unpack $ standardise c
+            title = ":recycle: " <> C.name closestCycle <> " :recycle:"
+            url = "https://netrunnerdb.com/en/cycle/" <> C.code closestCycle
+            pre = if C.rotated closestCycle then "**Rotated**" else ""
+        embedSetsOn title url pre (\c' -> c' == closestCycle) m
 
 -- | @embedCard@ takes a card and embeds it in a message.
 embedCard :: Card -> Message -> EnvDatabaseDiscord NrApi ()
@@ -281,17 +284,18 @@ embedCardSets card m = do
 
 -- | @embedSets@ embeds all sets from Netrunner history.
 embedSets :: Message -> EnvDatabaseDiscord NrApi ()
-embedSets = embedSetsOn (\_ -> True)
-
--- | @embedSetsOn@ embeds all sets from Netrunner history that fulfil a predicate.
-embedSetsOn :: (Cycle -> Bool) -> Message -> EnvDatabaseDiscord NrApi ()
-embedSetsOn predicate m = do
-  api <- ask
-  sep <- formatFromEmojiName "s_subroutine"
+embedSets =
   let title = ":card_box: All Netrunner sets :card_box:"
       url = "https://netrunnerdb.com/en/sets"
       pre = ":white_check_mark: legal | :repeat: rotated | :no_entry_sign: never legal in standard"
-      cols = mapMaybe (formatCycle api $ sep <> " ") $ filter predicate $ cycles api
+   in embedSetsOn title url pre (\_ -> True)
+
+-- | @embedSetsOn@ embeds all sets from Netrunner history that fulfil a predicate.
+embedSetsOn :: Text -> Text -> Text -> (Cycle -> Bool) -> Message -> EnvDatabaseDiscord NrApi ()
+embedSetsOn title url pre predicate m = do
+  api <- ask
+  sep <- formatFromEmojiName "s_subroutine"
+  let cols = mapMaybe (formatCycle api $ sep <> " ") $ filter predicate $ cycles api
       ordered = filter isCycle cols ++ filter (not . isCycle) cols
   sendEmbedMessage m "" $ addColour Blue $ embedColumnsWithUrl title url pre ordered
   where

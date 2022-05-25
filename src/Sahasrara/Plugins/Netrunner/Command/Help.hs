@@ -21,6 +21,7 @@ helpPageRoots =
   [ searchHelp,
     randomHelp,
     setsHelp,
+    cyclesHelp,
     banListHelp,
     rulesHelp,
     glossaryHelp,
@@ -126,6 +127,20 @@ setsHelp =
 **Usage**
 `sets` lists all Netrunner sets
 `sets Hedge Fund` shows the sets *Hedge Fund* was printed in|]
+    []
+    None
+
+cyclesHelp :: HelpPage
+cyclesHelp =
+  HelpPage
+    "cycles"
+    []
+    "lists the packs of a given cycle"
+    [r|Lists which packs are in a given cycle.
+
+**Usage**
+`cycles` lists all cycles
+`cycles ashes` shows the packs from the Ashes cycle|]
     []
     None
 
