@@ -235,7 +235,7 @@ nrCycles = Command "cycles" (parseComm cyclesComm) []
         api <- ask
         let pairs = zip (map (unpack . standardise . C.name) $ cycles api) (cycles api)
             closestCycle = closestValue pairs $ unpack $ standardise c
-            title = ":recycle: " <> C.name closestCycle <> " :recycle:"
+            title = ":recycle: **" <> C.name closestCycle <> "** :recycle:"
             url = "https://netrunnerdb.com/en/cycle/" <> C.code closestCycle
             pre = if C.rotated closestCycle then "**Rotated**" else ""
         embedSetsOn title url pre (\c' -> c' == closestCycle) m
