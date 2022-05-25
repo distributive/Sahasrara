@@ -18,6 +18,7 @@ module Sahasrara.Plugins.Netrunner.Utility.Embed
     embedText,
     embedTextWithUrl,
     embedColumns,
+    embedColumnsWithUrl,
     embedLines,
   )
 where
@@ -111,9 +112,13 @@ embedTextWithUrl title url text = createEmbed $ CreateEmbed "" "" Nothing title 
 
 -- | @embedColumns@ embeds Text into columns.
 embedColumns :: Text -> Text -> [(Text, [Text])] -> Embed
-embedColumns title pre cols =
+embedColumns title = embedColumnsWithUrl title ""
+
+-- | @embedColumns@ embeds Text into columns with a linked title URL.
+embedColumnsWithUrl :: Text -> Text -> Text -> [(Text, [Text])] -> Embed
+embedColumnsWithUrl title url pre cols =
   let fields = map (\x -> EmbedField (fst x) (intercalate "\n" $ snd x) $ Just True) cols
-   in createEmbed $ CreateEmbed "" "" Nothing title "" Nothing pre fields Nothing "" Nothing Nothing
+   in createEmbed $ CreateEmbed "" "" Nothing title url Nothing pre fields Nothing "" Nothing Nothing
 
 -- | @embedLines@ embeds a list of lines, splitting them into columns as needed.
 -- NOTE: does not preserve order

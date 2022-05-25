@@ -124,6 +124,7 @@ setsHelp =
     [r|Lists all sets a card was released in, excluding System Core 19.
 
 **Usage**
+`sets` lists all Netrunner sets
 `sets Hedge Fund` shows the sets *Hedge Fund* was printed in|]
     []
     None

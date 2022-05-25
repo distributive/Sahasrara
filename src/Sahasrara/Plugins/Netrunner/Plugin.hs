@@ -41,9 +41,9 @@ import Sahasrara.Plugins.Netrunner.Utility.Format (formatText)
 import Sahasrara.Plugins.Netrunner.Utility.NrApi (getNrApi)
 import Sahasrara.Plugins.Netrunner.Utility.Search
 import Sahasrara.Utility
-import Sahasrara.Utility.Discord (sendEmbedMessage, sendMessage)
+import Sahasrara.Utility.Discord (formatFromEmojiName, sendEmbedMessage, sendMessage)
 import Sahasrara.Utility.Embed (addColour)
-import Sahasrara.Utility.Exception (BotException (GenericException), embedError, throwBot)
+import Sahasrara.Utility.Exception (BotException (GenericException), embedError)
 import Sahasrara.Utility.Parser (inlineCommandHelper)
 import Sahasrara.Utility.Random (chooseOne, chooseOneSeeded)
 import Sahasrara.Utility.Search (FuzzyCosts (..), closestValueWithCosts)
@@ -219,7 +219,7 @@ nrSets = Command "sets" (parseComm setsComm) []
   where
     setsComm :: RestOfInput Text -> Message -> EnvDatabaseDiscord NrApi ()
     setsComm (ROI card) m = case strip card of
-      "" -> throwBot $ GenericException "No Card Specified" "Please provide a card name."
+      "" -> embedSets m
       c -> do
         api <- ask
         embedCardSets (queryCard api c) m
@@ -265,6 +265,35 @@ embedCardSets card m = do
       entries = map (\s -> "`" <> P.code s <> "` - " <> P.name s) sets
   embed <- cardToEmbedWithText api card $ intercalate "\n" entries
   sendEmbedMessage m "" embed
+
+-- | @embedSets@ embeds all sets from Netrunner history.
+embedSets :: Message -> EnvDatabaseDiscord NrApi ()
+embedSets m = do
+  api <- ask
+  sep <- formatFromEmojiName "s_subroutine"
+  let title = ":card_box: All Netrunner sets :card_box:"
+      url = "https://netrunnerdb.com/en/sets"
+      cols = mapMaybe (formatCycle api $ sep <> " ") $ cycles api
+      ordered = filter isCycle cols ++ filter (not . isCycle) cols
+  sendEmbedMessage m "" $ addColour Yellow $ embedColumnsWithUrl title url "_ _" ordered
+  where
+    formatCycle :: NrApi -> Text -> Cycle -> Maybe (Text, [Text])
+    formatCycle NrApi {packs = packs} sep c =
+      case filter (\p -> P.cycleCode p == C.code c) packs of
+        [] -> Nothing
+        ps -> Just (cycleName c, map ((sep <>) . P.name) ps)
+    cycleName :: Cycle -> Text
+    cycleName c =
+      (if isSpecial c then ":no_entry_sign:" else if C.rotated c then ":repeat:" else ":white_check_mark:")
+        <> " "
+        <> C.name c
+    isSpecial :: Cycle -> Bool
+    isSpecial c = case C.code c of
+      "draft" -> True
+      "napd" -> True
+      _ -> False
+    isCycle :: (Text, [Text]) -> Bool
+    isCycle (_, xs) = length xs > 2
 
 -- | @embedBanHistory@ embeds a card's banlist history.
 embedBanHistory :: Card -> Message -> EnvDatabaseDiscord NrApi ()
