@@ -35,7 +35,7 @@ rootBody =
 `((card))` to view its legality history
 
 **Additional parameters**
-`[[card|set]]` to view the printing of that card from a named set
+`[[card|set]]` to view the printing of a card from a named set
 `[[card|n]]` to view the nth printing of a card (0 is the first, -1 is the last)
 
 **Searching for [Original Netrunner](https://www.emergencyshutdown.net/webminster) cards**
