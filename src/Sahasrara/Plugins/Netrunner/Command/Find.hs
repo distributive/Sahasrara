@@ -66,7 +66,7 @@ cardParser c = try withSetIndex <|> try withSet <|> withoutSet
     withoutSet :: Parser (Text, Either Int Text)
     withoutSet = do
       card <- some $ anySingleBut c
-      return (pack card, Left 0)
+      return (pack card, Left (-1))
 
 -- | @outputCard@ takes a function that displays a card in some form (e.g. by
 -- displaying its text or art) and generates a function that applies the display
@@ -76,9 +76,9 @@ cardParser c = try withSetIndex <|> try withSet <|> withoutSet
 outputCard :: (Card -> Message -> EnvDatabaseDiscord NrApi ()) -> ((Text, Either Int Text) -> Message -> EnvDatabaseDiscord NrApi ())
 outputCard outf = \(card, set) m -> do
   api <- ask
-  let printings = queryPrintings api card
+  let printings = reverse $ queryPrintings api card
   case set of
-    Left 0 -> outf (queryCard api card) m
+    Left (-1) -> outf (queryCard api card) m
     Left index ->
       let i = if index < 0 then length printings + index else index
        in if i < 0 || i >= length printings
