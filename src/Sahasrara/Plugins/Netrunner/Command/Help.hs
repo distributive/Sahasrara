@@ -23,7 +23,6 @@ helpPageRoots =
     setsHelp,
     cyclesHelp,
     banListHelp,
-    rulesHelp,
     glossaryHelp,
     horoscopeHelp
   ]
@@ -95,24 +94,6 @@ banListHelp =
 
 **Usage**
 `banlist name` displays the history of the banlist version matching "name"|]
-    []
-    None
-
-rulesHelp :: HelpPage
-rulesHelp =
-  HelpPage
-    "rules"
-    ["cr"]
-    "provides official Netrunner rulings (CR v1.5)"
-    [r|Provides the official rulings on certain aspects of the game. Rulings are from the NISEI Comprehensive Rules v1.5.
-
-**Usage**
-`rules access` shows the steps of accessing a card
-`rules breach` shows the steps of breaching a server
-`rules run` shows the timing structure of a run
-`rules turn` shows the timing structure of a turn
-`rules corp` shows the timing structure of a Corp's turn
-`rules runner` shows the timing structure of a Runner's turn|]
     []
     None
 

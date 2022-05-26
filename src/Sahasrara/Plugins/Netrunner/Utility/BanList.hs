@@ -9,10 +9,13 @@
 -- Handles the representation of Netrunner ban lists in Sahasrara.
 module Sahasrara.Plugins.Netrunner.Utility.BanList where
 
-import Data.Map (lookup)
-import Data.Maybe (mapMaybe)
+import Data.List (nubBy)
+import Data.Map (keys, lookup)
+import Data.Maybe (fromMaybe, mapMaybe)
+import Data.Text (Text, intercalate, isInfixOf, toLower)
+import qualified Data.Text as T
 import Sahasrara.Plugins.Netrunner.Type.BanList
-import Sahasrara.Plugins.Netrunner.Type.Card (Card)
+import Sahasrara.Plugins.Netrunner.Type.Card (Card, keywords, sideCode, title)
 import qualified Sahasrara.Plugins.Netrunner.Type.Card as Card
 import Sahasrara.Plugins.Netrunner.Type.NrApi (NrApi (NrApi, banLists, cards))
 import Prelude hiding (lookup)
@@ -84,3 +87,74 @@ toGlobalPenalty api bl c = case map gp $ toBanEntries api bl c of
     gp :: CardBan -> Int
     gp (GlobalPenalty x) = x
     gp _ = 0
+
+-- | @listBanLists@ lists all banlists from Netrunner history.
+listBanLists :: NrApi -> Text
+listBanLists api = intercalate "\n" $ map format $ reverse $ banLists api
+  where
+    format :: BanList -> Text
+    format b = "• " <> name b <> if active b then " (active)" else ""
+
+-- | @listBanHistory@ lists each version of the Netrunner banlist and the state
+-- of the given card under each version.
+listBanHistory :: NrApi -> Card -> Text
+listBanHistory api card = intercalate "\n" $ map format $ reverse $ banLists api
+  where
+    format :: BanList -> Text
+    format b = symbol (toMwlStatus api b card) <> " " <> name b <> formatActive b
+    formatActive :: BanList -> Text
+    formatActive b = if active b then " (active)" else ""
+
+-- | @listAffectedCards@ lists all the cards affected by a banlist with links.
+-- The output pair is (additional text, list of linked cards). This is to
+-- account for large groups of cards being banned together resulting in
+-- otherwise excessively long lists of banned cards.
+listAffectedCards :: NrApi -> BanList -> (Text, [Text], [Text])
+listAffectedCards api b =
+  let banCurrents = listId b > 15 -- All banlists since list _all_ unrotated currents
+      allCards = nubBy (\c1 c2 -> title c1 == title c2) $ mapMaybe find $ keys $ affectedCards b
+      cards =
+        if banCurrents
+          then filter (not . ("current" `isInfixOf`) . toLower . (fromMaybe "") . keywords) allCards
+          else allCards
+      cCards = filter ((== Just "corp") . sideCode) cards
+      rCards = filter ((== Just "runner") . sideCode) cards
+      pre =
+        if banCurrents
+          then "🚫 All cards with the [Current](https://netrunnerdb.com/find/?q=s%3Acurrent) subtype."
+          else ""
+   in (pre, map format cCards, map format rCards)
+  where
+    find :: Text -> Maybe Card
+    find cCode = case filter ((Just cCode ==) . Card.code) $ cards api of
+      [] -> Nothing
+      xs -> Just $ head xs
+    format :: Card -> Text
+    format card = symbol (toMwlStatus api b card) <> " " <> condense (fromMaybe "?" $ title card)
+    condense :: Text -> Text
+    condense t =
+      if T.length t > 30
+        then T.take 27 t <> "..."
+        else t
+
+-- | @symbol@ gets the emoji corresponding to each type of card ban.
+symbol :: CardBan -> Text
+symbol Banned = "🚫"
+symbol Restricted = "🦄"
+symbol (UniversalInfluence x) = formatNum x
+symbol (GlobalPenalty x) = formatNum x
+symbol _ = "✅"
+
+-- | @formatNum@ formats a number to its Discord emoji.
+formatNum :: Int -> Text
+formatNum 1 = "1️⃣"
+formatNum 2 = "2️⃣"
+formatNum 3 = "3️⃣"
+formatNum 4 = "4️⃣"
+formatNum 5 = "5️⃣"
+formatNum 6 = "6️⃣"
+formatNum 7 = "7️⃣"
+formatNum 8 = "8️⃣"
+formatNum 9 = "9️⃣"
+formatNum 0 = "0️⃣"
+formatNum _ = "#️⃣"

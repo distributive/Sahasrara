@@ -7,19 +7,61 @@
 -- Portability : POSIX
 --
 -- Backend for commands that search the card database.
-module Sahasrara.Plugins.Netrunner.Command.Search (queryParser) where
+module Sahasrara.Plugins.Netrunner.Command.Search (nrSearch, nrRandom) where
 
+import Control.Monad.IO.Class
 import Control.Monad.Trans.Reader (ask)
 import Data.Char (isSpace)
 import Data.Map (lookup)
-import Discord.Internal.Rest (Message)
+import Data.Text (pack)
+import Discord.Types
+import Sahasrara.Internal.Handler.Command ()
 import Sahasrara.Plugins.Netrunner.Type.Card as Card
 import Sahasrara.Plugins.Netrunner.Type.NrApi (NrApi (..))
+import Sahasrara.Plugins.Netrunner.Utility.Print
 import Sahasrara.Plugins.Netrunner.Utility.Search
-import Sahasrara.Utility (EnvDatabaseDiscord, Parser)
+import Sahasrara.Utility
+import Sahasrara.Utility.Discord (sendMessage)
 import Sahasrara.Utility.Parser
+import Sahasrara.Utility.Random (chooseOne)
+import Sahasrara.Utility.Types ()
 import Text.Megaparsec
 import Prelude hiding (lookup, unwords)
+
+-- | @nrSearch@ searches the card database with specific queries.
+nrSearch :: EnvCommand NrApi
+nrSearch = Command "search" searchPars []
+  where
+    searchPars :: Parser (Message -> EnvDatabaseDiscord NrApi ())
+    searchPars = queryParser $ \cs pairs m -> do
+      case cs of
+        Nothing -> sendMessage m "No criteria provided!"
+        Just [] -> sendMessage m $ "No cards found for `" <> pairsToNrdb pairs <> "`"
+        Just [card] -> embedCard card m
+        Just cards ->
+          embedCards
+            ("Query: `" <> pairsToNrdb pairs <> "`\n")
+            cards
+            ("_[...view on NRDB](" <> pairsToQuery pairs <> ")_")
+            ("_[..." <> pack (show $ length cards - 10) <> " more](" <> pairsToQuery pairs <> ")_")
+            m
+
+-- | @nrRandom@ searches the card database with specific queries and outputs a
+-- single result at random.
+nrRandom :: EnvCommand NrApi
+nrRandom = Command "random" randomPars []
+  where
+    randomPars :: Parser (Message -> EnvDatabaseDiscord NrApi ())
+    randomPars = queryParser $ \cs pairs m -> do
+      case cs of
+        Nothing -> do
+          api <- ask
+          card <- liftIO $ chooseOne $ cards api
+          embedCard card m
+        Just [] -> sendMessage m $ "No cards found for `" <> pairsToNrdb pairs <> "`"
+        Just cards -> do
+          card <- liftIO $ chooseOne cards
+          embedCard card m
 
 -- | @queryParser@ extracts search queries from plaintext.
 queryParser ::
