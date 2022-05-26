@@ -93,6 +93,7 @@ banListHelp =
 `latest` and `active` will provide their respective banlists (they differ only when the latest banlist has not yet been made active). If no argument is given it will instead list all banlists from Netrunner history.
 
 **Usage**
+`banlist` lists all Standard MWL entries
 `banlist name` displays the history of the banlist version matching "name"|]
     []
     None
