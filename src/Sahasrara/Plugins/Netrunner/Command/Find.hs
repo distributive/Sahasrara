@@ -12,7 +12,7 @@ module Sahasrara.Plugins.Netrunner.Command.Find (nrInline, nrInlineImg, nrInline
 import Control.Monad.Trans.Reader (ask)
 import Data.List (find)
 import Data.Maybe (fromMaybe)
-import Data.Text (Text, pack, unpack)
+import Data.Text (Text, pack, strip, unpack)
 import Discord.Types
 import Sahasrara.Internal.Handler.Command ()
 import Sahasrara.Plugins.Netrunner.Type.Card (Card (packCode, title))
@@ -26,7 +26,7 @@ import Sahasrara.Plugins.Netrunner.Utility.Print (embedBanHistory, embedCard, em
 import Sahasrara.Utility
 import Sahasrara.Utility.Discord (sendEmbedMessage)
 import Sahasrara.Utility.Exception (BotException (GenericException), embedError)
-import Sahasrara.Utility.Parser (inlineCommandHelper, integer)
+import Sahasrara.Utility.Parser (inlineCommandHelper, integer, skipSpace)
 import Sahasrara.Utility.Search (FuzzyCosts (..), closestValueWithCosts)
 import Sahasrara.Utility.Types ()
 import Text.Megaparsec (anySingleBut, single, some, try, (<|>))
@@ -55,14 +55,16 @@ cardParser c = try withSetIndex <|> try withSet <|> withoutSet
     withSetIndex = do
       card <- some $ anySingleBut '|'
       _ <- single '|'
+      skipSpace
       index <- integer
+      skipSpace
       return (pack card, Left index)
     withSet :: Parser (Text, Either Int Text)
     withSet = do
       card <- some $ anySingleBut '|'
       _ <- single '|'
       set <- some $ anySingleBut c
-      return (pack card, Right $ pack set)
+      return (pack card, Right $ strip $ pack set)
     withoutSet :: Parser (Text, Either Int Text)
     withoutSet = do
       card <- some $ anySingleBut c
