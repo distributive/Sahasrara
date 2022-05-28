@@ -33,7 +33,7 @@ nrRam = Command "ram" (parseComm ramComm) []
   where
     ramComm ::
       WithError
-        "Expected two positive integers"
+        "Expected two non-negative integers"
         (Either () (NonNegativeInt, NonNegativeInt)) ->
       Message ->
       EnvDatabaseDiscord NrApi ()
