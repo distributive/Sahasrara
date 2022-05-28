@@ -16,6 +16,7 @@ import Sahasrara.Plugins.Netrunner.Command.Find (nrInline, nrInlineBanHistory, n
 import Sahasrara.Plugins.Netrunner.Command.Glossary (nrGlossary)
 import Sahasrara.Plugins.Netrunner.Command.Help (helpPageRoots)
 import Sahasrara.Plugins.Netrunner.Command.Horoscope (nrHoroscope)
+import Sahasrara.Plugins.Netrunner.Command.Ram (nrRam)
 import Sahasrara.Plugins.Netrunner.Command.Search (nrRandom, nrSearch)
 import Sahasrara.Plugins.Netrunner.Command.Sets (nrCycles, nrSets)
 import Sahasrara.Plugins.Netrunner.Type.NrApi (NrApi (..))
@@ -41,6 +42,7 @@ netrunnerPlugin =
           commandAlias "mwl" nrBanList,
           nrGlossary,
           commandAlias "g" nrGlossary,
+          nrRam,
           nrHoroscope
         ],
       inlineCommands = [nrInline, nrInlineImg, nrInlineFlavour, nrInlineBanHistory],

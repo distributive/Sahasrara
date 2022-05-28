@@ -24,6 +24,7 @@ helpPageRoots =
     cyclesHelp,
     banListHelp,
     glossaryHelp,
+    ramHelp,
     horoscopeHelp
   ]
 
@@ -137,6 +138,20 @@ glossaryHelp =
 **Usage**
 `glossary <term>` gets the definition of a given term
 `glossary` lists contributors to the glossary|]
+    []
+    None
+
+ramHelp :: HelpPage
+ramHelp =
+  HelpPage
+    "ram"
+    []
+    "generates RAM card pools"
+    [r|RAM (Random Access Memories) is a format where the card pool is randomly generated from a subset of data packs and larger releases of Netrunner cards. See the official [supported formats page](https://nisei.net/players/supported-formats/#random-access-memories) for more.
+
+**Usage**
+`ram` generates a standard RAM card pool with 2 large expansions and 12 data packs
+`ram x y` generates a customised RAM card pool with `x` large expansions and `y` data packs|]
     []
     None
 

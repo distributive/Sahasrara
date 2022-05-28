@@ -172,6 +172,19 @@ newtype RestOfInput1 a = ROI1 a
 instance IsString a => CanParse (RestOfInput1 a) where
   pars = ROI1 . fromString <$> untilEnd1
 
+-- | @PosInteger a@ parses a sequence of digits with no preceeding "-" as an int.
+newtype PosInt = PosInt Int
+
+instance CanParse PosInt where
+  pars = PosInt <$> posInteger
+
+-- | @NonNegativeInt a@ parses a non-zero sequence of digits with no preceeding
+-- "-" as an int.
+newtype NonNegativeInt = NonNegativeInt Int
+
+instance CanParse NonNegativeInt where
+  pars = NonNegativeInt <$> nonNegativeInteger
+
 -- | @noArguments@ is a type-specific alias for @parseComm@ for commands that
 -- have no arguments (thus making it extremely clear).
 noArguments :: (Message -> EnvDatabaseDiscord d ()) -> Parser (Message -> EnvDatabaseDiscord d ())

@@ -148,11 +148,19 @@ keyValuesSepOn seps ors = many $ try $ skipManyTill anySingle pair
 sp :: Parser ()
 sp = space <|> pure ()
 
--- | @posInteger@ parses an integer with no "-".
+-- | @posInteger@ parses a non-zero integer with no "-".
 posInteger :: (Integral a, Read a) => Parser a
 posInteger = do
   digits <- some digit
-  return (read digits)
+  if read digits > 0
+    then return $ read digits
+    else fail "Zero is not positive"
+
+-- | @nonNegativeInteger@ parses an integer with no "-".
+nonNegativeInteger :: (Integral a, Read a) => Parser a
+nonNegativeInteger = do
+  digits <- some digit
+  return $ read digits
 
 -- | @integer@ parses any whole number.
 integer :: (Integral a, Read a) => Parser a
