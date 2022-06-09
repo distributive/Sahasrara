@@ -22,7 +22,7 @@ import Sahasrara.Utility.Parser (skipSpace)
 import Sahasrara.Utility.Permission (requirePermission)
 import Sahasrara.Utility.Types hiding (helpPages)
 import Text.Megaparsec (choice, chunk, eof, try, (<?>), (<|>))
-import Text.RawString.QQ (rQ)
+import Text.RawString.QQ (r, rQ)
 
 rootBody :: Text
 rootBody =
@@ -44,7 +44,18 @@ rootBody =
 `<|card|>` to view its flavour text|]
 
 helpHelpPage :: HelpPage
-helpHelpPage = HelpPage "help" [] "show information about commands" "Shows information about bot commands\n\n**Usage**\n`help <page>`" [] None
+helpHelpPage =
+  HelpPage
+    "help"
+    []
+    "shows information about a specific command"
+    [r|Shows information about bot commands.
+
+**Usage**
+`help` shows the general information about this bot
+`help <command>` shows the documentation for the given command|]
+    []
+    None
 
 generateHelp :: CombinedPlugin -> CombinedPlugin
 generateHelp p =
