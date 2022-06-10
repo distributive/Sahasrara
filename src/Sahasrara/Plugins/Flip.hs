@@ -40,7 +40,7 @@ flipHelp =
   HelpPage
     "flip"
     []
-    "randomly picks either 'Heads' or 'Tails', or randomly pick from a given list"
+    "randomly picks either 'Heads' or 'Tails', or from a given list"
     [r|Randomly picks one element from its arguments or, if none are provided, either 'Heads' or 'Tails'.
 
 **Usage**
