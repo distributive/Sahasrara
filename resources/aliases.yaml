@@ -101,9 +101,14 @@ aliases:
   rdi: "R&D Interface"
   ppvp: "Prepaid VoicePAD"
   sscg: "SanSan City Grid"
+  mca: "MCA Austerity Policy"
   mcaap: "MCA Austerity Policy"
   mca ap: "MCA Austerity Policy"
   hpt: "High-Profile Target"
+  fihp: "Friends in High Places"
+  sot: "Same Old Thing"
+  tpr: "Timely Public Release"
+  wtwb: "Watch the World Burn"
 
   # Misc.
   baby: "Symmetrical Visage"
@@ -166,6 +171,9 @@ aliases:
   # Cars
   nice car: "Sports Hopper"
   sweet car: "Advanced Concept Hopper"
+
+  # Boat
+  on the boat: "Timely Public Release"
 
   # Dogs
   lady: 'Cerberus "Lady" H1'
