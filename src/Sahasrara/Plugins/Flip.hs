@@ -13,7 +13,7 @@ import Control.Monad.IO.Class (MonadIO (liftIO))
 import Data.Text (pack)
 import Sahasrara.Utility
 import Sahasrara.Utility.Discord (Message, formatFromEmojiName, sendEmbedMessage)
-import Sahasrara.Utility.Embed (basicEmbed)
+import Sahasrara.Utility.Embed (addColour, basicEmbed)
 import Sahasrara.Utility.Parser
 import Sahasrara.Utility.Random (chooseOne)
 import Sahasrara.Utility.SmartParser (PComm (parseComm))
@@ -72,6 +72,27 @@ sideHelp =
     []
     None
 
+mark :: Command
+mark = Command "mark" (parseComm markComm) []
+  where
+    markComm :: () -> Message -> DatabaseDiscord ()
+    markComm () m = do
+      (result, colour) <- liftIO $ chooseOne [("HQ", Blue), ("R&D", Green), ("Archives", Red)]
+      sendEmbedMessage m "" $ addColour colour $ basicEmbed ":game_die: Result :game_die:" ("**Your mark is:** " <> result)
+
+markHelp :: HelpPage
+markHelp =
+  HelpPage
+    "mark"
+    []
+    "identifies your mark"
+    [r|Randomly picks one of the three central servers with uniform probability.
+
+**Usage**
+`mark` outputs 'HQ', 'R&D', or 'Archives' with uniform probability|]
+    []
+    None
+
 -- | @flipPlugin@ assembles the command into a plugin.
 flipPlugin :: Plugin
-flipPlugin = (plug "flip") {commands = [flip, side], helpPages = [flipHelp, sideHelp]}
+flipPlugin = (plug "flip") {commands = [flip, side, mark], helpPages = [flipHelp, sideHelp, markHelp]}
