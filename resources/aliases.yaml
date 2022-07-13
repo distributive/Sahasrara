@@ -100,6 +100,7 @@ aliases:
   cvs: "Cyberdex Virus Suite"
   etf: "Haas-Bioroid: Engineering the Future"
   hqi: "HQ Interface"
+  ltf: "Light the Fire!"
   rdi: "R&D Interface"
   ppvp: "Prepaid VoicePAD"
   sscg: "SanSan City Grid"
@@ -182,6 +183,8 @@ aliases:
 
   # Boat
   on the boat: "Timely Public Release"
+  big boat: "Endurance"
+  dead boat: "Azef Protocol"
 
   # Dogs
   lady: 'Cerberus "Lady" H1'
