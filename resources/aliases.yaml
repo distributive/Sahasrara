@@ -43,6 +43,7 @@ aliases:
   r+: "NBN: Reality Plus"
   restoring: "Jinteki: Restoring Humanity"
   rp: "Jinteki: Replicating Perfection"
+  sable: "Nyusha \"Sable\" Sintashta: Symphonic Prodigy"
   seidr: "Seidr Laboratories: Destiny Defined"
   seidr labs: "Seidr Laboratories: Destiny Defined"
   sil: "Silhouette: Stealth Operative"
@@ -161,6 +162,8 @@ aliases:
   rosalind: "Crick"
   franklin: "Crick"
   rosalind franklin: "Crick"
+  violin: "Virtuoso"
+  coffee: "Cezve"
 
   # I am
   flower: "Sahasrara"
@@ -183,6 +186,7 @@ aliases:
 
   # Boat
   on the boat: "Timely Public Release"
+  boat: "Endurance"
   big boat: "Endurance"
   dead boat: "Azef Protocol"
 
