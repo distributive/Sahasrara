@@ -21,6 +21,7 @@ import qualified Sahasrara.Plugins.Netrunner.Type.Cycle as C
 import Sahasrara.Plugins.Netrunner.Type.NrApi (NrApi (..))
 import Sahasrara.Plugins.Netrunner.Type.Pack (Pack)
 import qualified Sahasrara.Plugins.Netrunner.Type.Pack as P
+import Sahasrara.Plugins.Netrunner.Utility.Card (toCycle)
 import Sahasrara.Plugins.Netrunner.Utility.Find
 import Sahasrara.Plugins.Netrunner.Utility.Print (embedBanHistory, embedCard, embedCardFlavour, embedCardImg)
 import Sahasrara.Utility
@@ -88,15 +89,15 @@ outputCard outf = \(card, set) m -> do
             else outf (printings !! i) m
     Right set' ->
       let mSet = matchedSet api set'
-       in case find (setFilter mSet) printings of
+       in case find (setFilter api mSet) printings of
             Just card' -> outf card' m
             Nothing -> case mSet of
               Left p -> sendEmbedMessage m "" $ errorNotFound (P.name p) $ fromMaybe "?" $ title $ head printings
               Right c -> sendEmbedMessage m "" $ errorNotFound (C.name c) $ fromMaybe "?" $ title $ head printings
   where
-    setFilter :: Either Pack Cycle -> (Card -> Bool)
-    setFilter (Left p) = (\card -> packCode card == (Just $ P.code p))
-    setFilter (Right c) = (\card -> packCode card == (Just $ C.code c))
+    setFilter :: NrApi -> Either Pack Cycle -> (Card -> Bool)
+    setFilter _ (Left p) = \card -> packCode card == (Just $ P.code p)
+    setFilter api (Right c) = \card -> toCycle api card == Just c
     matchedSet :: NrApi -> Text -> Either Pack Cycle
     matchedSet api set =
       case (matchedPack, matchedCycle, closestSet) of
