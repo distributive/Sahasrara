@@ -104,7 +104,7 @@ runSahasrara vinfo dToken prefix dbpath plugins =
           updateStatusOptsGame =
             Just
               ( Activity
-                  { activityName = "Netrunner. Type '" <> prefix <> "help' for help. Prefix is " <> prefix <> "."
+                  { activityName = "Netrunner. Type " <> prefix <> "help for help. Prefix is " <> prefix <> ".",
                     activityType = ActivityTypeGame,
                     activityUrl = Nothing
                   }
