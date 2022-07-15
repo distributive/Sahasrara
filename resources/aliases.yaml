@@ -33,6 +33,7 @@ aliases:
   the mask: "The Masque: Cyber General"
   neh: "Near-Earth Hub: Broadcast Center"
   next: "NEXT Design: Guarding the Net"
+  ob: "Ob Superheavy Logistics: Extract. Export. Excel."
   palana: "Pālanā Foods: Sustainable Growth"
   prede: "Haas-Bioroid: Precision Design"
   prof: "The Professor: Keeper of Knowledge"
@@ -89,6 +90,7 @@ aliases:
   saccon: "Sacrificial Construct"
   spinny: "Spin Doctor"
   teamspo: "Team Sponsorship"
+  vig: "Ubiquitous Vig"
 
   # Acronyms
   ihw: "I've Had Worse"
@@ -187,7 +189,8 @@ aliases:
   # Boat
   on the boat: "Timely Public Release"
   boat: "Endurance"
-  big boat: "Endurance"
+  big boat: "Ob Superheavy Logistics: Extract. Export. Excel."
+  ship: "Ob Superheavy Logistics: Extract. Export. Excel."
   dead boat: "Azef Protocol"
 
   # Dogs
