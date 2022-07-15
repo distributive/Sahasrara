@@ -26,7 +26,7 @@ data Card = Card
     flavour :: !(Maybe Text),
     illustrator :: !(Maybe Text),
     influenceLimit :: !(Maybe Int),
-    keywords :: !(Maybe Text),
+    subtypes :: !(Maybe Text),
     memoryCost :: !(Maybe Int),
     minimumDeckSize :: !(Maybe Int),
     packCode :: !(Maybe Text),

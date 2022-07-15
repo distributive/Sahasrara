@@ -15,7 +15,7 @@ import Data.Maybe (fromMaybe, mapMaybe)
 import Data.Text (Text, intercalate, isInfixOf, toLower)
 import qualified Data.Text as T
 import Sahasrara.Plugins.Netrunner.Type.BanList
-import Sahasrara.Plugins.Netrunner.Type.Card (Card, keywords, sideCode, title)
+import Sahasrara.Plugins.Netrunner.Type.Card (Card, subtypes, sideCode, title)
 import qualified Sahasrara.Plugins.Netrunner.Type.Card as Card
 import Sahasrara.Plugins.Netrunner.Type.NrApi (NrApi (NrApi, banLists, cards))
 import Prelude hiding (lookup)
@@ -115,7 +115,7 @@ listAffectedCards api b =
       allCards = nubBy (\c1 c2 -> title c1 == title c2) $ mapMaybe find $ keys $ affectedCards b
       cards =
         if banCurrents
-          then filter (not . ("current" `isInfixOf`) . toLower . (fromMaybe "") . keywords) allCards
+          then filter (not . ("current" `isInfixOf`) . toLower . (fromMaybe "") . subtypes) allCards
           else allCards
       cCards = filter ((== Just "corp") . sideCode) cards
       rCards = filter ((== Just "runner") . sideCode) cards

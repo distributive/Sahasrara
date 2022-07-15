@@ -71,7 +71,7 @@ toSubtitle :: Card -> Text
 toSubtitle Card {..} =
   "**"
     <> typeCode'
-    <> keywords'
+    <> subtypes'
     <> cost'
     <> mu
     <> strength'
@@ -85,7 +85,7 @@ toSubtitle Card {..} =
     maybeIntToText = maybe "?" intToText
     maybeEmptyPrependI s mi = maybeEmptyPrepend s (intToText <$> mi)
     typeCode' = maybe "?" Data.Text.toTitle typeCode
-    keywords' = maybeEmptyPrepend ": " keywords
+    subtypes' = maybeEmptyPrepend ": " subtypes
     cost' =
       let rezText = " • Rez: "
        in case (cost, typeCode) of
