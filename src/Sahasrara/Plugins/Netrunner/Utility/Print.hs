@@ -62,7 +62,11 @@ embedCards pre cards post err m = do
 embedCardImg :: Card -> Message -> EnvDatabaseDiscord NrApi ()
 embedCardImg card m = do
   api <- ask
-  sendEmbedMessage m "" $ cardToImgEmbed api card
+  let card' = case code card of
+        Just "13026" -> queryCard api "Bio-Modeled Network"
+        Just "12006" -> queryCard api "Biometric Spoofing"
+        _ -> card
+  sendEmbedMessage m "" $ cardToImgEmbed api card'
 
 -- | @embedCardFlavour@ embeds a card's flavour in a message, if able.
 embedCardFlavour :: Card -> Message -> EnvDatabaseDiscord NrApi ()
