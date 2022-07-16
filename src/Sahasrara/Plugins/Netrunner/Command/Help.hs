@@ -9,9 +9,6 @@
 -- Commands for interfacing with NetrunnerDB.
 module Sahasrara.Plugins.Netrunner.Command.Help (helpPageRoots) where
 
-import Data.Map (keys)
-import Data.Text (Text, intercalate, pack)
-import Sahasrara.Plugins.Netrunner.Utility.Search (shorthands)
 import Sahasrara.Utility
 import Text.RawString.QQ (r)
 
@@ -28,16 +25,13 @@ helpPageRoots =
     horoscopeHelp
   ]
 
-shortcutsList :: Text
-shortcutsList = intercalate ", " $ map pack $ keys shorthands
-
 searchHelp :: HelpPage
 searchHelp =
   HelpPage
     "search"
     []
     "gets a list of all Netrunner cards matching a search query"
-    ( [r|Gets a list of all Netrunner cards matching a search query, matching NetrunnerDB's [syntax](<https://netrunnerdb.com/en/syntax>).
+    [r|Gets a list of all Netrunner cards matching a search query, matching NetrunnerDB's [syntax](<https://netrunnerdb.com/en/syntax>).
 Queries are case insensitive and show a maximum of 10 results. There is some shorthand you can use to simplify searches.
 
 The following fields are not implemented:
@@ -48,12 +42,8 @@ The following fields are not implemented:
 `search x:advanced` all cards containing the text "advanced"
 `search o:1 f:nbn"` all 1-cost cards in NBN
 `search a:"and the"` all cards with "and the" in their flavour text
-`search premium jinteki ice` all non-zero-cost Jinteki ice
-
-**Accepted shorthand queries**
+`search premium jinteki ap ice` all non-zero-cost AP Jinteki ice
 |]
-        <> shortcutsList
-    )
     []
     None
 
@@ -63,7 +53,7 @@ randomHelp =
     "random"
     []
     "randomly selects a card with optional conditions"
-    ( [r|Displays a random card from throughout Netrunner's history. NetrunnerDB [syntax](<https://netrunnerdb.com/en/syntax>) may be added to restrict the selection of cards.
+    [r|Displays a random card from throughout Netrunner's history. NetrunnerDB [syntax](<https://netrunnerdb.com/en/syntax>) may be added to restrict the selection of cards.
 Queries are case insensitive, and there is some shorthand you can use to simplify commands.
 
 The following fields are not implemented:
@@ -75,12 +65,8 @@ The following fields are not implemented:
 `random t:agenda` displays a random agenda
 `random o:5 f:-` displays a random 5-cost neutral card from either side
 `random _:"green level clearance"` displays Green Level Clearance
-`random free event` all 0-cost events
-
-**Accepted shorthand queries**
+`random free run event` displays a random 0-cost run event
 |]
-        <> shortcutsList
-    )
     []
     None
 

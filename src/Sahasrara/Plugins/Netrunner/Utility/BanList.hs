@@ -15,7 +15,7 @@ import Data.Maybe (fromMaybe, mapMaybe)
 import Data.Text (Text, intercalate, isInfixOf, toLower)
 import qualified Data.Text as T
 import Sahasrara.Plugins.Netrunner.Type.BanList
-import Sahasrara.Plugins.Netrunner.Type.Card (Card, subtypes, sideCode, title)
+import Sahasrara.Plugins.Netrunner.Type.Card (Card, sideCode, subtypes, title)
 import qualified Sahasrara.Plugins.Netrunner.Type.Card as Card
 import Sahasrara.Plugins.Netrunner.Type.NrApi (NrApi (NrApi, banLists, cards))
 import Prelude hiding (lookup)

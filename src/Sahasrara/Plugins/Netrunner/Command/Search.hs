@@ -11,9 +11,11 @@ module Sahasrara.Plugins.Netrunner.Command.Search (nrSearch, nrRandom) where
 
 import Control.Monad.IO.Class
 import Control.Monad.Trans.Reader (ask)
-import Data.Char (isSpace)
+import Data.Char (isSpace, toLower)
+import Data.Either (isLeft, lefts, rights)
+import Data.List (nub)
 import Data.Map (lookup)
-import Data.Text (pack)
+import Data.Text (pack, unpack)
 import Discord.Types
 import Sahasrara.Internal.Handler.Command ()
 import Sahasrara.Plugins.Netrunner.Type.Card as Card
@@ -21,7 +23,7 @@ import Sahasrara.Plugins.Netrunner.Type.NrApi (NrApi (..))
 import Sahasrara.Plugins.Netrunner.Utility.Print
 import Sahasrara.Plugins.Netrunner.Utility.Search
 import Sahasrara.Utility
-import Sahasrara.Utility.Discord (sendMessage)
+import Sahasrara.Utility.Exception (BotException (GenericException, ParserException), throwBot)
 import Sahasrara.Utility.Parser
 import Sahasrara.Utility.Random (chooseOne)
 import Sahasrara.Utility.Types ()
@@ -35,8 +37,8 @@ nrSearch = Command "search" searchPars []
     searchPars :: Parser (Message -> EnvDatabaseDiscord NrApi ())
     searchPars = queryParser $ \cs pairs m -> do
       case cs of
-        Nothing -> sendMessage m "No criteria provided!"
-        Just [] -> sendMessage m $ "No cards found for `" <> pairsToNrdb pairs <> "`"
+        Nothing -> throwBot $ ParserException "No criteria provided" "Please specify some parameters\nUse the `help search` command for syntax"
+        Just [] -> throwBot $ GenericException "No results" $ "No cards found for `" ++ unpack (pairsToNrdb pairs) ++ "`"
         Just [card] -> embedCard card m
         Just cards ->
           embedCards
@@ -58,7 +60,7 @@ nrRandom = Command "random" randomPars []
           api <- ask
           card <- liftIO $ chooseOne $ cards api
           embedCard card m
-        Just [] -> sendMessage m $ "No cards found for `" <> pairsToNrdb pairs <> "`"
+        Just [] -> throwBot $ GenericException "No results" $ "No cards found for `" ++ unpack (pairsToNrdb pairs) ++ "`"
         Just cards -> do
           card <- liftIO $ chooseOne cards
           embedCard card m
@@ -71,23 +73,31 @@ queryParser action = do
   ps <- many $ skipSpace *> (try pair <|> shorthand)
   return $ \m -> do
     api <- ask
-    let pairs = fixSearch api ps
+    let decoded = map (fromShorthand api) ps
+        pairs = fixSearch api $ rights decoded
         cards = searchCards api pairs
-    action cards pairs m
+    if any isLeft decoded
+      then throwBot $ ParserException "Shorthand not found" $ errorMsg $ lefts decoded
+      else action cards pairs m
   where
     seps = [':', '!', '<', '>']
     ors = ['|']
-    pair :: Parser (String, Char, [String])
+    pair :: Parser (Either a (String, Char, [String]))
     pair = do
       cat <- underscoreWord
       sep <- satisfy (`elem` seps)
       content <- (quotedWithout ors <|> nonSpaceWord') `sepBy` satisfy (`elem` ors)
-      return (cat, sep, content)
-    shorthand :: Parser (String, Char, [String])
-    shorthand = do
-      w <- nonSpaceWord
-      case lookup w shorthands of
-        Just p -> return p
-        Nothing -> fail $ "No alias found for " ++ w
+      return $ Right (cat, sep, content)
     nonSpaceWord' :: Parser String
     nonSpaceWord' = some $ satisfy $ \c -> not (isSpace c) && (c `notElem` ors)
+    shorthand :: Parser (Either String b)
+    shorthand = do
+      w <- nonSpaceWord
+      return $ Left w
+    fromShorthand :: NrApi -> Either String (String, Char, [String]) -> Either String (String, Char, [String])
+    fromShorthand api (Left s) = case lookup (map toLower s) $ shorthands api of
+      Nothing -> Left s
+      Just p -> Right p
+    fromShorthand _ p = p
+    errorMsg :: [String] -> String
+    errorMsg ss = "No alias found for " ++ formatListOr (map (\s -> "`" ++ s ++ "`") $ nub ss) ++ "."

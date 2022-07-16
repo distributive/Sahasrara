@@ -48,6 +48,22 @@ standardise x = filter (not . property Diacritic) normalizedText
 maybeEmptyPrepend :: Text -> Maybe Text -> Text
 maybeEmptyPrepend s = maybe "" (s <>)
 
+-- | Formats a list with commas and a given separator between the last two elements
+formatList :: String -> [String] -> String
+formatList _ [] = ""
+formatList _ [s] = s
+formatList x [a, b] = a ++ " " ++ x ++ " " ++ b
+formatList x [a, b, c] = a ++ ", " ++ b ++ ", " ++ x ++ " " ++ c
+formatList x (s : ss) = s ++ ", " ++ formatList x ss
+
+-- | Formats a list with commas and an and between the last two elements
+formatListAnd :: [String] -> String
+formatListAnd = formatList "and"
+
+-- | Formats a list with commas and an or between the last two elements
+formatListOr :: [String] -> String
+formatListOr = formatList "or"
+
 newtype DebugString = DStr String
 
 instance Show DebugString where

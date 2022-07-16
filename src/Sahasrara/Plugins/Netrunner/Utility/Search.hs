@@ -18,10 +18,10 @@ module Sahasrara.Plugins.Netrunner.Utility.Search
   )
 where
 
-import Data.List (findIndex, nubBy)
+import Data.List (findIndex, nub, nubBy)
 import Data.Map (Map, fromList)
 import Data.Maybe (fromMaybe, mapMaybe)
-import Data.Text (Text, intercalate, isInfixOf, pack, replace, toLower, unpack, unwords)
+import Data.Text (Text, intercalate, isInfixOf, pack, replace, splitOn, toLower, unpack, unwords)
 import Data.Text.Read (decimal)
 import Sahasrara.Plugins.Netrunner.Type.BanList (BanList)
 import qualified Sahasrara.Plugins.Netrunner.Type.BanList as BanList
@@ -32,6 +32,7 @@ import Sahasrara.Plugins.Netrunner.Type.NrApi (NrApi (..))
 import qualified Sahasrara.Plugins.Netrunner.Type.Type as Type
 import Sahasrara.Plugins.Netrunner.Utility.BanList (activeBanList, isBanned, latestBanList)
 import Sahasrara.Plugins.Netrunner.Utility.Card (toCycle)
+import Sahasrara.Utility
 import Sahasrara.Utility.Search (autocomplete, closestMatch, closestPair, closestValue)
 import Sahasrara.Utility.Utils (standardise)
 import Text.Read (readMaybe)
@@ -232,21 +233,11 @@ pairsToNrdb pairs = unwords queries
     fromComp QLT = "<"
 
 -- | @shorthand@ maps plaintext shortcuts to explicit queries.
-shorthands :: Map String (String, Char, [String])
-shorthands =
-  fromList
+shorthands :: NrApi -> Map String (String, Char, [String])
+shorthands api =
+  fromList $
     [ ("corp", ("d", ':', ["corp"])),
       ("runner", ("d", ':', ["runner"])),
-      ("identity", ("t", ':', ["identity"])),
-      ("agenda", ("t", ':', ["agenda"])),
-      ("asset", ("t", ':', ["asset"])),
-      ("ice", ("t", ':', ["ice"])),
-      ("operation", ("t", ':', ["operation"])),
-      ("upgrade", ("t", ':', ["upgrade"])),
-      ("event", ("t", ':', ["event"])),
-      ("hardware", ("t", ':', ["hardware"])),
-      ("program", ("t", ':', ["program"])),
-      ("resource", ("t", ':', ["resource"])),
       ("hb", ("f", ':', ["haas-bioroid"])),
       ("haas-bioroid", ("f", ':', ["haas-bioroid"])),
       ("jinteki", ("f", ':', ["jinteki"])),
@@ -265,22 +256,14 @@ shorthands =
       ("free", ("o", ':', ["0"])),
       ("premium", ("o", '>', ["0"])),
       ("cheap", ("o", '<', ["3"])),
-      ("expensive", ("o", '>', ["6"])),
-      ("ambush", ("s", ':', ["ambush"])),
-      ("bioroid", ("s", ':', ["bioroid"])),
-      ("companion", ("s", ':', ["companion"])),
-      ("friend", ("s", ':', ["companion"])),
-      ("connection", ("s", ':', ["connection"])),
-      ("console", ("s", ':', ["console"])),
-      ("transaction", ("s", ':', ["transaction"])),
-      ("icebreaker", ("s", ':', ["icebreaker"])),
-      ("fracter", ("s", ':', ["fracter"])),
-      ("decoder", ("s", ':', ["decoder"])),
-      ("sentry", ("s", ':', ["sentry"])),
-      ("ai", ("s", ':', ["ai"])),
-      ("barrier", ("s", ':', ["barrier"])),
-      ("code-gate", ("s", ':', ["code gate"])),
-      ("sentry", ("s", ':', ["sentry"])),
-      ("mythic", ("s", ':', ["mythic"])),
-      ("grail", ("s", ':', ["grail"]))
+      ("expensive", ("o", '>', ["6"]))
     ]
+      ++ typesList
+      ++ subtypesList
+  where
+    typesList :: [(String, (String, Char, [String]))]
+    typesList = map (identity "t" . unpack . toLower . Type.name) $ filter (not . Type.is_subtype) $ types api
+    subtypesList :: [(String, (String, Char, [String]))]
+    subtypesList = map (identity "s" . unpack . toLower) $ nub $ concatMap (splitOn " - ") $ mapMaybe subtypes $ cards api
+    identity :: String -> String -> (String, (String, Char, [String]))
+    identity param s = (s, (param, ':', [s]))
