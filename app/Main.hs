@@ -9,4 +9,4 @@ import Sahasrara.Utility.Help (rootBody)
 
 -- @main@ runs forever. This allows bot reloading by fully shutting down the bot and letting it restart.
 main :: IO ()
-main = runSahasraraWithEnv allPlugins $ BotConfig {gamePlaying = "!!!", rootHelpText = rootBody}
+main = runSahasraraWithEnv allPlugins $ BotConfig {gamePlaying = "...if you're seeing this text something has gone wrong", rootHelpText = rootBody}
