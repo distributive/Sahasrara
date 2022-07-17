@@ -152,7 +152,7 @@ sp = space <|> pure ()
 posInteger :: (Integral a, Read a) => Parser a
 posInteger = do
   digits <- some digit
-  if read digits > 0
+  if (read :: String -> Int) digits > 0
     then return $ read digits
     else fail "Zero is not positive"
 
