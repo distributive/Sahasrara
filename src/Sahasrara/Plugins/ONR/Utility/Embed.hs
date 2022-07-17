@@ -29,48 +29,46 @@ import Sahasrara.Utility.Types ()
 import Prelude hiding (unwords)
 
 -- | @cardToEmbed@ takes a card and generates an embed message representing it.
-cardToEmbed :: OnrApi -> Card -> EnvDatabaseDiscord OnrApi Embed
+cardToEmbed :: OnrApi -> Card -> EnvDatabaseDiscord OnrApi CreateEmbed
 cardToEmbed api card = do
   let eTitle = toTitle card
       eFoot = toReleaseData card
       eImg = toImage api card
       eColour = toColour card
   eText <- toText card
-  return $ addColour eColour $ createEmbed $ CreateEmbed "" "" Nothing eTitle "" eImg eText [] Nothing eFoot Nothing Nothing
+  return $ addColour eColour $ CreateEmbed "" "" Nothing eTitle "" eImg eText [] Nothing eFoot Nothing Nothing Nothing
 
 -- | @cardToEmbedWithText@ embeds some text and decorates it with a given card.
-cardToEmbedWithText :: OnrApi -> Card -> Text -> EnvDatabaseDiscord OnrApi Embed
+cardToEmbedWithText :: OnrApi -> Card -> Text -> EnvDatabaseDiscord OnrApi CreateEmbed
 cardToEmbedWithText api card text = do
   let eTitle = toTitle card
       eColour = toColour card
       eImg = toImage api card
-  return $ addColour eColour $ createEmbed $ CreateEmbed "" "" Nothing eTitle "" eImg text [] Nothing "" Nothing Nothing
+  return $ addColour eColour $ CreateEmbed "" "" Nothing eTitle "" eImg text [] Nothing "" Nothing Nothing Nothing
 
 -- | @cardToImgEmbed@ takes a card and attempts to embed a picture of it.
-cardToImgEmbed :: OnrApi -> Card -> Embed
+cardToImgEmbed :: OnrApi -> Card -> CreateEmbed
 cardToImgEmbed api card =
   let eTitle = toTitle card
       eColour = toColour card
-   in addColour eColour $
-        createEmbed $ case toImage api card of
-          Nothing -> CreateEmbed "" "" Nothing eTitle "" Nothing "`Could not find card art`" [] Nothing "" Nothing Nothing
-          eImg -> CreateEmbed "" "" Nothing eTitle "" Nothing "" [] eImg "" Nothing Nothing
+   in addColour eColour $  case toImage api card of
+    Nothing -> CreateEmbed "" "" Nothing eTitle "" Nothing "`Could not find card art`" [] Nothing "" Nothing Nothing Nothing
+    eImg -> CreateEmbed "" "" Nothing eTitle "" Nothing "" [] eImg "" Nothing Nothing Nothing
 
 -- | @cardToFlavourEmbed@ takes a card and attempts to embed its flavour text.
-cardToFlavourEmbed :: OnrApi -> Card -> EnvDatabaseDiscord OnrApi Embed
+cardToFlavourEmbed :: OnrApi -> Card -> EnvDatabaseDiscord OnrApi CreateEmbed
 cardToFlavourEmbed api card = do
   let eTitle = toTitle card
       eColour = toColour card
       eImg = toImage api card
-      fallback = CreateEmbed "" "" Nothing eTitle "" eImg "`Card has no flavour text`" [] Nothing "" Nothing Nothing
+      fallback = CreateEmbed "" "" Nothing eTitle "" eImg "`Card has no flavour text`" [] Nothing "" Nothing Nothing Nothing
   flavour <- toFlavour card
   return $
-    addColour eColour $
-      createEmbed $ case flavour of
-        Nothing -> fallback
-        Just "" -> fallback
-        Just eFlavour -> CreateEmbed "" "" Nothing eTitle "" eImg eFlavour [] Nothing "" Nothing Nothing
+    addColour eColour $ case flavour of
+      Nothing -> fallback
+      Just "" -> fallback
+      Just eFlavour -> CreateEmbed "" "" Nothing eTitle "" eImg eFlavour [] Nothing "" Nothing Nothing Nothing
 
 -- | @embedText@ just embeds the given text.
-embedText :: Text -> Text -> Embed
-embedText title text = createEmbed $ CreateEmbed "" "" Nothing title "" Nothing text [] Nothing "" Nothing Nothing
+embedText :: Text -> Text -> CreateEmbed
+embedText title text = CreateEmbed "" "" Nothing title "" Nothing text [] Nothing "" Nothing Nothing Nothing

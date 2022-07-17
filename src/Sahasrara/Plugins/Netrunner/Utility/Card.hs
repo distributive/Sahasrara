@@ -173,8 +173,8 @@ toReleaseData api card = fromMaybe "" helper
       return $ faction <> " • " <> expansion <> pos
 
 -- | @toColour@ gets the factional colour of a card to use in its embed.
-toColour :: NrApi -> Card -> DiscordColour
-toColour api card = maybe Default (hexToDiscordColour . unpack . Faction.colour) (toFaction api card)
+toColour :: NrApi -> Card -> DiscordColor
+toColour api card = maybe DiscordColorDefault (hexToDiscordColor . unpack . Faction.colour) (toFaction api card)
 
 -- | @toFlavour@ gets a cards flavour text.
 toFlavour :: Card -> EnvDatabaseDiscord NrApi (Maybe Text)

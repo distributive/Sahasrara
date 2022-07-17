@@ -11,63 +11,62 @@ module Sahasrara.Utility.Embed where
 
 import Data.Text (Text)
 import Discord.Internal.Types
-import Sahasrara.Internal.Embed (Embeddable, asEmbed, colourToInternal)
-import Sahasrara.Utility.Types (DiscordColour)
+import Sahasrara.Internal.Embed (Embeddable, asEmbed)
 
 -- | Some helper functions to allow progressively building up an embed
 -- If you need something more complex, you can still use the createEmbed flow provided by discord-haskell,
 -- its not bad (once you realise that it turns empty strings into Nothing for you...) but it can't do colours.
 -- To add a colour run createEmbed on it and then use one of these functions to manipulate it
-simpleEmbed :: Text -> Embed
-simpleEmbed t = createEmbed $ CreateEmbed "" "" Nothing "" "" Nothing t [] Nothing "" Nothing Nothing
+simpleEmbed :: Text -> CreateEmbed
+simpleEmbed t = CreateEmbed "" "" Nothing "" "" Nothing t [] Nothing "" Nothing Nothing Nothing
 
-basicEmbed :: Text -> Text -> Embed
-basicEmbed title body = createEmbed $ CreateEmbed "" "" Nothing title "" Nothing body [] Nothing "" Nothing Nothing
+basicEmbed :: Text -> Text -> CreateEmbed
+basicEmbed title body = CreateEmbed "" "" Nothing title "" Nothing body [] Nothing "" Nothing Nothing Nothing
 
-addTitle :: Embeddable e => Text -> e -> Embed
+addTitle :: Embeddable e => Text -> e -> CreateEmbed
 addTitle t e =
   (asEmbed e)
-    { embedTitle = Just t
+    { createEmbedTitle = t
     }
 
-addFooter :: Embeddable e => Text -> e -> Embed
+addFooter :: Embeddable e => Text -> e -> CreateEmbed
 addFooter t e =
   (asEmbed e)
-    { embedFooter = Just $ EmbedFooter t Nothing Nothing
+    { createEmbedFooterText = t
     }
 
-addTimestamp :: UTCTime -> Embed -> Embed
+addTimestamp :: Embeddable e => UTCTime -> e -> CreateEmbed
 addTimestamp t e =
-  e
-    { embedTimestamp = Just t
+  (asEmbed e)
+    { createEmbedTimestamp = Just t
     }
 
-addAuthor :: Text -> Embed -> Embed
+addAuthor :: Embeddable e => Text -> e -> CreateEmbed
 addAuthor t e =
   (asEmbed e)
-    { embedAuthor = Just $ EmbedAuthor (Just t) Nothing Nothing Nothing
+    { createEmbedAuthorName = t
     }
 
-addLink :: Text -> Embed -> Embed
+addLink :: Embeddable e => Text -> e -> CreateEmbed
 addLink t e =
-  e
-    { embedUrl = Just t
+  (asEmbed e)
+    { createEmbedUrl = t
     }
 
-addColour :: DiscordColour -> Embed -> Embed
+addColour :: Embeddable e => DiscordColor -> e -> CreateEmbed
 addColour c e =
   (asEmbed e)
-    { embedColor = Just $ colourToInternal c
+    { createEmbedColor = Just c
     }
 
-addImage :: Embeddable e => Text -> e -> Embed
+addImage :: Embeddable e => Text -> e -> CreateEmbed
 addImage url e =
   (asEmbed e)
-    { embedImage = Just $ EmbedImage (Just url) Nothing Nothing Nothing
+    { createEmbedImage = Just $ CreateEmbedImageUrl url
     }
 
-addThumbnail :: Embeddable e => Text -> e -> Embed
+addThumbnail :: Embeddable e => Text -> e -> CreateEmbed
 addThumbnail url e =
   (asEmbed e)
-    { embedThumbnail = Just $ EmbedThumbnail (Just url) Nothing Nothing Nothing
+    { createEmbedThumbnail = Just $ CreateEmbedImageUrl url
     }

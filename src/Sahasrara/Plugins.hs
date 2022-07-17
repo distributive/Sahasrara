@@ -9,10 +9,7 @@
 -- Here is a collection of existing plugins for Sahasrara. If you add new plugins
 -- to the Plugins directory, include an import here. This means that users only
 -- need to import @Sahasrara.Plugins@ to import individual plugins.
-module Sahasrara.Plugins
-  ( plugins,
-  )
-where
+module Sahasrara.Plugins where
 
 import Control.Concurrent.MVar (MVar)
 import Sahasrara.Internal.Administration (ShutdownReason)
@@ -25,10 +22,8 @@ import Sahasrara.Plugins.Netrunner (netrunnerPlugin)
 import Sahasrara.Plugins.ONR (onrPlugin)
 
 -- Use long list format to make additions and removals non-conflicting on git PRs
-plugins :: MVar ShutdownReason -> [CompiledPlugin]
-plugins rFlag =
-  addAdministrationPlugin
-    rFlag
+allPlugins :: [CompiledPlugin]
+allPlugins =
     [ compilePlugin basicPlugin,
       compilePlugin flipPlugin,
       compilePlugin netrunnerPlugin,

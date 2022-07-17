@@ -13,6 +13,7 @@ module Sahasrara.Internal.Handler.Command
   ( parseNewMessage,
     parseCommands,
     parseInlineCommands,
+    parseValue,
   )
 where
 
@@ -21,13 +22,13 @@ import Data.Maybe (catMaybes)
 import Data.Set (singleton, toList)
 import Data.Text (Text)
 import Data.Void (Void)
-import Discord.Types (Message (messageText))
+import Discord.Types (Message (messageContent))
 import Sahasrara.Internal.Plugins (changeAction)
 import Sahasrara.Internal.Types
 import Sahasrara.Utility.Discord (sendEmbedMessage)
-import Sahasrara.Utility.Exception (BotException (ParserException), embedError)
+import Sahasrara.Utility.Exception (BotException (ParserException), embedError, throwBot)
 import Sahasrara.Utility.Parser (skipSpace1, space, word)
-import Sahasrara.Utility.Types (Parser)
+import Sahasrara.Utility.Types (EnvDatabaseDiscord, Parser)
 import Text.Megaparsec
 import qualified UnliftIO.Exception as UIOE (tryAny)
 
@@ -36,7 +37,7 @@ import qualified UnliftIO.Exception as UIOE (tryAny)
 -- to find inline commands.
 parseNewMessage :: PluginActions -> Text -> Message -> CompiledDatabaseDiscord ()
 parseNewMessage pl prefix m =
-  if isCommandCall $ messageText m
+  if isCommandCall $ messageContent m
     then parseCommands (compiledCommands pl) m prefix
     else parseInlineCommands (compiledInlineCommands pl) m
   where
@@ -58,7 +59,7 @@ parseNewMessage pl prefix m =
 -- If the parser errors, the last error (which is hopefully one created by
 -- '<?>') is sent to the user as a Discord message.
 parseCommands :: [CompiledCommand] -> Message -> Text -> CompiledDatabaseDiscord ()
-parseCommands cs m prefix = case parse (parser cs) "" (messageText m) of
+parseCommands cs m prefix = case parse (parser cs) "" (messageContent m) of
   Right p -> p m
   Left e ->
     let (errs, title) = makeBundleReadable e
@@ -68,7 +69,7 @@ parseCommands cs m prefix = case parse (parser cs) "" (messageText m) of
     parser cs' =
       do
         _ <- chunk prefix
-        choice (map toErroringParser cs') <|> pure (const (pure ()))
+        choice (map toErroringParser cs') <?> "No command with that name was found!"
     toErroringParser :: CompiledCommand -> Parser (Message -> CompiledDatabaseDiscord ())
     toErroringParser c = try (chunk $ commandName c) *> (skipSpace1 <|> eof) *> (try (choice $ map toErroringParser $ commandSubcommands c) <|> commandParser c)
 
@@ -123,7 +124,15 @@ makeReadable e = (mapParseError (const UnknownError) e, Nothing)
 -- command's parser on the message text. Errors are not sent to the user, and do
 -- not halt command attempts (achieved using 'tryAny').
 parseInlineCommands :: [CompiledInlineCommand] -> Message -> CompiledDatabaseDiscord ()
-parseInlineCommands cs m = mapM_ (fromResult . (\cic -> parse (inlineCommandParser cic) "" (messageText m))) cs
+parseInlineCommands cs m = mapM_ (fromResult . (\cic -> parse (inlineCommandParser cic) "" (messageContent m))) cs
   where
     fromResult (Right p) = UIOE.tryAny (p m)
     fromResult _ = return $ return ()
+
+-- | Turn the parsing of a value into an exception when given text to parse.
+parseValue :: Parser a -> Text -> EnvDatabaseDiscord s a
+parseValue par t = case parse par "" t of
+  Right p -> return p
+  Left e ->
+    let (errs, title) = makeBundleReadable e
+     in throwBot $ ParserException title $ "```\n" ++ errorBundlePretty errs ++ "```"

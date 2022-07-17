@@ -38,7 +38,7 @@ import Sahasrara.Utility.Types ()
 import Prelude hiding (unwords)
 
 -- | @cardToEmbed@ takes a card and generates an embed message representing it.
-cardToEmbed :: NrApi -> Card -> EnvDatabaseDiscord NrApi Embed
+cardToEmbed :: NrApi -> Card -> EnvDatabaseDiscord NrApi CreateEmbed
 cardToEmbed api card = do
   let eTitle = toTitle card
       eURL = toLink card
@@ -46,25 +46,25 @@ cardToEmbed api card = do
       eImg = toImage api card
       eColour = toColour api card
   eText <- toText card
-  return $ addColour eColour $ createEmbed $ CreateEmbed "" "" Nothing eTitle eURL eImg eText [] Nothing eFoot Nothing Nothing
+  return $ addColour eColour $ CreateEmbed "" "" Nothing eTitle eURL eImg eText [] Nothing eFoot Nothing Nothing Nothing
 
 -- | @cardToEmbedWithText@ embeds some text and decorates it with a given card.
-cardToEmbedWithText :: NrApi -> Card -> Text -> EnvDatabaseDiscord NrApi Embed
+cardToEmbedWithText :: NrApi -> Card -> Text -> EnvDatabaseDiscord NrApi CreateEmbed
 cardToEmbedWithText api card text = do
   let eTitle = toTitle card
       eURL = toLink card
       eColour = toColour api card
       eImg = toImage api card
-  return $ addColour eColour $ createEmbed $ CreateEmbed "" "" Nothing eTitle eURL eImg text [] Nothing "" Nothing Nothing
+  return $ addColour eColour $ CreateEmbed "" "" Nothing eTitle eURL eImg text [] Nothing "" Nothing Nothing Nothing
 
 -- | @cardsToEmbed@ takes a list of cards and embeds their names with links.
-cardsToEmbed :: NrApi -> Text -> [Card] -> Text -> Text -> EnvDatabaseDiscord NrApi Embed
+cardsToEmbed :: NrApi -> Text -> [Card] -> Text -> Text -> EnvDatabaseDiscord NrApi CreateEmbed
 cardsToEmbed api pre cards post err = do
   formatted <- mapM formatCard $ take 10 cards
   let cards' = "**" <> intercalate "\n" formatted <> "**"
       eTitle = ":mag_right: **" <> pack (show $ length cards) <> " results**"
       eText = pre <> "\n" <> cards' <> "\n" <> if length cards > 10 then err else post
-  return $ createEmbed $ CreateEmbed "" "" Nothing eTitle "" Nothing eText [] Nothing "" Nothing Nothing
+  return $ CreateEmbed "" "" Nothing eTitle "" Nothing eText [] Nothing "" Nothing Nothing Nothing
   where
     formatCard :: Card -> EnvDatabaseDiscord NrApi Text
     formatCard card = do
@@ -76,53 +76,51 @@ cardsToEmbed api pre cards post err = do
       return $ icon <> " [" <> title' <> "](" <> link <> ")"
 
 -- | @cardToImgEmbed@ takes a card and attempts to embed a picture of it.
-cardToImgEmbed :: NrApi -> Card -> Embed
+cardToImgEmbed :: NrApi -> Card -> CreateEmbed
 cardToImgEmbed api card =
   let eTitle = toTitle card
       eURL = toLink card
       eColour = toColour api card
-   in addColour eColour $
-        createEmbed $ case toImage api card of
-          Nothing -> CreateEmbed "" "" Nothing eTitle eURL Nothing "`Could not find card art`" [] Nothing "" Nothing Nothing
-          eImg -> CreateEmbed "" "" Nothing eTitle eURL Nothing "" [] eImg "" Nothing Nothing
+   in addColour eColour $ case toImage api card of
+    Nothing -> CreateEmbed "" "" Nothing eTitle eURL Nothing "`Could not find card art`" [] Nothing "" Nothing Nothing Nothing
+    eImg -> CreateEmbed "" "" Nothing eTitle eURL Nothing "" [] eImg "" Nothing Nothing Nothing
 
 -- | @cardToFlavourEmbed@ takes a card and attempts to embed its flavour text.
-cardToFlavourEmbed :: NrApi -> Card -> EnvDatabaseDiscord NrApi Embed
+cardToFlavourEmbed :: NrApi -> Card -> EnvDatabaseDiscord NrApi CreateEmbed
 cardToFlavourEmbed api card = do
   let eTitle = toTitle card
       eURL = toLink card
       eColour = toColour api card
       eImg = toImage api card
-      fallback = CreateEmbed "" "" Nothing eTitle eURL eImg "`Card has no flavour text`" [] Nothing "" Nothing Nothing
+      fallback = CreateEmbed "" "" Nothing eTitle eURL eImg "`Card has no flavour text`" [] Nothing "" Nothing Nothing Nothing
   flavor <- toFlavour card
   return $
-    addColour eColour $
-      createEmbed $ case flavor of
-        Nothing -> fallback
-        Just "" -> fallback
-        Just eFlavour -> CreateEmbed "" "" Nothing eTitle eURL eImg eFlavour [] Nothing "" Nothing Nothing
+    addColour eColour $ case flavor of
+      Nothing -> fallback
+      Just "" -> fallback
+      Just eFlavour -> CreateEmbed "" "" Nothing eTitle eURL eImg eFlavour [] Nothing "" Nothing Nothing Nothing
 
 -- | @embedText@ just embeds the given text.
-embedText :: Text -> Text -> Embed
-embedText title text = createEmbed $ CreateEmbed "" "" Nothing title "" Nothing text [] Nothing "" Nothing Nothing
+embedText :: Text -> Text -> CreateEmbed
+embedText title text = CreateEmbed "" "" Nothing title "" Nothing text [] Nothing "" Nothing Nothing Nothing
 
 -- | @embedTextWithUrl@ is @embedText@ but you can set the title URL.
-embedTextWithUrl :: Text -> Text -> Text -> Embed
-embedTextWithUrl title url text = createEmbed $ CreateEmbed "" "" Nothing title url Nothing text [] Nothing "" Nothing Nothing
+embedTextWithUrl :: Text -> Text -> Text -> CreateEmbed
+embedTextWithUrl title url text = CreateEmbed "" "" Nothing title url Nothing text [] Nothing "" Nothing Nothing Nothing
 
 -- | @embedColumns@ embeds Text into columns.
-embedColumns :: Text -> Text -> [(Text, [Text])] -> Embed
+embedColumns :: Text -> Text -> [(Text, [Text])] -> CreateEmbed
 embedColumns title = embedColumnsWithUrl title ""
 
 -- | @embedColumns@ embeds Text into columns with a linked title URL.
-embedColumnsWithUrl :: Text -> Text -> Text -> [(Text, [Text])] -> Embed
+embedColumnsWithUrl :: Text -> Text -> Text -> [(Text, [Text])] -> CreateEmbed
 embedColumnsWithUrl title url pre cols =
   let fields = map (\x -> EmbedField (fst x) (intercalate "\n" $ snd x) $ Just True) cols
-   in createEmbed $ CreateEmbed "" "" Nothing title url Nothing pre fields Nothing "" Nothing Nothing
+   in CreateEmbed "" "" Nothing title url Nothing pre fields Nothing "" Nothing Nothing Nothing
 
 -- | @embedLines@ embeds a list of lines, splitting them into columns as needed.
 -- NOTE: does not preserve order
-embedLines :: Text -> Text -> [Text] -> Embed
+embedLines :: Text -> Text -> [Text] -> CreateEmbed
 embedLines title pre xs =
   let cumLength = scanl (\l x -> 1 + T.length x + l) (T.length title + 2) xs -- +1 for each newline title characters
       safeIndex = length $ takeWhile (< 1900) cumLength -- 1900 instead of 2000 because I gave up trying to be exact
@@ -133,4 +131,4 @@ embedLines title pre xs =
       heights = replicate m (d + 1) ++ replicate (c - m) d
       cols = splitPlaces heights xs'
       fields = map (\x -> EmbedField "⠀" (intercalate "\n" x) $ Just True) cols
-   in createEmbed $ CreateEmbed "" "" Nothing title "" Nothing pre fields Nothing "" Nothing Nothing
+   in CreateEmbed "" "" Nothing title "" Nothing pre fields Nothing "" Nothing Nothing Nothing

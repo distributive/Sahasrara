@@ -15,7 +15,8 @@ module Sahasrara.Utility.Types where
 import Control.Concurrent.MVar (MVar)
 import Control.Monad.Trans.Class (lift)
 import Control.Monad.Trans.Reader (ReaderT)
-import Data.Char (toLower)
+import Data.ByteString (ByteString)
+import Data.Default (Default (def))
 import Data.Map (Map)
 import Data.Maybe (fromMaybe)
 import Data.Text (Text)
@@ -23,17 +24,30 @@ import Data.Version.Extra (Version)
 import Data.Void (Void)
 import Database.Persist.Sqlite (Migration, SqlPersistM, SqlPersistT)
 import Discord (DiscordHandler)
+import Discord.Interactions
+  ( CreateApplicationCommand,
+    Interaction,
+    InteractionResponseMessage (InteractionResponseMessage),
+    InteractionResponseMessageFlag (..),
+    InteractionResponseMessageFlags (..),
+  )
+import Discord.Internal.Rest.Channel (MessageDetailedOpts (MessageDetailedOpts))
 import Discord.Types
-  ( ChannelId,
+  ( ActionRow,
+    AllowedMentions,
+    ApplicationCommandId,
+    Attachment,
+    ChannelId,
+    CreateEmbed,
     Emoji,
     Event (..),
     Message,
     MessageId,
+    MessageReference,
     ReactionInfo,
+    StickerId,
   )
-import Safe.Exact (dropExactMay, takeExactMay)
 import Text.Megaparsec (Parsec)
-import Text.Read (readMaybe)
 
 -- * DatabaseDiscord
 
@@ -54,6 +68,7 @@ type Database d = SqlPersistM d
 
 data SahasraraCache = TCache
   { cacheKnownEmoji :: Map Text Emoji,
+    cacheApplicationCommands :: Map ApplicationCommandId (Interaction -> EnvDatabaseDiscord () ()),
     cacheVersionInfo :: VersionInfo
   }
 
@@ -83,8 +98,8 @@ liftDiscord = lift . lift . lift
 -- Each feature is its own type, and the features are combined via records into
 -- full plugins.
 
--- | For when you get a 'MessageCreate'. Checks that the @name@ is directly
--- after the bot prefix, and then runs @commandParser@ on it.
+-- | For when the plugin is first used, to ensure that certain data is
+-- available.
 newtype StartUp d = StartUp
   { -- | An action to run at startup
     startAction :: Database d
@@ -92,20 +107,23 @@ newtype StartUp d = StartUp
 
 -- | For when you get a 'MessageCreate'. Checks that the @name@ is directly
 -- after the bot prefix, and then runs @commandParser@ on it.
--- It will first try to match against any subcommands, and if that fails it runs the commandParser
+-- It will first try to match against any subcommands, and if that fails it runs
+-- the commandParser.
 data EnvCommand d = Command
   { -- | The name of the command.
-    name :: Text,
+    commandName :: Text,
     -- | A parser to run on the command arguments, returning a computation to
     -- run in 'DatabaseDiscord'.
     commandParser :: Parser (Message -> EnvDatabaseDiscord d ()),
-    -- | A list of subcommands to attempt to parse before the bare command, matching their name.
-    subcommands :: [EnvCommand d]
+    -- | A list of subcommands to attempt to parse before the bare command,
+    -- matching their name.
+    commandSubcommands :: [EnvCommand d]
   }
 
 type Command = EnvCommand ()
 
--- | Construct an aliased command that behaves the same as another command (for things like short forms)
+-- | Construct an aliased command that behaves the same as another command (for
+-- things like short forms).
 commandAlias :: Text -> EnvCommand d -> EnvCommand d
 commandAlias name' (Command _ cp sc) = Command name' cp sc
 
@@ -150,7 +168,34 @@ newtype EnvReactionDel d = ReactionDel
     onReactionDelete :: ReactionInfo -> EnvDatabaseDiscord d ()
   }
 
-type ReactionDel = EnvReactionAdd ()
+type ReactionDel = EnvReactionDel ()
+
+-- | Handles the creation of an application command and of the action to be
+-- performed once that application command is received.
+--
+-- This handles things like chat input (slash commands), message commands, or
+-- user commands. The `applicationCommand` is the data structure that
+-- represents the application command, and the `applicationCommandRecv` is the
+-- action to be performed when this application command is received.
+data EnvApplicationCommandRecv d = ApplicationCommandRecv
+  { -- | The application command to be created.
+    applicationCommand :: CreateApplicationCommand,
+    -- | The action to run when the application command is received.
+    applicationCommandRecv :: Interaction -> EnvDatabaseDiscord d ()
+  }
+
+type ApplicationCommandRecv = EnvApplicationCommandRecv ()
+
+-- | Handles recieving of components, such as buttons or select menus.
+--
+-- The name is the name of the component within a plugin. Choose something
+-- unique within the plugin.
+data EnvComponentRecv d = ComponentRecv
+  { componentName :: Text,
+    onComponentRecv :: Interaction -> EnvDatabaseDiscord d ()
+  }
+
+type ComponentRecv = EnvComponentRecv ()
 
 -- | Handles events not covered by the other kinds of features. This is only
 -- relevant to specific admin functionality, such as the deletion of channels.
@@ -178,16 +223,18 @@ data EnvCronJob d = CronJob
 type CronJob = EnvCronJob ()
 
 -- | A feature for generating help text
--- Each help text page consists of a explanation body, as well as a list of sub-pages
--- that display the short text for its page
+-- Each help text page consists of a explanation body, as well as a list of
+-- sub-pages that display the short text for its page
 data HelpPage = HelpPage
   { -- | The [sub]command name
     helpName :: Text,
     -- | List of aliases for this command
     helpAliases :: [Text],
-    -- | The text to show when listed in a subpage list. Will be prefixed by its helpName
+    -- | The text to show when listed in a subpage list. Will be prefixed by its
+    -- helpName
     helpShortText :: Text,
-    -- | The text to show when specifically listed. Appears above the list of subpages
+    -- | The text to show when specifically listed. Appears above the list of
+    -- subpages
     helpBody :: Text,
     -- | A list of help pages that can be recursively accessed
     helpSubpages :: [HelpPage],
@@ -195,78 +242,6 @@ data HelpPage = HelpPage
     helpPermission :: RequiredPermission
   }
   deriving (Show)
-
--- | Colour names
--- Colour is a bit of a mess on discord embeds.
--- I've here stolen the pallet list from https://gist.github.com/thomasbnt/b6f455e2c7d743b796917fa3c205f812
-data DiscordColour
-  = RGB Integer Integer Integer
-  | Default
-  | Aqua
-  | DarkAqua
-  | Green
-  | DarkGreen
-  | Blue
-  | DarkBlue
-  | Purple
-  | DarkPurple
-  | LuminousVividPink
-  | DarkVividPink
-  | Gold
-  | DarkGold
-  | Orange
-  | DarkOrange
-  | Red
-  | DarkRed
-  | Gray
-  | DarkGray
-  | DarkerGray
-  | LightGray
-  | Navy
-  | DarkNavy
-  | Yellow
-  | DiscordWhite
-  | DiscordBlurple
-  | DiscordGrayple
-  | DiscordDarkButNotBlack
-  | DiscordNotQuiteBlack
-  | DiscordGreen
-  | DiscordYellow
-  | DiscordFuschia
-  | DiscordRed
-  | DiscordBlack
-
--- | @hexToRGB@ attempts to convert a potential hex string into its decimal RGB
--- components.
-hexToRGB :: String -> Maybe (Integer, Integer, Integer)
-hexToRGB hex = do
-  let h = map toLower hex
-  r <- takeExactMay 2 h >>= toDec
-  g <- dropExactMay 2 h >>= takeExactMay 2 >>= toDec
-  b <- dropExactMay 4 h >>= toDec
-  return (r, g, b)
-  where
-    toDec :: String -> Maybe Integer
-    toDec [s, u] = do
-      a <- charToDec s
-      b <- charToDec u
-      return $ a * 16 + b
-    toDec _ = Nothing
-    charToDec :: Char -> Maybe Integer
-    charToDec 'a' = Just 10
-    charToDec 'b' = Just 11
-    charToDec 'c' = Just 12
-    charToDec 'd' = Just 13
-    charToDec 'e' = Just 14
-    charToDec 'f' = Just 15
-    charToDec c = readMaybe [c]
-
--- | @hexToDiscordColour@ converts a potential hex string into a DiscordColour,
--- evaluating to Default if it fails.
-hexToDiscordColour :: String -> DiscordColour
-hexToDiscordColour hex =
-  let (r, g, b) = fromMaybe (0, 0, 0) $ hexToRGB hex
-   in RGB r g b
 
 -- | Automatic handling of command permissions
 -- @UserPermission@ models the current permissions of the user
@@ -281,7 +256,7 @@ data UserPermission = UserPerm
   }
   deriving (Show, Eq)
 
-data RequiredPermission = None | Moderator | Superuser deriving (Show, Eq)
+data RequiredPermission = None | Any | Exec | Moderator | Both | Superuser deriving (Show, Eq)
 
 -- * Plugins
 
@@ -296,11 +271,13 @@ data RequiredPermission = None | Moderator | Superuser deriving (Show, Eq)
 data EnvPlugin d = Pl
   { pluginName :: Text,
     startUp :: StartUp d,
+    applicationCommands :: [EnvApplicationCommandRecv d],
     commands :: [EnvCommand d],
     inlineCommands :: [EnvInlineCommand d],
     onMessageChanges :: [EnvMessageChange d],
     onReactionAdds :: [EnvReactionAdd d],
     onReactionDeletes :: [EnvReactionDel d],
+    onComponentRecvs :: [EnvComponentRecv d],
     otherEvents :: [EnvOther d],
     cronJobs :: [EnvCronJob d],
     helpPages :: [HelpPage],
@@ -316,7 +293,56 @@ type Plugin = EnvPlugin ()
 -- Examples of this in use can be found in the imports of
 -- "Sahasrara.Plugins".
 plug :: Text -> Plugin
-plug name' = Pl name' (StartUp (return ())) [] [] [] [] [] [] [] [] []
+plug name' = Pl name' (StartUp (return ())) [] [] [] [] [] [] [] [] [] [] []
 
 envPlug :: Text -> StartUp d -> EnvPlugin d
-envPlug name' startup = Pl name' startup [] [] [] [] [] [] [] [] []
+envPlug name' startup = Pl name' startup [] [] [] [] [] [] [] [] [] [] []
+
+messageDetailsBasic :: Text -> MessageDetails
+messageDetailsBasic t = MessageDetails Nothing (Just t) Nothing Nothing Nothing Nothing Nothing Nothing Nothing Nothing
+
+instance Default MessageDetails where
+  def = MessageDetails Nothing Nothing Nothing Nothing Nothing Nothing Nothing Nothing Nothing Nothing
+
+-- | This data structure as a convenient way to make either interaction responses
+-- or just plain messages. It is used in cases that we're either gonna return
+-- an interaction or a message.
+data MessageDetails = MessageDetails
+  { messageDetailsTTS :: Maybe Bool,
+    messageDetailsContent :: Maybe Text,
+    messageDetailsEmbeds :: Maybe [CreateEmbed],
+    messageDetailsFile :: Maybe (Text, ByteString),
+    messageDetailsAllowedMentions :: Maybe AllowedMentions,
+    messageDetailsFlags :: Maybe InteractionResponseMessageFlags,
+    messageDetailsReference :: Maybe MessageReference,
+    messageDetailsComponents :: Maybe [ActionRow],
+    messageDetailsAttachments :: Maybe [Attachment],
+    messageDetailsStickerIds :: Maybe [StickerId]
+  }
+  deriving (Show)
+
+makeEphermeral :: MessageDetails -> MessageDetails
+makeEphermeral m = m {messageDetailsFlags = Just $ InteractionResponseMessageFlags [InteractionResponseMessageFlagEphermeral]}
+
+convertMessageFormatInteraction :: MessageDetails -> InteractionResponseMessage
+convertMessageFormatInteraction MessageDetails {..} =
+  InteractionResponseMessage
+    messageDetailsTTS
+    messageDetailsContent
+    messageDetailsEmbeds
+    messageDetailsAllowedMentions
+    messageDetailsFlags
+    messageDetailsComponents
+    messageDetailsAttachments
+
+convertMessageFormatBasic :: MessageDetails -> MessageDetailedOpts
+convertMessageFormatBasic MessageDetails {..} =
+  MessageDetailedOpts
+    (fromMaybe "" messageDetailsContent)
+    (fromMaybe False messageDetailsTTS)
+    messageDetailsEmbeds
+    messageDetailsFile
+    messageDetailsAllowedMentions
+    messageDetailsReference
+    messageDetailsComponents
+    messageDetailsStickerIds

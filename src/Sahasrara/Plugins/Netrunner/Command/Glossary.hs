@@ -14,6 +14,7 @@ import Data.List (nub)
 import Data.Map (fromList, lookup)
 import Data.Maybe (catMaybes, fromMaybe)
 import Data.Text (Text, intercalate, unpack)
+import Discord.Types
 import Sahasrara.Plugins.Netrunner.Type.Card (title)
 import Sahasrara.Plugins.Netrunner.Type.Glossary (Definition (..), Glossary (..))
 import Sahasrara.Plugins.Netrunner.Type.NrApi
@@ -52,7 +53,7 @@ printMain m = do
       disclaimer = "\n\n*This glossary is supported by members of the community. It is not endorsed by NISEI, nor is the content guaranteed to be consistent with the game's official rules.*"
   randomDef <- liftIO $ chooseOne $ map name definitions
   let example = "\nTry: `glossary " <> randomDef <> "`"
-  sendEmbedMessage m "" $ addColour Blue $ basicEmbed ":pencil: Glossary" $ desc <> example <> attribution <> disclaimer
+  sendEmbedMessage m "" $ addColour DiscordColorBlue $ basicEmbed ":pencil: Glossary" $ desc <> example <> attribution <> disclaimer
 
 -- | @printDef@ attempts to find a specific term in the glossary
 printDef :: Text -> Message -> EnvDatabaseDiscord NrApi ()
@@ -60,14 +61,14 @@ printDef term m = do
   api <- ask
   let g = glossary api
   case lookup (standardise term) $ fromList $ defMap $ defs g of
-    Nothing -> sendEmbedMessage m "" $ addColour Red $ basicEmbed ":pencil2: Term not found" $ failText api
+    Nothing -> sendEmbedMessage m "" $ addColour DiscordColorRed $ basicEmbed ":pencil2: Term not found" $ failText api
     Just def -> do
       let defSource = case sources def of
             Just [x] -> "\n\n***Source:** " <> x <> "*"
             Just xs -> "\n\n***Sources:** " <> intercalate ", " xs <> "*"
             Nothing -> ""
       defText <- formatText' $ long def
-      sendEmbedMessage m "" $ addColour Blue $ basicEmbed (":pencil: " <> name def) $ format defText (related def) defSource (source g)
+      sendEmbedMessage m "" $ addColour DiscordColorBlue $ basicEmbed (":pencil: " <> name def) $ format defText (related def) defSource (source g)
   where
     defMap :: [Definition] -> [(Text, Definition)]
     defMap definitions = concatMap (\def -> (standardise $ name def, def) : [(standardise $ a, def) | a <- aliases def]) definitions

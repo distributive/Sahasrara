@@ -42,7 +42,7 @@ packages:
 # allow-newer: true
 
 extra-deps:
-  - discord-haskell-1.10.0
+  - discord-haskell-1.14.0
   - emoji-0.1.0.2
   - load-env-0.2.1.0
   - megaparsec-9.0.1

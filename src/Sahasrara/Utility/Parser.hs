@@ -212,3 +212,17 @@ parseCommaSeparated1 p = do
   first <- p
   others <- many (try (skipSpace *> char ',' *> skipSpace) *> p)
   return (first : others)
+
+-- | Type class to display a value in a way that can be parsed.
+--
+-- `Right a === parse (pars :: Parser a) "" (parseShow a)`
+class ParseShow a where
+  -- | Represent the value
+  parseShow :: a -> Text
+
+instance (ParseShow a, ParseShow b) => ParseShow (Either a b) where
+  parseShow (Left a) = parseShow a
+  parseShow (Right b) = parseShow b
+
+instance ParseShow Text where
+  parseShow t = t

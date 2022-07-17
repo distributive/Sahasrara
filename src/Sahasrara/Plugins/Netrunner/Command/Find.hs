@@ -122,7 +122,7 @@ outputCard outf = \(card, set) m -> do
               substitution = 1,
               transposition = 1
             }
-    errorNotFound :: Text -> Text -> Embed
+    errorNotFound :: Text -> Text -> CreateEmbed
     errorNotFound set card = embedError $ GenericException "Set does not contain card" $ "`" <> (unpack set) <> "` does not contain *" <> unpack card <> "*."
-    errorIndex :: Int -> Text -> Embed
+    errorIndex :: Int -> Text -> CreateEmbed
     errorIndex index card = embedError $ GenericException "Invalid index" $ "`" <> show index <> "` is out of range.\nTry `sets " <> unpack card <> "` to see how many sets it was printed in."

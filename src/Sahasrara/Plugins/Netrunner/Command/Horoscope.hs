@@ -44,7 +44,7 @@ nrHoroscope = Command "horoscope" horoscopePars []
       seed <- liftIO $ getCurrentTime >>= return . fromIntegral . toModifiedJulianDay . utctDay
       f <- liftIO $ chooseOneSeeded seed fs
       f' <- formatText f
-      sendEmbedMessage m "" $ addColour (RGB 170 141 216) $ embedText ":crystal_ball: Horoscope :crystal_ball:" $ replaceAll [r|"(.*?)"[.\S\s]*|] "$1" f'
+      sendEmbedMessage m "" $ addColour (DiscordColorRGB 170 141 216) $ embedText ":crystal_ball: Horoscope :crystal_ball:" $ replaceAll [r|"(.*?)"[.\S\s]*|] "$1" f'
     filterFlavours :: Blacklist -> [Card] -> [Text]
     filterFlavours Blacklist {badSubstrings = badSubstrings, badCards = badCards} cards =
       let flavoured = filter ((Nothing /=) . flavour) cards

@@ -102,12 +102,12 @@ toReleaseData card = fromMaybe "" $ do
   return $ s <> " • " <> r
 
 -- | @toColour@ gets the factional colour of a card to use in its embed.
-toColour :: Card -> DiscordColour
+toColour :: Card -> DiscordColor
 toColour card = case rarity card of
-  Just "Uncommon" -> RGB 71 177 80
-  Just "Rare" -> RGB 71 93 177
-  Just "Vital" -> RGB 145 71 177
-  _ -> RGB 177 150 71
+  Just "Uncommon" -> DiscordColorRGB 71 177 80
+  Just "Rare" -> DiscordColorRGB 71 93 177
+  Just "Vital" -> DiscordColorRGB 145 71 177
+  _ -> DiscordColorRGB 177 150 71
 
 -- | @toFlavour@ gets a cards flavour text.
 toFlavour :: Card -> EnvDatabaseDiscord OnrApi (Maybe Text)

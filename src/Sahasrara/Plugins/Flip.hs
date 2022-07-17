@@ -11,6 +11,7 @@ module Sahasrara.Plugins.Flip (flipPlugin) where
 
 import Control.Monad.IO.Class (MonadIO (liftIO))
 import Data.Text (pack)
+import Discord.Types
 import Sahasrara.Utility
 import Sahasrara.Utility.Discord (Message, formatFromEmojiName, sendEmbedMessage)
 import Sahasrara.Utility.Embed (addColour, basicEmbed)
@@ -77,7 +78,7 @@ mark = Command "mark" (parseComm markComm) []
   where
     markComm :: () -> Message -> DatabaseDiscord ()
     markComm () m = do
-      (result, colour) <- liftIO $ chooseOne [("HQ", Blue), ("R&D", Green), ("Archives", Red)]
+      (result, colour) <- liftIO $ chooseOne [("HQ", DiscordColorBlue), ("R&D", DiscordColorGreen), ("Archives", DiscordColorRed)]
       sendEmbedMessage m "" $ addColour colour $ basicEmbed ":game_die: Result :game_die:" ("**Your mark is:** " <> result)
 
 markHelp :: HelpPage

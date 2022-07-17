@@ -50,7 +50,7 @@ embedRam a b m = do
       legalPacks = name <$> snd ram
       codes = intercalate "|" $ map P.code $ (fst ram) ++ (snd ram)
   sendEmbedMessage m "" $
-    addColour Green $
+    addColour DiscordColorGreen $
       embedText ":game_die: RAM :game_die:" $
         (if length bigBoxes > 0 then "**Large Releases**\n" <> intercalate "\n" bigBoxes <> "\n\n" else "")
           <> (if length legalPacks > 0 then "**Data Packs**\n" <> intercalate "\n" legalPacks <> "\n\n" else "")

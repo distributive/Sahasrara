@@ -9,6 +9,7 @@
 -- This module creates functions and data structures to help generate help text for commands
 module Sahasrara.Utility.Help where
 
+import Data.Default (Default (def))
 import Data.Functor (($>))
 import Data.Text (Text)
 import qualified Data.Text as T
@@ -57,16 +58,17 @@ helpHelpPage =
     []
     None
 
-generateHelp :: CombinedPlugin -> CombinedPlugin
-generateHelp p =
+generateHelp :: Text -> CombinedPlugin -> CombinedPlugin
+generateHelp rootText p =
   p
-    { combinedSetupAction = return (PA [CCommand "help" (handleHelp (helpHelpPage : combinedHelpPages p)) []] [] [] [] [] [] []) : combinedSetupAction p
+    { combinedSetupAction = return (def {compiledCommands = [CCommand "help" (handleHelp rootText (helpHelpPage : combinedHelpPages p)) []]}) : combinedSetupAction p
     }
 
-handleHelp :: [HelpPage] -> Parser (Message -> CompiledDatabaseDiscord ())
-handleHelp hp = parseHelpPage root
+handleHelp :: Text -> [HelpPage] -> Parser (Message -> CompiledDatabaseDiscord ())
+handleHelp rootText hp = parseHelpPage root
   where
-    root = HelpPage "" [] "" rootBody hp None
+    root = HelpPage "" [] "" rootText hp None
+
 
 parseHelpPage :: HelpPage -> Parser (Message -> CompiledDatabaseDiscord ())
 parseHelpPage hp = do
@@ -77,7 +79,7 @@ parseHelpPage hp = do
 displayHelp :: HelpPage -> Message -> CompiledDatabaseDiscord ()
 displayHelp hp m = changeAction () . requirePermission (helpPermission hp) m $ do
   uPerm <- getSenderPermission m
-  sendEmbedMessage m "" $ addColour Aqua $ createEmbed $ CreateEmbed "" "" Nothing (formatHelpTitle hp) "" Nothing (formatHelp uPerm hp) [] Nothing "" Nothing Nothing
+  sendEmbedMessage m "" $ addColour DiscordColorAqua $ CreateEmbed "" "" Nothing (formatHelpTitle hp) "" Nothing (formatHelp uPerm hp) [] Nothing "" Nothing Nothing Nothing
 
 formatHelpTitle :: HelpPage -> Text
 formatHelpTitle hp = ":scroll:  " <> if helpName hp == "" then "Sahasrara" else "Help: `$" <> helpName hp <> "`"
@@ -87,7 +89,7 @@ formatHelp up hp = helpBody hp <> formatSubpages hp
   where
     formatSubpages :: HelpPage -> Text
     formatSubpages (HelpPage _ _ _ _ [] _) = ""
-    formatSubpages hp' = if T.null sp then "" else "\n\n**Subcommands**" <> sp
+    formatSubpages hp' = if T.null sp then "" else "\n\n*Subcommands*" <> sp
       where
         sp = T.concat (map formatSubpage (helpSubpages hp'))
     formatSubpage :: HelpPage -> Text
