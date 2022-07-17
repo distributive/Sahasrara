@@ -35,7 +35,6 @@ data BotException
   | RandomException String
   | EvaluationException String [String]
   | IOException String
-  | NetrunnerException String
   | InteractionException String
   | PermissionException String
   deriving (Show, Eq)
