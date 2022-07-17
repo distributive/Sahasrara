@@ -18,12 +18,12 @@ import Data.Maybe (fromMaybe, isNothing)
 import Data.String (IsString (fromString))
 import Data.Text (Text, intercalate, pack, unpack)
 import qualified Data.Text as T
-import System.Random (randomRIO)
 import Sahasrara.Plugins.Roll.Dice.DiceData
 import Sahasrara.Plugins.Roll.Dice.DiceFunctions (FuncInfoBase (..), ListInteger (..))
 import Sahasrara.Utility.Discord (Format (..), formatInput, formatText)
 import Sahasrara.Utility.Exception (BotException (EvaluationException), catchBot, throwBot)
 import Sahasrara.Utility.Random (chooseOne)
+import System.Random (randomRIO)
 
 -- | A wrapper type to differentiate between the RNGCount and other Integers.
 --
