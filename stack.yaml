@@ -61,6 +61,12 @@ extra-deps:
   # - distribution-1.1.1.1
   - git: https://github.com/L0neGamer/haskell-distribution.git
     commit: 569d6452e4bffedb2c0d3795885fccdb22a4d29d
+  - diagrams-core-1.5.0
+  - diagrams-lib-1.4.5.1
+  - diagrams-postscript-1.5.1
+  - diagrams-svg-1.4.3.1
+  - Chart-diagrams-1.9.3
+  - diagrams-rasterific-1.4.2.2
 # Override default flag values for local packages and extra-deps
 # flags: {}
 

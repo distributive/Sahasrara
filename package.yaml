@@ -63,6 +63,12 @@ dependencies:
   - regex-pcre
   - distribution
   - scientific >= 0.3.7.0
+  - Chart
+  - Chart-diagrams
+  - diagrams-core
+  - diagrams-lib
+  - diagrams-rasterific
+  - JuicyPixels
 
 library:
   source-dirs: src
