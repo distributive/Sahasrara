@@ -13,7 +13,7 @@ import Control.Monad.IO.Class (MonadIO (liftIO))
 import Data.Text (pack)
 import Discord.Types
 import Sahasrara.Utility
-import Sahasrara.Utility.Discord (Message, formatFromEmojiName, sendEmbedMessage)
+import Sahasrara.Utility.Discord (formatFromEmojiName, sendEmbedMessage)
 import Sahasrara.Utility.Embed (addColour, basicEmbed)
 import Sahasrara.Utility.Parser
 import Sahasrara.Utility.Random (chooseOne)

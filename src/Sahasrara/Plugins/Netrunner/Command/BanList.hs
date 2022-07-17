@@ -18,7 +18,7 @@ import Sahasrara.Plugins.Netrunner.Type.BanList (BanList (name))
 import Sahasrara.Plugins.Netrunner.Type.NrApi (NrApi (..))
 import Sahasrara.Plugins.Netrunner.Utility.BanList
 import Sahasrara.Plugins.Netrunner.Utility.Print (embedBanList, embedBanLists)
-import Sahasrara.Utility hiding (name)
+import Sahasrara.Utility
 import Sahasrara.Utility.Search (FuzzyCosts (..), closestValueWithCosts)
 import Sahasrara.Utility.SmartParser (PComm (parseComm), RestOfInput (ROI))
 

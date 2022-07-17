@@ -17,7 +17,7 @@ import Discord.Types
 import Sahasrara.Plugins.Netrunner.Type.Cycle (Cycle (code, name, rotated))
 import Sahasrara.Plugins.Netrunner.Type.NrApi (NrApi (..))
 import Sahasrara.Plugins.Netrunner.Utility.Print (embedCardSets, embedCycles, embedSets, embedSetsOn)
-import Sahasrara.Utility hiding (name)
+import Sahasrara.Utility
 import Sahasrara.Utility.Search (closestValue)
 import Sahasrara.Utility.SmartParser (PComm (parseComm), RestOfInput (ROI))
 

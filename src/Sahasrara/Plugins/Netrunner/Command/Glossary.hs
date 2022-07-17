@@ -20,8 +20,8 @@ import Sahasrara.Plugins.Netrunner.Type.Glossary (Definition (..), Glossary (..)
 import Sahasrara.Plugins.Netrunner.Type.NrApi
 import Sahasrara.Plugins.Netrunner.Utility.Alias (fromAlias)
 import Sahasrara.Plugins.Netrunner.Utility.Format (formatText')
-import Sahasrara.Utility hiding (name)
-import Sahasrara.Utility.Discord (Message, sendEmbedMessage)
+import Sahasrara.Utility
+import Sahasrara.Utility.Discord (sendEmbedMessage)
 import Sahasrara.Utility.Embed (addColour, basicEmbed)
 import Sahasrara.Utility.Random (chooseOne)
 import Sahasrara.Utility.Search (FuzzyCosts (..), sortValuesWithCosts)

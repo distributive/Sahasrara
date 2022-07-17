@@ -19,7 +19,7 @@ import Sahasrara.Plugins.Netrunner.Type.NrApi (NrApi (..))
 import Sahasrara.Plugins.Netrunner.Type.Pack (Pack (cycleCode, name))
 import qualified Sahasrara.Plugins.Netrunner.Type.Pack as P
 import Sahasrara.Plugins.Netrunner.Utility.Embed (embedText)
-import Sahasrara.Utility hiding (name)
+import Sahasrara.Utility
 import Sahasrara.Utility.Discord (sendEmbedMessage)
 import Sahasrara.Utility.Embed (addColour)
 import Sahasrara.Utility.Exception (BotException (GenericException), throwBot)

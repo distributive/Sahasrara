@@ -34,7 +34,6 @@ import Sahasrara.Plugins.Netrunner.Utility.BanList (activeBanList, isBanned, lat
 import Sahasrara.Plugins.Netrunner.Utility.Card (toCycle)
 import Sahasrara.Utility
 import Sahasrara.Utility.Search (autocomplete, closestMatch, closestPair, closestValue)
-import Sahasrara.Utility.Utils (standardise)
 import Text.Read (readMaybe)
 import Prelude hiding (unwords)
 

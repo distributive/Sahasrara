@@ -10,7 +10,7 @@
 module Sahasrara.Internal.Permission where
 
 import Control.Monad.IO.Class (liftIO)
-import Discord.Types (GuildMember, Message, RoleId, memberRoles)
+import Discord.Types (GuildMember, RoleId, memberRoles)
 import Sahasrara.Utility.SmartParser (Context (contextMember))
 import Sahasrara.Utility.Types
 import Sahasrara.Utility.Utils (isDebug)
