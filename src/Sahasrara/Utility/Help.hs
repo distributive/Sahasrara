@@ -69,7 +69,6 @@ handleHelp rootText hp = parseHelpPage root
   where
     root = HelpPage "" [] "" rootText hp None
 
-
 parseHelpPage :: HelpPage -> Parser (Message -> CompiledDatabaseDiscord ())
 parseHelpPage hp = do
   _ <- choice (map chunk (helpName hp : helpAliases hp))

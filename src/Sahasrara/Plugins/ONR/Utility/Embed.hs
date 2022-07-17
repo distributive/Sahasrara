@@ -51,9 +51,9 @@ cardToImgEmbed :: OnrApi -> Card -> CreateEmbed
 cardToImgEmbed api card =
   let eTitle = toTitle card
       eColour = toColour card
-   in addColour eColour $  case toImage api card of
-    Nothing -> CreateEmbed "" "" Nothing eTitle "" Nothing "`Could not find card art`" [] Nothing "" Nothing Nothing Nothing
-    eImg -> CreateEmbed "" "" Nothing eTitle "" Nothing "" [] eImg "" Nothing Nothing Nothing
+   in addColour eColour $ case toImage api card of
+        Nothing -> CreateEmbed "" "" Nothing eTitle "" Nothing "`Could not find card art`" [] Nothing "" Nothing Nothing Nothing
+        eImg -> CreateEmbed "" "" Nothing eTitle "" Nothing "" [] eImg "" Nothing Nothing Nothing
 
 -- | @cardToFlavourEmbed@ takes a card and attempts to embed its flavour text.
 cardToFlavourEmbed :: OnrApi -> Card -> EnvDatabaseDiscord OnrApi CreateEmbed

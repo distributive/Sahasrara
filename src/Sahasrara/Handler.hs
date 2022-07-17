@@ -20,7 +20,6 @@ import Discord (Cache (cacheApplication), DiscordHandler, readCache, restCall)
 import Discord.Interactions (ApplicationCommand (..), Interaction (..))
 import Discord.Requests (ChannelRequest (JoinThread))
 import Discord.Types
-import System.Environment (lookupEnv)
 import Sahasrara.Internal.Handler.Command (parseNewMessage)
 import Sahasrara.Internal.Handler.Event
   ( parseApplicationCommandRecv,
@@ -35,6 +34,7 @@ import Sahasrara.Internal.Types
 import Sahasrara.Utility.Discord (createApplicationCommand, interactionResponseCustomMessage, removeApplicationCommandsNotInList, sendChannelEmbedMessage)
 import Sahasrara.Utility.Exception (BotException, embedError)
 import Sahasrara.Utility.Types (MessageDetails (messageDetailsEmbeds), SahasraraCache (cacheApplicationCommands), liftDiscord, messageDetailsBasic)
+import System.Environment (lookupEnv)
 import Text.Read (readMaybe)
 import UnliftIO.Concurrent
   ( ThreadId,

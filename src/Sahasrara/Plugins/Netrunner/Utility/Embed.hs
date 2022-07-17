@@ -82,8 +82,8 @@ cardToImgEmbed api card =
       eURL = toLink card
       eColour = toColour api card
    in addColour eColour $ case toImage api card of
-    Nothing -> CreateEmbed "" "" Nothing eTitle eURL Nothing "`Could not find card art`" [] Nothing "" Nothing Nothing Nothing
-    eImg -> CreateEmbed "" "" Nothing eTitle eURL Nothing "" [] eImg "" Nothing Nothing Nothing
+        Nothing -> CreateEmbed "" "" Nothing eTitle eURL Nothing "`Could not find card art`" [] Nothing "" Nothing Nothing Nothing
+        eImg -> CreateEmbed "" "" Nothing eTitle eURL Nothing "" [] eImg "" Nothing Nothing Nothing
 
 -- | @cardToFlavourEmbed@ takes a card and attempts to embed its flavour text.
 cardToFlavourEmbed :: NrApi -> Card -> EnvDatabaseDiscord NrApi CreateEmbed

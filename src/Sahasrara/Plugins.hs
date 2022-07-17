@@ -24,11 +24,11 @@ import Sahasrara.Plugins.ONR (onrPlugin)
 -- Use long list format to make additions and removals non-conflicting on git PRs
 allPlugins :: [CompiledPlugin]
 allPlugins =
-    [ compilePlugin basicPlugin,
-      compilePlugin flipPlugin,
-      compilePlugin netrunnerPlugin,
-      compilePlugin onrPlugin
-    ]
+  [ compilePlugin basicPlugin,
+    compilePlugin flipPlugin,
+    compilePlugin netrunnerPlugin,
+    compilePlugin onrPlugin
+  ]
 
 -- | @addAdministrationPlugin@ is needed to allow the administration plugin to be aware of the list of current plugins
 addAdministrationPlugin :: MVar ShutdownReason -> [CompiledPlugin] -> [CompiledPlugin]

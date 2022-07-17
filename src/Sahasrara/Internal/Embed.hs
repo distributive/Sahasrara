@@ -14,13 +14,11 @@ import qualified Data.ByteString.Lazy as BL
 import Data.Text (Text)
 import Discord.Internal.Rest.Prelude
 import Discord.Internal.Types
+import Discord.Internal.Types (CreateEmbed (CreateEmbed))
 import Network.HTTP.Client.MultipartFormData (partBS)
 import Network.HTTP.Req ((/:))
 import qualified Network.HTTP.Req as R
 import Sahasrara.Utility.Types
-
-import Data.Text (Text)
-import Discord.Internal.Types (CreateEmbed (CreateEmbed))
 
 class Embeddable e where
   asEmbed :: e -> CreateEmbed

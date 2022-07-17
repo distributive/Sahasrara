@@ -38,8 +38,6 @@ import Discord
 import Discord.Internal.Rest
 import LoadEnv (loadEnv)
 import Paths_sahasrara (version)
-import System.Environment (getEnv, lookupEnv)
-import System.Exit (die)
 import Sahasrara.Handler (eventHandler, killCron, runCron, submitApplicationCommands)
 import Sahasrara.Internal.Administration
   ( ShutdownReason (Reload),
@@ -52,9 +50,11 @@ import Sahasrara.Internal.Administration
   )
 import Sahasrara.Internal.Plugins
 import Sahasrara.Internal.Types
+import Sahasrara.Plugins (addAdministrationPlugin)
 import Sahasrara.Utility
 import Sahasrara.Utility.Help (generateHelp)
-import Sahasrara.Plugins (addAdministrationPlugin)
+import System.Environment (getEnv, lookupEnv)
+import System.Exit (die)
 import Text.Regex.PCRE ((=~))
 
 -- | runSahasraraWithEnv @plugins@ runs the bot using data found in the .env
