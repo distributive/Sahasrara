@@ -17,6 +17,7 @@ import Discord.Types
 import Sahasrara.Internal.Permission (getSenderPermission, userHasPermission)
 import Sahasrara.Internal.Plugins (changeAction)
 import Sahasrara.Internal.Types
+import Sahasrara.Utility.Colour
 import Sahasrara.Utility.Discord (sendEmbedMessage)
 import Sahasrara.Utility.Embed (addColour)
 import Sahasrara.Utility.Parser (skipSpace)
@@ -78,7 +79,7 @@ parseHelpPage hp = do
 displayHelp :: HelpPage -> Message -> CompiledDatabaseDiscord ()
 displayHelp hp m = changeAction () . requirePermission (helpPermission hp) m $ do
   uPerm <- getSenderPermission m
-  sendEmbedMessage m "" $ addColour DiscordColorAqua $ CreateEmbed "" "" Nothing (formatHelpTitle hp) "" Nothing (formatHelp uPerm hp) [] Nothing "" Nothing Nothing Nothing
+  sendEmbedMessage m "" $ addColour colHelp $ CreateEmbed "" "" Nothing (formatHelpTitle hp) "" Nothing (formatHelp uPerm hp) [] Nothing "" Nothing Nothing Nothing
 
 formatHelpTitle :: HelpPage -> Text
 formatHelpTitle hp = ":scroll:  " <> if helpName hp == "" then "Sahasrara" else "Help: `$" <> helpName hp <> "`"

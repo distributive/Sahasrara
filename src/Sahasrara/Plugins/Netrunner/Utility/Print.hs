@@ -42,6 +42,7 @@ import Sahasrara.Plugins.Netrunner.Utility.Embed
 import Sahasrara.Plugins.Netrunner.Utility.Find
 import Sahasrara.Plugins.Netrunner.Utility.Format (formatText)
 import Sahasrara.Utility
+import Sahasrara.Utility.Colour
 import Sahasrara.Utility.Discord (formatFromEmojiName, sendEmbedMessage)
 import Sahasrara.Utility.Embed (addColour)
 import Sahasrara.Utility.Types ()
@@ -107,7 +108,7 @@ embedSetsOn title url pre predicate m = do
   sep <- formatFromEmojiName "s_subroutine"
   let cols = mapMaybe (formatCycle api $ sep <> " ") $ filter predicate $ cycles api
       ordered = filter isCycle cols ++ filter (not . isCycle) cols
-  sendEmbedMessage m "" $ addColour DiscordColorBlue $ embedColumnsWithUrl title url pre ordered
+  sendEmbedMessage m "" $ addColour colInfo $ embedColumnsWithUrl title url pre ordered
   where
     formatCycle :: NrApi -> Text -> Cycle -> Maybe (Text, [Text])
     formatCycle NrApi {packs = packs} sep c =
@@ -135,7 +136,7 @@ embedCycles m = do
       pre = ":white_check_mark: legal | :repeat: rotated"
       list = intercalate "\n" $ map formatCycle $ filter (isCycle api) $ cycles api
       text = pre <> "\n\n" <> list
-  sendEmbedMessage m "" $ addColour DiscordColorBlue $ embedTextWithUrl title url text
+  sendEmbedMessage m "" $ addColour colInfo $ embedTextWithUrl title url text
   where
     formatCycle :: Cycle -> Text
     formatCycle c = (if C.rotated c then ":repeat: " else ":white_check_mark: ") <> C.name c
@@ -150,9 +151,9 @@ embedBanHistory card m = do
   api <- ask
   embed <- cardToEmbedWithText api card $ listBanHistory api card
   let colour = case toMwlStatus api (activeBanList api) card of
-        Banned -> DiscordColorRed
-        Legal -> DiscordColorGreen
-        _ -> DiscordColorYellow
+        Banned -> colNegative
+        Legal -> colPositive
+        _ -> colNeutral
   sendEmbedMessage m "" $ addColour colour embed
 
 -- | @embedBanLists@ embeds all banlists in Netrunner history.
@@ -160,7 +161,7 @@ embedBanLists :: Message -> EnvDatabaseDiscord NrApi ()
 embedBanLists m = do
   api <- ask
   let embed = embedTextWithUrl "Standard Banlists" "https://netrunnerdb.com/en/banlists" $ listBanLists api
-      colour = if latestBanListActive api then DiscordColorRed else DiscordColorYellow
+      colour = if latestBanListActive api then colNegative else colNeutral
   sendEmbedMessage m "" $ addColour colour embed
 
 -- | @embedBanList@ embeds the list of cards affected by a given banlist.
@@ -169,5 +170,5 @@ embedBanList banList m = do
   api <- ask
   let (pre, cCards, rCards) = listAffectedCards api banList
       header = BanList.name banList <> if active banList then " (active)" else ""
-      colour = if active banList then DiscordColorRed else DiscordColorYellow
+      colour = if active banList then colNegative else colNeutral
   sendEmbedMessage m "" $ addColour colour $ embedColumns header pre [("Corp Cards", cCards), ("Runner Cards", rCards)]

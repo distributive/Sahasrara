@@ -15,12 +15,13 @@ import Data.Distribution (isValid)
 import Data.Maybe (fromMaybe)
 import Data.Text (Text, intercalate, pack, replicate, unpack)
 import qualified Data.Text as T
-import Discord.Types (CreateEmbedImage (CreateEmbedImageUpload), DiscordColor (..), Message (messageAuthor))
+import Discord.Types (CreateEmbedImage (CreateEmbedImageUpload), Message (messageAuthor))
 import Sahasrara.Plugins.Roll.Dice
 import Sahasrara.Plugins.Roll.Dice.DiceData
 import Sahasrara.Plugins.Roll.Dice.DiceStats (getStats, rangeExpr)
 import Sahasrara.Plugins.Roll.Dice.DiceStatsBase (distributionByteString)
 import Sahasrara.Utility
+import Sahasrara.Utility.Colour
 import Sahasrara.Utility.Discord (Format (Code), formatText, sendEmbedMessage, toMention)
 import Sahasrara.Utility.Embed (addColour, addImageUpload, basicEmbed, simpleEmbed)
 import Sahasrara.Utility.Exception (BotException (EvaluationException), throwBot)
@@ -40,8 +41,8 @@ rollDice' e' t m = do
     (Right b) -> liftIO $ first Right <$> evalInteger b
   let msg = makeMsg vs ss
   if countFormatting msg < 199
-    then sendEmbedMessage m "" $ addColour DiscordColorDiscordWhite $ basicEmbed ":game_die: Result :game_die:" msg
-    else sendEmbedMessage m "" $ addColour DiscordColorDiscordWhite $ basicEmbed ":game_die: Result :game_die:" (makeMsg (simplify vs) (prettyShow e <> " _(could not display rolls)_"))
+    then sendEmbedMessage m "" $ addColour colRoll $ basicEmbed ":game_die: Result :game_die:" msg
+    else sendEmbedMessage m "" $ addColour colRoll $ basicEmbed ":game_die: Result :game_die:" (makeMsg (simplify vs) (prettyShow e <> " _(could not display rolls)_"))
   where
     dsc = maybe ": " (\(Qu t') -> " \"" <> t' <> "\": `") t
     baseMsg = toMention (messageAuthor m) <> " rolled" <> dsc
@@ -145,12 +146,12 @@ statsCommand = Command "stats" statsCommandParser []
           mimage <- liftIO $ timeout (oneSecond * 5) (distributionByteString range' >>= \res -> res `seq` return res)
           case mimage of
             Nothing -> do
-              sendEmbedMessage m "" $ addColour DiscordColorDiscordWhite $ simpleEmbed $ msg range'
+              sendEmbedMessage m "" $ addColour colRoll $ simpleEmbed $ msg range'
               throwBot (EvaluationException "Timed out displaying statistics." [])
             Just image -> do
               sendEmbedMessage m "" $
                 addImageUpload (CreateEmbedImageUpload $ toStrict image) $
-                  addColour DiscordColorDiscordWhite $
+                  addColour colRoll $
                     simpleEmbed $ msg range'
       where
         msg [(d, t)] =

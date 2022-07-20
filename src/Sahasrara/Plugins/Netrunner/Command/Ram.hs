@@ -20,6 +20,7 @@ import Sahasrara.Plugins.Netrunner.Type.Pack (Pack (cycleCode, name))
 import qualified Sahasrara.Plugins.Netrunner.Type.Pack as P
 import Sahasrara.Plugins.Netrunner.Utility.Embed (embedText)
 import Sahasrara.Utility
+import Sahasrara.Utility.Colour
 import Sahasrara.Utility.Discord (sendEmbedMessage)
 import Sahasrara.Utility.Embed (addColour)
 import Sahasrara.Utility.Exception (BotException (GenericException), throwBot)
@@ -50,7 +51,7 @@ embedRam a b m = do
       legalPacks = name <$> snd ram
       codes = intercalate "|" $ map P.code $ (fst ram) ++ (snd ram)
   sendEmbedMessage m "" $
-    addColour DiscordColorGreen $
+    addColour colInfo $
       embedText ":game_die: RAM :game_die:" $
         (if length bigBoxes > 0 then "**Large Releases**\n" <> intercalate "\n" bigBoxes <> "\n\n" else "")
           <> (if length legalPacks > 0 then "**Data Packs**\n" <> intercalate "\n" legalPacks <> "\n\n" else "")

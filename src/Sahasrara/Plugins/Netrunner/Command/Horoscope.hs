@@ -26,6 +26,7 @@ import Sahasrara.Plugins.Netrunner.Type.NrApi (NrApi (..))
 import Sahasrara.Plugins.Netrunner.Utility.Embed
 import Sahasrara.Plugins.Netrunner.Utility.Format (formatText)
 import Sahasrara.Utility
+import Sahasrara.Utility.Colour
 import Sahasrara.Utility.Discord (sendEmbedMessage)
 import Sahasrara.Utility.Embed (addColour)
 import Sahasrara.Utility.Random (chooseOneSeeded)
@@ -44,7 +45,7 @@ nrHoroscope = Command "horoscope" horoscopePars []
       seed <- liftIO $ getCurrentTime >>= return . fromIntegral . toModifiedJulianDay . utctDay
       f <- liftIO $ chooseOneSeeded seed fs
       f' <- formatText f
-      sendEmbedMessage m "" $ addColour (DiscordColorRGB 170 141 216) $ embedText ":crystal_ball: Horoscope :crystal_ball:" $ replaceAll [r|"(.*?)"[.\S\s]*|] "$1" f'
+      sendEmbedMessage m "" $ addColour colHoroscope $ embedText ":crystal_ball: Horoscope :crystal_ball:" $ replaceAll [r|"(.*?)"[.\S\s]*|] "$1" f'
     filterFlavours :: Blacklist -> [Card] -> [Text]
     filterFlavours Blacklist {badSubstrings = badSubstrings, badCards = badCards} cards =
       let flavoured = filter ((Nothing /=) . flavour) cards

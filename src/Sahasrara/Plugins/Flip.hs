@@ -13,6 +13,7 @@ import Control.Monad.IO.Class (MonadIO (liftIO))
 import Data.Text (pack)
 import Discord.Types
 import Sahasrara.Utility
+import Sahasrara.Utility.Colour
 import Sahasrara.Utility.Discord (formatFromEmojiName, sendEmbedMessage)
 import Sahasrara.Utility.Embed (addColour, basicEmbed)
 import Sahasrara.Utility.Parser
@@ -78,7 +79,7 @@ mark = Command "mark" (parseComm markComm) []
   where
     markComm :: () -> Message -> DatabaseDiscord ()
     markComm () m = do
-      (result, colour) <- liftIO $ chooseOne [("HQ", DiscordColorBlue), ("R&D", DiscordColorGreen), ("Archives", DiscordColorRed)]
+      (result, colour) <- liftIO $ chooseOne [("HQ", colHQ), ("R&D", colRnD), ("Archives", colArchives)]
       sendEmbedMessage m "" $ addColour colour $ basicEmbed ":game_die: Result :game_die:" ("**Your mark is:** " <> result)
 
 markHelp :: HelpPage

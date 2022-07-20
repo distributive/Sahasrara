@@ -23,6 +23,7 @@ import Control.Monad.Exception (Exception, MonadException, catch, throw)
 import Data.List (intercalate)
 import Data.Text (pack)
 import Discord.Internal.Types
+import Sahasrara.Utility.Colour
 import Sahasrara.Utility.Embed
 
 -- | @BotException@ is the type for errors caught in Sahasrara.
@@ -97,7 +98,7 @@ showUserError e = formatUserError (errorName e) (errorMsg e)
 embedError :: BotException -> CreateEmbed
 embedError e =
   addTitle (pack $ errorEmoji ++ " **" ++ errorName e ++ "** " ++ errorEmoji) $
-    addColour DiscordColorRed $
+    addColour colError $
       simpleEmbed (pack $ errorMsg e)
 
 -- | @errorInfo@ takes a BotException and converts it into an ErrorInfo struct.

@@ -26,6 +26,7 @@ import Sahasrara.Plugins.ONR.Type.Card (Card (..), Stat (..))
 import Sahasrara.Plugins.ONR.Type.OnrApi (OnrApi (..))
 import Sahasrara.Plugins.ONR.Utility.Misc (formatNr)
 import Sahasrara.Utility
+import Sahasrara.Utility.Colour
 import Sahasrara.Utility.Types ()
 
 -- | @toImage@ takes a Netrunner card and loads an embed image of it.
@@ -104,10 +105,10 @@ toReleaseData card = fromMaybe "" $ do
 -- | @toColour@ gets the factional colour of a card to use in its embed.
 toColour :: Card -> DiscordColor
 toColour card = case rarity card of
-  Just "Uncommon" -> DiscordColorRGB 71 177 80
-  Just "Rare" -> DiscordColorRGB 71 93 177
-  Just "Vital" -> DiscordColorRGB 145 71 177
-  _ -> DiscordColorRGB 177 150 71
+  Just "Vital" -> colVital
+  Just "Rare" -> colRare
+  Just "Uncommon" -> colUncommon
+  _ -> colCommon
 
 -- | @toFlavour@ gets a cards flavour text.
 toFlavour :: Card -> EnvDatabaseDiscord OnrApi (Maybe Text)
