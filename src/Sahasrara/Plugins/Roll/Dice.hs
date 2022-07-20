@@ -69,4 +69,4 @@ import Sahasrara.Plugins.Roll.Dice.DiceParsing ()
 
 -- | The default expression to evaluate if no expression is given.
 defaultRoll :: Expr
-defaultRoll = promote (Die (Value 20))
+defaultRoll = promote (Die (Value 6))
