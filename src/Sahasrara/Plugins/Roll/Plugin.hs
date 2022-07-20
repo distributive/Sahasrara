@@ -107,8 +107,7 @@ rollHelp =
 rollHelpText :: Text
 rollHelpText =
   pack $
-    [r|**Roll**
-Given an expression, evaluate the expression. Can roll inline using `#1d6#`.
+    [r|Given an expression, evaluates the expression. You can roll dice inline using `#` (e.g. `#1d6#`).
 
 This supports addition, subtraction, multiplication, integer division, exponentiation, parentheses, dice of arbitrary size, dice with custom sides, rerolling dice once on a condition, rerolling dice indefinitely on a condition, keeping or dropping the highest or lowest dice, keeping or dropping dice based on a condition, operating on lists (which have a maximum, configurable size of 50), and using functions like |]
       ++ unpack (intercalate ", " integerFunctionsList)
