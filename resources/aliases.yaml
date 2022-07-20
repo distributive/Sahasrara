@@ -122,7 +122,6 @@ aliases:
   basket ball: "Fast Break"
   bitcoin: "TGTBT"
   boxer girl: "Leela Patel: Trained Pragmatist"
-  butler: "Jeeves Model Bioroids"
   catch me if you can: "Gingerbread"
   cowabunga: "Surfer"
   darude: "Sand Storm"
@@ -173,6 +172,14 @@ aliases:
   bot: "Sahasrara"
   the bot: "Sahasrara"
   you: "Sahasrara"
+
+  # Those who came before
+  butler: "Jeeves Model Bioroids"
+  the butler: "Jeeves Model Bioroids"
+  mezuzi: "Jeeves Model Bioroids"
+  plant: "Beanstalk Royalties"
+  the plant: "Beanstalk Royalties"
+  doug: "Beanstalk Royalties"
 
   # Mr Phones
   cell phone: "Underworld Contracts" #"02069"

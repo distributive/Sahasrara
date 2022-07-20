@@ -25,7 +25,7 @@ import Data.Text (pack)
 import Discord.Internal.Types
 import Sahasrara.Utility.Embed
 
--- | @BotException@ is the type for errors caught in TableBot.
+-- | @BotException@ is the type for errors caught in Sahasrara.
 -- Declare new errors here, and define them at the bottom of the file.
 data BotException
   = GenericException String String

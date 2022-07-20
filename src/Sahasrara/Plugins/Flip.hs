@@ -34,7 +34,7 @@ flip = Command "flip" flipcomm []
         c <- case length args of
           0 -> liftIO $ chooseOne [":arrow_up: Heads", ":arrow_down: Tails"]
           _ -> liftIO $ chooseOne $ map (\a -> "> " <> pack a) args
-        sendEmbedMessage m "" $ basicEmbed ":game_die: Result :game_die:" c
+        sendEmbedMessage m "" $ basicEmbed ":coin: Result :coin:" c
 
 flipHelp :: HelpPage
 flipHelp =
@@ -58,7 +58,7 @@ side = Command "side" (parseComm sideComm) []
       corp <- formatFromEmojiName "s_corp"
       runner <- formatFromEmojiName "s_runner"
       result <- liftIO $ chooseOne [corp <> " Corp", runner <> " Runner"]
-      sendEmbedMessage m "" $ basicEmbed ":game_die: Result :game_die:" result
+      sendEmbedMessage m "" $ basicEmbed ":coin: Result :coin:" result
 
 sideHelp :: HelpPage
 sideHelp =
