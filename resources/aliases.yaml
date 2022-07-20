@@ -167,6 +167,8 @@ aliases:
   violin: "Virtuoso"
   coffee: "Cezve"
   jenkins northern plaza: "Pravdivost Consulting: Political Solutions"
+  baseball bat: "Retribution"
+  mammoth: "Regenesis"
 
   # I am
   flower: "Sahasrara"
@@ -240,6 +242,12 @@ aliases:
   kahiue: "Kuwinda K4H1U3"
   malia zoloka: "Malia Z0L0K4"
   zoloka: "Malia Z0L0K4"
+
+  # Fairchilds
+  fc1: Fairchild 1.0
+  fc2: Fairchild 2.0
+  fc3: Fairchild 3.0
+  fc: Fairchild
 
   # Orbs
   green ball: "Rezeki"
