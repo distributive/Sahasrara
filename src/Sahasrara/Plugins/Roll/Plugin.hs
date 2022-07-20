@@ -18,7 +18,6 @@ import qualified Data.Text as T
 import Discord (restCall)
 import Discord.Internal.Rest.Channel (ChannelRequest (CreateMessageDetailed), MessageDetailedOpts (MessageDetailedOpts))
 import Discord.Types (Message (messageAuthor, messageChannelId))
-import System.Timeout (timeout)
 import Sahasrara.Plugins.Roll.Dice
 import Sahasrara.Plugins.Roll.Dice.DiceData
 import Sahasrara.Plugins.Roll.Dice.DiceStats (getStats, rangeExpr)
@@ -28,6 +27,7 @@ import Sahasrara.Utility.Discord (Format (Code), formatText, sendMessage, toMent
 import Sahasrara.Utility.Exception (BotException (EvaluationException), throwBot)
 import Sahasrara.Utility.Parser (inlineCommandHelper, skipSpace)
 import Sahasrara.Utility.SmartParser (PComm (parseComm), Quoted (Qu), WithError (WErr), pars)
+import System.Timeout (timeout)
 import Text.Megaparsec
 import Text.RawString.QQ (r)
 
