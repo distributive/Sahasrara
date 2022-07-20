@@ -65,6 +65,12 @@ addImage url e =
     { createEmbedImage = Just $ CreateEmbedImageUrl url
     }
 
+addImageUpload :: Embeddable e => CreateEmbedImage -> e -> CreateEmbed
+addImageUpload upload e =
+  (asEmbed e)
+    { createEmbedImage = Just $ upload
+    }
+
 addThumbnail :: Embeddable e => Text -> e -> CreateEmbed
 addThumbnail url e =
   (asEmbed e)

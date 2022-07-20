@@ -8,26 +8,25 @@
 -- A command that outputs the result of rolling the input dice.
 module Sahasrara.Plugins.Roll.Plugin (rollPlugin) where
 
-import Control.Monad.Writer (MonadIO (liftIO), void)
+import Control.Monad.Writer (MonadIO (liftIO))
 import Data.Bifunctor (Bifunctor (first))
 import Data.ByteString.Lazy (toStrict)
 import Data.Distribution (isValid)
 import Data.Maybe (fromMaybe)
 import Data.Text (Text, intercalate, pack, replicate, unpack)
 import qualified Data.Text as T
-import Discord (restCall)
-import Discord.Internal.Rest.Channel (ChannelRequest (CreateMessageDetailed), MessageDetailedOpts (MessageDetailedOpts))
-import Discord.Types (Message (messageAuthor, messageChannelId))
+import Discord.Types (Message (messageAuthor), DiscordColor (..), CreateEmbedImage (CreateEmbedImageUpload))
 import Sahasrara.Plugins.Roll.Dice
 import Sahasrara.Plugins.Roll.Dice.DiceData
 import Sahasrara.Plugins.Roll.Dice.DiceStats (getStats, rangeExpr)
 import Sahasrara.Plugins.Roll.Dice.DiceStatsBase (distributionByteString)
 import Sahasrara.Utility
-import Sahasrara.Utility.Discord (Format (Code), formatText, sendMessage, toMention)
+import Sahasrara.Utility.Discord (Format (Code), formatText, sendEmbedMessage, toMention)
 import Sahasrara.Utility.Exception (BotException (EvaluationException), throwBot)
 import Sahasrara.Utility.Parser (inlineCommandHelper, skipSpace)
 import Sahasrara.Utility.SmartParser (PComm (parseComm), Quoted (Qu), WithError (WErr), pars)
 import System.Timeout (timeout)
+import Sahasrara.Utility.Embed (addColour, addImageUpload, basicEmbed, simpleEmbed)
 import Text.Megaparsec
 import Text.RawString.QQ (r)
 
@@ -41,13 +40,13 @@ rollDice' e' t m = do
     (Right b) -> liftIO $ first Right <$> evalInteger b
   let msg = makeMsg vs ss
   if countFormatting msg < 199
-    then sendMessage m msg
-    else sendMessage m (makeMsg (simplify vs) (prettyShow e <> " `[could not display rolls]`"))
+    then sendEmbedMessage m "" $ addColour DiscordColorDiscordWhite $ basicEmbed ":game_die: Result :game_die:" msg
+    else sendEmbedMessage m "" $ addColour DiscordColorDiscordWhite $ basicEmbed ":game_die: Result :game_die:" (makeMsg (simplify vs) (prettyShow e <> " _(could not display rolls)_"))
   where
-    dsc = maybe ": " (\(Qu t') -> " \"" <> t' <> "\": ") t
+    dsc = maybe ": " (\(Qu t') -> " \"" <> t' <> "\": `") t
     baseMsg = toMention (messageAuthor m) <> " rolled" <> dsc
     makeLine (i, s) = pack (show i) <> Data.Text.replicate (max 0 (6 - length (show i))) " " <> " ⟵ " <> s
-    makeMsg (Right v) s = baseMsg <> s <> ".\nOutput: " <> pack (show v)
+    makeMsg (Right v) s = baseMsg <> s <> ".\nOutput: `" <> pack (show v) <> "`"
     makeMsg (Left []) _ = baseMsg <> "No output."
     makeMsg (Left ls) ss
       | all (T.null . snd) ls = baseMsg <> ss <> "\nOutput: {" <> intercalate ", " (pack . show . fst <$> ls) <> "}"
@@ -91,7 +90,7 @@ rollDice = Command "roll" rollDiceParser [statsCommand]
 
 -- | Rolling dice inline.
 rollDiceInline :: InlineCommand
-rollDiceInline = inlineCommandHelper "[|" "|]" pars (\e m -> rollDice' (Just e) Nothing m)
+rollDiceInline = inlineCommandHelper "#" "#" pars (\e m -> rollDice' (Just e) Nothing m)
 
 -- | Help page for rolling dice, with a link to the help page.
 rollHelp :: HelpPage
@@ -99,7 +98,7 @@ rollHelp =
   HelpPage
     "roll"
     ["r"]
-    "roll dice and do maths"
+    "rolls dice and does maths"
     rollHelpText
     [statsHelp]
     None
@@ -109,9 +108,7 @@ rollHelpText :: Text
 rollHelpText =
   pack $
     [r|**Roll**
-Given an expression, evaluate the expression. Can roll inline using |]
-      ++ "`[|to roll|]`."
-      ++ [r| Can use `r` instead of `roll`.
+Given an expression, evaluate the expression. Can roll inline using `#1d6#`.
 
 This supports addition, subtraction, multiplication, integer division, exponentiation, parentheses, dice of arbitrary size, dice with custom sides, rerolling dice once on a condition, rerolling dice indefinitely on a condition, keeping or dropping the highest or lowest dice, keeping or dropping dice based on a condition, operating on lists (which have a maximum, configurable size of 50), and using functions like |]
       ++ unpack (intercalate ", " integerFunctionsList)
@@ -119,40 +116,15 @@ This supports addition, subtraction, multiplication, integer division, exponenti
       ++ unpack (intercalate ", " listFunctionsList)
       ++ [r| (which return lists).
 
-To see a full list of uses, options and limitations, please go to <https://github.com/WarwickTabletop/tablebot/blob/stable/docs/Roll.md>.
+To see a full list of uses, options and limitations, please go to <https://github.com/distributive/Sahasrara/blob/main/docs/Roll.md>.
 
 *Usage:*
-  - `roll 1d20` -> rolls a twenty sided die and returns the outcome
-  - `roll 3d6 + 5d4` -> sums the result of rolling three d6s and five d4s
-  - `roll 2d20kh1` -> keeps the highest value out of rolling two d20s
-  - `roll 5d10dl4` -> roll five d10s and drop the lowest four
+`roll` rolls a 6-sided die
+`roll 1d20` rolls a 20-sided die
+`roll 3d6 + 5d4` sums the result of rolling three d6s and five d4s
+`roll 2d20kh1` keeps the highest value out of rolling two d20s
+`roll 5d10dl4` rolls five d10s and drop the lowest four
 |]
-
--- | Command for generating characters.
-genchar :: Command
-genchar = Command "genchar" (snd $ head rpgSystems') (toCommand <$> rpgSystems')
-  where
-    doDiceRoll (nm, lv) = (nm, parseComm $ rollDice' (Just (Left lv)) (Just (Qu ("genchar for " <> nm))))
-    rpgSystems' = doDiceRoll <$> rpgSystems
-    toCommand (nm, ps) = Command nm ps []
-
--- | List of supported genchar systems and the dice used to roll for them
-rpgSystems :: [(Text, ListValues)]
-rpgSystems =
-  [ ("dnd", MultipleValues (Value 6) (DiceBase (Dice (NBase (Value 4)) (Die (Value 6)) (Just (DieOpRecur (DieOpOptionKD Drop (Low (Value 1))) Nothing))))),
-    ("wfrp", MultipleValues (Value 8) (NBase (NBParen (Paren (Add (promote (Value 20)) (promote (Die (Value 10))))))))
-  ]
-
--- | Small help page for gen char.
-gencharHelp :: HelpPage
-gencharHelp =
-  HelpPage
-    "genchar"
-    []
-    "generate stat arrays for some systems"
-    ("**Genchar**\nCan be used to generate stat arrays for certain systems.\n\nCurrently supported systems: " <> intercalate ", " (fst <$> rpgSystems) <> ".\n\n*Usage:* `genchar`, `genchar dnd`")
-    []
-    None
 
 -- | The command to get the statistics for an expression and display the
 -- results.
@@ -174,39 +146,40 @@ statsCommand = Command "stats" statsCommandParser []
           mimage <- liftIO $ timeout (oneSecond * 5) (distributionByteString range' >>= \res -> res `seq` return res)
           case mimage of
             Nothing -> do
-              sendMessage m (msg range')
+              sendEmbedMessage m "" $ addColour DiscordColorDiscordWhite $ simpleEmbed $ msg range'
               throwBot (EvaluationException "Timed out displaying statistics." [])
-            (Just image) -> do
-              liftDiscord $
-                void $
-                  restCall
-                    ( CreateMessageDetailed (messageChannelId m) (MessageDetailedOpts (msg range') False Nothing (Just (T.unwords (snd <$> range') <> ".png", toStrict image)) Nothing Nothing Nothing Nothing)
-                    )
+            Just image -> do
+              sendEmbedMessage m ""
+                $ addImageUpload (CreateEmbedImageUpload $ toStrict image)
+                $ addColour DiscordColorDiscordWhite
+                $ simpleEmbed $ msg range'
       where
         msg [(d, t)] =
           if (not . isValid) d
             then "The distribution was empty."
             else
               let (modalOrder, mean, std) = getStats d
-               in ( "Here are the statistics for your dice ("
+               in ( "Here are the statistics for your dice (`"
                       <> formatText Code t
-                      <> ").\n  Ten most common totals: "
+                      <> "`):\nThe ten most common totals: `"
                       <> T.pack (show (take 10 modalOrder))
-                      <> "\n  Mean: "
+                      <> "`\nMean: `"
                       <> roundShow mean
-                      <> "\n  Standard deviation: "
+                      <> "`\nStandard deviation: `"
                       <> roundShow std
+                      <> "`"
                   )
         msg dts =
           let (modalOrders, means, stds) = unzip3 $ getStats . fst <$> dts
-           in ( "Here are the statistics for your dice ("
+           in ( "Here are the statistics for your dice (`"
                   <> intercalate ", " (formatText Code . snd <$> dts)
-                  <> ").\n  Most common totals (capped to ten total): "
+                  <> "`):\nThe ten most common totals: `"
                   <> T.pack (show (take (div 10 (length modalOrders)) <$> modalOrders))
-                  <> "\n  Means: "
+                  <> "`\nMeans: `"
                   <> intercalate ", " (roundShow <$> means)
-                  <> "\n  Standard deviations: "
+                  <> "`\nStandard deviations: `"
                   <> intercalate ", " (roundShow <$> stds)
+                  <> "`"
               )
         roundShow :: Double -> Text
         roundShow d = T.pack $ show $ fromInteger (round (d * 10 ** precision)) / 10 ** precision
@@ -220,7 +193,13 @@ statsHelp =
     "stats"
     []
     "calculate and display statistics for expressions."
-    "**Roll Stats**\nCan be used to display statistics for expressions of dice.\n\n*Usage:* `roll stats 2d20kh1`, `roll stats 4d6rr=1dl1+5`, `roll stats 3d6dl1+6 4d6dl1`"
+    [r|**Roll Stats**
+    Can be used to display statistics for expressions of dice.
+
+    *Usage:*
+    `roll stats 2d20kh1`
+    `roll stats 4d6rr=1dl1+5`
+    `roll stats 3d6dl1+6 4d6dl1`|]
     []
     None
 
@@ -228,7 +207,7 @@ statsHelp =
 rollPlugin :: Plugin
 rollPlugin =
   (plug "roll")
-    { commands = [rollDice, commandAlias "r" rollDice, genchar],
-      helpPages = [rollHelp, gencharHelp],
+    { commands = [rollDice, commandAlias "r" rollDice],
+      helpPages = [rollHelp],
       inlineCommands = [rollDiceInline]
     }
