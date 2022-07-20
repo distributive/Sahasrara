@@ -15,18 +15,18 @@ import Data.Distribution (isValid)
 import Data.Maybe (fromMaybe)
 import Data.Text (Text, intercalate, pack, replicate, unpack)
 import qualified Data.Text as T
-import Discord.Types (Message (messageAuthor), DiscordColor (..), CreateEmbedImage (CreateEmbedImageUpload))
+import Discord.Types (CreateEmbedImage (CreateEmbedImageUpload), DiscordColor (..), Message (messageAuthor))
 import Sahasrara.Plugins.Roll.Dice
 import Sahasrara.Plugins.Roll.Dice.DiceData
 import Sahasrara.Plugins.Roll.Dice.DiceStats (getStats, rangeExpr)
 import Sahasrara.Plugins.Roll.Dice.DiceStatsBase (distributionByteString)
 import Sahasrara.Utility
 import Sahasrara.Utility.Discord (Format (Code), formatText, sendEmbedMessage, toMention)
+import Sahasrara.Utility.Embed (addColour, addImageUpload, basicEmbed, simpleEmbed)
 import Sahasrara.Utility.Exception (BotException (EvaluationException), throwBot)
 import Sahasrara.Utility.Parser (inlineCommandHelper, skipSpace)
 import Sahasrara.Utility.SmartParser (PComm (parseComm), Quoted (Qu), WithError (WErr), pars)
 import System.Timeout (timeout)
-import Sahasrara.Utility.Embed (addColour, addImageUpload, basicEmbed, simpleEmbed)
 import Text.Megaparsec
 import Text.RawString.QQ (r)
 
@@ -149,10 +149,10 @@ statsCommand = Command "stats" statsCommandParser []
               sendEmbedMessage m "" $ addColour DiscordColorDiscordWhite $ simpleEmbed $ msg range'
               throwBot (EvaluationException "Timed out displaying statistics." [])
             Just image -> do
-              sendEmbedMessage m ""
-                $ addImageUpload (CreateEmbedImageUpload $ toStrict image)
-                $ addColour DiscordColorDiscordWhite
-                $ simpleEmbed $ msg range'
+              sendEmbedMessage m "" $
+                addImageUpload (CreateEmbedImageUpload $ toStrict image) $
+                  addColour DiscordColorDiscordWhite $
+                    simpleEmbed $ msg range'
       where
         msg [(d, t)] =
           if (not . isValid) d
