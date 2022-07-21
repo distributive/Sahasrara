@@ -35,12 +35,14 @@ import Sahasrara.Plugins.Netrunner.Type.Card (Card (code, text))
 import Sahasrara.Plugins.Netrunner.Type.Cycle (Cycle)
 import qualified Sahasrara.Plugins.Netrunner.Type.Cycle as C
 import Sahasrara.Plugins.Netrunner.Type.NrApi (NrApi (..))
+import Sahasrara.Plugins.Netrunner.Type.Pack (Pack)
 import qualified Sahasrara.Plugins.Netrunner.Type.Pack as P
 import Sahasrara.Plugins.Netrunner.Utility.BanList (activeBanList, latestBanListActive, listAffectedCards, listBanHistory, listBanLists, toMwlStatus)
 import Sahasrara.Plugins.Netrunner.Utility.Card (toPack)
 import Sahasrara.Plugins.Netrunner.Utility.Embed
 import Sahasrara.Plugins.Netrunner.Utility.Find
 import Sahasrara.Plugins.Netrunner.Utility.Format (formatText)
+import Sahasrara.Plugins.Netrunner.Utility.Pack (toCycleName)
 import Sahasrara.Utility
 import Sahasrara.Utility.Colour
 import Sahasrara.Utility.Discord (formatFromEmojiName, sendEmbedMessage)
@@ -89,9 +91,17 @@ embedCardSets card m = do
   api <- ask
   let printings = queryPrintings api card
       sets = mapMaybe (toPack api) printings
-      entries = map (\s -> "`" <> P.code s <> "` - " <> P.name s) sets
+      entries = map (\s -> "`" <> P.code s <> "` - " <> P.name s <> cycleName api s) sets
   embed <- cardToEmbedWithText api (head printings) $ intercalate "\n" entries
   sendEmbedMessage m "" embed
+  where
+    cycleName :: NrApi -> Pack -> Text
+    cycleName api set = case toCycleName api set of
+      Nothing -> ""
+      Just name ->
+        if name == P.name set
+          then ""
+          else " (" <> name <> ")"
 
 -- | @embedSets@ embeds all sets from Netrunner history.
 embedSets :: Message -> EnvDatabaseDiscord NrApi ()
