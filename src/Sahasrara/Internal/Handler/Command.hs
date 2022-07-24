@@ -71,7 +71,7 @@ parseCommands cs m prefix = case parse (parser cs) "" (messageContent m) of
         _ <- chunk prefix
         choice (map toErroringParser cs') <|> pure (const (pure ()))
     toErroringParser :: CompiledCommand -> Parser (Message -> CompiledDatabaseDiscord ())
-    toErroringParser c = try (chunk $ commandName c) *> (skipSpace1 <|> eof) *> (try (choice $ map toErroringParser $ commandSubcommands c) <|> commandParser c)
+    toErroringParser c = try (chunk (commandName c) *> (skipSpace1 <|> eof)) *> (try (choice $ map toErroringParser $ commandSubcommands c) <|> commandParser c)
 
 data ReadableError = UnknownError | KnownError String [String]
   deriving (Show, Eq, Ord)
