@@ -26,7 +26,7 @@ import Data.Maybe (fromMaybe)
 import Data.Text (Text, pack, replace, unpack)
 import qualified Data.Text (toTitle)
 import Discord.Types
-import Sahasrara.Plugins.Netrunner.Type.Card (Card (..))
+import Sahasrara.Plugins.Netrunner.Type.Card (Card (..), statToText)
 import Sahasrara.Plugins.Netrunner.Type.Cycle (Cycle)
 import qualified Sahasrara.Plugins.Netrunner.Type.Cycle as Cycle
 import Sahasrara.Plugins.Netrunner.Type.Faction (Faction)
@@ -83,21 +83,23 @@ toSubtitle Card {..} =
     <> "**\n"
   where
     maybeIntToText = maybe "?" intToText
+    maybeStatToText = maybe "?" statToText
     maybeEmptyPrependI s mi = maybeEmptyPrepend s (intToText <$> mi)
+    maybeEmptyPrependS s mi = maybeEmptyPrepend s (statToText <$> mi)
     typeCode' = maybe "?" Data.Text.toTitle typeCode
     subtypes' = maybeEmptyPrepend ": " subtypes
     cost' =
       let rezText = " • Rez: "
        in case (cost, typeCode) of
             (Nothing, _) -> ""
-            (Just x, Just "asset") -> rezText <> intToText x
-            (Just x, Just "ice") -> rezText <> intToText x
-            (Just x, Just "upgrade") -> rezText <> intToText x
-            (Just x, _) -> " • Cost: " <> intToText x
+            (Just x, Just "asset") -> rezText <> statToText x
+            (Just x, Just "ice") -> rezText <> statToText x
+            (Just x, Just "upgrade") -> rezText <> statToText x
+            (Just x, _) -> " • Cost: " <> statToText x
     mu = maybeEmptyPrependI " • MU: " memoryCost
-    strength' = maybeEmptyPrependI " • Strength: " strength
+    strength' = maybeEmptyPrependS " • Strength: " strength
     agendaStats =
-      let adv = maybeIntToText advancementCost
+      let adv = maybeStatToText advancementCost
           points = maybeIntToText agendaPoints
        in case typeCode of
             Just "agenda" -> " • " <> adv <> "/" <> points

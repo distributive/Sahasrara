@@ -20,7 +20,7 @@ where
 
 import Data.List (findIndex, nub, nubBy)
 import Data.Map (Map, fromList)
-import Data.Maybe (fromMaybe, mapMaybe)
+import Data.Maybe (fromMaybe, isNothing, mapMaybe)
 import Data.Text (Text, intercalate, isInfixOf, pack, replace, splitOn, toLower, unpack, unwords)
 import Data.Text.Read (decimal)
 import Sahasrara.Plugins.Netrunner.Type.BanList (BanList)
@@ -41,6 +41,7 @@ import Prelude hiding (unwords)
 data Query
   = QText Text QueryComp (Card -> Maybe Text) [Text]
   | QInt Text QueryComp (Card -> Maybe Int) [Text]
+  | QStat Text QueryComp (Card -> Maybe Stat) [Text]
   | QBool Text QueryComp (Card -> Maybe Bool) [Text] -- TODO: make this a single Text?
   | QBan Text QueryComp (Text, BanList)
 
@@ -57,6 +58,7 @@ searchCards api pairs = Just $ nubBy cardEq $ foldr filterCards (cards api) pair
     filterCards :: Query -> [Card] -> [Card]
     filterCards (QText _ sep f xs) = filterText sep f xs
     filterCards (QInt _ sep f xs) = filterInt sep f xs
+    filterCards (QStat _ sep f xs) = filterStat sep f xs
     filterCards (QBool _ sep f xs) = filterBool sep f xs
     filterCards (QBan _ sep x) = filterBan sep x
     filterText :: QueryComp -> (Card -> Maybe Text) -> [Text] -> ([Card] -> [Card])
@@ -80,6 +82,22 @@ searchCards api pairs = Just $ nubBy cardEq $ foldr filterCards (cards api) pair
     compFunc QNE = (/=)
     compFunc QGT = (<)
     compFunc QLT = (>)
+    filterStat :: QueryComp -> (Card -> Maybe Stat) -> [Text] -> ([Card] -> [Card])
+    filterStat sep f xs =
+      let check c x = case (readMaybe :: String -> Maybe Int) $ unpack x of
+            Just _ -> checkVal c x
+            Nothing -> checkVar c x
+          checkVal c x = fromMaybe False $ do
+            a <- readMaybe $ unpack x
+            b <- f c
+            return $ case b of
+              Val b' -> (compFunc sep) a b'
+              Var _ -> False
+          checkVar c x = case f c of
+            Just (Var v) -> isInfixOf (standardise x) $ standardise v
+            _ -> False
+          fil c = any (check c) xs
+       in filter fil
     filterBool :: QueryComp -> (Card -> Maybe Bool) -> a -> ([Card] -> [Card])
     filterBool QEQ f _ = filter (fromMaybe False . f)
     filterBool QNE f _ = filter (maybe True not . f)
@@ -117,11 +135,11 @@ fixSearch api = mapMaybe fix
     format ("s", sep, v) = Just $ QText "s" sep subtypes v
     format ("d", sep, v) = Just $ QText "d" sep sideCode $ map fixSide v
     format ("i", sep, v) = Just $ QText "i" sep illustrator v
-    format ("o", sep, v) = Just $ QInt "o" sep cost v
-    format ("g", sep, v) = Just $ QInt "g" sep advancementCost v
+    format ("o", sep, v) = Just $ QStat "o" sep cost v
+    format ("g", sep, v) = Just $ QStat "g" sep advancementCost v
     format ("m", sep, v) = Just $ QInt "m" sep memoryCost v
     format ("n", sep, v) = Just $ QInt "n" sep factionCost v
-    format ("p", sep, v) = Just $ QInt "p" sep strength v
+    format ("p", sep, v) = Just $ QStat "p" sep strength v
     format ("v", sep, v) = Just $ QInt "v" sep agendaPoints v
     format ("h", sep, v) = Just $ QInt "h" sep trashCost v
     -- format ("r", sep, v) =
@@ -190,6 +208,9 @@ fixSearch api = mapMaybe fix
     checkComp (QInt k QGT f s) = if length s == 1 then Just (QInt k QGT f s) else Nothing
     checkComp (QInt k QLT f s) = if length s == 1 then Just (QInt k QLT f s) else Nothing
     checkComp (QInt k sep f s) = Just $ QInt k sep f s
+    checkComp (QStat k QGT f s) = if length s == 1 && (not $ isNothing $ (readMaybe :: String -> Maybe Int) $ unpack $ head s) then Just (QStat k QGT f s) else Nothing
+    checkComp (QStat k QLT f s) = if length s == 1 && (not $ isNothing $ (readMaybe :: String -> Maybe Int) $ unpack $ head s) then Just (QStat k QLT f s) else Nothing
+    checkComp (QStat k sep f s) = Just $ QStat k sep f s
     checkComp (QBool _ QGT _ _) = Nothing
     checkComp (QBool _ QLT _ _) = Nothing
     checkComp (QBool k sep f s) = Just $ QBool k sep f s
@@ -214,6 +235,7 @@ pairsToNrdb pairs = unwords queries
     format :: Query -> Text
     format (QText k sep _ vs) = format' k sep vs
     format (QInt k sep _ vs) = format' k sep vs
+    format (QStat k sep _ vs) = format' k sep vs
     format (QBool k sep _ vs) = format' k sep vs
     format (QBan k sep v) = format' k sep [fst v]
     format' :: Text -> QueryComp -> [Text] -> Text

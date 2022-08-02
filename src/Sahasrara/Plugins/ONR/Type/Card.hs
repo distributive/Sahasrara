@@ -59,7 +59,7 @@ instance FromJSON Card where
       <*> o .:? "trash_cost"
       <*> o .:? "type_code"
 
--- | @Value@ represents values that are either a numeric value or a variable (usually X)
+-- | @Stat@ represents values that are either a numeric value or a variable (usually X)
 data Stat = Var Text | Val Int deriving (Show, Generic)
 
 instance FromJSON Stat where
