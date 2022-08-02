@@ -30,7 +30,7 @@ import Sahasrara.Utility.Exception (BotException (GenericException), embedError)
 import Sahasrara.Utility.Parser (inlineCommandHelper, integer, skipSpace)
 import Sahasrara.Utility.Search (FuzzyCosts (..), closestValueWithCosts)
 import Sahasrara.Utility.Types ()
-import Text.Megaparsec (anySingleBut, single, some, try, (<|>))
+import Text.Megaparsec (anySingleBut, satisfy, single, some, try, (<|>))
 
 -- | @nrInline@ searches for cards by name.
 nrInline :: EnvInlineCommand NrApi
@@ -54,7 +54,7 @@ cardParser c = try withSetIndex <|> try withSet <|> withoutSet
   where
     withSetIndex :: Parser (Text, Either Int Text)
     withSetIndex = do
-      card <- some $ anySingleBut '|'
+      card <- some $ satisfy (`notElem` [c, '|'])
       _ <- single '|'
       skipSpace
       index <- integer
@@ -62,9 +62,9 @@ cardParser c = try withSetIndex <|> try withSet <|> withoutSet
       return (pack card, Left index)
     withSet :: Parser (Text, Either Int Text)
     withSet = do
-      card <- some $ anySingleBut '|'
+      card <- some $ satisfy (`notElem` [c, '|'])
       _ <- single '|'
-      set <- some $ anySingleBut c
+      set <- some $ satisfy (`notElem` [c, '|'])
       return (pack card, Right $ strip $ pack set)
     withoutSet :: Parser (Text, Either Int Text)
     withoutSet = do
