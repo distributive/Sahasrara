@@ -25,6 +25,7 @@ aliases:
   tenma: "Ken \"Express\" Tenma: Disappeared Clone"
   kit: 'Rielle "Kit" Peddler: Transhuman'
   lat: "Lat: Ethical Freelancer"
+  liza: "Liza Talking Thunder: Prominent Legislator"
   mac: 'Kate "Mac" McCaffrey: Digital Tinker'
   max: "MaxX: Maximum Punk Rock"
   masque: "The Masque: Cyber General"
@@ -100,6 +101,7 @@ aliases:
   glc: "Green Level Clearance"
   vlc: "Violet Level Clearance"
   uvc: "Ultraviolet Clearance"
+  rlc: "Red Level Clearance"
   dbs: "Daily Business Show"
   cvs: "Cyberdex Virus Suite"
   etf: "Haas-Bioroid: Engineering the Future"
@@ -259,6 +261,20 @@ aliases:
   fc2: Fairchild 2.0
   fc3: Fairchild 3.0
   fc: Fairchild
+
+  # n-walls
+  0-wall: "Vanilla"
+  0 wall: "Vanilla"
+  1-wall: "Ice Wall"
+  1 wall: "Ice Wall"
+  2-wall: "Himitsu-Baku"
+  2 wall: "Himitsu-Baku"
+  3-wall: "Wall of Static"
+  3 wall: "Wall of Static"
+  4-wall: "Bastion"
+  4 wall: "Bastion"
+  5-wall: "Fire Wall"
+  5 wall: "Fire Wall"
 
   # Orbs
   green ball: "Rezeki"
