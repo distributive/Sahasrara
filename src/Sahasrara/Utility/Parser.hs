@@ -190,7 +190,7 @@ inlineCommandHelper :: Text -> Text -> Parser e -> (e -> Message -> EnvDatabaseD
 inlineCommandHelper open close p action =
   InlineCommand
     ( do
-        getExprs <- some (try $ skipManyTill anySingle (string open *> skipSpace *> (((Right <$> try p) <* skipSpace <* string close) <|> (Left . T.pack <$> manyTill anySingle (string close)))))
+        getExprs <- some (try $ skipManyTill anySingle (string open *> skipSpace *> (((Right <$> try p) <* skipSpace <* string close) <|> (Left . T.pack <$> someTill anySingle (string close)))))
         return $ \m -> mapM_ (`action'` m) (take maxInlineCommands getExprs)
     )
   where
