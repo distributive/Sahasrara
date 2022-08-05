@@ -262,6 +262,23 @@ aliases:
   fc3: Fairchild 3.0
   fc: Fairchild
 
+  # Sequels
+  noise 2: "The Nihilist"
+  andromeda 2: "The Class Act"
+  andy 2: "The Class Act"
+  kate 2: "The Artist"
+  amped up 2: "Running Hot"
+  study guide 2: "Hyperbaric"
+  jackson howard 2: "Spin Doctor"
+  jackson 2: "Spin Doctor"
+  ive had worse 2: "Steelskin Scarring"
+  ihw 2: "Steelskin Scarring"
+  modded 2: "Rigging Up"
+  ghost branch 2: "Chekist Scion"
+  cyberdex virus suite 2: "Bladderwort"
+  cyberdex 2: "Bladderwort"
+  cvs 2: "Bladderwort"
+
   # n-walls
   0-wall: "Vanilla"
   0 wall: "Vanilla"
