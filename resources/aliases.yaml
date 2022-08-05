@@ -275,9 +275,9 @@ aliases:
   ihw 2: "Steelskin Scarring"
   modded 2: "Rigging Up"
   ghost branch 2: "Chekist Scion"
-  cyberdex virus suite 2: "Bladderwort"
-  cyberdex 2: "Bladderwort"
-  cvs 2: "Bladderwort"
+  cyberdex virus suite 2: "Mavirus"
+  cyberdex 2: "Mavirus"
+  cvs 2: "Mavirus"
 
   # n-walls
   0-wall: "Vanilla"
