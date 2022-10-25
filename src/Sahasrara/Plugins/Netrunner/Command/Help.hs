@@ -22,6 +22,7 @@ helpPageRoots =
     banListHelp,
     glossaryHelp,
     ramHelp,
+    jankHelp,
     horoscopeHelp
   ]
 
@@ -134,6 +135,21 @@ ramHelp =
 **Usage**
 `ram` generates a standard RAM card pool with 2 large expansions and 12 data packs
 `ram x y` generates a customised RAM card pool with `x` large expansions and `y` data packs|]
+    []
+    None
+
+jankHelp :: HelpPage
+jankHelp =
+  HelpPage
+    "jank"
+    []
+    "generates a janky combo"
+    [r|Generates a janky combo to build around, comprised of an identity and three valid cards for it.
+
+**Usage**
+`jank` generates a random ID and three valid cards to go in a deck with it
+`jank corp` generates a Corp combo
+`jank runner` generates a Runner combo|]
     []
     None
 
