@@ -32,17 +32,14 @@ searchHelp =
     []
     "gets a list of all Netrunner cards matching a search query"
     [r|Gets a list of all Netrunner cards matching a search query, matching NetrunnerDB's [syntax](<https://netrunnerdb.com/en/syntax>).
-Queries are case insensitive and show a maximum of 10 results. There is some shorthand you can use to simplify searches.
+Queries are case insensitive and show a maximum of 10 results.
 
-The following fields are not implemented:
-> `r` - release date
-> `z` - rotation
+Note that this uses NetrunnerDB's [new API](api-preview.netrunnerdb.com) which is still unstable and subject to changes and bugs.
 
 **Usage**
 `search x:advanced` all cards containing the text "advanced"
 `search o:1 f:nbn"` all 1-cost cards in NBN
 `search a:"and the"` all cards with "and the" in their flavour text
-`search premium jinteki ap ice` all non-zero-cost AP Jinteki ice
 |]
     []
     None
@@ -53,19 +50,15 @@ randomHelp =
     "random"
     []
     "randomly selects a card with optional conditions"
-    [r|Displays a random card from throughout Netrunner's history. NetrunnerDB [syntax](<https://netrunnerdb.com/en/syntax>) may be added to restrict the selection of cards.
-Queries are case insensitive, and there is some shorthand you can use to simplify commands.
+    [r|Displays a random card. NetrunnerDB [syntax](<https://netrunnerdb.com/en/syntax>) may be added to restrict the selection of cards. Queries are case insensitive.
 
-The following fields are not implemented:
-> `r` - release date
-> `z` - rotation
+Note that this uses NetrunnerDB's [new API](api-preview.netrunnerdb.com) which is still unstable and subject to changes and bugs.
 
 **Usage**
 `random` displays a random Netrunner card
 `random t:agenda` displays a random agenda
 `random o:5 f:-` displays a random 5-cost neutral card from either side
 `random _:"green level clearance"` displays Green Level Clearance
-`random free run event` displays a random 0-cost run event
 |]
     []
     None
@@ -75,12 +68,15 @@ banListHelp =
   HelpPage
     "banlist"
     ["bl", "mwl"]
-    "lists all cards affected by a given banlist"
-    [r|Shows the list of cards affected by the given banlist.
-`latest` and `active` will provide their respective banlists (they differ only when the latest banlist has not yet been made active). If no argument is given it will instead list all banlists from Netrunner history.
+    "lists all cards affected by a given banlist or all banlists of a given format"
+    [r|Shows the list of cards affected by a given banlist.
+If Startup, Standard, or Eternal is given instead, it will list the banlists of that format.
+`latest` and `active` will provide the latest and active Standard banlists (they differ only when the latest banlist has not yet been made active). If no argument is given it will instead list all Standard banlists.
 
 **Usage**
-`banlist` lists all Standard MWL entries
+`banlist` lists all Standard banlists and MWLs
+`banlist eternal` lists all Eternal Points List entries
+`banlist active` displays the active Standard banlist
 `banlist name` displays the history of the banlist version matching "name"|]
     []
     None
@@ -91,11 +87,12 @@ setsHelp =
     "sets"
     []
     "lists which sets a card was released in"
-    [r|Lists all sets a card was released in, excluding System Core 19.
+    [r|Lists all sets a card was released in, or all cards released in a specific cycle.
 
 **Usage**
 `sets` lists all Netrunner sets
-`sets Hedge Fund` shows the sets *Hedge Fund* was printed in|]
+`sets Hedge Fund` shows the sets *Hedge Fund* was printed in
+`sets Ashes` lists the sets released in the *Ashes* cycle|]
     []
     None
 
@@ -104,12 +101,11 @@ cyclesHelp =
   HelpPage
     "cycles"
     []
-    "lists the packs of a given cycle"
-    [r|Lists which packs are in a given cycle.
+    "lists all cycles"
+    [r|Lists all cycles.
 
 **Usage**
-`cycles` lists all cycles
-`cycles ashes` shows the packs from the Ashes cycle|]
+`cycles` lists all cycles|]
     []
     None
 

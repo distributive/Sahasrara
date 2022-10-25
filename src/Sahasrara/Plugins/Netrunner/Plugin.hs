@@ -11,11 +11,11 @@ module Sahasrara.Plugins.Netrunner.Plugin (netrunnerPlugin) where
 
 import Control.Monad.IO.Class
 import Sahasrara.Internal.Handler.Command ()
-import Sahasrara.Plugins.Netrunner.Command.BanList
 import Sahasrara.Plugins.Netrunner.Command.Find (nrInline, nrInlineBanHistory, nrInlineFlavour, nrInlineImg)
 import Sahasrara.Plugins.Netrunner.Command.Glossary (nrGlossary)
 import Sahasrara.Plugins.Netrunner.Command.Help (helpPageRoots)
 import Sahasrara.Plugins.Netrunner.Command.Horoscope (nrHoroscope)
+import Sahasrara.Plugins.Netrunner.Command.Legality
 import Sahasrara.Plugins.Netrunner.Command.Ram (nrRam)
 import Sahasrara.Plugins.Netrunner.Command.Search (nrRandom, nrSearch)
 import Sahasrara.Plugins.Netrunner.Command.Sets (nrCycles, nrSets)
@@ -37,9 +37,9 @@ netrunnerPlugin =
           nrRandom,
           nrSets,
           nrCycles,
-          nrBanList,
-          commandAlias "bl" nrBanList,
-          commandAlias "mwl" nrBanList,
+          nrRestriction,
+          commandAlias "bl" nrRestriction,
+          commandAlias "mwl" nrRestriction,
           nrGlossary,
           commandAlias "g" nrGlossary,
           nrRam,

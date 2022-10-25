@@ -10,6 +10,8 @@
 module Sahasrara.Utility.Utils where
 
 import Control.Monad (when)
+import qualified Data.Char as Char (toLower)
+import Data.Maybe (fromMaybe)
 import Data.Text (Text, filter, toLower)
 import Data.Text.ICU.Char (Bool_ (Diacritic), property)
 import Data.Text.ICU.Normalize (NormalizationMode (NFD), normalize)
@@ -19,19 +21,24 @@ import Data.Text.Lazy.Builder.Int (decimal)
 import System.Environment (lookupEnv)
 import Prelude hiding (filter)
 
-isDebug :: IO Bool
-isDebug = do
-  d <- lookupEnv "DEBUG"
-  return $ justDebug d
-  where
-    justDebug (Just "True") = True
-    justDebug (Just "true") = True
-    justDebug (Just "1") = True
-    justDebug _ = False
+lookupEnvDefault :: String -> String -> IO String
+lookupEnvDefault k def = do
+  v <- lookupEnv k
+  return $ fromMaybe def v
+
+lookupEnvBool :: String -> IO Bool
+lookupEnvBool k = do
+  v <- lookupEnv k
+  return $ case v of
+    Just s -> case map Char.toLower s of
+      "true" -> True
+      "1" -> True
+      _ -> False
+    _ -> False
 
 debugPrint :: Show a => a -> IO ()
 debugPrint a = do
-  d <- isDebug
+  d <- lookupEnvBool "DEBUG"
   when d $ print a
 
 intToText :: Integral a => a -> Text

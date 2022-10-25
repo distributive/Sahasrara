@@ -7,24 +7,24 @@
 -- Portability : POSIX
 --
 -- The Pack and Packs types.
-module Sahasrara.Plugins.Netrunner.Type.Pack where
+module Sahasrara.Plugins.Netrunner.Type.CardType where
 
 import Data.Aeson (FromJSON, parseJSON, withObject, (.:))
 import Data.Text (Text)
 import GHC.Generics (Generic)
 
--- | @Pack@ represents a single data pack in the NetrunnerDB API.
-data Pack = Pack
+-- | @CardType@ represents a single card type in the NetrunnerDB API.
+data CardType = CardType
   { code :: !Text,
-    cycleCode :: !Text,
     name :: !Text,
-    position :: !Int
+    sideCode :: !Text
   }
   deriving (Eq, Show, Generic)
 
-instance FromJSON Pack where
-  parseJSON = withObject "Pack" $ \o ->
-    Pack <$> o .: "code"
-      <*> o .: "cycle_code"
-      <*> o .: "name"
-      <*> o .: "position"
+instance FromJSON CardType where
+  parseJSON = withObject "Type" $ \o -> do
+    code <- o .: "id"
+    a <- o .: "attributes"
+    name <- a .: "name"
+    sideCode <- a .: "side_id"
+    return CardType {..}

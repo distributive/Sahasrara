@@ -9,91 +9,70 @@
 -- The Card and Cards types.
 module Sahasrara.Plugins.Netrunner.Type.Card where
 
-import Data.Aeson (FromJSON, Value (..), parseJSON, withObject, (.:!), (.:?))
+import Data.Aeson (FromJSON, parseJSON, withObject, (.:), (.:!), (.:?))
 import Data.Maybe (fromMaybe)
-import Data.Scientific (toBoundedInteger)
-import Data.Text (Text)
+import Data.Text (Text, splitOn)
 import GHC.Generics (Generic)
-import Sahasrara.Utility
+import Sahasrara.Plugins.Netrunner.Type.Stat (Stat)
 
 -- | @Card@ represents a single card in the NetrunnerDB API.
 data Card = Card
-  { advancementCost :: !(Maybe Stat),
+  { code :: !Text,
+    strippedTitle :: !Text,
+    title :: !Text,
+    cardTypeCode :: !Text,
+    sideCode :: !Text,
+    factionCode :: !Text,
+    advancementRequirement :: !(Maybe Stat),
     agendaPoints :: !(Maybe Int),
     baseLink :: !(Maybe Int),
-    code :: !(Maybe Text),
     cost :: !(Maybe Stat),
     deckLimit :: !(Maybe Int),
-    factionCode :: !(Maybe Text),
-    factionCost :: !(Maybe Int),
-    flavour :: !(Maybe Text),
-    illustrator :: !(Maybe Text),
+    influenceCost :: !(Maybe Int),
     influenceLimit :: !(Maybe Int),
-    subtypes :: !(Maybe Text),
     memoryCost :: !(Maybe Int),
     minimumDeckSize :: !(Maybe Int),
-    packCode :: !(Maybe Text),
-    position :: !(Maybe Int),
-    quantity :: !(Maybe Int),
-    sideCode :: !(Maybe Text),
     strength :: !(Maybe Stat),
-    strippedText :: !(Maybe Text),
-    strippedTitle :: !(Maybe Text),
-    text :: !(Maybe Text),
-    title :: !(Maybe Text),
+    strippedText :: !Text,
+    text :: !Text,
     trashCost :: !(Maybe Int),
-    typeCode :: !(Maybe Text),
-    uniqueness :: !(Maybe Bool)
+    uniqueness :: !Bool,
+    subtypes :: ![Text]
   }
   deriving (Eq, Show, Generic)
 
 -- Note: (.:?) is not used for (Maybe Stat) fields since nrdb represents
 -- variables as null.
 instance FromJSON Card where
-  parseJSON = withObject "Card" $ \o ->
-    Card <$> o .:! "advancement_cost"
-      <*> o .:? "agenda_points"
-      <*> o .:? "base_link"
-      <*> o .:? "code"
-      <*> o .:! "cost"
-      <*> o .:? "deck_limit"
-      <*> o .:? "faction_code"
-      <*> o .:? "faction_cost"
-      <*> o .:? "flavor"
-      <*> o .:? "illustrator"
-      <*> o .:? "influence_limit"
-      <*> o .:? "keywords"
-      <*> o .:? "memory_cost"
-      <*> o .:? "minimum_deck_size"
-      <*> o .:? "pack_code"
-      <*> o .:? "position"
-      <*> o .:? "quantity"
-      <*> o .:? "side_code"
-      <*> o .:! "strength"
-      <*> o .:? "stripped_text"
-      <*> o .:? "stripped_title"
-      <*> o .:? "text"
-      <*> o .:? "title"
-      <*> o .:? "trash_cost"
-      <*> o .:? "type_code"
-      <*> o .:? "uniqueness"
-
--- | @Stat@ represents values that are either a numeric value or a variable (usually X)
-data Stat = Var Text | Val Int deriving (Eq, Show, Generic)
-
-statToText :: Stat -> Text
-statToText (Var x) = x
-statToText (Val x) = intToText x
-
-isVar :: Stat -> Bool
-isVar (Var _) = True
-isVar _ = False
-
-isVal :: Stat -> Bool
-isVal (Val _) = True
-isVal _ = False
-
-instance FromJSON Stat where
-  parseJSON (String var) = Var <$> pure var
-  parseJSON (Number val) = pure $ Val $ fromMaybe 0 $ toBoundedInteger val
-  parseJSON _ = Var <$> pure "X"
+  parseJSON = withObject "Card" $ \o -> do
+    code <- o .: "id"
+    a <- o .: "attributes"
+    strippedTitle <- a .: "stripped_title"
+    title <- a .: "title"
+    cardTypeCode <- a .: "card_type_id"
+    sideCode <- a .: "side_id"
+    factionCode <- a .: "faction_id"
+    advancementRequirement <- a .:! "advancement_requirement"
+    agendaPoints <- a .:? "agenda_points"
+    baseLink <- a .:? "base_link"
+    cost <- a .:! "cost"
+    deckLimit <- a .:? "deck_limit"
+    influenceCost <- a .:? "influenceCost"
+    influenceLimit <- a .:? "influenceLimit"
+    memoryCost <- a .:? "memory_cost"
+    minimumDeckSize <- a .:? "minimum_deck_size"
+    strength <- a .:! "strength"
+    strippedText <- do
+      (st :: Maybe Text) <- a .:? "stripped_text"
+      return $ fromMaybe "" st
+    text <- do
+      (t :: Maybe Text) <- a .:? "text"
+      return $ fromMaybe "" t
+    trashCost <- a .:? "trash_cost"
+    uniqueness <- a .: "is_unique"
+    subtypes <- do
+      s <- a .:? "display_subtypes"
+      return $ case s of
+        Nothing -> []
+        Just s' -> splitOn " - " s'
+    return Card {..}

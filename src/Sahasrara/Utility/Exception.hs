@@ -32,6 +32,7 @@ data BotException
   = GenericException String String
   | MessageSendException String
   | ParserException String String
+  | EnvException String
   | IndexOutOfBoundsException Int (Int, Int)
   | RandomException String
   | EvaluationException String [String]
@@ -109,6 +110,7 @@ errorInfo :: BotException -> ErrorInfo
 errorInfo (GenericException name' msg') = ErrorInfo name' msg'
 errorInfo (MessageSendException msg') = ErrorInfo "MessageSendException" msg'
 errorInfo (ParserException title msg') = ErrorInfo title msg'
+errorInfo (EnvException msg') = ErrorInfo "EnvException" msg'
 errorInfo (IndexOutOfBoundsException index (a, b)) =
   ErrorInfo
     "IndexOutOfBoundsException"

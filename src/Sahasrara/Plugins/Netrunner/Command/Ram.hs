@@ -12,12 +12,11 @@
 module Sahasrara.Plugins.Netrunner.Command.Ram (nrRam) where
 
 import Control.Monad.Reader (ask, liftIO)
-import Data.Text (Text, intercalate)
+import Data.Text (intercalate)
 import Discord.Types
-import qualified Sahasrara.Plugins.Netrunner.Type.Cycle as C
+import Sahasrara.Plugins.Netrunner.Type.CardSet (CardSet (cardSetTypeCode, name))
+import qualified Sahasrara.Plugins.Netrunner.Type.CardSet as CardSet
 import Sahasrara.Plugins.Netrunner.Type.NrApi (NrApi (..))
-import Sahasrara.Plugins.Netrunner.Type.Pack (Pack (cycleCode, name))
-import qualified Sahasrara.Plugins.Netrunner.Type.Pack as P
 import Sahasrara.Plugins.Netrunner.Utility.Embed (embedText)
 import Sahasrara.Utility
 import Sahasrara.Utility.Colour
@@ -48,33 +47,21 @@ embedRam a b m = do
   api <- ask
   ram <- liftIO $ generateRam api a b
   let bigBoxes = name <$> fst ram
-      legalPacks = name <$> snd ram
-      codes = intercalate "|" $ map P.code $ (fst ram) ++ (snd ram)
+      legalSets = name <$> snd ram
+      codes = intercalate "|" $ map CardSet.legacyCode $ (fst ram) ++ (snd ram)
   sendEmbedMessage m "" $
     addColour colInfo $
       embedText ":game_die: RAM :game_die:" $
         (if length bigBoxes > 0 then "**Large Releases**\n" <> intercalate "\n" bigBoxes <> "\n\n" else "")
-          <> (if length legalPacks > 0 then "**Data Packs**\n" <> intercalate "\n" legalPacks <> "\n\n" else "")
+          <> (if length legalSets > 0 then "**Data Packs**\n" <> intercalate "\n" legalSets <> "\n\n" else "")
           <> "**NetrunnerDB link**\nSee the list of legal cards for this card pool [here](https://netrunnerdb.com/find/?q=e:"
           <> codes
           <> ")!"
 
--- | @generateRam@ generates a card pool with a set number of data packs and
+-- | @generateRam@ generates a card pool with a set number of card sets and
 -- core/deluxe expansions.
-generateRam :: NrApi -> Int -> Int -> IO ([Pack], [Pack])
-generateRam NrApi {cycles = cycles, packs = packs} bigBoxCount packCount = do
-  a <- chooseN bigBoxCount bigBoxes
-  b <- chooseN packCount legalPacks
-  return (a, b)
-  where
-    bigBoxes :: [Pack]
-    bigBoxes = withCode ["core", "cac", "hap", "oac", "dad", "td", "core", "rar", "sg"]
-    legalPacks :: [Pack]
-    legalPacks =
-      let legalCycles = filter (\c -> (length $ filter (\p -> C.code c == cycleCode p) packs) > 2) cycles
-          dataPacks = concatMap (\c -> filter (\p -> C.code c == cycleCode p) packs) legalCycles
-          extraPacks = withCode ["sm", "mor"]
-          removedPacks = withCode ["sc19", "su21", "urbp", "dag", "bm"]
-       in filter (not . (flip elem removedPacks)) $ dataPacks ++ extraPacks
-    withCode :: [Text] -> [Pack]
-    withCode xs = filter (\p -> elem (P.code p) xs) packs
+generateRam :: NrApi -> Int -> Int -> IO ([CardSet], [CardSet])
+generateRam NrApi {cardSets = cardSets} largeCount smallCount = do
+  large <- chooseN largeCount $ filter (\s -> cardSetTypeCode s `elem` ["core", "deluxe"] && (not $ name s `elem` ["System Core 2019", "System Update 2021"])) cardSets
+  small <- chooseN smallCount $ filter (\s -> cardSetTypeCode s `elem` ["data_pack", "expansion"] && (not $ name s `elem` ["Magnum Opus", "Democracy and Dogma", "Blood Money"])) cardSets
+  return (large, small)

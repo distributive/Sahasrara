@@ -108,8 +108,8 @@ discordUser = do
 -- | @keyValue@ gets a set of key/value pairs where keys are separated from
 -- values by colons. Invalid strings between and surrounding pairs are ignored.
 -- It matches @a:value b:"val ue" c:value ...@
-keyValue :: Parser [(String, String)]
-keyValue = many $ try $ skipManyTill anySingle pair
+keyValue :: Parser (String, String)
+keyValue = try $ skipManyTill anySingle pair
   where
     pair :: Parser (String, String)
     pair = do
@@ -120,8 +120,8 @@ keyValue = many $ try $ skipManyTill anySingle pair
 
 -- | @keyValueSepOn@ is @keyValue@ except is allows a given list of key/value
 -- separators.
-keyValueSepOn :: [Char] -> Parser [(String, Char, String)]
-keyValueSepOn seps = many $ try $ skipManyTill anySingle pair
+keyValueSepOn :: [Char] -> Parser (String, Char, String)
+keyValueSepOn seps = try $ skipManyTill anySingle pair
   where
     pair :: Parser (String, Char, String)
     pair = do
@@ -132,8 +132,8 @@ keyValueSepOn seps = many $ try $ skipManyTill anySingle pair
 
 -- | @keyValuesSepOn@ is @keyValue@ except is allows a given list of key/value
 -- separators, and a list of `or` dividers.
-keyValuesSepOn :: [Char] -> [Char] -> Parser [(String, Char, [String])]
-keyValuesSepOn seps ors = many $ try $ skipManyTill anySingle pair
+keyValuesSepOn :: [Char] -> [Char] -> Parser (String, Char, [String])
+keyValuesSepOn seps ors = try $ skipManyTill anySingle pair
   where
     pair :: Parser (String, Char, [String])
     pair = do

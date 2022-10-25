@@ -5,4 +5,4 @@ badSubstrings:
   - "crazy"
   - "deranged"
 badCards:
-  - "Financial Collapse"
+  - "11039" # Financial collapse

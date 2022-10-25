@@ -13,7 +13,7 @@ import Control.Monad.IO.Class (liftIO)
 import Discord.Types (GuildMember, RoleId, memberRoles)
 import Sahasrara.Utility.SmartParser (Context (contextMember))
 import Sahasrara.Utility.Types
-import Sahasrara.Utility.Utils (isDebug)
+import Sahasrara.Utility.Utils (lookupEnvBool)
 import System.Environment (lookupEnv)
 import Text.Read (readMaybe)
 
@@ -55,5 +55,5 @@ getSenderPermission :: Context m => m -> EnvDatabaseDiscord s UserPermission
 getSenderPermission m = do
   let member = contextMember m
   knownroles <- liftIO getKnownRoles
-  debug <- liftIO isDebug
+  debug <- liftIO $ lookupEnvBool "DEBUG"
   return $ permsFromGroups debug knownroles $ getMemberGroups member

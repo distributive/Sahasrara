@@ -1,99 +1,96 @@
 {-# LANGUAGE DuplicateRecordFields #-}
-
 -- |
--- Module      : Sahasrara.Plugins.Netrunner.Netrunner
--- Description : Handles the internal functionality of the Netrunner command.
--- License     : MIT
--- Maintainer  : github.com/distributive
--- Stability   : experimental
--- Portability : POSIX
+-- Description : Functions for formatting Netrunner data into embeds.
 --
--- The backend functionality of the Netrunner commands.
 module Sahasrara.Plugins.Netrunner.Utility.Embed
-  ( cardToEmbed,
-    cardToEmbedWithText,
-    cardsToEmbed,
-    cardToImgEmbed,
-    cardToFlavourEmbed,
+  ( printingToEmbed,
+    printingToEmbedWithText,
+    printingsToEmbed,
+    printingToImgEmbed,
+    printingToFlavourEmbed,
     embedText,
     embedTextWithUrl,
     embedColumns,
     embedColumnsWithUrl,
+    emptyField,
     embedLines,
   )
 where
 
 import Data.List.Split (splitPlaces)
-import Data.Maybe (fromMaybe)
 import Data.Text (Text, intercalate, pack)
 import qualified Data.Text as T (length)
 import Discord.Types
-import Sahasrara.Plugins.Netrunner.Type.Card as Card (Card (..))
+import Sahasrara.Plugins.Netrunner.Type.Card (Card (..))
 import Sahasrara.Plugins.Netrunner.Type.NrApi (NrApi (..))
+import Sahasrara.Plugins.Netrunner.Type.Printing (Printing (..))
 import Sahasrara.Plugins.Netrunner.Utility.Card
 import Sahasrara.Plugins.Netrunner.Utility.Faction
+import Sahasrara.Plugins.Netrunner.Utility.Printing
 import Sahasrara.Utility
 import Sahasrara.Utility.Embed (addColour)
 import Sahasrara.Utility.Types ()
 import Prelude hiding (unwords)
 
--- | @cardToEmbed@ takes a card and generates an embed message representing it.
-cardToEmbed :: NrApi -> Card -> EnvDatabaseDiscord NrApi CreateEmbed
-cardToEmbed api card = do
-  let eTitle = toTitle card
-      eURL = toLink card
-      eFoot = toReleaseData api card
-      eImg = toImage api card
-      eColour = toColour api card
-  eText <- toText card
+-- | @printingToEmbed@ takes a printing and creates an embed representation of it.
+printingToEmbed :: NrApi -> Printing -> EnvDatabaseDiscord NrApi CreateEmbed
+printingToEmbed api printing = do
+  let card = toCard api printing
+      eTitle = title card
+      eURL = toLink printing
+      eFoot = toReleaseData api printing
+      eImg = Just $ toImage printing
+      eColour = toFactionColour api card
+  eText <- formatPrinting printing
   return $ addColour eColour $ CreateEmbed "" "" Nothing eTitle eURL eImg eText [] Nothing eFoot Nothing Nothing Nothing
 
--- | @cardToEmbedWithText@ embeds some text and decorates it with a given card.
-cardToEmbedWithText :: NrApi -> Card -> Text -> EnvDatabaseDiscord NrApi CreateEmbed
-cardToEmbedWithText api card text = do
-  let eTitle = toTitle card
-      eURL = toLink card
-      eColour = toColour api card
-      eImg = toImage api card
+-- | @printingToEmbedWithText@ embeds text and decorates it with a given printing.
+printingToEmbedWithText :: NrApi -> Printing -> Text -> EnvDatabaseDiscord NrApi CreateEmbed
+printingToEmbedWithText api printing text = do
+  let card = toCard api printing
+      eTitle = title card
+      eURL = toLink printing
+      eImg = Just $ toImage printing
+      eColour = toFactionColour api card
   return $ addColour eColour $ CreateEmbed "" "" Nothing eTitle eURL eImg text [] Nothing "" Nothing Nothing Nothing
 
--- | @cardsToEmbed@ takes a list of cards and embeds their names with links.
-cardsToEmbed :: NrApi -> Text -> [Card] -> Text -> Text -> EnvDatabaseDiscord NrApi CreateEmbed
-cardsToEmbed api pre cards post err = do
-  formatted <- mapM formatCard $ take 10 cards
-  let cards' = "**" <> intercalate "\n" formatted <> "**"
-      eTitle = ":mag_right: **" <> pack (show $ length cards) <> " results**"
-      eText = pre <> "\n" <> cards' <> "\n" <> if length cards > 10 then err else post
+-- | @printingsToEmbed@ takes a list of printings and embeds their names with links.
+printingsToEmbed :: NrApi -> Text -> [Printing] -> Text -> Text -> EnvDatabaseDiscord NrApi CreateEmbed
+printingsToEmbed api pre printings post err = do
+  formatted <- mapM formatPrintingText $ take 10 printings
+  let ps = "**" <> intercalate "\n" formatted <> "**"
+      eTitle = ":mag_right: **" <> pack (show $ length printings) <> " results**"
+      eText = pre <> "\n" <> ps <> "\n" <> if length printings > 10 then err else post
   return $ CreateEmbed "" "" Nothing eTitle "" Nothing eText [] Nothing "" Nothing Nothing Nothing
   where
-    formatCard :: Card -> EnvDatabaseDiscord NrApi Text
-    formatCard card = do
-      let title' = fromMaybe "?" $ title card
-          link = toLink card
-      icon <- case toFaction api card of
-        Nothing -> return ""
-        Just faction -> toEmoji faction
+    formatPrintingText :: Printing -> EnvDatabaseDiscord NrApi Text
+    formatPrintingText printing = do
+      let card = toCard api printing
+          title' = title card
+          link = toLink printing
+      icon <- toEmoji $ toFaction api card
       return $ icon <> " [" <> title' <> "](" <> link <> ")"
 
--- | @cardToImgEmbed@ takes a card and attempts to embed a picture of it.
-cardToImgEmbed :: NrApi -> Card -> CreateEmbed
-cardToImgEmbed api card =
-  let eTitle = toTitle card
-      eURL = toLink card
-      eColour = toColour api card
-   in addColour eColour $ case toImage api card of
-        Nothing -> CreateEmbed "" "" Nothing eTitle eURL Nothing "`Could not find card art`" [] Nothing "" Nothing Nothing Nothing
-        eImg -> CreateEmbed "" "" Nothing eTitle eURL Nothing "" [] eImg "" Nothing Nothing Nothing
+-- | @printingToImgEmbed@ takes a printing and embeds a picture of it.
+printingToImgEmbed :: NrApi -> Printing -> CreateEmbed
+printingToImgEmbed api printing =
+  let card = toCard api printing
+      eTitle = title card
+      eURL = toLink printing
+      eColour = toColour $ toFaction api card
+      eImg = Just $ toImage printing
+   in addColour eColour $ CreateEmbed "" "" Nothing eTitle eURL Nothing "" [] eImg "" Nothing Nothing Nothing
 
--- | @cardToFlavourEmbed@ takes a card and attempts to embed its flavour text.
-cardToFlavourEmbed :: NrApi -> Card -> EnvDatabaseDiscord NrApi CreateEmbed
-cardToFlavourEmbed api card = do
-  let eTitle = toTitle card
-      eURL = toLink card
-      eColour = toColour api card
-      eImg = toImage api card
+-- | @printingToFlavourEmbed@ takes a printing and attempts to embed its flavour text.
+printingToFlavourEmbed :: NrApi -> Printing -> EnvDatabaseDiscord NrApi CreateEmbed
+printingToFlavourEmbed api printing = do
+  let card = toCard api printing
+      eTitle = title card
+      eURL = toLink printing
+      eColour = toFactionColour api card
+      eImg = Just $ toImage printing
       fallback = CreateEmbed "" "" Nothing eTitle eURL eImg "`Card has no flavour text`" [] Nothing "" Nothing Nothing Nothing
-  flavor <- toFlavour card
+  flavor <- toFlavour printing
   return $
     addColour eColour $ case flavor of
       Nothing -> fallback
@@ -117,6 +114,11 @@ embedColumnsWithUrl :: Text -> Text -> Text -> [(Text, [Text])] -> CreateEmbed
 embedColumnsWithUrl title url pre cols =
   let fields = map (\x -> EmbedField (fst x) (intercalate "\n" $ snd x) $ Just True) cols
    in CreateEmbed "" "" Nothing title url Nothing pre fields Nothing "" Nothing Nothing Nothing
+
+-- | @emptyField@ represents an empty field for use in embedColumns.
+-- NOTE: fields can't be empty, so it uses italicised spaces to force blankness
+emptyField :: (Text, [Text])
+emptyField = ("_ _", ["_ _"])
 
 -- | @embedLines@ embeds a list of lines, splitting them into columns as needed.
 -- NOTE: does not preserve order

@@ -12,14 +12,14 @@ module Sahasrara.Plugins.Netrunner.Command.Glossary (nrGlossary) where
 import Control.Monad.Reader (ask, liftIO)
 import Data.List (nub)
 import Data.Map (fromList, lookup)
-import Data.Maybe (catMaybes, fromMaybe)
+import Data.Maybe (catMaybes)
 import Data.Text (Text, intercalate, unpack)
 import Discord.Types
 import Sahasrara.Plugins.Netrunner.Type.Card (title)
 import Sahasrara.Plugins.Netrunner.Type.Glossary (Definition (..), Glossary (..))
 import Sahasrara.Plugins.Netrunner.Type.NrApi
 import Sahasrara.Plugins.Netrunner.Utility.Alias (fromAlias)
-import Sahasrara.Plugins.Netrunner.Utility.Format (formatText')
+import Sahasrara.Plugins.Netrunner.Utility.Formatting (formatText')
 import Sahasrara.Utility
 import Sahasrara.Utility.Colour
 import Sahasrara.Utility.Discord (sendEmbedMessage)
@@ -87,9 +87,9 @@ printDef term m = do
           footnote = "\n\n*Can't find a definition you think should be here? [Let me know!](" <> source glossary <> ")*"
        in if fromAlias cardAliases term /= term
             then "That's the alias of a card; try: `[[" <> (fromAlias cardAliases term) <> "]]`"
-            else case filter ((== Just term) . title) cards of
+            else case filter ((== term) . title) cards of
               [] -> "Maybe you meant:\n " <> intercalate "\n " suggestions <> footnote
-              c : _ -> "That's a card; try: `[[" <> (fromMaybe "" $ title c) <> "]]`"
+              c : _ -> "That's a card; try: `[[" <> (title c) <> "]]`"
     formatDef :: Definition -> Text
     formatDef Definition {name = name, short = short} = "`" <> name <> "`: *" <> short <> "*"
     editCosts :: FuzzyCosts

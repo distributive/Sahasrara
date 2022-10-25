@@ -65,6 +65,10 @@ generateHelp rootText p =
     { combinedSetupAction = return (def {compiledCommands = [CCommand "help" (handleHelp rootText (helpHelpPage : combinedHelpPages p)) []]}) : combinedSetupAction p
     }
 
+-- Assumes only the root page will have an empty name
+isHelpPageRoot :: HelpPage -> Bool
+isHelpPageRoot hp = helpName hp == ""
+
 handleHelp :: Text -> [HelpPage] -> Parser (Message -> CompiledDatabaseDiscord ())
 handleHelp rootText hp = parseHelpPage root
   where
@@ -82,15 +86,16 @@ displayHelp hp m = changeAction () . requirePermission (helpPermission hp) m $ d
   sendEmbedMessage m "" $ addColour colHelp $ CreateEmbed "" "" Nothing (formatHelpTitle hp) "" Nothing (formatHelp uPerm hp) [] Nothing "" Nothing Nothing Nothing
 
 formatHelpTitle :: HelpPage -> Text
-formatHelpTitle hp = ":scroll:  " <> if helpName hp == "" then "Sahasrara" else "Help: `$" <> helpName hp <> "`"
+formatHelpTitle hp = ":scroll:  " <> if isHelpPageRoot hp then "Sahasrara" else "Help: `$" <> helpName hp <> "`"
 
 formatHelp :: UserPermission -> HelpPage -> Text
 formatHelp up hp = helpBody hp <> formatSubpages hp
   where
     formatSubpages :: HelpPage -> Text
     formatSubpages (HelpPage _ _ _ _ [] _) = ""
-    formatSubpages hp' = if T.null sp then "" else "\n\n*Subcommands*" <> sp
+    formatSubpages hp' = if T.null sp then "" else header <> sp
       where
+        header = if isHelpPageRoot hp' then "\n\n**Commands**" else "\n\n*Subcommands*"
         sp = T.concat (map formatSubpage (helpSubpages hp'))
     formatSubpage :: HelpPage -> Text
     formatSubpage hp' = if userHasPermission (helpPermission hp') up then "\n`" <> helpName hp' <> "` " <> helpShortText hp' else ""

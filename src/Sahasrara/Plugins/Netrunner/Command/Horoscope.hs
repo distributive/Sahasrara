@@ -21,10 +21,10 @@ import Data.Time.Clock
 import Discord.Types
 import Sahasrara.Internal.Handler.Command ()
 import Sahasrara.Plugins.Netrunner.Type.Blacklist (Blacklist (..))
-import Sahasrara.Plugins.Netrunner.Type.Card (Card (flavour, title))
 import Sahasrara.Plugins.Netrunner.Type.NrApi (NrApi (..))
+import Sahasrara.Plugins.Netrunner.Type.Printing (Printing (code, flavour))
 import Sahasrara.Plugins.Netrunner.Utility.Embed
-import Sahasrara.Plugins.Netrunner.Utility.Format (formatText)
+import Sahasrara.Plugins.Netrunner.Utility.Formatting (formatText)
 import Sahasrara.Utility
 import Sahasrara.Utility.Colour
 import Sahasrara.Utility.Discord (sendEmbedMessage)
@@ -41,13 +41,13 @@ nrHoroscope = Command "horoscope" horoscopePars []
     horoscopePars :: Parser (Message -> EnvDatabaseDiscord NrApi ())
     horoscopePars = return $ \m -> do
       api <- ask
-      let fs = filterFlavours (blacklist api) (cards api)
+      let fs = filterFlavours (blacklist api) (printings api)
       seed <- liftIO $ getCurrentTime >>= return . fromIntegral . toModifiedJulianDay . utctDay
       f <- liftIO $ chooseOneSeeded seed fs
       f' <- formatText f
       sendEmbedMessage m "" $ addColour colHoroscope $ embedText ":crystal_ball: Horoscope :crystal_ball:" $ replaceAll [r|"(.*?)"[.\S\s]*|] "$1" f'
-    filterFlavours :: Blacklist -> [Card] -> [Text]
+    filterFlavours :: Blacklist -> [Printing] -> [Text]
     filterFlavours Blacklist {badSubstrings = badSubstrings, badCards = badCards} cards =
       let flavoured = filter ((Nothing /=) . flavour) cards
-          withoutBadCards = filter (\c -> all (\b -> Just b /= title c) badCards) flavoured
+          withoutBadCards = filter (\c -> all (\b -> b /= code c) badCards) flavoured
        in filter (\c -> not $ any (`isInfixOf` c) badSubstrings) $ mapMaybe flavour withoutBadCards -- Without bad substrings

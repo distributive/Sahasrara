@@ -241,7 +241,7 @@ data HelpPage = HelpPage
     -- | Permission required to run
     helpPermission :: RequiredPermission
   }
-  deriving (Show)
+  deriving (Show, Eq)
 
 -- | Automatic handling of command permissions
 -- @UserPermission@ models the current permissions of the user
