@@ -1,7 +1,7 @@
 {-# LANGUAGE DuplicateRecordFields #-}
+
 -- |
 -- Description : Functions for formatting Netrunner data into embeds.
---
 module Sahasrara.Plugins.Netrunner.Utility.Embed
   ( printingToEmbed,
     printingToEmbedWithText,

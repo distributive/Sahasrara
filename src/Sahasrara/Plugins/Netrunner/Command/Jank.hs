@@ -13,11 +13,11 @@ module Sahasrara.Plugins.Netrunner.Command.Jank (nrJank) where
 
 import Control.Monad.IO.Class (liftIO)
 import Control.Monad.Trans.Reader (ask)
+import Data.List (nubBy)
 import Data.Maybe (fromMaybe)
 import Data.Text (Text, toLower, unpack)
-import Data.List (nubBy)
 import Discord.Types
-import Sahasrara.Plugins.Netrunner.Type.Card (Card (title, factionCode, packCode, sideCode, typeCode))
+import Sahasrara.Plugins.Netrunner.Type.Card (Card (factionCode, packCode, sideCode, title, typeCode))
 import Sahasrara.Plugins.Netrunner.Type.NrApi (NrApi (..))
 import Sahasrara.Plugins.Netrunner.Utility.Print (embedCards)
 import Sahasrara.Utility
