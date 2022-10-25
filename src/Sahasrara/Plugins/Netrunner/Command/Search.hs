@@ -40,6 +40,7 @@ nrSearch = Command "search" searchComm []
         [card] -> embedCard card m
         cs ->
           embedCards
+            (":mag_right: **" <> pack (show $ length cs) <> " results**")
             ("Query: `" <> (pack query) <> "`\n")
             cs
             ""

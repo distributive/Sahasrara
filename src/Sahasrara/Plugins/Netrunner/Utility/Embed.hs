@@ -18,7 +18,7 @@ module Sahasrara.Plugins.Netrunner.Utility.Embed
 where
 
 import Data.List.Split (splitPlaces)
-import Data.Text (Text, intercalate, pack)
+import Data.Text (Text, intercalate)
 import qualified Data.Text as T (length)
 import Discord.Types
 import Sahasrara.Plugins.Netrunner.Type.Card (Card (..))
@@ -55,13 +55,12 @@ printingToEmbedWithText api printing text = do
   return $ addColour eColour $ CreateEmbed "" "" Nothing eTitle eURL eImg text [] Nothing "" Nothing Nothing Nothing
 
 -- | @printingsToEmbed@ takes a list of printings and embeds their names with links.
-printingsToEmbed :: NrApi -> Text -> [Printing] -> Text -> Text -> EnvDatabaseDiscord NrApi CreateEmbed
-printingsToEmbed api pre printings post err = do
+printingsToEmbed :: NrApi -> Text -> Text -> [Printing] -> Text -> Text -> EnvDatabaseDiscord NrApi CreateEmbed
+printingsToEmbed api header pre printings post err = do
   formatted <- mapM formatPrintingText $ take 10 printings
   let ps = "**" <> intercalate "\n" formatted <> "**"
-      eTitle = ":mag_right: **" <> pack (show $ length printings) <> " results**"
       eText = pre <> "\n" <> ps <> "\n" <> if length printings > 10 then err else post
-  return $ CreateEmbed "" "" Nothing eTitle "" Nothing eText [] Nothing "" Nothing Nothing Nothing
+  return $ CreateEmbed "" "" Nothing header "" Nothing eText [] Nothing "" Nothing Nothing Nothing
   where
     formatPrintingText :: Printing -> EnvDatabaseDiscord NrApi Text
     formatPrintingText printing = do

@@ -19,7 +19,7 @@ import Sahasrara.Plugins.Netrunner.Type.NrApi (NrApi (..))
 import Sahasrara.Plugins.Netrunner.Type.Restriction (Restriction)
 import qualified Sahasrara.Plugins.Netrunner.Type.Restriction as Restriction
 import Sahasrara.Plugins.Netrunner.Type.Snapshot (Snapshot (cardPoolCode, dateStart, formatCode, restrictionCode))
-import Sahasrara.Plugins.Netrunner.Utility.CardPool (fromCardPoolCode)
+import Sahasrara.Plugins.Netrunner.Utility.CardPool (fromCardPoolCode, fromCardPoolCodeUnsafe)
 import Sahasrara.Plugins.Netrunner.Utility.Restriction (fromRestrictionCode)
 import Sahasrara.Plugins.Netrunner.Utility.Snapshot (fromSnapshotCode, fromSnapshotCodeUnsafe, toRestriction)
 import Prelude hiding (lookup)
@@ -62,6 +62,10 @@ toActiveSnapshot api format = fromSnapshotCodeUnsafe api $ activeSnapshotCode fo
 toSnapshots :: NrApi -> Format -> [Snapshot]
 toSnapshots api Format {snapshotCodes = snapshotCodes} =
   mapMaybe (fromSnapshotCode api) snapshotCodes
+
+-- | @toActiveCardPool@ gets the active card pool of a format.
+toActiveCardPool :: NrApi -> Format -> CardPool
+toActiveCardPool api format = fromCardPoolCodeUnsafe api $ activeSnapshotCode format
 
 -- | @toCardPools@ lists all card pools in a format.
 toCardPools :: NrApi -> Format -> [CardPool]

@@ -76,16 +76,16 @@ embedCard card m = do
   embedPrinting (toLatestPrinting api card) m
 
 -- | @embedPrintings@ takes a list of printings and embeds their names.
-embedPrintings :: Text -> [Printing] -> Text -> Text -> Message -> EnvDatabaseDiscord NrApi ()
-embedPrintings pre printings post err m = do
+embedPrintings :: Text -> Text -> [Printing] -> Text -> Text -> Message -> EnvDatabaseDiscord NrApi ()
+embedPrintings header pre printings post err m = do
   api <- ask
-  sendEmbedMessage m "" =<< printingsToEmbed api pre printings post err
+  sendEmbedMessage m "" =<< printingsToEmbed api header pre printings post err
 
 -- | @embedCards@ takes a list of cards and embeds their names.
-embedCards :: Text -> [Card] -> Text -> Text -> Message -> EnvDatabaseDiscord NrApi ()
-embedCards pre cards post err m = do
+embedCards :: Text -> Text -> [Card] -> Text -> Text -> Message -> EnvDatabaseDiscord NrApi ()
+embedCards header pre cards post err m = do
   api <- ask
-  embedPrintings pre (map (toLatestPrinting api) cards) post err m
+  embedPrintings header pre (map (toLatestPrinting api) cards) post err m
 
 -- | @embedPrintingImg@ embeds a card's image in a message, if able.
 embedPrintingImg :: Printing -> Message -> EnvDatabaseDiscord NrApi ()
