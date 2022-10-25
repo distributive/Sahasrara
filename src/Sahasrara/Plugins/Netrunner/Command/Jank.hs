@@ -15,8 +15,9 @@ import Control.Monad.IO.Class (liftIO)
 import Control.Monad.Trans.Reader (ask)
 import Data.Maybe (fromMaybe)
 import Data.Text (Text, toLower, unpack)
+import Data.List (nubBy)
 import Discord.Types
-import Sahasrara.Plugins.Netrunner.Type.Card (Card (factionCode, packCode, sideCode, typeCode))
+import Sahasrara.Plugins.Netrunner.Type.Card (Card (title, factionCode, packCode, sideCode, typeCode))
 import Sahasrara.Plugins.Netrunner.Type.NrApi (NrApi (..))
 import Sahasrara.Plugins.Netrunner.Utility.Print (embedCards)
 import Sahasrara.Utility
@@ -49,7 +50,7 @@ nrJank = Command "jank" (parseComm jankComm) []
     generateJank :: Side -> EnvDatabaseDiscord NrApi Jank
     generateJank Corp = do
       api <- ask
-      let pool = filter (\c -> sideCode c == Just "corp" && (not $ elem (fromMaybe "" $ packCode c) ["draft", "napd", "tdc"])) $ cards api
+      let pool = nubBy (\c1 c2 -> title c1 == title c2) $ filter (\c -> sideCode c == Just "corp" && (not $ elem (fromMaybe "" $ packCode c) ["draft", "napd", "tdc"])) $ cards api
       identity <- liftIO $ chooseOne $ filter (\c -> typeCode c == Just "identity" && factionCode c /= Just "neutral") pool
       [c1, c2, c3] <- liftIO $ chooseN 3 $ filter (\c -> (typeCode c /= Just "agenda" || factionCode c == factionCode identity) && typeCode c /= Just "identity") pool
       return $ Jank identity c1 c2 c3
