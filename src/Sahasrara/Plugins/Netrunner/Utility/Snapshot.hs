@@ -43,7 +43,8 @@ toRestriction api snapshot = fromRestrictionCode api =<< restrictionCode snapsho
 -- | @toLegalCards@ gets the cards legal to a snapshot
 toLegalCards :: NrApi -> Snapshot -> [Card]
 toLegalCards api snapshot =
-  let bannedCodes = case toRestriction api snapshot of
-        Nothing -> []
-        Just r -> banned r
+  let gatewayIDs = if formatCode snapshot == "system_gateway" then [] else ["the_catalyst_convention_breaker", "the_syndicate_profit_over_principle"] -- Temporary workaround
+      bannedCodes = case toRestriction api snapshot of
+        Nothing -> gatewayIDs
+        Just r -> gatewayIDs ++ banned r
    in filter (not . (`elem` bannedCodes) . Card.code) $ toCards api $ toCardPool api snapshot
