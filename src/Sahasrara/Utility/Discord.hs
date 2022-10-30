@@ -16,6 +16,9 @@ module Sahasrara.Utility.Discord
     sendCustomReplyMessage,
     sendEmbedMessage,
     sendChannelEmbedMessage,
+    sendEmbedInteraction,
+    sendEmbedInteractionWithButtons,
+    basicButton,
     reactToMessage,
     findGuild,
     findEmoji,
@@ -70,7 +73,7 @@ import Discord.Types
 import GHC.Word (Word64)
 import Sahasrara.Internal.Cache (fillEmojiCache, lookupEmojiCache)
 import Sahasrara.Internal.Embed (Embeddable (..))
-import Sahasrara.Utility (EnvDatabaseDiscord, MessageDetails, convertMessageFormatBasic, convertMessageFormatInteraction, liftDiscord, messageDetailsBasic)
+import Sahasrara.Utility (EnvDatabaseDiscord, MessageDetails, convertMessageFormatBasic, convertMessageFormatInteraction, liftDiscord, messageDetailsBasic, messageDetailsEmbeds, messageDetailsComponents)
 import Sahasrara.Utility.Exception (BotException (..))
 import System.Environment (lookupEnv)
 
@@ -170,6 +173,30 @@ sendChannelEmbedMessage cid t e = do
   case res of
     Left _ -> throw $ MessageSendException "Failed to send message."
     Right _ -> return ()
+
+sendEmbedInteraction ::
+  Embeddable e =>
+  Text ->
+  e ->
+  EnvDatabaseDiscord s MessageDetails
+sendEmbedInteraction t e = return $ (messageDetailsBasic t) {messageDetailsEmbeds = Just [asEmbed e]}
+
+sendEmbedInteractionWithButtons ::
+  Embeddable e =>
+  Text ->
+  [Button] ->
+  e ->
+  EnvDatabaseDiscord s MessageDetails
+sendEmbedInteractionWithButtons t bs e = return $
+  (messageDetailsBasic t)
+  { messageDetailsEmbeds = Just [asEmbed e],
+    messageDetailsComponents = Just [ActionRowButtons bs]
+  }
+
+basicButton :: Text -> Text -> Text -> Text -> UserId -> Button
+basicButton label emoji commandId buttonId userId =
+  (mkButton label $ commandId <> " " <> buttonId <> " " <> (pack $ show userId))
+  { buttonEmoji = Just (mkEmoji emoji) }
 
 -- | @getChannel@ gets the relevant Channel object for a given 'ChannelId'
 -- and 'MessageId', or returns an error ('RestCallErrorCode').
