@@ -17,22 +17,22 @@ import Network.HTTP.Simple (httpLBS)
 -- | @contentRequest@ makes an api call and wraps the result in a Content.
 contentRequest :: FromJSON a => String -> String -> IO [a]
 contentRequest label url = case label of
-  "" -> contentRequest_ url
+  "" -> contentRequest' url
   _ -> do
-    cs <- contentRequest_ url
+    cs <- contentRequest' url
     putStrLn $ label ++ ": " ++ (show $ length cs)
     return cs
   where
-    contentRequest_ :: FromJSON a => String -> IO [a]
-    contentRequest_ url_ = do
-      req <- parseRequest url_
+    contentRequest' :: FromJSON a => String -> IO [a]
+    contentRequest' url' = do
+      req <- parseRequest url'
       res <- httpLBS req
       case eitherDecode $ responseBody res of
-        Left err -> putStrLn (url_ <> " " <> err) >> (return $ content defaultContent)
+        Left err -> putStrLn (url' <> " " <> err) >> (return $ content defaultContent)
         Right cData ->
           case link cData of
             Just next -> do
-              dataNext <- contentRequest_ $ unpack next
+              dataNext <- contentRequest' $ unpack next
               return $ (content cData) ++ dataNext
             Nothing -> return $ content cData
 
