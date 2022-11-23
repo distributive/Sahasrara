@@ -74,7 +74,7 @@ import Discord.Types
 import GHC.Word (Word64)
 import Sahasrara.Internal.Cache (fillEmojiCache, lookupEmojiCache)
 import Sahasrara.Internal.Embed (Embeddable (..))
-import Sahasrara.Utility (EnvDatabaseDiscord, MessageDetails, convertMessageFormatBasic, convertMessageFormatInteraction, liftDiscord, messageDetailsBasic, messageDetailsEmbeds, messageDetailsComponents)
+import Sahasrara.Utility (EnvDatabaseDiscord, MessageDetails, convertMessageFormatBasic, convertMessageFormatInteraction, liftDiscord, messageDetailsBasic, messageDetailsComponents, messageDetailsEmbeds)
 import Sahasrara.Utility.Exception (BotException (..))
 import System.Environment (lookupEnv)
 
@@ -188,16 +188,18 @@ sendEmbedInteractionWithButtons ::
   [Button] ->
   e ->
   EnvDatabaseDiscord s MessageDetails
-sendEmbedInteractionWithButtons t bs e = return $
-  (messageDetailsBasic t)
-  { messageDetailsEmbeds = Just [asEmbed e],
-    messageDetailsComponents = Just [ActionRowButtons bs]
-  }
+sendEmbedInteractionWithButtons t bs e =
+  return $
+    (messageDetailsBasic t)
+      { messageDetailsEmbeds = Just [asEmbed e],
+        messageDetailsComponents = Just [ActionRowButtons bs]
+      }
 
 basicButton :: Text -> Text -> Text -> Text -> UserId -> Button
 basicButton label emoji commandId buttonId userId =
   (mkButton label $ commandId <> " " <> buttonId <> " " <> (pack $ show userId))
-  { buttonEmoji = Just (mkEmoji emoji) }
+    { buttonEmoji = Just (mkEmoji emoji)
+    }
 
 -- | @getChannel@ gets the relevant Channel object for a given 'ChannelId'
 -- and 'MessageId', or returns an error ('RestCallErrorCode').
