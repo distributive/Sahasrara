@@ -10,48 +10,32 @@
 module Sahasrara.Plugins.Flip (flipPlugin) where
 
 import Control.Monad.IO.Class (MonadIO (liftIO))
-import Data.Text (Text, pack)
-import Data.Maybe (catMaybes, fromMaybe)
+import Data.Text (pack)
 import Discord.Types
 import Sahasrara.Utility
 import Sahasrara.Utility.Colour
-import Sahasrara.Utility.Discord (formatFromEmojiName, sendEmbedMessage, sendEmbedInteractionWithButtons, basicButton)
+import Sahasrara.Utility.Discord (formatFromEmojiName, sendEmbedMessage)
 import Sahasrara.Utility.Embed (addColour, basicEmbed)
 import Sahasrara.Utility.Parser
 import Sahasrara.Utility.Random (chooseOne)
-import Sahasrara.Utility.SmartParser -- (Labelled (..), SenderUserId, PComm (parseComm), makeApplicationCommandPair)
+import Sahasrara.Utility.SmartParser (PComm (parseComm))
 import Text.Megaparsec
 import Text.RawString.QQ
 import Prelude hiding (flip)
-import Discord.Interactions (Interaction (..))
-import Sahasrara.Internal.Handler.Command (parseValue)
 
 -- | @flip@ picks one of its arguments at random, or one of "Corp" and "Runner"
 -- if none are provided.
-flipComm :: Maybe Text -> UserId -> DatabaseDiscord MessageDetails
-flipComm arg uid = do
-  -- args <- parseValue flipPars $ fromMaybe "" arg
-  let args = []
-  c <- case length args of
-    0 -> liftIO $ chooseOne [":arrow_up: Heads", ":arrow_down: Tails"]
-    _ -> liftIO $ chooseOne $ map ("> " <>) args
-  sendEmbedInteractionWithButtons "" [button] $ basicEmbed ":coin: Result :coin:" c
+flip :: Command
+flip = Command "flip" flipcomm []
   where
-    flipPars :: Parser [Text]
-    flipPars = do
+    flipcomm :: Parser (Message -> DatabaseDiscord ())
+    flipcomm = do
       args <- (try quoted <|> nonSpaceWord) `sepBy` some space
-      return $ map pack args
-    button :: Button
-    button = basicButton "Reroll" "🔄" "flip" "reroll" uid
-
-flipSlashCommand :: Labelled "args" "strings to select from" (Maybe Text) -> SenderUserId -> DatabaseDiscord MessageDetails
-flipSlashCommand (Labelled arg) (SenderUserId uid) = flipComm arg uid
-
-rerollFlipRecv :: ComponentRecv
-rerollFlipRecv = ComponentRecv "reroll" (processComponentInteraction' rerollParser True)
-  where
-    rerollParser :: Parser (Interaction -> DatabaseDiscord MessageDetails)
-    rerollParser = onlyAllowRequestor $ \arg -> flipComm arg
+      return $ \m -> do
+        c <- case length args of
+          0 -> liftIO $ chooseOne [":arrow_up: Heads", ":arrow_down: Tails"]
+          _ -> liftIO $ chooseOne $ map (\a -> "> " <> pack a) args
+        sendEmbedMessage m "" $ basicEmbed ":coin: Result :coin:" c
 
 flipHelp :: HelpPage
 flipHelp =
@@ -113,11 +97,4 @@ markHelp =
 
 -- | @flipPlugin@ assembles the command into a plugin.
 flipPlugin :: Plugin
-flipPlugin =
-  (plug "flip")
-  {
-    commands = [side, mark],
-    applicationCommands = catMaybes [makeApplicationCommandPair "flip" "choose one of several strings" flipSlashCommand],
-    onComponentRecvs = [rerollFlipRecv],
-    helpPages = [flipHelp, sideHelp, markHelp]
-  }
+flipPlugin = (plug "flip") {commands = [flip, side, mark], helpPages = [flipHelp, sideHelp, markHelp]}
