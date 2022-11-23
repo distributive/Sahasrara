@@ -30,6 +30,7 @@ import Sahasrara.Utility.Embed
 -- Declare new errors here, and define them at the bottom of the file.
 data BotException
   = GenericException String String
+  | InvisibleException
   | MessageSendException String
   | ParserException String String
   | EnvException String
@@ -97,6 +98,7 @@ showUserError e = formatUserError (errorName e) (errorMsg e)
 
 -- | @embedError@ takes an error and makes it into an embed.
 embedError :: BotException -> CreateEmbed
+embedError InvisibleException = basicEmbed "" "" -- Abuses the fact this won't be rendered to throw exceptions without informing the user
 embedError e =
   addTitle (pack $ errorEmoji ++ " **" ++ errorName e ++ "** " ++ errorEmoji) $
     addColour colError $
@@ -108,6 +110,7 @@ errorInfo :: BotException -> ErrorInfo
 -- | Add new errors here. Do not modify anything above this line except to
 -- declare new errors in the definition of BotException.
 errorInfo (GenericException name' msg') = ErrorInfo name' msg'
+errorInfo (InvisibleException) = ErrorInfo "" ""
 errorInfo (MessageSendException msg') = ErrorInfo "MessageSendException" msg'
 errorInfo (ParserException title msg') = ErrorInfo title msg'
 errorInfo (EnvException msg') = ErrorInfo "EnvException" msg'
