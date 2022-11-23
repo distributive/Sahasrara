@@ -14,27 +14,40 @@ import Data.Text (Text, unpack)
 import Network.HTTP.Conduit (Response (responseBody), parseRequest)
 import Network.HTTP.Simple (httpLBS)
 
--- | @contentRequest@ makes an api call and wraps the result in a Content.
-contentRequest :: FromJSON a => String -> String -> IO [a]
-contentRequest label url = case label of
-  "" -> contentRequest' url
+-- | @fetch@ makes an api call and wraps the result in a Content.
+-- If paginate is true, continue fetching data until all pages are parsed
+fetch :: FromJSON a => Bool -> String -> String -> IO [a]
+fetch paginate label url = case label of
+  "" -> fetch' url
   _ -> do
-    cs <- contentRequest' url
+    cs <- fetch' url
     putStrLn $ label ++ ": " ++ (show $ length cs)
     return cs
   where
-    contentRequest' :: FromJSON a => String -> IO [a]
-    contentRequest' url' = do
+    fetch' :: FromJSON a => String -> IO [a]
+    fetch' url' = do
       req <- parseRequest url'
       res <- httpLBS req
       case eitherDecode $ responseBody res of
         Left err -> putStrLn (url' <> " " <> err) >> (return $ content defaultContent)
         Right cData ->
-          case link cData of
-            Just next -> do
-              dataNext <- contentRequest' $ unpack next
-              return $ (content cData) ++ dataNext
-            Nothing -> return $ content cData
+          if paginate
+            then
+              case link cData of
+                Just next -> do
+                  dataNext <- fetch' $ unpack next
+                  return $ (content cData) ++ dataNext
+                Nothing -> return $ content cData
+            else
+              return $ content cData
+
+-- | @contentRequest@ gets all content from a link, including additional pages.
+contentRequest :: FromJSON a => String -> String -> IO [a]
+contentRequest = fetch True
+
+-- | @pageRequest@ gets exactly one page of data.
+pageRequest :: FromJSON a => String -> String -> IO [a]
+pageRequest = fetch False
 
 -- | @Content@ represents raw data from the api.
 data FromJSON a => Content a = Content
