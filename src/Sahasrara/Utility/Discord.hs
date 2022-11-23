@@ -21,6 +21,7 @@ module Sahasrara.Utility.Discord
     basicButton,
     reactToMessage,
     findGuild,
+    listGuildMembers,
     findEmoji,
     getChannel,
     getMessage,
@@ -275,6 +276,23 @@ findGuild m = case messageGuildId m of
     case fmap channelGuild channel of
       Right a -> pure $ Just a
       Left _ -> pure Nothing
+
+listGuildMembers :: Message -> EnvDatabaseDiscord s (Maybe [GuildMember])
+listGuildMembers m = do
+  gid <- findGuild m
+  member <- getMessageMember m -- The R.GuildMembersTiming line breaks in DMs, so this determines if it's in a DM first
+  case member of
+    Just _ -> toMembers gid
+    Nothing -> return Nothing
+  where
+    maybeRight :: Either a b -> Maybe b
+    maybeRight (Left _) = Nothing
+    maybeRight (Right a) = Just a
+    toMembers :: Maybe GuildId -> EnvDatabaseDiscord s (Maybe [GuildMember])
+    toMembers Nothing = return Nothing
+    toMembers (Just gid) = do
+      ms <- liftDiscord $ restCall $ R.ListGuildMembers gid $ R.GuildMembersTiming (Just 1000) Nothing
+      return $ maybeRight ms
 
 -- | Find an emoji from its name within a specific guild if it doesn't exist in the cache
 -- Not exported, used by findEmoji and findGuildEmoji
