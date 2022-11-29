@@ -10,6 +10,7 @@
 module Sahasrara.Plugins.Netrunner.Type.Stat where
 
 import Data.Aeson (FromJSON, Value (..), parseJSON)
+import Data.Aeson.Types (typeMismatch)
 import Data.Maybe (fromMaybe)
 import Data.Scientific (toBoundedInteger)
 import Data.Text (Text)
@@ -33,5 +34,9 @@ isVal _ = False
 
 instance FromJSON Stat where
   parseJSON (String var) = Var <$> pure var
-  parseJSON (Number val) = pure $ Val $ fromMaybe 0 $ toBoundedInteger val
-  parseJSON _ = Var <$> pure "X"
+  parseJSON (Number val) =
+    let v = fromMaybe 0 $ toBoundedInteger val
+     in if v < 0
+          then Var <$> pure "X"
+          else pure $ Val v
+  parseJSON v = typeMismatch "Stat" v

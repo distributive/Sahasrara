@@ -9,7 +9,7 @@
 -- The Card and Cards types.
 module Sahasrara.Plugins.Netrunner.Type.Card where
 
-import Data.Aeson (FromJSON, parseJSON, withObject, (.:), (.:!), (.:?))
+import Data.Aeson (FromJSON, parseJSON, withObject, (.:), (.:?))
 import Data.Maybe (fromMaybe)
 import Data.Text (Text, splitOn)
 import GHC.Generics (Generic)
@@ -41,8 +41,6 @@ data Card = Card
   }
   deriving (Eq, Show, Generic)
 
--- Note: (.:?) is not used for (Maybe Stat) fields since nrdb represents
--- variables as null.
 instance FromJSON Card where
   parseJSON = withObject "Card" $ \o -> do
     code <- o .: "id"
@@ -52,16 +50,16 @@ instance FromJSON Card where
     cardTypeCode <- a .: "card_type_id"
     sideCode <- a .: "side_id"
     factionCode <- a .: "faction_id"
-    advancementRequirement <- a .:! "advancement_requirement"
+    advancementRequirement <- a .:? "advancement_requirement"
     agendaPoints <- a .:? "agenda_points"
     baseLink <- a .:? "base_link"
-    cost <- a .:! "cost"
+    cost <- a .:? "cost"
     deckLimit <- a .:? "deck_limit"
     influenceCost <- a .:? "influenceCost"
     influenceLimit <- a .:? "influenceLimit"
     memoryCost <- a .:? "memory_cost"
     minimumDeckSize <- a .:? "minimum_deck_size"
-    strength <- a .:! "strength"
+    strength <- a .:? "strength"
     strippedText <- do
       (st :: Maybe Text) <- a .:? "stripped_text"
       return $ fromMaybe "" st
