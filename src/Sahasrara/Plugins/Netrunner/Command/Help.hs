@@ -9,9 +9,9 @@
 -- Commands for interfacing with NetrunnerDB.
 module Sahasrara.Plugins.Netrunner.Command.Help (helpPageRoots) where
 
+import Data.Text
 import Sahasrara.Utility
 import Text.RawString.QQ (r)
-import Data.Text
 
 -- | @helpPageRoots@ encapsulates the help page forest for all Netrunner commands.
 helpPageRoots :: [HelpPage]
@@ -48,7 +48,8 @@ randomHelp =
     None
 
 searchBody :: Text
-searchBody = [r|Gets a list of all Netrunner cards matching a search query, matching NetrunnerDB's upcoming [syntax](api-preview.netrunnerdb.com).
+searchBody =
+  [r|Gets a list of all Netrunner cards matching a search query, matching NetrunnerDB's upcoming [syntax](api-preview.netrunnerdb.com).
 Queries are case insensitive and show a maximum of 10 results.
 
 Note that this uses NetrunnerDB's [new API](api-preview.netrunnerdb.com/api/docs/#printings-filter___printing_search_operator) which is still unstable and subject to changes and bugs.
@@ -56,20 +57,24 @@ Note that this uses NetrunnerDB's [new API](api-preview.netrunnerdb.com/api/docs
 **Usage**
 `search query` gets all cards matching the query
 
-|] <> searchSyntaxDocs
+|]
+    <> searchSyntaxDocs
 
 randomBody :: Text
-randomBody = [r|Displays a random card. NetrunnerDB [syntax](<https://netrunnerdb.com/en/syntax>) may be added to restrict the selection of cards. Queries are case insensitive.
+randomBody =
+  [r|Displays a random card. NetrunnerDB [syntax](<https://netrunnerdb.com/en/syntax>) may be added to restrict the selection of cards. Queries are case insensitive.
 
 Note that this uses NetrunnerDB's [new API](api-preview.netrunnerdb.com) which is still unstable and subject to changes and bugs.
 
 **Usage**
 `random` query gets a random card matching the query
 
-|] <> searchSyntaxDocs
+|]
+    <> searchSyntaxDocs
 
 searchSyntaxDocs :: Text
-searchSyntaxDocs = [r|**Syntax**
+searchSyntaxDocs =
+  [r|**Syntax**
 For full documentation, see the [new API](api-preview.netrunnerdb.com/api/docs/#printings-filter___printing_search_operator). Note that this syntax is a superset of the old NetrunnerDB syntax, and queries valid in the current [search syntax](https://netrunnerdb.com/en/syntax) for NetrunnerDB should be valid for this command. The exception to this is searching by card ID or card aliases.
 
 Search queries are constructed of conditions, taking one of 2 forms:
