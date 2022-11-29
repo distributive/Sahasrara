@@ -11,6 +11,7 @@ module Sahasrara.Plugins.Netrunner.Command.Help (helpPageRoots) where
 
 import Sahasrara.Utility
 import Text.RawString.QQ (r)
+import Data.Text
 
 -- | @helpPageRoots@ encapsulates the help page forest for all Netrunner commands.
 helpPageRoots :: [HelpPage]
@@ -32,16 +33,7 @@ searchHelp =
     "search"
     []
     "gets a list of all Netrunner cards matching a search query"
-    [r|Gets a list of all Netrunner cards matching a search query, matching NetrunnerDB's [syntax](<https://netrunnerdb.com/en/syntax>).
-Queries are case insensitive and show a maximum of 10 results.
-
-Note that this uses NetrunnerDB's [new API](api-preview.netrunnerdb.com) which is still unstable and subject to changes and bugs.
-
-**Usage**
-`search x:advanced` all cards containing the text "advanced"
-`search o:1 f:nbn"` all 1-cost cards in NBN
-`search a:"and the"` all cards with "and the" in their flavour text
-|]
+    searchBody
     []
     None
 
@@ -51,18 +43,77 @@ randomHelp =
     "random"
     []
     "randomly selects a card with optional conditions"
-    [r|Displays a random card. NetrunnerDB [syntax](<https://netrunnerdb.com/en/syntax>) may be added to restrict the selection of cards. Queries are case insensitive.
+    randomBody
+    []
+    None
+
+searchBody :: Text
+searchBody = [r|Gets a list of all Netrunner cards matching a search query, matching NetrunnerDB's upcoming [syntax](api-preview.netrunnerdb.com).
+Queries are case insensitive and show a maximum of 10 results.
+
+Note that this uses NetrunnerDB's [new API](api-preview.netrunnerdb.com/api/docs/#printings-filter___printing_search_operator) which is still unstable and subject to changes and bugs.
+
+**Usage**
+`search query` gets all cards matching the query
+
+|] <> searchSyntaxDocs
+
+randomBody :: Text
+randomBody = [r|Displays a random card. NetrunnerDB [syntax](<https://netrunnerdb.com/en/syntax>) may be added to restrict the selection of cards. Queries are case insensitive.
 
 Note that this uses NetrunnerDB's [new API](api-preview.netrunnerdb.com) which is still unstable and subject to changes and bugs.
 
 **Usage**
-`random` displays a random Netrunner card
-`random t:agenda` displays a random agenda
-`random o:5 f:-` displays a random 5-cost neutral card from either side
-`random _:"green level clearance"` displays Green Level Clearance
-|]
-    []
-    None
+`random` query gets a random card matching the query
+
+|] <> searchSyntaxDocs
+
+searchSyntaxDocs :: Text
+searchSyntaxDocs = [r|**Syntax**
+For full documentation, see the [new API](api-preview.netrunnerdb.com/api/docs/#printings-filter___printing_search_operator). Note that this syntax is a superset of the old NetrunnerDB syntax, and queries valid in the current [search syntax](https://netrunnerdb.com/en/syntax) for NetrunnerDB should be valid for this command. The exception to this is searching by card ID or card aliases.
+
+Search queries are constructed of conditions, taking one of 2 forms:
+`card name` (e.g. `sahas` to match Sahasrara) which matches a card titles
+`field:value` (e.g. `title:sahas`) which matches specific properties of cards
+
+Field/value pairs have multiple operators:
+`field:value` gets cards where the given field has the given value
+`field!value` gets cards where the given field doesn't have the given value
+
+It also supports inequalities for numeric and date values:
+`field<value`
+`field>value`
+`field<=value`
+`field>=value`
+
+Values can be text, quoted text, numbers, or regular expressions:
+`text:abc`
+`text:"a b c"`
+`text:'a b c'`
+`cost:1`
+`text:/^[a-z]{10}$/`
+
+You can use multiple conditions to find cards that match all of them:
+`a b text:c` gets all cards with `a` _and_ `b` in their title, and also `c` in their text
+
+You can also use `and` and `or`:
+`a and b or c and d` gets all cards that either contain both `a` and `b` in their title, or contain both `c` and `d`
+
+Not that using `and` is equivalent to ommitting it entirely, but can be used for clarity:
+`a and b or c and d` = `a b or c d`
+
+You can use brackets to specify precedence:
+`a and (b or c) and d` gets all cards with `a`, `d`, and either `b` or `c` in their title
+
+You can preface a condition with `-` or `!` to negate it:
+`-a` gets all cards without `a` in their title
+`-(cost<4 and faction:nbn)` gets all cards that aren't NBN cards costing less than 4
+
+You can add multiple values to the right side of a field/value pair using `&` and `|`:
+(They represent `and` and `or` respectively)
+`flavour:x&y|z` gets cards with either `x` and `y` in their flavour text, or `z` in their flavour text.
+
+See the API documentation for a full list of valid fields.|]
 
 banListHelp :: HelpPage
 banListHelp =
