@@ -18,25 +18,23 @@ import GHC.Generics (Generic)
 import Sahasrara.Plugins.Netrunner.Type.Blacklist (Blacklist, defaultBlacklist)
 import Sahasrara.Plugins.Netrunner.Type.Glossary (Glossary, defaultGlossary)
 import Sahasrara.Plugins.Netrunner.Type.NrApi (NrApi (..))
-import Sahasrara.Utility.Json (contentRequest)
-import System.Environment (getEnv)
+import Sahasrara.Utility.Json (Content (content), contentRequest)
 
 -- | @getNrApi@ is a function that attempts to get the JSON objects containing
 -- all required Netrunner data (cards, cycles, and packs) as provided by
 -- https://netrunnerdb.com/api/2.0/doc.
 getNrApi :: IO NrApi
 getNrApi = do
-  apiUrl <- getEnv "API_URL"
-  cards <- contentRequest "Cards" $ apiUrl ++ "cards"
-  printings <- contentRequest "Printings" $ apiUrl ++ "printings"
-  cardTypes <- contentRequest "CardTypes" $ apiUrl ++ "card_types"
-  factions <- contentRequest "Factions" $ apiUrl ++ "factions"
-  cardCycles <- contentRequest "CardCycles" $ apiUrl ++ "card_cycles?sort=date_release"
-  cardSets <- contentRequest "CardSets" $ apiUrl ++ "card_sets"
-  formats <- contentRequest "Formats" $ apiUrl ++ "formats"
-  snapshots <- contentRequest "Snapshots" $ apiUrl ++ "snapshots"
-  cardPools <- contentRequest "CardPools" $ apiUrl ++ "card_pools"
-  restrictions <- contentRequest "Restrictions" $ apiUrl ++ "restrictions"
+  cards <- content <$> contentRequest "Cards" "cards" []
+  printings <- content <$> contentRequest "Printings" "printings" []
+  cardTypes <- content <$> contentRequest "CardTypes" "card_types" []
+  factions <- content <$> contentRequest "Factions" "factions" []
+  cardCycles <- content <$> contentRequest "CardCycles" "card_cycles" ["sort=date_release"]
+  cardSets <- content <$> contentRequest "CardSets" "card_sets" []
+  formats <- content <$> contentRequest "Formats" "formats" []
+  snapshots <- content <$> contentRequest "Snapshots" "snapshots" []
+  cardPools <- content <$> contentRequest "CardPools" "card_pools" []
+  restrictions <- content <$> contentRequest "Restrictions" "restrictions" []
   cardAliases <- getAliases
   putStrLn "Loaded aliases"
   blacklist <- getBlacklist
