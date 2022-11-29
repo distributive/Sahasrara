@@ -33,6 +33,7 @@ aliases:
   the masque: "The Masque: Cyber General"
   mask: "The Masque: Cyber General"
   the mask: "The Masque: Cyber General"
+  mirrormorph: "MirrorMorph: Endless Iteration"
   neh: "Near-Earth Hub: Broadcast Center"
   next: "NEXT Design: Guarding the Net"
   ob: "Ob Superheavy Logistics: Extract. Export. Excel."
@@ -62,7 +63,9 @@ aliases:
 
   # Other abbreviations
   aesops: "Aesop's Pawnshop"
+  ash: "Ash 2X3ZB9CY"
   blorch: "Black Orchestra"
+  cerebral: "Cerebral Overwriter"
   clippy: "Paperclip"
   247 news cycle: "24/7 News Cycle"
   david: "D4v1d"
@@ -70,12 +73,14 @@ aliases:
   dyper: "Hyperdriver"
   free to play: "F2P"
   free to pay: "F2P"
+  gt: "Government Takeover"
   gotay: "Government Takeover"
   gotek: "Government Takeover"
   hart: "Harmony AR Therapy"
   j-how: "Jackson Howard"
   jhow: "Jackson Howard"
   larla: "Levy AR Lab Access"
+  mark: "Mark Yale"
   midseasons: "Midseason Replacements"
   mopus: "Magnum Opus"
   emcap: "MCA Austerity Policy"
@@ -83,6 +88,7 @@ aliases:
   nisei mk 2: "Nisei MK II"
   nisei mark 2: "Nisei MK II"
   nisei mark ii: "Nisei MK II"
+  obo: "Obokata Protocol"
   polop: "Political Operative"
   proco: "Professional Contacts"
   procon: "Professional Contacts"
@@ -95,6 +101,7 @@ aliases:
   vig: "Ubiquitous Vig"
 
   # Acronyms
+  aoycr: "An Offer You Can't Refuse"
   bitw: "Blood in the Water"
   ihw: "I've Had Worse"
   hhn: "Hard-Hitting News"
@@ -262,6 +269,14 @@ aliases:
   fc2: Fairchild 2.0
   fc3: Fairchild 3.0
   fc: Fairchild
+
+  # GRaNDL
+  grandl: "GRNDL: Power Unleashed"
+  grendl: "GRNDL: Power Unleashed"
+  grindl: "GRNDL: Power Unleashed"
+  grondl: "GRNDL: Power Unleashed"
+  grundl: "GRNDL: Power Unleashed"
+  gryndl: "GRNDL: Power Unleashed"
 
   # Sequels
   noise 2: "The Nihilist"
