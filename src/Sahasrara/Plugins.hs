@@ -20,12 +20,14 @@ import Sahasrara.Plugins.Basic (basicPlugin)
 import Sahasrara.Plugins.Flip (flipPlugin)
 import Sahasrara.Plugins.Netrunner (netrunnerPlugin)
 import Sahasrara.Plugins.ONR (onrPlugin)
+import Sahasrara.Plugins.Quest (questPlugin)
 import Sahasrara.Plugins.Roll (rollPlugin)
 
 -- Use long list format to make additions and removals non-conflicting on git PRs
 allPlugins :: [CompiledPlugin]
 allPlugins =
   [ compilePlugin basicPlugin,
+    compilePlugin questPlugin,
     compilePlugin flipPlugin,
     compilePlugin rollPlugin,
     compilePlugin netrunnerPlugin,
