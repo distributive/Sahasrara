@@ -98,7 +98,7 @@ rollHelp :: HelpPage
 rollHelp =
   HelpPage
     "roll"
-    ["r"]
+    []
     "rolls dice and does maths"
     rollHelpText
     [statsHelp]

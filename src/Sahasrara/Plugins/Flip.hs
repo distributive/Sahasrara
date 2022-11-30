@@ -56,10 +56,11 @@ side = Command "side" (parseComm sideComm) []
   where
     sideComm :: () -> Message -> DatabaseDiscord ()
     sideComm () m = do
-      corp <- formatFromEmojiName "s_corp"
+      -- corp <- formatFromEmojiName "s_corp"
       runner <- formatFromEmojiName "s_runner"
-      result <- liftIO $ chooseOne [corp <> " Corp", runner <> " Runner"]
-      sendEmbedMessage m "" $ basicEmbed ":coin: Result :coin:" result
+      -- result <- liftIO $ chooseOne [corp <> " Corp", runner <> " Runner"]
+      -- sendEmbedMessage m "" $ basicEmbed ":coin: Result :coin:" result
+      sendEmbedMessage m "" $ basicEmbed ":coin: Result :coin:" $ runner <> " Runner"
 
 sideHelp :: HelpPage
 sideHelp =
