@@ -47,5 +47,5 @@ toColour Faction {code = code} = case code of
   "shaper" -> colShaper
   "adam" -> colAdam
   "apex" -> colApex
-  "sunny_lebeaux" -> colSunny
+  "sunny_lebeau" -> colSunny
   _ -> colError
