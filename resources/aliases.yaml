@@ -130,6 +130,7 @@ aliases:
   wtwb: "Watch the World Burn"
 
   # Misc.
+  666: "Superdeep Borehole"
   baby: "Symmetrical Visage"
   basketball: "Fast Break"
   basket ball: "Fast Break"
@@ -144,8 +145,10 @@ aliases:
   desperadito: "Pennyshaver"
   face kick: "Jailbreak"
   facekick: "Jailbreak"
+  fishy: "Orca"
   folding at home: "Data Folding"
   fugu: "Puffer"
+  isaac: "Issuaq Adaptics: Sustaining Diversity"
   julybug: "Urtica Cipher"
   just in time: "Compile"
   kitty: "Quantum Predictive Model"
@@ -158,6 +161,11 @@ aliases:
   piggy bank: "Bankroll"
   pistol: "Unregistered S&W '35"
   pizza field: "Giordano Memorial Field"
+  purple sea source: "Distributed Tracing"
+  purple sea: "Distributed Tracing"
+  purple source: "Distributed Tracing"
+  rapture: "Thule Subsea: Safety Below"
+  reg cap: "Regulatory Capture"
   sauron: "Hunter"
   slimhack: "Overclock"
   soccer mom: "Sunny Lebeau: Security Specialist"
@@ -181,6 +189,9 @@ aliases:
   jenkins northern plaza: "Pravdivost Consulting: Political Solutions"
   baseball bat: "Retribution"
   mammoth: "Regenesis"
+
+  # Quest
+  quest: "Spoilers"
 
   # I am
   flower: "Sahasrara"
@@ -278,6 +289,13 @@ aliases:
   grundl: "GRNDL: Power Unleashed"
   gryndl: "GRNDL: Power Unleashed"
 
+  # Mr. Hendriks
+  triplets: "Mr. Hendrik"
+  mr 3: "Mr. Hendrik"
+  mr. 3: "Mr. Hendrik"
+  mr three: "Mr. Hendrik"
+  mr. three: "Mr. Hendrik"
+
   # Sequels
   noise 2: "The Nihilist"
   andromeda 2: "The Class Act"
@@ -295,6 +313,8 @@ aliases:
   cyberdex 2: "Mavirus"
   cvs 2: "Mavirus"
   matrix analyzer 2: "Vasilisa"
+  scorched earth 2: "End of the Line"
+  hostile infrastructure 2: "Hostile Architecture"
 
   # n-walls
   0-wall: "Vanilla"
