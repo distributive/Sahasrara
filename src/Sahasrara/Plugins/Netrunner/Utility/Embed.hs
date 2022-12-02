@@ -36,7 +36,7 @@ import Prelude hiding (unwords)
 printingToEmbed :: NrApi -> Printing -> EnvDatabaseDiscord NrApi CreateEmbed
 printingToEmbed api printing = do
   let card = toCard api printing
-      eTitle = title card
+      eTitle = formatTitle card
       eURL = toLink printing
       eFoot = toReleaseData api printing
       eImg = Just $ toImage printing
