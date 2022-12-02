@@ -11,7 +11,8 @@ module Sahasrara.Plugins.Netrunner.Command.Find (nrInline, nrInlineImg, nrInline
 
 import Control.Monad.Trans.Reader (ask)
 import Data.List (find)
-import Data.Text (Text, pack, strip, unpack)
+import Data.Maybe (fromMaybe)
+import Data.Text (Text, pack, strip, unpack, toLower)
 import Discord.Types
 import Safe
 import Sahasrara.Internal.Handler.Command ()
@@ -87,7 +88,10 @@ cardParser c = try withSetIndex <|> try withSet <|> withoutSet
 outputCard :: (Printing -> Message -> EnvDatabaseDiscord NrApi ()) -> ((Text, Either Int Text) -> Message -> EnvDatabaseDiscord NrApi ())
 outputCard outf = \(query, set) m -> do
   api <- ask
-  let card = queryCard api query
+  let card =
+        case toLower query of
+          "me" -> queryCard api $ messageAuthorName m
+          _ -> queryCard api query
       printings = reverse $ toPrintings api card
   case set of
     Left (-1) -> outf (headNote (show card) printings) m
@@ -131,6 +135,12 @@ outputCard outf = \(query, set) m -> do
               substitution = 1,
               transposition = 1
             }
+    messageAuthorName :: Message -> Text
+    messageAuthorName m =
+      let uName = userName $ messageAuthor m
+       in case messageMember m of
+            Nothing -> uName
+            Just guildMember -> fromMaybe uName $ memberNick guildMember
     errorNotFound :: Text -> Text -> CreateEmbed
     errorNotFound set card = embedError $ GenericException "Set does not contain card" $ "`" <> (unpack set) <> "` does not contain *" <> unpack card <> "*."
     errorIndex :: Int -> Text -> CreateEmbed
