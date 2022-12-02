@@ -9,7 +9,6 @@
 -- Commands for getting Netrunner cards.
 module Sahasrara.Plugins.Netrunner.Command.Find (nrInline, nrInlineImg, nrInlineFlavour, nrInlineBanHistory) where
 
-import Control.Monad.IO.Class (MonadIO (liftIO))
 import Control.Monad.Trans.Reader (ask)
 import Data.List (find)
 import Data.Text (Text, pack, strip, unpack)
@@ -28,12 +27,9 @@ import Sahasrara.Plugins.Netrunner.Utility.Find
 import Sahasrara.Plugins.Netrunner.Utility.Print (embedPrinting, embedPrintingFlavour, embedPrintingImg, embedRestrictionHistory)
 import Sahasrara.Plugins.Netrunner.Utility.Printing (toCard, toCycle)
 import Sahasrara.Utility
-import Sahasrara.Utility.Colour
 import Sahasrara.Utility.Discord (sendEmbedMessage)
-import Sahasrara.Utility.Embed (addColour, basicEmbed)
-import Sahasrara.Utility.Exception (BotException (GenericException, InvisibleException), embedError, throwBot)
+import Sahasrara.Utility.Exception (BotException (GenericException), embedError)
 import Sahasrara.Utility.Parser (inlineCommandHelper, integer, skipSpace)
-import Sahasrara.Utility.Random (chooseOne)
 import Sahasrara.Utility.Search (FuzzyCosts (..), closestValueWithCosts)
 import Sahasrara.Utility.Types ()
 import Text.Megaparsec (anySingleBut, satisfy, single, some, try, (<|>))
@@ -90,18 +86,6 @@ cardParser c = try withSetIndex <|> try withSet <|> withoutSet
 -- Errors are embedded manually, as errors thrown in inline commands are hidden.
 outputCard :: (Printing -> Message -> EnvDatabaseDiscord NrApi ()) -> ((Text, Either Int Text) -> Message -> EnvDatabaseDiscord NrApi ())
 outputCard outf = \(query, set) m -> do
-  rng <- liftIO $ chooseOne [1 .. 75]
-  case rng of
-    1 -> do
-      sendEmbedMessage m "" $ addColour colError $ basicEmbed ":low_battery: **Warning:** power low :warning: :warning: :warning:" "Power-er-er is low! Pppppplease reboot power source!\n\nType `$quest` to interface."
-      throwBot InvisibleException
-    2 -> do
-      sendEmbedMessage m "" $ addColour colError $ basicEmbed ":low_battery: **Warning:** power low :warning:" "Powwwwwwerrrrrr is looooooow! PleeeaAAAAaase reboot power source!\n\nType `$quest` to interface."
-      throwBot InvisibleException
-    3 -> do
-      sendEmbedMessage m "" $ addColour colError $ basicEmbed ":warning: **Warning:** power low :low_battery:" "P-p-p-p-power is l-l-l-low! Please reboot _-/zzzzz/-_ power source!\n\nType `$quest` to interface."
-      throwBot InvisibleException
-    _ -> return ()
   api <- ask
   let card = queryCard api query
       printings = reverse $ toPrintings api card

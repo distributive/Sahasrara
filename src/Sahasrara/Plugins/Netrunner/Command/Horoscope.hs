@@ -40,16 +40,14 @@ nrHoroscope = Command "horoscope" horoscopePars []
   where
     horoscopePars :: Parser (Message -> EnvDatabaseDiscord NrApi ())
     horoscopePars = return $ \m -> do
-      sendEmbedMessage m "" $ addColour colHoroscope $ embedText ":crystal_ball: Horoscope :crystal_ball:" "Every rig needs a power source."
-
---   api <- ask
---   let fs = filterFlavours (blacklist api) (printings api)
---   seed <- liftIO $ getCurrentTime >>= return . fromIntegral . toModifiedJulianDay . utctDay
---   f <- liftIO $ chooseOneSeeded seed fs
---   f' <- formatText f
---   sendEmbedMessage m "" $ addColour colHoroscope $ embedText ":crystal_ball: Horoscope :crystal_ball:" $ replaceAll [r|"(.*?)"[.\S\s]*|] "$1" f'
--- filterFlavours :: Blacklist -> [Printing] -> [Text]
--- filterFlavours Blacklist {badSubstrings = badSubstrings, badCards = badCards} cards =
---   let flavoured = filter ((Nothing /=) . flavour) cards
---       withoutBadCards = filter (\c -> all (\b -> b /= code c) badCards) flavoured
---    in filter (\c -> not $ any (`isInfixOf` c) badSubstrings) $ mapMaybe flavour withoutBadCards -- Without bad substrings
+      api <- ask
+      let fs = filterFlavours (blacklist api) (printings api)
+      seed <- liftIO $ getCurrentTime >>= return . fromIntegral . toModifiedJulianDay . utctDay
+      f <- liftIO $ chooseOneSeeded seed fs
+      f' <- formatText f
+      sendEmbedMessage m "" $ addColour colHoroscope $ embedText ":crystal_ball: Horoscope :crystal_ball:" $ replaceAll [r|"(.*?)"[.\S\s]*|] "$1" f'
+    filterFlavours :: Blacklist -> [Printing] -> [Text]
+    filterFlavours Blacklist {badSubstrings = badSubstrings, badCards = badCards} cards =
+      let flavoured = filter ((Nothing /=) . flavour) cards
+          withoutBadCards = filter (\c -> all (\b -> b /= code c) badCards) flavoured
+       in filter (\c -> not $ any (`isInfixOf` c) badSubstrings) $ mapMaybe flavour withoutBadCards -- Without bad substrings
