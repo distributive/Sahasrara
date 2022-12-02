@@ -9,7 +9,7 @@
 -- Handles the representation of Netrunner cards in Sahasrara.
 module Sahasrara.Plugins.Netrunner.Utility.Card where
 
-import Data.Text (Text, intercalate)
+import Data.Text (Text, intercalate, replicate)
 import qualified Data.Text (toTitle)
 import Discord.Types
 import Safe
@@ -23,6 +23,7 @@ import Sahasrara.Plugins.Netrunner.Utility.Faction (toColour)
 import Sahasrara.Plugins.Netrunner.Utility.Formatting (formatText)
 import Sahasrara.Utility
 import Sahasrara.Utility.Types ()
+import Prelude hiding (replicate)
 
 -- | @fromCardCode@ finds a card by its code.
 fromCardCode :: NrApi -> Text -> Maybe Card
@@ -109,8 +110,9 @@ toSubtitle Card {..} =
       Just x ->
         if x == 0 && cardTypeCode `elem` ["agenda", "identity"]
           then ""
-          else " • Influence: " <> intToText x
-    deckbuilding = case cardTypeCode of
-      "identity" -> " • " <> maybeIntToText minimumDeckSize <> "/" <> maybeIntToText influenceLimit
-      _ -> ""
+          else " • Influence: " <> (replicate x "●")
+    deckbuilding =
+      if cardTypeCode `elem` ["corp_identity", "runner_identity"]
+        then " (" <> maybeIntToText minimumDeckSize <> "/" <> maybeIntToText influenceLimit <> ")"
+        else ""
     link = maybeEmptyPrependI " • Link: " baseLink
