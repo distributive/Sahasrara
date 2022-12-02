@@ -12,7 +12,7 @@ module Sahasrara.Plugins.Netrunner.Command.Find (nrInline, nrInlineImg, nrInline
 import Control.Monad.Trans.Reader (ask)
 import Data.List (find)
 import Data.Maybe (fromMaybe)
-import Data.Text (Text, pack, strip, unpack, toLower)
+import Data.Text (Text, pack, strip, toLower, unpack)
 import Discord.Types
 import Safe
 import Sahasrara.Internal.Handler.Command ()
