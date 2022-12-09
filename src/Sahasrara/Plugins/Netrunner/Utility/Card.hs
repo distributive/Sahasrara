@@ -82,8 +82,8 @@ toSubtitle Card {..} =
     <> link
     <> "**\n"
   where
-    maybeIntToText = maybe "?" intToText
-    maybeStatToText = maybe "?" statToText
+    maybeIntToText = maybe "∞" intToText
+    maybeStatToText = maybe "∞" statToText
     maybeEmptyPrependI s mi = maybeEmptyPrepend s (intToText <$> mi)
     maybeEmptyPrependS s mi = maybeEmptyPrepend s (statToText <$> mi)
     typeCode = Data.Text.toTitle $ if cardTypeCode `elem` ["corp_identity", "runner_identity"] then "identity" else cardTypeCode
