@@ -9,6 +9,7 @@
 -- Commands for getting Netrunner cards.
 module Sahasrara.Plugins.Netrunner.Command.Find (nrInline, nrInlineImg, nrInlineFlavour, nrInlineBanHistory) where
 
+import Control.Monad.Reader (liftIO)
 import Control.Monad.Trans.Reader (ask)
 import Data.List (find)
 import Data.Maybe (fromMaybe)
@@ -16,7 +17,7 @@ import Data.Text (Text, pack, strip, toLower, unpack)
 import Discord.Types
 import Safe
 import Sahasrara.Internal.Handler.Command ()
-import Sahasrara.Plugins.Netrunner.Type.Card (Card (title))
+import Sahasrara.Plugins.Netrunner.Type.Card (Card (title, factionCode))
 import Sahasrara.Plugins.Netrunner.Type.CardCycle (CardCycle)
 import qualified Sahasrara.Plugins.Netrunner.Type.CardCycle as CardCycle
 import Sahasrara.Plugins.Netrunner.Type.CardSet (CardSet)
@@ -28,6 +29,7 @@ import Sahasrara.Plugins.Netrunner.Utility.Find
 import Sahasrara.Plugins.Netrunner.Utility.Print (embedPrinting, embedPrintingFlavour, embedPrintingImg, embedRestrictionHistory)
 import Sahasrara.Plugins.Netrunner.Utility.Printing (toCard, toCycle)
 import Sahasrara.Utility
+import Sahasrara.Utility.Random (chooseOne)
 import Sahasrara.Utility.Discord (sendEmbedMessage)
 import Sahasrara.Utility.Exception (BotException (GenericException), embedError)
 import Sahasrara.Utility.Parser (inlineCommandHelper, integer, skipSpace)
@@ -88,11 +90,12 @@ cardParser c = try withSetIndex <|> try withSet <|> withoutSet
 outputCard :: (Printing -> Message -> EnvDatabaseDiscord NrApi ()) -> ((Text, Either Int Text) -> Message -> EnvDatabaseDiscord NrApi ())
 outputCard outf = \(query, set) m -> do
   api <- ask
-  let card =
-        case toLower query of
-          "me" -> queryCard api $ messageAuthorName m
-          _ -> queryCard api query
-      printings = reverse $ toPrintings api card
+  card <-
+    case toLower query of
+      "me" -> pure $ queryCard api $ messageAuthorName m
+      ":|" -> liftIO $ chooseOne $ filter ((`elem` ["neutral_corp", "neutral_runner"]) . factionCode) $ cards api
+      _ -> pure $ queryCard api query
+  let printings = reverse $ toPrintings api card
   case set of
     Left (-1) -> outf (headNote (show card) printings) m
     Left index ->
