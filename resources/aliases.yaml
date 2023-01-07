@@ -24,6 +24,7 @@ aliases:
   ig: "Industrial Genomics: Growing Solutions"
   ken: "Ken \"Express\" Tenma: Disappeared Clone"
   tenma: "Ken \"Express\" Tenma: Disappeared Clone"
+  ken tenma: "Ken \"Express\" Tenma: Disappeared Clone"
   kit: 'Rielle "Kit" Peddler: Transhuman'
   lat: "Lat: Ethical Freelancer"
   liza: "Liza Talking Thunder: Prominent Legislator"
@@ -136,6 +137,7 @@ aliases:
 
   # Misc.
   :(: "Unsmiling Tsarevna"
+  :): "Defense Construct"
   666: "Superdeep Borehole"
   awake implant: "Basilar Synthgland 2KVJ"
   baby: "Symmetrical Visage"
@@ -158,6 +160,7 @@ aliases:
   fishy: "Orca"
   folding at home: "Data Folding"
   fugu: "Puffer"
+  gender: "Rebirth"
   girl boss: "Nyusha \"Sable\" Sintashta: Symphonic Prodigy"
   girlboss: "Nyusha \"Sable\" Sintashta: Symphonic Prodigy"
   isaac: "Issuaq Adaptics: Sustaining Diversity"
@@ -173,10 +176,13 @@ aliases:
   piggy bank: "Bankroll"
   pistol: "Unregistered S&W '35"
   pizza field: "Giordano Memorial Field"
+  princess space kitten: "Rumor Mill"
+  psk: "Rumor Mill"
   purple sea source: "Distributed Tracing"
   purple sea: "Distributed Tracing"
   purple source: "Distributed Tracing"
   rapture: "Thule Subsea: Safety Below"
+  rawr: "Nanisivik Grid"
   reg cap: "Regulatory Capture"
   sauron: "Hunter"
   shark grid: "Nanisivik Grid"
@@ -204,9 +210,6 @@ aliases:
   baseball bat: "Retribution"
   mammoth: "Regenesis"
 
-  # Memes
-  ken tenma: "Clone Retirement"
-
   # Real people
   dan dargenio: "Deuces Wild"
   jens erickson: "CBI Raid"
@@ -228,6 +231,7 @@ aliases:
 
   # I am
   flower: "Sahasrara"
+  the flower: "Sahasrara"
   bot: "Sahasrara"
   the bot: "Sahasrara"
   you: "Sahasrara"
