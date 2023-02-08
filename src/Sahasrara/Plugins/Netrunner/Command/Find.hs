@@ -17,7 +17,7 @@ import Data.Text (Text, pack, strip, toLower, unpack)
 import Discord.Types
 import Safe
 import Sahasrara.Internal.Handler.Command ()
-import Sahasrara.Plugins.Netrunner.Type.Card (Card (title, factionCode))
+import Sahasrara.Plugins.Netrunner.Type.Card (Card (factionCode, title))
 import Sahasrara.Plugins.Netrunner.Type.CardCycle (CardCycle)
 import qualified Sahasrara.Plugins.Netrunner.Type.CardCycle as CardCycle
 import Sahasrara.Plugins.Netrunner.Type.CardSet (CardSet)
@@ -29,10 +29,10 @@ import Sahasrara.Plugins.Netrunner.Utility.Find
 import Sahasrara.Plugins.Netrunner.Utility.Print (embedPrinting, embedPrintingFlavour, embedPrintingImg, embedRestrictionHistory)
 import Sahasrara.Plugins.Netrunner.Utility.Printing (toCard, toCycle)
 import Sahasrara.Utility
-import Sahasrara.Utility.Random (chooseOne)
 import Sahasrara.Utility.Discord (sendEmbedMessage)
 import Sahasrara.Utility.Exception (BotException (GenericException), embedError)
 import Sahasrara.Utility.Parser (inlineCommandHelper, integer, skipSpace)
+import Sahasrara.Utility.Random (chooseOne)
 import Sahasrara.Utility.Search (FuzzyCosts (..), closestValueWithCosts)
 import Sahasrara.Utility.Types ()
 import Text.Megaparsec (anySingleBut, satisfy, single, some, try, (<|>))
