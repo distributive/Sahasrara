@@ -62,12 +62,15 @@ pageRequest pageSize pageIndex label url flags =
    in fetch False label url $ pageFlags ++ flags
 
 -- | @Content@ represents raw data from the api.
+-- Ormolu doesn't understand typeclass constraints in this context so it's disabled
+{- ORMOLU_DISABLE -}
 data FromJSON a => Content a = Content
   { content :: ![a],
     next :: !(Maybe Text),
     count :: !Int
   }
   deriving (Show)
+{- ORMOLU_ENABLE -}
 
 defaultContent :: FromJSON a => Content a
 defaultContent = Content [] Nothing 0
