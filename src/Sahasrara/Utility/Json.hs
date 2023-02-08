@@ -7,16 +7,17 @@
 -- Portability : POSIX
 --
 -- Functions for pinging JSON APIs.
-module Sahasrara.Utility.Json (
-  Content (..),
-  contentRequest,
-  pageRequest
-  ) where
+module Sahasrara.Utility.Json
+  ( Content (..),
+    contentRequest,
+    pageRequest,
+  )
+where
 
 import Data.Aeson (FromJSON, Value (Object), eitherDecode, parseJSON, (.:), (.:?))
 import Data.Char (isDigit)
-import Data.Text (Text, unpack)
 import Data.List (intercalate)
+import Data.Text (Text, unpack)
 import Network.HTTP.Conduit (Response (responseBody), parseRequest)
 import Network.HTTP.Simple (httpLBS)
 import System.Environment (getEnv)
@@ -42,14 +43,12 @@ fetch paginate label url flags = do
         Left err -> putStrLn (url' <> " " <> err) >> (return defaultContent)
         Right cData ->
           if paginate
-            then
-              case next cData of
-                Just n -> do
-                  dataNext <- fetch' $ unpack n
-                  return $ Content ((content cData) ++ (content dataNext)) (next cData) (count cData)
-                Nothing -> return cData
-            else
-              return cData
+            then case next cData of
+              Just n -> do
+                dataNext <- fetch' $ unpack n
+                return $ Content ((content cData) ++ (content dataNext)) (next cData) (count cData)
+              Nothing -> return cData
+            else return cData
 
 -- | @contentRequest@ gets all content from a link, including additional pages.
 contentRequest :: FromJSON a => String -> String -> [String] -> IO (Content a)
