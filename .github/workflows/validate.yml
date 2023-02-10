@@ -1,0 +1,14 @@
+name: Validate
+
+on:
+  push:
+  pull_request:
+
+  workflow_dispatch: # Allows you to run this workflow manually from the Actions tab
+
+jobs:
+  ormolu:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - uses: mrkkrp/ormolu-action@v4
