@@ -2,8 +2,6 @@ name: Validate
 
 on:
   push:
-    branches:
-      - main
   pull_request:
 
   workflow_dispatch: # Allows you to run this workflow manually from the Actions tab
