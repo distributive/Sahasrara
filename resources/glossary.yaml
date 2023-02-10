@@ -1451,6 +1451,30 @@ defs:
       - "Jinteki"
     citations:
       - "Ams"
+  - name: "trace"
+    aliases:
+      - "traces"
+      - "trace n"
+    short: "a mechanic in which players take turns spending credits"
+    long: "When a card initiates a trace (for example [[Punitive Counterstrike]]) the Corp starts a trace with a given number; this is their \"trace strength\". For Punitive Counterstike, this value is 5. Then the Corp may spend any number of credits to increase this strength by 1 per credit spent.<br><br>Once the corp has decided the trace's strength, the Runner may try to avoid the trace. Their base trace strength is equal to their link. They may also spend any number of credits to increase their trace strength by one per credit spent.<br><br>Note that this is not a back-and-forth; each player only gets to spend once; the Corp first then the Runner.<br><br>If the Runner's trace strength equals or exceeds the Corp's, the trace is unsuccessful. If the Corp's strength is greater, the trace is successful."
+    isOfficial: true
+    isObsolete: false
+    related:
+      - "link"
+      - "NBN"
+      - "tag"
+    citations:
+      - "Veronica"
+  - name: "link"
+    aliases: []
+    short: "a property of Runners predominantly affecting traces"
+    long: "This entry has not yet been written."
+    isOfficial: true
+    isObsolete: false
+    related:
+      - "trace"
+    citations:
+      - "Ams"
   - name: "icebreaker"
     aliases:
       - "breaker"
