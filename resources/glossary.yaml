@@ -1,4 +1,6 @@
 source: "https://github.com/distributive/Sahasrara/issues"
+hiddenCitations:
+  - "Ams"
 defs:
   - name: "Netrunner"
     aliases:

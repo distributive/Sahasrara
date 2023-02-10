@@ -28,6 +28,7 @@ data Definition = Definition
 
 data Glossary = Glossary
   { defs :: [Definition],
+    hiddenCitations :: [Text],
     source :: Text
   }
   deriving (Eq, Show, Generic)

@@ -64,22 +64,28 @@ printDef term m = do
   case lookup (standardise term) $ fromList $ defMap $ defs g of
     Nothing -> sendEmbedMessage m "" $ addColour colError $ basicEmbed ":pencil2: Term not found" $ failText api
     Just def -> do
-      let defSource = case sources def of
+      let defCitation = case filter (\c -> not $ elem c $ hiddenCitations g) <$> citations def of
+            Nothing -> ""
+            Just [] -> ""
+            Just [x] -> "\n\n***Citation:** " <> x <> "*"
+            Just xs -> "\n\n***Citations:** " <> intercalate ", " xs <> "*"
+          defSource = case sources def of
+            Nothing -> ""
+            Just [] -> ""
             Just [x] -> "\n\n***Source:** " <> x <> "*"
             Just xs -> "\n\n***Sources:** " <> intercalate ", " xs <> "*"
-            Nothing -> ""
       defText <- formatText' $ long def
-      sendEmbedMessage m "" $ addColour colInfo $ basicEmbed (":pencil: " <> name def) $ format defText (related def) defSource (source g)
+      sendEmbedMessage m "" $ addColour colInfo $ basicEmbed (":pencil: " <> name def) $ format defText (related def) defCitation defSource (source g)
   where
     defMap :: [Definition] -> [(Text, Definition)]
     defMap definitions = concatMap (\def -> (standardise $ name def, def) : [(standardise $ a, def) | a <- aliases def]) definitions
-    format :: Text -> [Text] -> Text -> Text -> Text
-    format defText related defSource source =
+    format :: Text -> [Text] -> Text -> Text -> Text -> Text
+    format defText related defCitation defSource source =
       let suffix = case related of
             [] -> ""
             _ -> "\n\n**See also**\n`" <> intercalate "`, `" related <> "`"
           footnote = "\n\n*Is this definition inaccurate, incomplete, or misleading? [Let me know!](" <> source <> ")*"
-       in defText <> defSource <> footnote <> suffix
+       in defText <> defCitation <> defSource <> footnote <> suffix
     failText :: NrApi -> Text
     failText NrApi {cards = cards, glossary = glossary, cardAliases = cardAliases} =
       let definitions = map (\(s, d) -> (unpack s, d)) $ defMap $ defs $ glossary
