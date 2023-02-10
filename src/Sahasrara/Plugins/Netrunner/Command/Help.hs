@@ -186,7 +186,7 @@ ramHelp =
     "ram"
     []
     "generates RAM card pools"
-    [r|RAM (Random Access Memories) is a format where the card pool is randomly generated from a subset of data packs and larger releases of Netrunner cards. See the official [supported formats page](https://nisei.net/players/supported-formats/#random-access-memories) for more.
+    [r|RAM (Random Access Memories) is a format where the card pool is randomly generated from a subset of data packs and larger releases of Netrunner cards. See the official [supported formats page](https://nullsignal.games/players/supported-formats/#random-access-memories) for more.
 
 **Usage**
 `ram` generates a standard RAM card pool with 2 large expansions and 12 data packs
