@@ -108,12 +108,12 @@ defs:
     aliases:
       - "maximum hand size"
     short: "the max. number of cards you can have in hand without discarding"
-    long: "Each player has a maximum hand size. At the end of a player's turn, if they have more cards in hand than their hand size, they discard cards until they are at their hand size limit. Both players start the game with a maximum hand size of 5, unless an ID ability says otherwise. Some card effects increase or decrease one or both players' hand sizes. When the Runner suffers brain damage, their hand size is permanently reduced by the amount of damage they took for the rest of the game."
+    long: "Each player has a maximum hand size. At the end of a player's turn, if they have more cards in hand than their hand size, they discard cards until they are at their hand size limit. Both players start the game with a maximum hand size of 5, unless an ID ability says otherwise. Some card effects increase or decrease one or both players' hand sizes. When the Runner suffers core damage, their hand size is permanently reduced by the amount of damage they took for the rest of the game."
     isOfficial: true
     isObsolete: false
     related:
       - "discarding"
-      - "brain damage"
+      - "core damage"
     citations:
       - "Ams"
   - name: "trash"
@@ -199,7 +199,7 @@ defs:
   - name: "grip"
     aliases: []
     short: "the Runner's hand"
-    long: "The grip is the Runner's hand. They may play/install cards from the grip (paying their play/install cost) and if they end their turn with more cards in the grip than their maximum hand size, they must discard cards until they hit their hand size. Damage removes cards from the grip at random, and brain damage permanently reduces the Runner's maximum hand size."
+    long: "The grip is the Runner's hand. They may play/install cards from the grip (paying their play/install cost) and if they end their turn with more cards in the grip than their maximum hand size, they must discard cards until they hit their hand size. Damage removes cards from the grip at random, and core damage permanently reduces the Runner's maximum hand size."
     isOfficial: true
     isObsolete: false
     related:
@@ -799,7 +799,7 @@ defs:
       - "HB"
       - "Haas Bioroid"
     short: "one of the four Corp factions"
-    long: "Haas-Bioroid (HB) is one of the four Corp factions. Mechanically they are themed around bioroids, installing cards, gaining clicks, brain damage, and recursion. Thematically they are producer of bioroids: artificially intelligent androids used for labor. As the other of the two Corps manurfacturing androids, their main competitor is Jinteki."
+    long: "Haas-Bioroid (HB) is one of the four Corp factions. Mechanically they are themed around bioroids, installing cards, gaining clicks, core damage, and recursion. Thematically they are producer of bioroids: artificially intelligent androids used for labor. As the other of the two Corps manurfacturing androids, their main competitor is Jinteki."
     isOfficial: true
     isObsolete: false
     related:
@@ -1636,7 +1636,7 @@ defs:
       - "power counter"
       - "virus counter"
       - "condition counter"
-      - "brain damage counter"
+      - "core damage counter"
       - "click tracker"
       - "hosted credit"
       - "recurring credit"
@@ -1711,15 +1711,16 @@ defs:
       - "operation"
     citations:
       - "monde"
-  - name: "brain damage counter"
-    aliases: []
-    short: "a counter used to denote how much brain damage a Runner has"
-    long: "Whenever the Runner suffers brain damage, their hand size is reduced by 1 for each brain damage taken. Players often use brain damage tokens as a reminder for how much brain damage they are currently on."
+  - name: "core damage counter"
+    aliases:
+      - "brain damage counter"
+    short: "a counter used to denote how much core damage a Runner has"
+    long: "Whenever the Runner suffers core damage, their hand size is reduced by 1 for each core damage taken. Players often use core damage tokens as a reminder for how much core damage they have taken each game."
     isOfficial: false
     isObsolete: false
     related:
       - "counter"
-      - "brain damage"
+      - "core damage"
     citations:
       - "Ams"
   - name: "click tracker"
@@ -1835,7 +1836,7 @@ defs:
       - "damage"
       - "flatlining"
       - "net damage"
-      - "brain damage"
+      - "core damage"
     citations:
       - "monde"
   - name: "net damage"
@@ -1848,13 +1849,14 @@ defs:
       - "damage"
       - "flatlining"
       - "meat damage"
-      - "brain damage"
+      - "core damage"
     citations:
       - "monde"
-  - name: "brain damage"
-    aliases: []
+  - name: "core damage"
+    aliases:
+      - "brain damage"
     short: "a type of damage permanently reducing the Runner's hand size"
-    long: "Brain damage is a special type of damage that the Runner may take. When resolving \"take X brain damage\", the Runner trashes X cards at random from their grip and receives that many brain damage tokens. Each token reduces the Runner's maximum hand size by 1. If the Runner has to trash more cards than they have in hand, or reaches the discard phase at the end of their turn with a negative hand size, they flatline and lose the game."
+    long: "Core damage is a special type of damage that the Runner may take. When resolving \"take X core damage\", the Runner trashes X cards at random from their grip and receives that many core damage tokens. Each token reduces the Runner's maximum hand size by 1. If the Runner has to trash more cards than they have in hand, or reaches the discard phase at the end of their turn with a negative hand size, they flatline and lose the game."
     isOfficial: true
     isObsolete: false
     related:
