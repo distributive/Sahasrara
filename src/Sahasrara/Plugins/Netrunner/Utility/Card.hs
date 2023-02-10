@@ -87,7 +87,7 @@ toSubtitle Card {..} =
     maybeEmptyPrependI s mi = maybeEmptyPrepend s (intToText <$> mi)
     maybeEmptyPrependS s mi = maybeEmptyPrepend s (statToText <$> mi)
     typeCode = Data.Text.toTitle $ if cardTypeCode `elem` ["corp_identity", "runner_identity"] then "identity" else cardTypeCode
-    subtypes' = ": " <> intercalate " - " subtypes
+    subtypes' = if subtypes == [] then "" else ": " <> intercalate " - " subtypes
     cost' =
       let rezText = " • Rez: "
        in case (cost, cardTypeCode) of
@@ -102,7 +102,7 @@ toSubtitle Card {..} =
       let adv = maybeStatToText advancementRequirement
           points = maybeIntToText agendaPoints
        in case cardTypeCode of
-            "agenda" -> " • " <> adv <> "/" <> points
+            "agenda" -> " (" <> adv <> "/" <> points <> ")"
             _ -> ""
     trash = maybeEmptyPrependI " • Trash: " trashCost
     influence = case influenceCost of

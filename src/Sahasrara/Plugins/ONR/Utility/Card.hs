@@ -91,7 +91,7 @@ toSubtitle Card {..} =
       let adv = maybeIntToText difficulty
           points = maybeIntToText agendaPoints
        in case typeCode of
-            Just "agenda" -> " • " <> adv <> "/" <> points
+            Just "agenda" -> " (" <> adv <> "/" <> points <> ")"
             _ -> ""
     trash = maybeEmptyPrependI " • Trash: " trashCost
 
