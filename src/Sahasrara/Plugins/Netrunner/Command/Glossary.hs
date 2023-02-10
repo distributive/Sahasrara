@@ -51,7 +51,7 @@ printMain m = do
         [] -> ""
         _ -> "\n\n**With thanks to:**\n• " <> intercalate "\n• " authors
       authors = nub $ concat $ catMaybes $ citations <$> definitions
-      disclaimer = "\n\n*This glossary is supported by members of the community. It is not endorsed by NISEI, nor is the content guaranteed to be consistent with the game's official rules.*"
+      disclaimer = "\n\n*This glossary is supported by members of the community. It is not endorsed by Null Signal Games, nor is the content guaranteed to be consistent with the game's official rules.*"
   randomDef <- liftIO $ chooseOne $ map name definitions
   let example = "\nTry: `glossary " <> randomDef <> "`"
   sendEmbedMessage m "" $ addColour colHelp $ basicEmbed ":pencil: Glossary" $ desc <> example <> attribution <> disclaimer
