@@ -1,8 +1,8 @@
-name: Validate
+name: Tests
 
 on:
-  push:
   pull_request:
+  workflow_call:
 
   workflow_dispatch: # Allows you to run this workflow manually from the Actions tab
 
