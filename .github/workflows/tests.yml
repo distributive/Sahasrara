@@ -8,7 +8,14 @@ on:
 
 jobs:
   ormolu:
+    name: Ormolu
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
       - uses: mrkkrp/ormolu-action@v4
+  build:
+    name: "Build"
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - uses: freckle/stack-action@v3
