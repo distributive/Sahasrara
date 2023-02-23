@@ -19,9 +19,6 @@ data Printing = Printing
   { code :: !Text,
     cardCode :: !Text,
     cardSetCode :: !Text,
-    printedText :: !Text,
-    strippedPrintedText :: !Text,
-    printedIsUnique :: !Bool,
     flavour :: !(Maybe Text),
     illustrators :: ![Text],
     position :: !Int,
@@ -37,13 +34,6 @@ instance FromJSON Printing where
     a <- o .: "attributes"
     cardCode <- a .: "card_id"
     cardSetCode <- a .: "card_set_id"
-    printedText <- do
-      t <- a .: "printed_text"
-      return $ fromMaybe "" t
-    strippedPrintedText <- do
-      t <- a .: "stripped_printed_text"
-      return $ fromMaybe "" t
-    printedIsUnique <- a .: "printed_is_unique"
     flavour <- a .:? "flavor"
     illustrators <- do
       i <- a .:? "display_illustrators"
