@@ -38,4 +38,4 @@ instance FromJSON Definition
 instance FromJSON Glossary
 
 defaultGlossary :: Glossary
-defaultGlossary = Glossary {defs = [], source = ""}
+defaultGlossary = Glossary {defs = [], hiddenCitations = [], source = ""}
