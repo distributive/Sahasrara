@@ -25,8 +25,8 @@ import Sahasrara.Utility.Json (Content (content), contentRequest)
 -- https://netrunnerdb.com/api/2.0/doc.
 getNrApi :: IO NrApi
 getNrApi = do
-  cards <- content <$> contentRequest "Cards" "cards" ["sort=-date_release"]
-  printings <- content <$> contentRequest "Printings" "printings" ["sort=-date_release"]
+  cards <- content <$> contentRequest "Cards" "cards" []
+  printings <- content <$> contentRequest "Printings" "printings" ["sort=date_release"] >>= return . reverse -- Applying the reverse to the API directly with "sort=-date_release" causes some inconsistent bugs I don't understand
   cardTypes <- content <$> contentRequest "CardTypes" "card_types" []
   factions <- content <$> contentRequest "Factions" "factions" []
   cardCycles <- content <$> contentRequest "CardCycles" "card_cycles" ["sort=date_release"]
