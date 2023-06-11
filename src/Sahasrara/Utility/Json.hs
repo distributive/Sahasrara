@@ -15,12 +15,12 @@ module Sahasrara.Utility.Json
 where
 
 import Data.Aeson (FromJSON, Value (Object), eitherDecode, parseJSON, (.:), (.:?))
-import Data.Char (isDigit)
 import Data.List (intercalate)
 import Data.Text (Text, unpack)
 import Network.HTTP.Conduit (Response (responseBody), parseRequest)
 import Network.HTTP.Simple (httpLBS)
 import System.Environment (getEnv)
+import Text.Regex.PCRE ((=~))
 
 -- | @fetch@ makes an api call and wraps the result in a Content.
 -- If paginate is true, continue fetching data until all pages are parsed
@@ -87,6 +87,7 @@ instance FromJSON a => FromJSON (Content a) where
         Nothing -> return $ length content
         Just ls -> do
           lst <- ls .: "last"
-          return $ (length content) + (read $ reverse $ takeWhile isDigit $ reverse lst)
+          let str = (unpack lst) =~ ("(?<=page%5Boffset%5D=)\\d+" :: String)
+          return $ (length content) + (read str)
     return $ Content content next count
   parseJSON _ = return defaultContent

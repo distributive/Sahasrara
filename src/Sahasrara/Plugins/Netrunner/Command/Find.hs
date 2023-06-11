@@ -97,7 +97,7 @@ outputCard outf = \(query, set) m -> do
       _ -> pure $ queryCard api query
   let printings = reverse $ toPrintings api card
   case set of
-    Left (-1) -> outf (headNote (show card) printings) m
+    Left (-1) -> outf (headNote (show card) $ reverse printings) m
     Left index ->
       let i = if index < 0 then length printings + index else index
        in if i < 0 || i >= length printings

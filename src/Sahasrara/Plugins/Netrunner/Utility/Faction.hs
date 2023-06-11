@@ -31,7 +31,7 @@ toEmoji Faction {code = code} = case code of
   "adam" -> formatFromEmojiName "s_adam"
   "apex" -> formatFromEmojiName "s_apex"
   "sunny_lebeau" -> formatFromEmojiName "s_sunny"
-  _ -> formatFromEmojiName "s_nisei"
+  _ -> formatFromEmojiName "s_nsg"
 
 -- | @toColour@ gets the factional colour of a card to use in its embed.
 toColour :: Faction -> DiscordColor

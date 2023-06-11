@@ -28,6 +28,7 @@ data Definition = Definition
 
 data Glossary = Glossary
   { defs :: [Definition],
+    hiddenCitations :: [Text],
     source :: Text
   }
   deriving (Eq, Show, Generic)
@@ -37,4 +38,4 @@ instance FromJSON Definition
 instance FromJSON Glossary
 
 defaultGlossary :: Glossary
-defaultGlossary = Glossary {defs = [], source = ""}
+defaultGlossary = Glossary {defs = [], hiddenCitations = [], source = ""}

@@ -26,7 +26,7 @@ import Sahasrara.Utility.Json (Content (content), contentRequest)
 getNrApi :: IO NrApi
 getNrApi = do
   cards <- content <$> contentRequest "Cards" "cards" []
-  printings <- content <$> contentRequest "Printings" "printings" []
+  printings <- content <$> contentRequest "Printings" "printings" ["sort=-date_release,position"]
   cardTypes <- content <$> contentRequest "CardTypes" "card_types" []
   factions <- content <$> contentRequest "Factions" "factions" []
   cardCycles <- content <$> contentRequest "CardCycles" "card_cycles" ["sort=date_release"]
