@@ -29,4 +29,8 @@ WORKDIR /sahasrara
 COPY --from=build /sahasrara/build/bin .
 # apparently we need the .git folder
 COPY .git .git
+# also we need the runtime resources folder
+COPY resources resources
+
+# Run the bot
 CMD /sahasrara/sahasrara-exe
