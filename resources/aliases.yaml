@@ -103,6 +103,9 @@ aliases:
   spinny: "Spin Doctor"
   teamspo: "Team Sponsorship"
   vig: "Ubiquitous Vig"
+  s&b: "Slash and Burn Agriculture"
+  /&burn: "Slash and Burn Agriculture"
+  /&b: "Slash and Burn Agriculture"
 
   # Acronyms
   am: "Archived Memories"
@@ -137,6 +140,7 @@ aliases:
   qpm: "Quantum Predictive Model"
   rdi: "R&D Interface"
   rpc: "Red Planet Couriers"
+  sab: "Slash and Burn Agriculture"
   smc: "Self-modifying Code"
   sscg: "SanSan City Grid"
   sso: "SSO Industries: Fueling Innovation"
@@ -246,6 +250,11 @@ aliases:
   walk-ins: "Front Company"
   terminator: "B-1001"
   blool: "B-1001"
+  seymour: "Audrey v2"
+  seymore: "Audrey v2"
+  s3ym0ur: "Audrey v2"
+  flowey: "Audrey v2"
+  point: "Valentão"
 
   # Real people
   dan dargenio: "Deuces Wild"
