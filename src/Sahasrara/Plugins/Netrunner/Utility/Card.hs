@@ -45,7 +45,7 @@ toPrintings api card = filter ((== code card) . cardCode) $ printings api
 -- | @toLatestPrinting@ gets the most recent printing of a card.
 -- Assumes they're ordered oldest first
 toLatestPrinting :: NrApi -> Card -> Printing
-toLatestPrinting api card = last $ toPrintings api card
+toLatestPrinting api card = head $ toPrintings api card
 
 -- | @toFaction@ takes a card and attempts to find its faction.
 toFaction :: NrApi -> Card -> Faction

@@ -2,9 +2,8 @@
 -- Description : Handles the representation of card legality in Netrunner.
 module Sahasrara.Plugins.Netrunner.Utility.Legality where
 
-import Data.List (nub, nubBy)
-import Data.Map (elems, keys)
-import qualified Data.Map as Map
+import Data.List (groupBy, nub, nubBy, sortBy)
+import Data.Map (Map, findWithDefault, keys, lookup)
 import Data.Maybe (fromMaybe, mapMaybe)
 import Data.Text (Text, intercalate, toLower)
 import qualified Data.Text as T
@@ -85,10 +84,7 @@ isRestricted restriction card = elem (Card.code card) $ restricted restriction
 
 -- | @toUniversalFactionCost@ gets a card's universal cost under a restriction.
 toUniversalFactionCost :: Restriction -> Card -> Int
-toUniversalFactionCost restriction Card {Card.code = code} =
-  case keys $ Map.filter (code `elem`) $ universalFactionCost restriction of
-    [] -> 0
-    (x : _) -> x
+toUniversalFactionCost restriction Card {Card.code = code} = findWithDefault 0 code $ universalFactionCost restriction
 
 -- | @hasGlobalPenalty@ determines if a card had a global penalty under a restriction.
 hasGlobalPenalty :: Restriction -> Card -> Bool
@@ -96,10 +92,7 @@ hasGlobalPenalty restriction card = elem (Card.code card) $ globalPenalty restri
 
 -- | @toPoints@ gets a card's points under a restriction.
 toPoints :: Restriction -> Card -> Int
-toPoints restriction Card {Card.code = code} =
-  case keys $ Map.filter (code `elem`) $ points restriction of
-    [] -> 0
-    (x : _) -> x
+toPoints restriction Card {Card.code = code} = findWithDefault 0 code $ points restriction
 
 -- | @cycleLegality@ gets the legality of a given cycle under a given snapshot.
 cycleLegality :: NrApi -> Snapshot -> CardCycle -> Legality
@@ -142,22 +135,41 @@ listRestrictions api format =
 -- | @listHistory@ lists each restriction of the given format and the state of
 -- the given card under each version.
 listHistory :: NrApi -> Format -> Card -> Text
-listHistory api format card = intercalate "\n" $ map toText snapshots
+listHistory api format card = intercalate "\n" condensed
   where
     snapshots :: [Snapshot] -- Doesn't use toRestrictions because we need the snapshots for their card pools
-    snapshots = reverse $ filter (\s -> restrictionCode s /= Nothing) $ nubBy (\a b -> restrictionCode a == restrictionCode b) $ toSnapshots api format
+    snapshots = reverse $ filter (\s -> restrictionCode s /= Nothing && toLegality api s card /= Invalid) $ nubBy (\a b -> restrictionCode a == restrictionCode b) $ toSnapshots api format
+    groups :: [[Snapshot]]
+    groups = groupBy (\a b -> toLegality api a card == toLegality api b card) snapshots
+    condensed :: [Text]
+    condensed = concatMap takeFirstLast groups
+    takeFirstLast :: [Snapshot] -> [Text]
+    takeFirstLast xs = if length xs < 4
+      then toText <$> xs
+      else [toText $ head xs, formatSkip xs, toText $ last xs]
+    formatSkip :: [Snapshot] -> Text -- Should never be given a list with fewer than 4 elements
+    formatSkip [] = "`#ERROR`"
+    formatSkip (x:xs) = legalityToSymbol (toLegality api x card) <> " _unchanged " <> (T.pack $ show $ length xs - 1) <> " updates_"
     toText :: Snapshot -> Text
     toText snapshot =
       let restriction = fromMaybe defaultRestriction $ toRestriction api snapshot
-       in legalityToSymbol (toLegality api snapshot card) <> " " <> Restriction.name restriction <> formatActive restriction
+       in legalityToSymbol (toLegality api snapshot card) <> " " <> formatActive restriction
     formatActive :: Restriction -> Text
-    formatActive r = if isActiveRestriction api format r then " (active)" else ""
+    formatActive r = if isActiveRestriction api format r
+      then "**" <> Restriction.name r <> " (active)**"
+      else Restriction.name r
 
 -- | @affectedCards@ gets all cards affected by a given restriction.
 affectedCards :: NrApi -> Restriction -> [Card]
-affectedCards api r =
-  let codes = concat [banned r, restricted r, concat $ reverse $ elems (universalFactionCost r), globalPenalty r, concat $ reverse $ elems (points r)]
-   in mapMaybe (fromCardCode api) $ nub codes
+affectedCards api r = mapMaybe (fromCardCode api) $ nub codes
+  where
+    codes :: [Text]
+    codes = concat [banned r, restricted r, sortBy (valueOf $ universalFactionCost r) $ keys (universalFactionCost r), globalPenalty r, sortBy (valueOf $ points r) $ keys (points r)]
+    valueOf :: Map Text Int -> Text -> Text -> Ordering
+    valueOf mapping a b =
+      let vA = lookup a mapping
+          vB = lookup b mapping
+       in if vA > vB then LT else if vA < vB then GT else EQ
 
 -- | @listAffectedCards@ lists all the cards affected by a restriction.
 -- The output is (additional text, corp cards, runner cards).

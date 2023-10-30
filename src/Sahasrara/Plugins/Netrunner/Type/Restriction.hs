@@ -24,9 +24,9 @@ data Restriction = Restriction
     pointLimit :: !(Maybe Int),
     banned :: ![Text],
     restricted :: ![Text],
-    universalFactionCost :: !(Map Int [Text]),
+    universalFactionCost :: !(Map Text Int),
     globalPenalty :: ![Text],
-    points :: !(Map Int [Text]),
+    points :: !(Map Text Int),
     bannedSubtypes :: ![Text]
   }
   deriving (Eq, Show, Generic)
