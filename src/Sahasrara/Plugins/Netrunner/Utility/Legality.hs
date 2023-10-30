@@ -144,20 +144,22 @@ listHistory api format card = intercalate "\n" condensed
     condensed :: [Text]
     condensed = concatMap takeFirstLast groups
     takeFirstLast :: [Snapshot] -> [Text]
-    takeFirstLast xs = if length xs < 4
-      then toText <$> xs
-      else [toText $ head xs, formatSkip xs, toText $ last xs]
+    takeFirstLast xs =
+      if length xs < 4
+        then toText <$> xs
+        else [toText $ head xs, formatSkip xs, toText $ last xs]
     formatSkip :: [Snapshot] -> Text -- Should never be given a list with fewer than 4 elements
     formatSkip [] = "`#ERROR`"
-    formatSkip (x:xs) = legalityToSymbol (toLegality api x card) <> " _unchanged " <> (T.pack $ show $ length xs - 1) <> " updates_"
+    formatSkip (x : xs) = legalityToSymbol (toLegality api x card) <> " _unchanged " <> (T.pack $ show $ length xs - 1) <> " updates_"
     toText :: Snapshot -> Text
     toText snapshot =
       let restriction = fromMaybe defaultRestriction $ toRestriction api snapshot
        in legalityToSymbol (toLegality api snapshot card) <> " " <> formatActive restriction
     formatActive :: Restriction -> Text
-    formatActive r = if isActiveRestriction api format r
-      then "**" <> Restriction.name r <> " (active)**"
-      else Restriction.name r
+    formatActive r =
+      if isActiveRestriction api format r
+        then "**" <> Restriction.name r <> " (active)**"
+        else Restriction.name r
 
 -- | @affectedCards@ gets all cards affected by a given restriction.
 affectedCards :: NrApi -> Restriction -> [Card]
