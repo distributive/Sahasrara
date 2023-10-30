@@ -17,7 +17,7 @@ import Data.Text (Text, pack, strip, toLower, unpack)
 import Discord.Types
 import Safe
 import Sahasrara.Internal.Handler.Command ()
-import Sahasrara.Plugins.Netrunner.Type.Card (Card (factionCode, title))
+import Sahasrara.Plugins.Netrunner.Type.Card (Card (code, factionCode, title))
 import Sahasrara.Plugins.Netrunner.Type.CardCycle (CardCycle)
 import qualified Sahasrara.Plugins.Netrunner.Type.CardCycle as CardCycle
 import Sahasrara.Plugins.Netrunner.Type.CardSet (CardSet)
@@ -94,6 +94,7 @@ outputCard outf = \(query, set) m -> do
     case toLower query of
       "me" -> pure $ queryCard api $ messageAuthorName m
       ":|" -> liftIO $ chooseOne $ filter ((`elem` ["neutral_corp", "neutral_runner"]) . factionCode) $ cards api
+      "qtm" -> liftIO $ chooseOne $ filter ((`elem` ["behold", "cerebral_overwriter", "dr_vientiane_keeling", "light_the_fire", "mindscaping", "ontological_dependence", "sds_drone_deployment"]) . code) $ cards api
       _ -> pure $ queryCard api query
   let printings = reverse $ toPrintings api card
   case set of
