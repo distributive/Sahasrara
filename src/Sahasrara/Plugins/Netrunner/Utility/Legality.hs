@@ -135,7 +135,10 @@ listRestrictions api format =
 -- | @listHistory@ lists each restriction of the given format and the state of
 -- the given card under each version.
 listHistory :: NrApi -> Format -> Card -> Text
-listHistory api format card = intercalate "\n" condensed
+listHistory api format card =
+  if all (\s -> Legal == toLegality api s card) snapshots
+    then (legalityToSymbol Legal) <> " This card has never appeared on a list."
+    else intercalate "\n" condensed
   where
     snapshots :: [Snapshot] -- Doesn't use toRestrictions because we need the snapshots for their card pools
     snapshots = reverse $ filter (\s -> restrictionCode s /= Nothing && toLegality api s card /= Invalid) $ nubBy (\a b -> restrictionCode a == restrictionCode b) $ toSnapshots api format
