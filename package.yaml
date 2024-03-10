@@ -101,6 +101,7 @@ library:
     - BangPatterns
   ghc-options:
     - -Wall
+    - "\"-with-rtsopts=-Iw10 -N\""
 
 executables:
   sahasrara-exe:
