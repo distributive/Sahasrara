@@ -29,6 +29,7 @@ aliases:
   kit: 'Rielle "Kit" Peddler: Transhuman'
   lat: "Lat: Ethical Freelancer"
   liza: "Liza Talking Thunder: Prominent Legislator"
+  lisa: "Liza Talking Thunder: Prominent Legislator"
   mac: 'Kate "Mac" McCaffrey: Digital Tinker'
   max: "MaxX: Maximum Punk Rock"
   masque: "The Masque: Cyber General"
@@ -111,17 +112,20 @@ aliases:
   # Acronyms
   am: "Archived Memories"
   aoycr: "An Offer You Can't Refuse"
+  bau: "Business as Usual"
   bitw: "Blood in the Water"
   hhn: "Hard-Hitting News"
   cvs: "Cyberdex Virus Suite"
   dbs: "Daily Business Show"
   dlr: "Data Leak Reversal"
+  efae: "Eye for an Eye"
   eotl: "End of the Line"
   etf: "Haas-Bioroid: Engineering the Future"
   fihp: "Friends in High Places"
   foi: "Freedom of Information"
   gfi: "Global Food Initiative"
   glc: "Green Level Clearance"
+  ham: "Hearts and Minds"
   vlc: "Violet Level Clearance"
   uvc: "Ultraviolet Clearance"
   rlc: "Red Level Clearance"
@@ -147,6 +151,7 @@ aliases:
   sso: "SSO Industries: Fueling Innovation"
   sot: "Same Old Thing"
   tpr: "Timely Public Release"
+  vsa: "Virtual Service Agent"
   wtwb: "Watch the World Burn"
 
   # Misc.
@@ -276,6 +281,7 @@ aliases:
   mattohno: "Vampyronassa"
   eric: "Yakov Erikovich Avdakov"
   whiteblade: "Yakov Erikovich Avdakov"
+  jason ford: "Joy Ride"
 
   # I am
   flower: "Sahasrara"
