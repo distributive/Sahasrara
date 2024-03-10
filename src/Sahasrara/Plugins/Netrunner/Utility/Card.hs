@@ -81,6 +81,7 @@ toSubtitle Card {..} =
     <> deckbuilding
     <> link
     <> "**\n"
+    <> cardPronouns
   where
     maybeIntToText = maybe "∞" intToText
     maybeStatToText = maybe "∞" statToText
@@ -116,3 +117,6 @@ toSubtitle Card {..} =
         then " (" <> maybeIntToText minimumDeckSize <> "/" <> maybeIntToText influenceLimit <> ")"
         else ""
     link = maybeEmptyPrependI " • Link: " baseLink
+    cardPronouns = case pronouns of
+      Nothing -> ""
+      Just p -> "(" <> p <> ")\n"

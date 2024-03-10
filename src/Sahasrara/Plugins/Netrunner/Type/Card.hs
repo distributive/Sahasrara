@@ -32,6 +32,7 @@ data Card = Card
     influenceLimit :: !(Maybe Int),
     memoryCost :: !(Maybe Int),
     minimumDeckSize :: !(Maybe Int),
+    pronouns :: !(Maybe Text),
     strength :: !(Maybe Stat),
     strippedText :: !Text,
     text :: !Text,
@@ -59,6 +60,7 @@ instance FromJSON Card where
     influenceLimit <- a .: "influence_limit"
     memoryCost <- a .:? "memory_cost"
     minimumDeckSize <- a .:? "minimum_deck_size"
+    pronouns <- a .:? "pronouns"
     strength <- a .:? "strength"
     strippedText <- do
       (st :: Maybe Text) <- a .:? "stripped_text"
