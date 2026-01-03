@@ -1,5 +1,9 @@
 # Sahasrara
 
+_**This bot is now obsolete. See the new JavaScript version [here](https://github.com/distributive/Sahasrara2).**_
+
+---
+
 An extendable Discord bot framework written on top of [WarwickTabletop's Tablebot](https://github.com/WarwickTabletop/tablebot) (built on top of [discord-haskell](https://github.com/aquarial/discord-haskell)) and inspired by [Jeeves](https://github.com/Mezuzi/Jeeves) and [Beanstalk](https://github.com/dougblack/beanstalk). Note that a lot of commands were stripped from the original version of this bot, but the underlying code remains. If you find code that seems to be unused, it probably is.
 
 ## Functionality
